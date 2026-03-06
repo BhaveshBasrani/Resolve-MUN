@@ -32,17 +32,19 @@
     cursor: none;
   }
 
+  a, button { cursor: none; }
+
   /* CUSTOM CURSOR */
   .cursor {
     position: fixed; width: 8px; height: 8px;
-    background: var(--gold); border-radius: 50%;
+    background: var(--white); border-radius: 50%;
     pointer-events: none; z-index: 9999;
     transform: translate(-50%, -50%);
     transition: transform 0.1s;
   }
   .cursor-ring {
     position: fixed; width: 32px; height: 32px;
-    border: 1px solid rgba(201,168,76,0.4); border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 50%;
     pointer-events: none; z-index: 9998;
     transform: translate(-50%, -50%);
     transition: all 0.15s ease;
@@ -232,18 +234,26 @@
 
   .hero-scroll {
     position: absolute; bottom: 40px;
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    left: 49%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
     opacity: 0; animation: fadeUp 1s ease 1.4s forwards;
+    z-index: 10;
   }
   .hero-scroll span {
     font-family: 'Oswald', sans-serif;
     font-size: 0.58rem; letter-spacing: 0.3em; text-transform: uppercase;
     color: var(--muted);
   }
-  .scroll-line {
-    width: 1px; height: 48px;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
-    animation: scrollPulse 2s ease infinite;
+  .scroll-line-container {
+    width: 1px; height: 60px;
+    background: rgba(255,255,255,0.05);
+    position: relative; overflow: hidden;
+  }
+  .scroll-line-fill {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    animation: scrollFill 2s cubic-bezier(0.76, 0, 0.24, 1) infinite;
   }
 
   /* COUNTDOWN */
@@ -323,28 +333,39 @@
   .about-orb {
     width: 400px; height: 400px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%,
-      rgba(107,33,232,0.4) 0%,
-      rgba(192,38,211,0.2) 40%,
-      rgba(201,168,76,0.1) 70%,
-      transparent 100%);
-    border: 1px solid rgba(107,33,232,0.3);
+    background: radial-gradient(circle at 30% 30%, 
+      rgba(37, 99, 235, 0.15) 0%, 
+      rgba(7, 7, 18, 1) 70%);
+    border: 1px solid rgba(37, 99, 235, 0.2);
     display: flex; align-items: center; justify-content: center;
     position: relative;
-    animation: orb-rotate 20s linear infinite;
+    overflow: hidden;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 30px rgba(37, 99, 235, 0.1);
   }
-  .about-orb::before {
-    content: '';
-    position: absolute; inset: 20px;
-    border-radius: 50%;
-    border: 1px solid rgba(201,168,76,0.15);
-    animation: orb-rotate 14s linear infinite reverse;
+  .about-orb svg {
+    width: 200%; height: 100%;
+    animation: globe-slide 20s linear infinite;
+    opacity: 0.6;
+    filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.3));
+  }
+  @keyframes globe-slide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
   .about-orb::after {
     content: '';
-    position: absolute; inset: 60px;
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 30%, transparent 40%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .about-orb::before {
+    content: '';
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 60px rgba(37, 99, 235, 0.2);
     border-radius: 50%;
-    border: 1px dashed rgba(255,255,255,0.06);
+    z-index: 1;
+    pointer-events: none;
   }
   .about-stat-grid {
     display: grid; grid-template-columns: 1fr 1fr;
@@ -712,6 +733,11 @@
     background-clip: text;
   }
 
+  @keyframes scrollFill {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
   /* REVEAL ANIMATIONS */
   .reveal {
     opacity: 0; transform: translateY(40px);
@@ -820,7 +846,9 @@
 
   <div class="hero-scroll">
     <span>Scroll</span>
-    <div class="scroll-line"></div>
+    <div class="scroll-line-container">
+      <div class="scroll-line-fill"></div>
+    </div>
   </div>
 </section>
 
@@ -852,12 +880,42 @@
 <section>
 <div id="about">
   <div class="about-visual reveal">
-    <div class="about-orb" style="animation: float 6s ease infinite, orb-rotate 20s linear infinite;">
-      <svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.25">
-        <ellipse cx="60" cy="40" rx="58" ry="38" stroke="white" stroke-width="0.5"/>
-        <line x1="60" y1="2" x2="60" y2="78" stroke="white" stroke-width="0.5"/>
-        <line x1="2" y1="40" x2="118" y2="40" stroke="white" stroke-width="0.5"/>
-        <ellipse cx="60" cy="40" rx="30" ry="38" stroke="white" stroke-width="0.5"/>
+    <div class="about-orb">
+      <svg viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <g fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.7" filter="url(#glow)">
+          <!-- Set 1 -->
+          <path d="M50,150 Q70,130 100,140 T150,130 T200,160 T180,200 T120,210 T60,190 Z" />
+          <path d="M250,80 Q280,60 320,90 T400,80 T450,130 T380,180 T300,160 Z" />
+          <path d="M100,280 Q130,260 170,290 T250,280 T300,330 T230,380 T150,360 Z" />
+          <path d="M350,220 Q380,200 420,230 T500,220 T550,270 T480,320 T400,300 Z" />
+          
+          <!-- Set 2 (Offset by 400) -->
+          <path d="M450,150 Q470,130 500,140 T550,130 T600,160 T580,200 T520,210 T460,190 Z" />
+          <path d="M650,80 Q680,60 720,90 T800,80 T850,130 T780,180 T700,160 Z" />
+          <path d="M500,280 Q530,260 570,290 T650,280 T700,330 T630,380 T550,360 Z" />
+          <path d="M750,220 Q780,200 820,230 T900,220 T950,270 T880,320 T800,300 Z" />
+
+          <!-- Grid/Longitude lines mapping across the 800 width -->
+          <line x1="0" y1="100" x2="800" y2="100" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="0" y1="200" x2="800" y2="200" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="0" y1="300" x2="800" y2="300" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="100" y1="0" x2="100" y2="400" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="200" y1="0" x2="200" y2="400" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="300" y1="0" x2="300" y2="400" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="400" y1="0" x2="400" y2="400" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="500" y1="0" x2="500" y2="400" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="600" y1="0" x2="600" y2="400" stroke-dasharray="2,4" opacity="0.2" />
+          <line x1="700" y1="0" x2="700" y2="400" stroke-dasharray="2,4" opacity="0.2" />
+        </g>
       </svg>
     </div>
     <div class="about-stat-grid">
@@ -1207,11 +1265,11 @@
   document.querySelectorAll('a, button').forEach(el => {
     el.addEventListener('mouseenter', () => {
       cursorRing.style.transform = 'translate(-50%, -50%) scale(1.8)';
-      cursorRing.style.borderColor = 'rgba(201,168,76,0.7)';
+      cursorRing.style.borderColor = 'rgba(255,255,255,0.7)';
     });
     el.addEventListener('mouseleave', () => {
       cursorRing.style.transform = 'translate(-50%, -50%) scale(1)';
-      cursorRing.style.borderColor = 'rgba(201,168,76,0.4)';
+      cursorRing.style.borderColor = 'rgba(255,255,255,0.4)';
     });
   });
 
