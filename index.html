@@ -670,36 +670,77 @@
   /* Globe styles from banner but themed */
   .globe {
     position: relative;
-    width: 180px;
-    height: 180px;
-    background: #0d1117;
+    width: 200px;
+    height: 200px;
+    background: #05070a;
     border-radius: 50%;
     box-shadow: 
-      inset 0 0 40px rgba(37, 99, 235, 0.3),
-      0 0 60px rgba(37, 99, 235, 0.15);
+      inset 0 0 50px rgba(37, 99, 235, 0.4),
+      0 0 80px rgba(37, 99, 235, 0.1);
     overflow: hidden;
     margin-bottom: 20px;
-    border: 1px solid rgba(37, 99, 235, 0.2);
+    border: 1px solid rgba(37, 99, 235, 0.3);
   }
 
   .globe-wrap {
+    position: absolute;
     width: 200%;
     height: 100%;
+    /* Horizontal longitude lines */
     background: repeating-linear-gradient(
       90deg,
-      rgba(37, 99, 235, 0.1) 0px,
-      rgba(37, 99, 235, 0.1) 1px,
+      rgba(37, 99, 235, 0.15) 0px,
+      rgba(37, 99, 235, 0.15) 1px,
       transparent 1px,
-      transparent 20px
-    ),
-    repeating-linear-gradient(
-      180deg,
-      rgba(37, 99, 235, 0.1) 0px,
-      rgba(37, 99, 235, 0.1) 1px,
-      transparent 1px,
-      transparent 20px
+      transparent 30px
     );
-    animation: globeRotate 12s linear infinite;
+    animation: globeRotate 15s linear infinite;
+  }
+
+  /* Vertical latitude lines (Ellipses) */
+  .globe::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-linear-gradient(
+      180deg,
+      rgba(37, 99, 235, 0.15) 0px,
+      rgba(37, 99, 235, 0.15) 1px,
+      transparent 1px,
+      transparent 30px
+    );
+    pointer-events: none;
+  }
+
+  /* Creating curved visual effect with pseudo-elements */
+  .globe-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .globe-lines::before, .globe-lines::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    height: 100%;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 50%;
+  }
+  .globe-lines::before { width: 33%; }
+  .globe-lines::after { width: 66%; }
+
+  .map-overlay {
+    position: absolute;
+    width: 200%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Cpath fill='%232563eb' fill-opacity='0.15' d='M20 40l10 5l5-10l15 5l10-15l20 10l5 20l-15 10l-10 20l-20 5zM100 80l15-5l10 10l20-5l5 15l-15 15l-20-5l-10-15zM220 30l20 5l10-15l15 10l10 30l-20 20l-25-10zM300 120l25 10l15-15l-5-25l-25-5l-15 15zM40 140l20 10l15-5l10 15l-15 15l-20-10z'/%3E%3C/svg%3E");
+    background-size: 50% 100%;
+    animation: globeRotate 15s linear infinite;
+    opacity: 0.6;
+    filter: blur(0.5px);
   }
 
   .banner-text {
@@ -1064,10 +1105,24 @@
     display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
     gap: 60px; margin-bottom: 60px;
   }
+  .footer-brand .footer-logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    margin-bottom: 24px;
+    cursor: none !important;
+  }
+  .footer-brand .footer-logo-img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+  }
   .footer-brand .logo-text {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 2rem; letter-spacing: 0.08em;
-    color: var(--white); display: block; margin-bottom: 16px;
+    color: var(--white);
+    margin: 0;
   }
   .footer-brand p {
     font-size: 0.92rem; line-height: 1.7;
@@ -1157,6 +1212,87 @@
   /* GLOBAL CURSOR HIDE */
   * {
     cursor: none !important;
+  }
+
+  /* MOBILE RESPONSIVENESS */
+  @media (max-width: 1024px) {
+    nav { padding: 16px 30px; }
+    nav.scrolled { padding: 12px 30px; }
+    .nav-links { display: none; }
+    
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .sec-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    /* Cursor handling on mobile */
+    .cursor, .cursor-ring { display: none !important; }
+    * { cursor: auto !important; }
+    body { cursor: auto !important; }
+
+    /* Layout Adjustments */
+    main, section { padding: 60px 20px !important; }
+    #hero { padding: 120px 20px 60px !important; min-height: auto; }
+    
+    /* Hero Adjustments */
+    .hero-title { font-size: clamp(4rem, 15vw, 6rem); }
+    .hero-eyebrow { font-size: 0.6rem; letter-spacing: 0.2em; }
+    .hero-meta { 
+      flex-wrap: wrap; 
+      gap: 15px; 
+      justify-content: center;
+      background: rgba(255,255,255,0.03);
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .hero-meta-divider { display: none; }
+    .hero-actions { flex-direction: column; width: 100%; max-width: 300px; margin: 40px auto 0; }
+    .btn-primary, .btn-secondary { width: 100%; text-align: center; justify-content: center; }
+
+    /* About Section */
+    #about { grid-template-columns: 1fr; gap: 60px; text-align: center; }
+    .section-label { justify-content: center; }
+    .about-visual { order: 2; }
+    .section-banner { width: 100%; max-width: 340px; margin: 0 auto; height: 400px; }
+    .about-stat-grid { grid-template-columns: 1fr 1fr; padding: 20px; }
+
+    /* Details & Committees */
+    .details-grid { grid-template-columns: 1fr; gap: 20px; }
+    .committees-grid { grid-template-columns: 1fr; gap: 20px; }
+    .committee-card { padding: 30px; }
+
+    /* Experience */
+    .experience-grid { grid-template-columns: 1fr; gap: 40px; }
+    .experience-showcase { height: 300px; }
+    .showcase-text { font-size: 3rem; }
+
+    /* Venue */
+    .venue-layout { grid-template-columns: 1fr; gap: 40px; }
+    .venue-visual { height: 250px; }
+
+    /* Secretariat */
+    .sec-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
+    .sec-card { padding: 30px 15px; }
+
+    /* Footer */
+    .footer-top { grid-template-columns: 1fr; text-align: center; gap: 40px; }
+    .footer-brand p { max-width: 100%; }
+    .footer-bottom { flex-direction: column; gap: 20px; text-align: center; }
+
+    /* Modal Mobile Fixes */
+    .modal-content { padding: 40px 20px; width: 95%; border-radius: 20px; }
+    .modal-title { font-size: 1.8rem; padding: 10px 20px; }
+    .form-group[style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 24px !important; }
+    .form-actions { flex-direction: column; gap: 12px; }
+    .btn-next, .btn-back { width: 100%; }
+    #pref1_portfolios, #pref2_portfolios, #pref3_portfolios { grid-template-columns: 1fr !important; }
+  }
+
+  @media (max-width: 480px) {
+    .sec-grid { grid-template-columns: 1fr; }
+    .countdown-unit { min-width: 60px; }
+    .countdown-num { font-size: 1.5rem; }
+    .cta-title { font-size: 3.5rem; }
   }
 </style>
 </head>
@@ -1476,7 +1612,9 @@
         <div class="star" style="top: 20%; left: 45%; --duration: 3.5s; width: 2px; height: 2px;"></div>
       </div>
       <div class="globe">
+        <div class="map-overlay"></div>
         <div class="globe-wrap"></div>
+        <div class="globe-lines"></div>
       </div>
       <div class="banner-text">RESOLVE MUN'26</div>
       <div class="banner-sub">Global Diplomacy</div>
@@ -1773,7 +1911,10 @@
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
-      <span class="logo-text">RESOLVE MUN</span>
+      <a href="#" class="footer-logo-link">
+        <img src="images/Logo.svg" alt="Resolve MUN Logo" class="footer-logo-img">
+        <span class="logo-text">RESOLVE MUN</span>
+      </a>
       <p>Resolve. Reform. Reconcile.<br><br>The premier Model United Nations conference, committed to building the next generation of global leaders through rigorous diplomatic simulation.</p>
     </div>
     <div class="footer-col">
@@ -1960,30 +2101,39 @@
   const cursor = document.getElementById('cursor');
   const cursorRing = document.getElementById('cursorRing');
   let mx = 0, my = 0, rx = 0, ry = 0;
-  document.addEventListener('mousemove', e => {
-    mx = e.clientX; my = e.clientY;
-  });
-  function animateCursor() {
-    rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
-    cursor.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
-    cursorRing.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
-    requestAnimationFrame(animateCursor);
+
+  // Detection for mobile (Simple and effective)
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  if (!isTouchDevice) {
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+    });
+    function animateCursor() {
+      rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
+      cursor.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
+      cursorRing.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    // Reset basic styles to work with transform3d
+    cursor.style.left = '0'; cursor.style.top = '0';
+    cursorRing.style.left = '0'; cursorRing.style.top = '0';
+
+    // Toggle cursor visibility based on mouse presence
+    document.addEventListener('mouseenter', () => {
+      cursor.style.opacity = '1';
+      cursorRing.style.opacity = '1';
+    });
+    document.addEventListener('mouseleave', () => {
+      cursor.style.opacity = '0';
+      cursorRing.style.opacity = '0';
+    });
+  } else {
+    cursor.style.display = 'none';
+    cursorRing.style.display = 'none';
   }
-  animateCursor();
-
-  // Reset basic styles to work with transform3d
-  cursor.style.left = '0'; cursor.style.top = '0';
-  cursorRing.style.left = '0'; cursorRing.style.top = '0';
-
-  // Toggle cursor visibility based on mouse presence
-  document.addEventListener('mouseenter', () => {
-    cursor.style.opacity = '1';
-    cursorRing.style.opacity = '1';
-  });
-  document.addEventListener('mouseleave', () => {
-    cursor.style.opacity = '0';
-    cursorRing.style.opacity = '0';
-  });
 
   // Helper to attach hover effects to elements
   function updateHoverListeners() {
@@ -2088,35 +2238,79 @@
   const canvas = document.getElementById('particles');
   const ctx = canvas.getContext('2d');
   let W, H, particles = [];
-  function resize() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
 
-  for (let i = 0; i < 80; i++) {
-    particles.push({
-      x: Math.random() * 1920,
-      y: Math.random() * 1080,
-      r: Math.random() * 1.2 + 0.2,
-      vx: (Math.random() - 0.5) * 0.15,
-      vy: (Math.random() - 0.5) * 0.15,
-      o: Math.random() * 0.4 + 0.05
-    });
+  class Particle {
+    constructor() {
+      this.reset();
+    }
+    reset() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.size = Math.random() * 1.5 + 0.5;
+      this.baseX = this.x;
+      this.baseY = this.y;
+      this.density = (Math.random() * 30) + 1;
+      this.vx = (Math.random() - 0.5) * 0.3;
+      this.vy = (Math.random() - 0.5) * 0.3;
+      this.opacity = Math.random() * 0.5 + 0.1;
+    }
+    update() {
+      // Gentle drift
+      this.x += this.vx;
+      this.y += this.vy;
+
+      // Wrap around screen
+      if (this.x < 0) this.x = W;
+      if (this.x > W) this.x = 0;
+      if (this.y < 0) this.y = H;
+      if (this.y > H) this.y = 0;
+
+      // Mouse interaction
+      let dx = mx - this.x;
+      let dy = my - this.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      let forceDirectionX = dx / distance;
+      let forceDirectionY = dy / distance;
+      let maxDistance = 150;
+      let force = (maxDistance - distance) / maxDistance;
+      
+      if (distance < maxDistance) {
+        this.x -= forceDirectionX * force * 3;
+        this.y -= forceDirectionY * force * 3;
+      }
+    }
+    draw() {
+      ctx.fillStyle = `rgba(37, 99, 235, ${this.opacity})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    initParticles();
+  }
+  
+  function initParticles() {
+    particles = [];
+    let numberOfParticles = (W * H) / 15000;
+    for (let i = 0; i < numberOfParticles; i++) {
+      particles.push(new Particle());
+    }
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
 
   function drawParticles() {
     ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-      ctx.beginPath();
-      ctx.arc(p.x * (W/1920), p.y * (H/1080), p.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(37, 99, 235, ${p.o})`;
-      ctx.fill();
-    });
+    for (let i = 0; i < particles.length; i++) {
+      particles[i].update();
+      particles[i].draw();
+    }
     requestAnimationFrame(drawParticles);
   }
   drawParticles();
