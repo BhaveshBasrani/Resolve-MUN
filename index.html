@@ -33,6 +33,22 @@
     cursor: none !important;
   }
 
+  /* CUSTOM SCROLLBAR */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--black);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
+  }
+
   /* Force hide cursor on everything */
   *, *::before, *::after { 
     box-sizing: border-box; 
@@ -117,43 +133,230 @@
     opacity: 0; pointer-events: none;
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: none !important;
+    overflow: hidden;
   }
   .modal-overlay.active { opacity: 1; pointer-events: all; }
 
-  .modal-content {
-    width: 100%; max-width: 600px;
-    background: var(--deep);
-    border: 1px solid var(--card-border);
-    padding: 48px;
-    position: relative;
-    transform: translateY(20px);
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    max-height: 90vh; overflow-y: auto;
-    cursor: none !important;
+  .modal-particles {
+    position: absolute; inset: 0;
+    z-index: -1;
+    pointer-events: none;
   }
-  .modal-overlay.active .modal-content { transform: translateY(0); }
+
+  .modal-content {
+    width: 100%; max-width: 630px;
+    background: rgba(7, 7, 18, 0.85);
+    border: 1px solid var(--card-border);
+    padding: 60px;
+    position: relative;
+    border-radius: 24px;
+    transform: translateY(40px) scale(0.95);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 85vh; 
+    overflow-y: auto;
+    cursor: none !important;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE and Edge */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+  .modal-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+  .modal-overlay.active .modal-content { transform: translateY(0) scale(1); }
 
   .modal-close {
-    position: absolute; top: 20px; right: 20px;
-    background: none; border: none; color: var(--muted);
-    font-size: 1.5rem; transition: color 0.3s;
+    position: absolute; top: 24px; right: 24px;
+    background: transparent; 
+    border: none;
+    color: var(--muted);
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: none !important;
+    z-index: 10;
   }
-  .modal-close:hover { color: var(--white); }
+  .modal-close svg {
+    width: 20px; height: 20px;
+    stroke: currentColor;
+    transition: all 0.3s;
+  }
+  .modal-close:hover { 
+    color: var(--white); 
+    transform: scale(1.1);
+  }
+  .modal-close:hover svg {
+    stroke-width: 2.5px;
+  }
+
+  .payment-banner {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
+    background-size: 200% auto;
+    padding: 18px 24px;
+    border-radius: 14px;
+    margin-bottom: 24px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.15);
+    animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .payment-banner h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    color: var(--white);
+    margin: 0;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .payment-card {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .qr-container {
+    margin: 0 auto 20px;
+    width: 160px;
+    height: 160px;
+    background: white;
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .qr-container::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1.5px solid var(--gold);
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+  .qr-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .upi-box {
+    background: rgba(37, 99, 235, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    padding: 10px 18px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    color: var(--white);
+  }
+  .upi-box:hover {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+  }
+  .copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--gold);
+    cursor: none !important;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    transition: transform 0.2s;
+  }
+  .copy-btn:hover { transform: scale(1.1); color: var(--gold-light); }
+  .payment-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 8px;
+    font-style: italic;
+  }
+  .payment-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--card-border);
+  }
+  .payment-contact {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    color: var(--white);
+    letter-spacing: 0.05em;
+  }
+  .payment-contact span { color: var(--gold); }
+
+  /* Form Step Animations */
+  .form-step { 
+    display: none; 
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .form-step.active { 
+    display: block; 
+    opacity: 1;
+    transform: translateX(0);
+    animation: stepEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes stepEnter {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .form-group { 
+    margin-bottom: 24px; 
+    position: relative;
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  .form-step.active .form-group {
+    animation: fieldFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .form-step.active .form-group:nth-child(1) { animation-delay: 0.1s; }
+  .form-step.active .form-group:nth-child(2) { animation-delay: 0.15s; }
+  .form-step.active .form-group:nth-child(3) { animation-delay: 0.2s; }
+  .form-step.active .form-group:nth-child(4) { animation-delay: 0.25s; }
+  .form-step.active .form-group:nth-child(5) { animation-delay: 0.3s; }
+
+  @keyframes fieldFadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
 
   .modal-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.5rem; letter-spacing: 0.05em;
-    color: var(--white); margin-bottom: 8px;
-    background: #000; padding: 10px 20px; display: inline-block;
+    font-size: 2.8rem; letter-spacing: 0.05em;
+    color: var(--white); 
+    background: linear-gradient(to bottom, #111, #000);
+    padding: 12px 32px; 
+    display: inline-block;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
     cursor: none !important;
+    text-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
   }
   .modal-subtitle {
     font-family: 'Oswald', sans-serif;
-    font-size: 0.8rem; color: var(--gold);
-    text-transform: uppercase; letter-spacing: 0.2em;
-    margin-bottom: 32px; display: block;
-    padding-left: 20px;
+    font-size: 0.85rem; color: var(--gold);
+    text-transform: uppercase; letter-spacing: 0.3em;
+    margin-top: 12px; display: block;
+    cursor: none !important;
   }
 
   .btn-matrix {
@@ -162,7 +365,9 @@
     font-family: 'Oswald', sans-serif; font-size: 0.75rem;
     text-transform: uppercase; letter-spacing: 0.1em;
     display: inline-flex; align-items: center; gap: 8px;
-    margin-bottom: 24px; cursor: none;
+    margin-bottom: 24px; cursor: none !important;
+    border-radius: 8px;
+    text-decoration: none;
   }
 
   /* STEP MANAGEMENT */
@@ -182,7 +387,7 @@
     padding: 12px 4px; color: var(--white);
     font-family: 'Crimson Pro', serif; font-size: 1.1rem;
     transition: all 0.3s; outline: none;
-    cursor: none;
+    cursor: none !important;
   }
   .form-group select option { background: var(--deep); color: var(--white); }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -202,9 +407,10 @@
     color: var(--white); border: none;
     padding: 12px 32px; font-family: 'Bebas Neue', sans-serif;
     font-size: 1.1rem; letter-spacing: 0.1em;
+    border-radius: 12px;
     transition: all 0.3s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    cursor: none;
+    cursor: none !important;
   }
   .btn-next { background: #0a25e8; flex: 1; }
   .btn-back { background: #111; border: 1px solid rgba(255,255,255,0.1); }
@@ -958,10 +1164,19 @@
 
 <!-- REGISTRATION MODAL -->
 <div class="modal-overlay" id="regModal">
+  <canvas class="modal-particles" id="modalParticles"></canvas>
   <div class="modal-content">
-    <button class="modal-close" id="closeModal">&times;</button>
-    <h2 class="modal-title">DELEGATE REGISTRATION</h2>
-    <span class="modal-subtitle">Join Resolve MUN 2026</span>
+    <button class="modal-close" id="closeModal" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header">
+      <h2 class="modal-title">DELEGATE REGISTRATION</h2>
+      <span class="modal-subtitle">Join Resolve MUN 2026</span>
+    </div>
     
     <form id="regForm">
       <!-- STEP 1: PERSONAL DETAILS -->
@@ -1101,7 +1316,56 @@
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextStep(1)">Back</button>
-          <button type="button" class="btn-next" onclick="nextStep(3)">Next</button>
+          <button type="button" class="btn-next" onclick="nextStep(3)">Review & Pay</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: PAYMENT & SUBMISSION -->
+      <div class="form-step" id="step3">
+        <div class="payment-banner">
+          <h3>Registration Fee: ₹2599</h3>
+        </div>
+
+        <div class="payment-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
+            <div style="text-align: center;">
+              <div class="qr-container">
+                <img src="images/QR.svg" alt="Payment QR Code">
+              </div>
+              <div class="upi-box">
+                <span id="upiID">jainalivela15-1@oksbi</span>
+                <button type="button" class="copy-btn" onclick="copyUPI()">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            </div>
+            <p class="payment-note" style="text-align: center; margin-bottom: 24px; font-style: normal; opacity: 0.5;">Scan or use the UPI ID</p>
+          </div>
+
+          <div class="form-group">
+            <label>2. TRANSACTION ID</label>
+            <input type="text" id="regTxnID" placeholder="Enter Transaction ID" required>
+          </div>
+
+          <div class="form-group">
+            <label>3. PAYMENT SCREENSHOT (DRIVE LINK)</label>
+            <input type="url" id="regDriveLink" placeholder="Paste link here" required>
+          </div>
+
+          <div class="form-group">
+            <label>4. UTR NUMBER (OPTIONAL)</label>
+            <input type="text" id="regUTR" placeholder="Enter 12-digit UTR">
+          </div>
+        </div>
+
+        <div class="payment-footer">
+          <p class="payment-contact">For payment issues, contact: <span>+91 9212107797</span></p>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextStep(2)">Back</button>
+          <button type="submit" class="btn-next">Submit Registration</button>
         </div>
       </div>
     </form>
@@ -1162,7 +1426,7 @@
   </div>
 
   <div class="hero-actions">
-    <a href="#register" class="btn-primary"><span>Register as Delegate</span></a>
+    <a href="#register" class="btn-primary hero-reg-btn"><span>Register as Delegate</span></a>
     <a href="#committees" class="btn-secondary">Explore Committees</a>
   </div>
 
@@ -1499,7 +1763,7 @@
       Resolve MUN is where future statesmen are forged. Join 500+ delegates from across the globe in three days of rigorous, transformative diplomacy.
     </p>
     <div class="cta-actions reveal">
-      <a href="#" class="btn-primary"><span>Register as Delegate</span></a>
+      <button class="btn-primary" onclick="openRegistration()"><span>Register as Delegate</span></button>
       <a href="#" class="btn-secondary">Faculty Advisor Registration</a>
     </div>
   </div>
@@ -1562,6 +1826,17 @@
     document.body.style.overflow = '';
     // Reset to step 1
     nextStep(1);
+    regForm.reset();
+  }
+
+  function copyUPI() {
+    const upi = document.getElementById('upiID').innerText;
+    navigator.clipboard.writeText(upi).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      const original = btn.innerHTML;
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      setTimeout(() => btn.innerHTML = original, 2000);
+    });
   }
 
   function nextStep(stepNum) {
@@ -1593,6 +1868,23 @@
           input.style.borderBottomColor = '';
         }
       });
+
+      // Special check for duplicate portfolios in Step 2
+      if (currentStepNum === 2) {
+        for (let i = 1; i <= 3; i++) {
+          const comm = document.getElementById(`pref${i}_committee`).value;
+          if (comm && comm !== 'IP') {
+            const p1 = document.getElementById(`pref${i}_port1`);
+            const p2 = document.getElementById(`pref${i}_port2`);
+            if (p1.value.trim().toLowerCase() === p2.value.trim().toLowerCase() && p1.value.trim() !== "") {
+              p1.style.borderBottomColor = '#ff4444';
+              p2.style.borderBottomColor = '#ff4444';
+              isValid = false;
+              // alert(`Portfolios for Preference ${i} cannot be the same!`);
+            }
+          }
+        }
+      }
 
       if (!isValid) return;
     }
@@ -1722,13 +2014,33 @@
   cursorObserver.observe(document.body, { childList: true, subtree: true });
 
   // Attach to registration triggers
-  document.querySelectorAll('a[href^="#register"], .nav-cta, .btn-primary').forEach(btn => {
-    if (btn.textContent.toLowerCase().includes('register') || btn.classList.contains('nav-cta')) {
-      btn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        openRegistration();
-      });
-    }
+  document.querySelectorAll('.nav-cta').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      openRegistration();
+    });
+  });
+
+  // Handle form submission
+  regForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = 'Submitting...';
+    
+    // Simulate processing
+    setTimeout(() => {
+        alert("Registration Submitted Successfully! We will review your details and payment within 24 hours.");
+        closeRegistration();
+        btn.disabled = false;
+        btn.innerHTML = 'Submit Registration';
+    }, 1500);
+  });
+
+  // Hero section register button (Scroll only)
+  document.querySelector('.hero-reg-btn').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
   });
 
   // Modal background click to close
@@ -1802,12 +2114,73 @@
       if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
       ctx.beginPath();
       ctx.arc(p.x * (W/1920), p.y * (H/1080), p.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(201,168,76,${p.o})`;
+      ctx.fillStyle = `rgba(37, 99, 235, ${p.o})`;
       ctx.fill();
     });
     requestAnimationFrame(drawParticles);
   }
   drawParticles();
+
+  // MODAL PARTICLES (Interaction)
+  const mCanvas = document.getElementById('modalParticles');
+  const mCtx = mCanvas.getContext('2d');
+  let mW, mH, mParticles = [];
+  function mResize() {
+    mW = mCanvas.width = window.innerWidth;
+    mH = mCanvas.height = window.innerHeight;
+  }
+  mResize();
+  window.addEventListener('resize', mResize);
+
+  function createMParticles() {
+    mParticles = [];
+    for(let i = 0; i < 120; i++) {
+      mParticles.push({
+        x: Math.random() * mW,
+        y: Math.random() * mH,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        size: Math.random() * 2 + 1,
+        baseSize: 0,
+        o: Math.random() * 0.5 + 0.1
+      });
+      mParticles[i].baseSize = mParticles[i].size;
+    }
+  }
+  createMParticles();
+
+  function drawMParticles() {
+    mCtx.clearRect(0, 0, mW, mH);
+    mParticles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = mW; if (p.x > mW) p.x = 0;
+      if (p.y < 0) p.y = mH; if (p.y > mH) p.y = 0;
+
+      let dx = mx - p.x;
+      let dy = my - p.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      
+      if (dist < 150) {
+        p.size = p.baseSize * (1 + (150 - dist) / 50);
+        p.x -= dx * 0.01;
+        p.y -= dy * 0.01;
+        mCtx.beginPath();
+        mCtx.moveTo(p.x, p.y);
+        mCtx.lineTo(mx, my);
+        mCtx.strokeStyle = `rgba(37, 99, 235, ${0.1 * (1 - dist/150)})`;
+        mCtx.stroke();
+      } else {
+        p.size = p.baseSize;
+      }
+
+      mCtx.beginPath();
+      mCtx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      mCtx.fillStyle = `rgba(96, 165, 250, ${p.o})`;
+      mCtx.fill();
+    });
+    requestAnimationFrame(drawMParticles);
+  }
+  drawMParticles();
 
   // EXPERIENCE tabs
   document.querySelectorAll('.exp-item').forEach(item => {
