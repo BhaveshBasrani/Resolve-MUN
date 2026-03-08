@@ -581,8 +581,14 @@
     background: rgba(255,255,255,0.015);
     border-top: 1px solid var(--card-border);
     border-bottom: 1px solid var(--card-border);
-    padding: 48px 60px;
+    padding: 60px;
     display: flex; align-items: center; justify-content: center;
+    gap: 16px;
+    flex-wrap: nowrap;
+  }
+  .countdown-units-wrapper {
+    display: flex;
+    align-items: center;
     gap: 16px;
   }
   .countdown-label {
@@ -592,6 +598,7 @@
   }
   .countdown-unit {
     text-align: center;
+    min-width: 80px;
   }
   .countdown-num {
     font-family: 'Bebas Neue', sans-serif;
@@ -606,7 +613,7 @@
   }
   .countdown-sep {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 3rem; color: var(--muted);
+    font-size: 3rem; color: rgba(255,255,255,0.1);
     align-self: flex-start; margin-top: 4px;
   }
 
@@ -1224,7 +1231,40 @@
     .sec-grid { grid-template-columns: repeat(3, 1fr); }
   }
 
+  /* Hamburguer Menu */
+  .mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--white);
+    z-index: 101;
+    cursor: pointer;
+  }
+  .nav-links.mobile-active {
+    display: flex !important;
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 70%;
+    background: rgba(5, 5, 7, 0.98);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    z-index: 99;
+    border-left: 1px solid var(--card-border);
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
   @media (max-width: 768px) {
+    .mobile-menu-btn { display: block; }
+    .nav-cta { display: none; } /* Hide register button in desktop-nav on phone */
+    .nav-links.mobile-active .nav-cta { display: flex !important; }
+
     /* Cursor handling on mobile */
     .cursor, .cursor-ring { display: none !important; }
     * { cursor: auto !important; }
@@ -1235,21 +1275,51 @@
     #hero { padding: 120px 20px 60px !important; min-height: auto; }
     
     /* Hero Adjustments */
-    .hero-title { font-size: clamp(4rem, 15vw, 6rem); }
-    .hero-eyebrow { font-size: 0.6rem; letter-spacing: 0.2em; }
+    .hero-title { font-size: clamp(3.5rem, 15vw, 5rem); }
+    .hero-eyebrow { font-size: 0.55rem; letter-spacing: 0.15em; width: 90%; margin: 0 auto; line-height: 1.4; }
     .hero-meta { 
-      flex-wrap: wrap; 
-      gap: 15px; 
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px; 
       justify-content: center;
       background: rgba(255,255,255,0.03);
-      padding: 20px;
+      padding: 15px;
       border-radius: 12px;
+      width: 100%;
+      max-width: 320px;
+      margin: 20px auto;
+    }
+    .hero-meta-item {
+      padding: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
     }
     .hero-meta-divider { display: none; }
-    .hero-actions { flex-direction: column; width: 100%; max-width: 300px; margin: 40px auto 0; }
-    .btn-primary, .btn-secondary { width: 100%; text-align: center; justify-content: center; }
+    .hero-actions { flex-direction: column; width: 100%; max-width: 280px; margin: 30px auto 0; gap: 12px; }
+    .btn-primary, .btn-secondary { width: 100%; text-align: center; justify-content: center; padding: 14px 20px; font-size: 0.75rem; }
 
-    /* About Section */
+    /* Countdown Fix */
+    #countdown {
+      padding: 40px 10px;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .countdown-label { 
+      margin-right: 0; 
+      margin-bottom: 0; 
+      font-size: 0.65rem; 
+      opacity: 0.8;
+    }
+    .countdown-units-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      width: 100%;
+    }
+    .countdown-unit { min-width: 65px; }
+    .countdown-num { font-size: 2.2rem; }
+    .countdown-sep { display: block; font-size: 1.5rem; opacity: 0.2; }
     #about { grid-template-columns: 1fr; gap: 60px; text-align: center; }
     .section-label { justify-content: center; }
     .about-visual { order: 2; }
@@ -1318,34 +1388,34 @@
       <!-- STEP 1: PERSONAL DETAILS -->
       <div class="form-step active" id="step1">
         <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" id="regName" placeholder="Enter your full name" required>
+          <label for="regName">Full Name</label>
+          <input type="text" id="regName" name="name" autocomplete="name" placeholder="Enter your full name" required>
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div>
-            <label>Grade / Class</label>
-            <input type="text" id="regGrade" placeholder="e.g. 10th, 1st Year" required>
+            <label for="regGrade">Grade / Class</label>
+            <input type="text" id="regGrade" name="grade" autocomplete="off" placeholder="e.g. 10th, 1st Year" required>
           </div>
           <div>
-            <label>Phone Number</label>
-            <input type="tel" id="regPhone" placeholder="10-digit number" required>
+            <label for="regPhone">Phone Number</label>
+            <input type="tel" id="regPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required>
           </div>
         </div>
         
         <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" id="regEmail" placeholder="yourname@example.com" required>
+          <label for="regEmail">Email Address</label>
+          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required>
         </div>
 
         <div class="form-group">
-          <label>Institute name</label>
-          <input type="text" id="regInstitute" placeholder="School or University name" required>
+          <label for="regInstitute">Institute name</label>
+          <input type="text" id="regInstitute" name="institute" autocomplete="organization" placeholder="School or University name" required>
         </div>
 
         <div class="form-group">
-          <label>Address</label>
-          <textarea id="regAddress" rows="1" placeholder="Full residential address" required style="resize: none;"></textarea>
+          <label for="regAddress">Address</label>
+          <textarea id="regAddress" name="address" autocomplete="street-address" rows="1" placeholder="Full residential address" required style="resize: none;"></textarea>
         </div>
 
         <div class="form-group">
@@ -1355,6 +1425,17 @@
             <option value="yes">Yes</option>
             <option value="no">No</option>
           </select>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div>
+            <label for="regEmergencyName">Emergency Contact Name</label>
+            <input type="text" id="regEmergencyName" name="emergency-name" autocomplete="off" placeholder="Parent / Guardian name" required>
+          </div>
+          <div>
+            <label for="regEmergencyPhone">Emergency Contact Phone</label>
+            <input type="tel" id="regEmergencyPhone" name="emergency-phone" autocomplete="off" placeholder="10-digit number" required>
+          </div>
         </div>
 
         <div class="form-group">
@@ -1470,7 +1551,7 @@
                 <img src="images/QR.svg" alt="Payment QR Code">
               </div>
               <div class="upi-box">
-                <span id="upiID">jainalivela15-1@oksbi</span>
+                <span id="upiID">8860226774@fam</span>
                 <button type="button" class="copy-btn" onclick="copyUPI()">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
@@ -1517,11 +1598,19 @@
     <img src="images/Logo.svg" alt="Resolve MUN Logo" class="nav-logo-mark">
     RESOLVE MUN
   </a>
-  <ul class="nav-links">
+  <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12" class="line-1"></line>
+      <line x1="3" y1="6" x2="21" y2="6" class="line-2"></line>
+      <line x1="3" y1="18" x2="21" y2="18" class="line-3"></line>
+    </svg>
+  </button>
+  <ul class="nav-links" id="navLinks">
     <li><a href="#about">About</a></li>
     <li><a href="#committees">Committees</a></li>
     <li><a href="#secretariat">Secretariat</a></li>
     <li><a href="#venue">Venue</a></li>
+    <li><a href="#register" class="nav-cta" style="display: none;">Register Now</a></li>
   </ul>
   <a href="#register" class="nav-cta">Register Now</a>
 </nav>
@@ -1577,24 +1666,26 @@
 <!-- COUNTDOWN -->
 <div id="countdown">
   <span class="countdown-label">Conference Opens In</span>
-  <div class="countdown-unit">
-    <span class="countdown-num" id="cd-days">--</span>
-    <span class="countdown-unit-label">Days</span>
-  </div>
-  <span class="countdown-sep">:</span>
-  <div class="countdown-unit">
-    <span class="countdown-num" id="cd-hours">--</span>
-    <span class="countdown-unit-label">Hours</span>
-  </div>
-  <span class="countdown-sep">:</span>
-  <div class="countdown-unit">
-    <span class="countdown-num" id="cd-mins">--</span>
-    <span class="countdown-unit-label">Minutes</span>
-  </div>
-  <span class="countdown-sep">:</span>
-  <div class="countdown-unit">
-    <span class="countdown-num" id="cd-secs">--</span>
-    <span class="countdown-unit-label">Seconds</span>
+  <div class="countdown-units-wrapper">
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-days">--</span>
+      <span class="countdown-unit-label">Days</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-hours">--</span>
+      <span class="countdown-unit-label">Hours</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-mins">--</span>
+      <span class="countdown-unit-label">Minutes</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-secs">--</span>
+      <span class="countdown-unit-label">Seconds</span>
+    </div>
   </div>
 </div>
 
@@ -1957,6 +2048,58 @@
   const closeModal = document.getElementById('closeModal');
   const regForm = document.getElementById('regForm');
 
+  // AUTO-SAVE form fields to localStorage
+  const STORAGE_KEY = 'resolveMunRegForm';
+  const formFieldIds = [
+    'regName','regGrade','regPhone','regEmail','regInstitute','regAddress',
+    'regTransport','regEmergencyName','regEmergencyPhone','regExp',
+    'pref1_committee','pref1_port1','pref1_port2','pref1_role',
+    'pref2_committee','pref2_port1','pref2_port2','pref2_role',
+    'pref3_committee','pref3_port1','pref3_port2','pref3_role',
+    'regTxnID','regDriveLink','regUTR'
+  ];
+
+  function saveFormData() {
+    const saved = {};
+    formFieldIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) saved[id] = el.value;
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  }
+
+  function restoreFormData() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw);
+      formFieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && saved[id]) el.value = saved[id];
+      });
+      // Re-trigger committee UI updates so containers/roles show correctly
+      [1, 2, 3].forEach(n => {
+        if (saved['pref' + n + '_committee']) updatePortfolioOptions(n);
+      });
+    } catch(_) {}
+  }
+
+  function clearFormData() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  // Restore on load
+  restoreFormData();
+
+  // Save on every input/change
+  formFieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', saveFormData);
+      el.addEventListener('change', saveFormData);
+    }
+  });
+
   function openRegistration() {
     regModal.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -2172,21 +2315,63 @@
   });
 
   // Handle form submission
-  regForm.addEventListener('submit', (e) => {
+  regForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
-    
-    // Simulate processing
-    setTimeout(() => {
-        alert("Registration Submitted Successfully! We will review your details and payment within 24 hours.");
-        closeRegistration();
-        btn.disabled = false;
-        btn.innerHTML = 'Submit Registration';
-    }, 1500);
-  });
 
+  const data = {
+    name: document.getElementById("regName").value,
+    grade: document.getElementById("regGrade").value,
+    phone: document.getElementById("regPhone").value,
+    email: document.getElementById("regEmail").value,
+    institute: document.getElementById("regInstitute").value,
+    address: document.getElementById("regAddress").value,
+    transport: document.getElementById("regTransport").value,
+    experience: document.getElementById("regExp").value,
+
+    pref1_committee: document.getElementById("pref1_committee").value,
+    pref1_country: document.getElementById("pref1_country").value,
+
+    pref2_committee: document.getElementById("pref2_committee").value,
+    pref2_country: document.getElementById("pref2_country").value,
+
+    pref3_committee: document.getElementById("pref3_committee").value,
+    pref3_country: document.getElementById("pref3_country").value,
+
+    payment_method: document.getElementById("payment_method")?.value || "",
+    payment_amount: document.getElementById("payment_amount")?.value || "",
+    payment_utr: document.getElementById("payment_utr")?.value || "",
+    payment_screenshot: document.getElementById("payment_screenshot")?.value || "",
+    payment_date: document.getElementById("payment_date")?.value || "",
+
+    emergency_name: document.getElementById("emergency_name")?.value || "",
+    emergency_phone: document.getElementById("emergency_phone")?.value || "",
+
+    referral: document.getElementById("referral_source")?.value || ""
+  };
+
+    try {
+      await fetch('https://script.google.com/macros/s/AKfycbwPWT8Cg1-B8Dwx6dJCbgBjG1GmIb5vwwOgr5zP9ifGoKoi69sXvM_kPQISxmSgEMdXdg/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(data)
+      });
+      alert('Registration Submitted Successfully! The Secretariat will review your application and notify you soon.');
+      clearFormData();
+      closeRegistration();
+    } catch (err) {
+      alert('Submission failed. Please check your connection and try again.');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Submit Registration';
+
+  }
+
+});
   // Hero section register button (Scroll only)
   document.querySelector('.hero-reg-btn').addEventListener('click', (e) => {
     e.preventDefault();
@@ -2200,6 +2385,20 @@
 
   // NAV SCROLL
   const navbar = document.getElementById('navbar');
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const navLinks = document.getElementById('navLinks');
+
+  mobileMenuBtn.addEventListener('click', () => {
+    navLinks.classList.toggle('mobile-active');
+  });
+
+  // Close menu when a link is clicked
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      navLinks.classList.remove('mobile-active');
+    });
+  });
+
   window.addEventListener('scroll', () => {
     navbar.classList.toggle('scrolled', window.scrollY > 60);
   });
