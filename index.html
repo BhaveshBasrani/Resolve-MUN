@@ -1926,6 +1926,29 @@
     .countdown-num { font-size: 1.5rem; }
     .cta-title { font-size: 3.5rem; }
   }
+
+  /* EASTER EGG STYLES */
+  .resolve-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: resolve-pop 1.2s cubic-bezier(0, 0.5, 0.5, 1) forwards;
+  }
+  @keyframes resolve-pop {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; filter: blur(0px); }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; filter: blur(2px); }
+  }
+  .resolve-flash {
+    position: fixed;
+    inset: 0;
+    background: white;
+    z-index: 99998;
+    pointer-events: none;
+    opacity: 0;
+  }
 </style>
 </head>
 <body data-cursor="none">
@@ -4183,6 +4206,77 @@
     }, { passive: false });
 
     // Stop link clicking while dragging
+    // --- EASTER EGG LOGIC ---
+    let resolveKeyBuffer = "";
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if ("resolve".includes(key)) {
+            resolveKeyBuffer += key;
+            if (!"resolve".startsWith(resolveKeyBuffer)) {
+                resolveKeyBuffer = key;
+            }
+            if (resolveKeyBuffer === "resolve") {
+                triggerResolveBlast();
+                resolveKeyBuffer = "";
+            }
+        } else {
+            resolveKeyBuffer = "";
+        }
+    });
+
+    function triggerResolveBlast() {
+        // Flash Screen
+        const flash = document.createElement('div');
+        flash.className = 'resolve-flash';
+        document.body.appendChild(flash);
+        
+        // CSS Animation for flash
+        flash.animate([
+            { opacity: 0.8 },
+            { opacity: 0 }
+        ], { duration: 800, easing: 'ease-out' }).onfinish = () => flash.remove();
+
+        // Particle Blast
+        const colors = ['#D4AF37', '#6b21e8', '#c026d3', '#ffffff'];
+        const particleCount = 150;
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        for (let i = 0; i < particleCount; i++) {
+            const p = document.createElement('div');
+            p.className = 'resolve-particle';
+            p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Random direction
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 200 + Math.random() * 600;
+            const tx = Math.cos(angle) * velocity;
+            const ty = Math.sin(angle) * velocity;
+            
+            p.style.setProperty('--tx', `${tx}px`);
+            p.style.setProperty('--ty', `${ty}px`);
+            p.style.left = `${centerX}px`;
+            p.style.top = `${centerY}px`;
+            
+            // Add slight shadow for gold particles
+            if(p.style.backgroundColor === 'rgb(212, 175, 55)') {
+                p.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.5)';
+            }
+
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1200);
+        }
+
+        // Add a temporary title distortion/scale effect to all H1/H2
+        document.querySelectorAll('h1, h2').forEach(el => {
+            el.animate([
+                { transform: 'scale(1) skew(0deg)' },
+                { transform: 'scale(1.1) skew(5deg)', color: '#D4AF37' },
+                { transform: 'scale(1) skew(0deg)' }
+            ], { duration: 600, easing: 'ease-out' });
+        });
+    }
+
     container.addEventListener('click', (e) => {
         if(isDragging) e.preventDefault();
     });
