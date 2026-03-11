@@ -13,12 +13,13 @@
     --deep: #070712;
     --purple: #5f21c8;
     --magenta: #8b5cf6;
-    --gold: #2563eb; /* primary blue accent (keeps existing variable names) */
-    --gold-light: #60a5fa; /* lighter blue for hovers/highlights */
-    --white: #f4f0eb;
-    --muted: #9aaed6;
-    --card-bg: rgba(255,255,255,0.03);
-    --card-border: rgba(255,255,255,0.07);
+    --gold: #0071e3; /* iOS Blue */
+    --gold-light: #47a1ff; /* Lighter iOS Blue */
+    --gold-shadow: rgba(0, 113, 227, 0.3);
+    --white: #f5f5f7;
+    --muted: #86868b;
+    --card-bg: rgba(255,255,255,0.04);
+    --card-border: rgba(255,255,255,0.1);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -112,23 +113,29 @@
   }
   .nav-links a:hover { color: var(--white); }
   .nav-cta {
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.7rem;
+    font-family: 'SF Pro Display', -apple-system, 'Oswald', sans-serif;
+    font-size: 0.75rem;
     font-weight: 600;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--black);
-    background: var(--gold);
-    padding: 10px 24px;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    color: var(--white);
+    background: linear-gradient(135deg, #0071e3 0%, #47a1ff 50%, #0071e3 100%);
+    background-size: 200% auto;
+    padding: 10px 28px;
     text-decoration: none;
-    border-radius: 4px;
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.15);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+    animation: buttonGradient 4s linear infinite;
   }
   .nav-cta:hover { 
-    background: var(--gold-light);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(201, 168, 76, 0.3);
+    transform: translateY(-1px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 20px rgba(0, 113, 227, 0.4);
+  }
+  .nav-cta:active {
+    transform: translateY(0) scale(0.98);
   }
 
   /* LOADING SCREEN */
@@ -184,6 +191,70 @@
   @keyframes loaderMove {
     0% { left: -40%; }
     100% { left: 140%; }
+  }
+
+  /* SELECTION MODAL */
+  .selection-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 30px;
+  }
+  .selection-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: left;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    cursor: none !important;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 180px;
+  }
+  .selection-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 113, 227, 0.1) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .selection-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 113, 227, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+  .selection-card:hover::before {
+    opacity: 1;
+  }
+  .selection-card h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .selection-card p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .selection-card .btn-primary {
+    align-self: flex-start;
+    padding: 10px 24px;
+    font-size: 0.75rem;
+    border-radius: 8px;
   }
 
   /* REGISTRATION MODAL */
@@ -628,83 +699,143 @@
   }
 
   .hero-actions {
-    display: flex; gap: 16px; margin-top: 48px;
+    display: flex; gap: 24px; margin-top: 56px;
+    justify-content: center;
     opacity: 0; transform: translateY(20px);
     transition: all 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) 1.1s;
   }
   body.loaded .hero-actions {
     opacity: 1; transform: translateY(0);
   }
+  .hero-reg-btn, .hero-actions .btn-secondary {
+    min-width: 280px;
+    padding-left: 0;
+    padding-right: 0;
+  }
   .btn-primary {
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--black);
-    background: var(--gold);
-    padding: 16px 40px;
+    font-family: 'SF Pro Display', -apple-system, 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    color: var(--white);
+    background: linear-gradient(135deg, #0071e3 0%, #47a1ff 50%, #0071e3 100%);
+    background-size: 200% auto;
+    padding: 16px 48px;
     text-decoration: none;
     position: relative;
-    border-radius: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    outline: none;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    box-shadow: 0 4px 15px rgba(201, 168, 76, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 10px 30px rgba(0, 113, 227, 0.3);
+    animation: buttonGradient 4s linear infinite;
+  }
+  @keyframes buttonGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
   .btn-primary::before {
     content: '';
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
     transform: translateX(-100%);
     transition: transform 0.6s ease;
   }
   .btn-primary:hover {
-    transform: translateY(-2px);
-    background: var(--gold-light);
-    box-shadow: 0 8px 25px rgba(201, 168, 76, 0.4);
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 113, 227, 0.5), 0 0 20px rgba(0, 113, 227, 0.3);
   }
   .btn-primary:hover::before {
     transform: translateX(100%);
   }
-  .btn-primary span { position: relative; z-index: 1; }
+  .btn-primary:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s;
+  }
+  .btn-primary span { position: relative; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
 
   .btn-secondary {
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.72rem;
+    font-family: 'SF Pro Display', -apple-system, 'Oswald', sans-serif;
+    font-size: 0.9rem;
     font-weight: 500;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.8);
-    padding: 16px 40px;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    color: var(--white);
+    padding: 16px 48px;
     text-decoration: none;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
   }
   .btn-secondary:hover {
-    border-color: rgba(255,255,255,0.4);
-    background: rgba(255,255,255,0.03);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--white);
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+  }
+  .btn-secondary:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s;
   }
 
   .hero-scroll {
     position: absolute; 
-    bottom: 40px;
-    left: 49.23%;
-    transform: translateX(-50%);
+    top: 50%;
+    left: 50.1%; /* Micro-adjustment for visual center between buttons */
+    transform: translate(-50%, -50%);
     display: flex; 
     flex-direction: column; 
     align-items: center; 
-    gap: 12px;
+    gap: 8px;
     opacity: 0; 
     animation: fadeUp 1s ease 1.4s forwards;
-    z-index: 1;
-    pointer-events: none;
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), filter 0.6s ease;
+    z-index: 10;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+  .hero-scroll:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    filter: drop-shadow(0 0 10px rgba(0, 113, 227, 0.5));
+  }
+  .hero-scroll span {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: var(--white);
+    opacity: 0.6;
+    text-transform: uppercase;
+  }
+  .hero-scroll .scroll-line-container {
+    height: 60px; /* Longer line */
+    width: 1.5px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-scroll .scroll-line-fill {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0071e3;
+    transform-origin: top;
+    animation: scrollFill 2s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+    box-shadow: 0 0 8px #0071e3;
   }
   .hero-scroll.hidden {
     opacity: 0 !important;
@@ -1373,7 +1504,7 @@
     background: linear-gradient(135deg, #2563eb, #61dafb);
     border-color: #3b82f6;
     color: var(--white);
-    box-shadow: 0 0 35px rgba(37,99,235,0.15);
+    box-shadow: 0 0 35px rgba(0,113,227,0.15);
   }
   .sec-card--dg .sec-avatar {
     background: linear-gradient(135deg, #7c3aed, #c084fc);
@@ -1454,15 +1585,15 @@
     backdrop-filter: blur(10px);
   }
   .oc-card:hover { 
-    border-color: rgba(37,99,235,0.25);
-    background: linear-gradient(180deg, rgba(37,99,235,0.04) 0%, rgba(255,255,255,0) 100%);
+    border-color: rgba(0,113,227,0.25);
+    background: linear-gradient(180deg, rgba(0,113,227,0.04) 0%, rgba(255,255,255,0) 100%);
     transform: translateY(-8px);
   }
   .oc-card-glow {
     position: absolute;
     top: 50%; left: 50%;
     width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0,113,227,0.08) 0%, transparent 70%);
     transform: translate(-50%, -50%);
     pointer-events: none;
     opacity: 0;
@@ -1478,14 +1609,14 @@
     width: 64px; height: 64px;
     margin-bottom: 30px;
     display: flex; align-items: center; justify-content: center;
-    border: 1px solid rgba(37,99,235,0.2);
+    border: 1px solid rgba(0,113,227,0.2);
     border-radius: 2px;
-    background: rgba(37,99,235,0.05);
+    background: rgba(0,113,227,0.05);
     transition: all 0.4s ease;
   }
   .oc-card:hover .oc-icon {
     border-color: var(--gold);
-    box-shadow: 0 0 25px rgba(37,99,235,0.2);
+    box-shadow: 0 0 25px rgba(0,113,227,0.2);
     transform: scale(1.05);
   }
   .oc-icon svg { width: 24px; height: 24px; stroke: var(--gold); stroke-width: 1.5; }
@@ -1532,27 +1663,35 @@
   .oc-perk:hover { 
     border-color: var(--gold) !important; 
     color: var(--white);
-    background: rgba(37,99,235,0.08); 
+    background: rgba(0,113,227,0.08); 
   }
   .oc-btn { 
     display: inline-flex;
-    padding: 18px 48px;
-    background: var(--gold);
+    padding: 20px 56px;
+    background: linear-gradient(135deg, #0071e3 0%, #47a1ff 50%, #0071e3 100%);
+    background-size: 200% auto;
     color: white;
     text-decoration: none;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.25em;
-    font-size: 0.85rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 2px;
-    box-shadow: 0 4px 15px rgba(37,99,235,0.25);
+    font-family: 'SF Pro Display', -apple-system, 'Oswald', sans-serif;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.05em;
+    font-size: 1rem;
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 113, 227, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    outline: none;
+    animation: buttonGradient 4s linear infinite;
   }
   .oc-btn:hover {
-    background: var(--gold-light);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(37,99,235,0.4);
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 113, 227, 0.5), 0 0 20px rgba(0, 113, 227, 0.3);
+  }
+  .oc-btn:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s;
   }
 
   /* SPONSORS */
@@ -1586,7 +1725,7 @@
     overflow: hidden;
   }
   .sponsor-slot:hover {
-    border-color: rgba(37,99,235,0.4);
+    border-color: rgba(0,113,227,0.4);
     background: rgba(255,255,255,0.05);
     color: var(--white);
     transform: translateY(-2px);
@@ -1594,7 +1733,7 @@
   .sponsor-slot::after {
     content: '';
     position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(37,99,235,0.05), transparent);
+    background: linear-gradient(135deg, rgba(0,113,227,0.05), transparent);
     opacity: 0; transition: opacity 0.4s;
   }
   .sponsor-slot:hover::after { opacity: 1; }
@@ -1645,7 +1784,7 @@
     color: rgba(255,255,255,0.45); font-weight: 300;
     margin-bottom: 52px;
   }
-  .cta-actions { display: flex; align-items: center; justify-content: center; gap: 20px; }
+  .cta-actions { display: flex; align-items: center; justify-content: center; gap: 32px; }
 
   /* FOOTER */
   footer {
@@ -1963,6 +2102,50 @@
 </div>
 
 <!-- REGISTRATION MODAL -->
+  <!-- SELECTION MODAL -->
+  <div class="modal-overlay" id="selectionModal">
+    <canvas class="modal-particles" id="selectionParticles"></canvas>
+    <div class="modal-content">
+      <button class="modal-close" id="closeSelectionModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
+      <div class="modal-header">
+        <h2 class="modal-title">REGISTER FOR RESOLVE</h2>
+        <span class="modal-subtitle">CHOOSE YOUR PATHWAY</span>
+      </div>
+
+      <div class="selection-grid">
+        <div class="selection-card">
+          <div>
+            <h3>Delegate</h3>
+            <p>Register as an individual representing a specific country or person in a committee.</p>
+          </div>
+          <button class="btn-primary" onclick="selectPathway('delegate')"><span>Register Now</span></button>
+        </div>
+
+        <div class="selection-card">
+          <div>
+            <h3>Delegation</h3>
+            <p>Register a group of students representing your school or university.</p>
+          </div>
+          <button class="btn-primary" onclick="selectPathway('delegation')"><span>Sign Up Group</span></button>
+        </div>
+
+        <div class="selection-card">
+          <div>
+            <h3>OC (Organising Committee)</h3>
+            <p>Join the team behind the scenes helping to plan and execute the conference.</p>
+          </div>
+          <button class="btn-primary" onclick="selectPathway('oc')"><span>Apply for OC</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <div class="modal-overlay" id="regModal">
   <canvas class="modal-particles" id="modalParticles"></canvas>
   <div class="modal-content">
@@ -2212,7 +2395,7 @@
     <li><a href="#venue">Venue</a></li>
     <li><a href="#register" class="nav-cta" style="display: none;">Register Now</a></li>
   </ul>
-  <a href="#register" class="nav-cta">Register Now</a>
+  <a href="javascript:void(0)" class="nav-cta" onclick="openSelection()">Register Now</a>
 </nav>
 
 <!-- HERO -->
@@ -2250,16 +2433,9 @@
     </div>
   </div>
 
-  <div class="hero-actions">
-    <a href="#register" class="btn-primary hero-reg-btn"><span>Register as Delegate</span></a>
+  <div class="hero-actions reveal">
+    <a href="#about" class="btn-primary hero-reg-btn"><span>Register Now</span></a>
     <a href="#committees" class="btn-secondary">Explore Committees</a>
-  </div>
-
-  <div class="hero-scroll">
-    <span>Scroll</span>
-    <div class="scroll-line-container">
-      <div class="scroll-line-fill"></div>
-    </div>
   </div>
 </section>
 
@@ -2420,7 +2596,7 @@
   <div class="committees-grid">
     <div class="committee-card reveal">
       <span class="committee-tag">General Assembly</span>
-      <div class="committee-name">UNDISEC</div>
+      <div class="committee-name">DISEC</div>
       <p class="committee-topic">Disarmament & international security challenges</p>
       <span class="committee-coming">Topic TBA</span>
     </div>
@@ -2734,7 +2910,7 @@
           <span class="oc-perk">Professional Network</span>
           <span class="oc-perk">Behind-the-Scenes Access</span>
         </div>
-        <button class="btn-primary oc-btn" id="openOcModal"><span>Apply for OC</span></button>
+        <button class="btn-primary oc-btn" onclick="openOcRegistration()"><span>Apply for OC</span></button>
       </div>
     </div>
   </div>
@@ -2990,7 +3166,7 @@
     </p>
     <div class="cta-actions reveal">
       <button class="btn-primary" onclick="openRegistration()"><span>Register as Delegate</span></button>
-      <button class="btn-secondary" id="openDelModal">Register as Delegation</button>
+      <button class="btn-secondary" onclick="openDelRegistration()">Register as Delegation</button>
     </div>
   </div>
 </section>
@@ -3067,6 +3243,79 @@
   }
 
   const regModal = document.getElementById('regModal');
+  const selectionModal = document.getElementById('selectionModal');
+
+  function openSelection() {
+    selectionModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSelection() {
+    selectionModal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  const closeSelectionModalBtn = document.getElementById('closeSelectionModal');
+  if (closeSelectionModalBtn) closeSelectionModalBtn.onclick = closeSelection;
+
+  function selectPathway(type) {
+    closeSelection();
+    if (type === 'delegate') {
+      openRegistration();
+    } else if (type === 'delegation') {
+      openDelRegistration();
+    } else if (type === 'oc') {
+      openOcRegistration();
+    }
+  }
+
+  function openDelRegistration() {
+    const delModal = document.getElementById('delModal');
+    if (delModal) {
+      delModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeDelRegistration() {
+    const delModal = document.getElementById('delModal');
+    if (delModal) {
+      delModal.classList.remove('active');
+      document.body.style.overflow = '';
+      if (typeof nextDelStep === 'function') nextDelStep(1);
+      const delForm = document.getElementById('delForm');
+      if (delForm) delForm.reset();
+    }
+  }
+
+  function openOcRegistration() {
+    const ocModal = document.getElementById('ocModal');
+    if (ocModal) {
+      ocModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeOcRegistration() {
+    const ocModal = document.getElementById('ocModal');
+    if (ocModal) {
+      ocModal.classList.remove('active');
+      document.body.style.overflow = '';
+      if (typeof nextOcStep === 'function') nextOcStep(1);
+      const ocForm = document.getElementById('ocForm');
+      if (ocForm) ocForm.reset();
+    }
+  }
+
+  window.addEventListener('click', (event) => {
+    if (event.target === selectionModal) closeSelection();
+    if (event.target === regModal) closeRegistration();
+    const dModal = document.getElementById('delModal');
+    const oModal = document.getElementById('ocModal');
+    if (event.target === dModal) closeDelRegistration();
+    if (event.target === oModal) closeOcRegistration();
+  });
+
   const closeModal = document.getElementById('closeModal');
   const regForm = document.getElementById('regForm');
 
@@ -3355,7 +3604,10 @@
   document.querySelectorAll('.nav-cta').forEach(btn => {
     btn.addEventListener('click', (ev) => {
       ev.preventDefault();
-      openRegistration();
+      // Only triggered by buttons without specific onclick handlers
+      if (!btn.hasAttribute('onclick')) {
+        openSelection();
+      }
     });
   });
 
@@ -3418,10 +3670,16 @@
 
 });
   // Hero section register button (Scroll only)
-  document.querySelector('.hero-reg-btn').addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
-  });
+  const heroRegBtn = document.querySelector('.hero-reg-btn');
+  if (heroRegBtn) {
+    heroRegBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.getElementById('register');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
 
   // DELEGATION MODAL LOGIC
   const delModal = document.getElementById('delModal');
@@ -3734,8 +3992,10 @@
 
   // Handle outside click for Delegation Modal
   window.addEventListener('click', (e) => {
-    if (e.target === delModal) closeDelRegistration();
-    if (e.target === ocModal) closeOcRegistration();
+    const dModal = document.getElementById('delModal');
+    const oModal = document.getElementById('ocModal');
+    if (e.target === dModal) closeDelRegistration();
+    if (e.target === oModal) closeOcRegistration();
   });
 
   // OC MODAL LOGIC
@@ -3788,12 +4048,7 @@
   if (openOcBtn && ocModal) {
     openOcBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      ocModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-      restoreOcFormData(); // Ensure form is up to date when opened
-      if (window.innerWidth > 768) {
-        // initModalParticles('ocModalParticles'); // Already initialized globally
-      }
+      openSelection(); // Transition to selection instead of directly opening OC
     });
   }
 
