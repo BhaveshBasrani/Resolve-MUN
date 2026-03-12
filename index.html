@@ -110,8 +110,26 @@
     letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--muted); text-decoration: none;
     transition: color 0.3s;
+    position: relative;
+    padding: 8px 0;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--gold);
+    transition: width 0.3s ease;
   }
   .nav-links a:hover { color: var(--white); }
+  .nav-links a:hover::after, .nav-links a.active::after {
+    width: 100%;
+  }
+  .nav-links a.active {
+    color: var(--white);
+  }
   .nav-cta {
     font-family: 'SF Pro Display', -apple-system, 'Oswald', sans-serif;
     font-size: 0.72rem;
@@ -649,18 +667,24 @@
     font-size: clamp(5rem, 14vw, 14rem);
     line-height: 0.88; letter-spacing: 0.02em;
     color: var(--white);
-    opacity: 0; transform: translateY(30px);
-    transition: all 1s cubic-bezier(0.165, 0.84, 0.44, 1) 0.5s;
     position: relative;
-  }
-  body.loaded .hero-title {
-    opacity: 1; transform: translateY(0);
   }
   .hero-title span {
     display: block;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.9s cubic-bezier(0.165, 0.84, 0.44, 1);
     background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.7) 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+  body.loaded .hero-title span:nth-child(1) {
+    opacity: 1; transform: translateY(0);
+    transition-delay: 0.6s;
+  }
+  body.loaded .hero-title span:nth-child(2) {
+    opacity: 1; transform: translateY(0);
+    transition-delay: 0.8s;
   }
   .hero-title .mun {
     background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
@@ -704,6 +728,13 @@
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.4rem; letter-spacing: 0.08em;
     color: var(--white);
+    display: inline-block;
+  }
+  .value-suffix {
+    font-size: 1rem;
+    color: var(--gold);
+    vertical-align: super;
+    margin-left: 2px;
   }
   .hero-meta-divider {
     width: 1px; height: 40px;
@@ -957,13 +988,16 @@
 
   /* ABOUT */
   #about {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 100px;
-    align-items: center;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 160px 0;
+    padding: 100px 60px;
+  }
+
+  .about-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
   }
 
   .about-visual {
@@ -973,12 +1007,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 60px;
   }
 
   .emblem-wrapper {
     position: relative;
     width: 100%;
-    height: 520px;
+    height: auto;
+    min-height: 380px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1050,7 +1086,11 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    overflow: hidden;
   }
 
   .about-stat {
@@ -1103,6 +1143,7 @@
   .title-accent {
     background: linear-gradient(90deg, var(--white) 30%, var(--gold) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.15));
     display: inline-block;
@@ -1288,6 +1329,7 @@
   .title-accent {
     background: linear-gradient(90deg, var(--white) 0%, var(--gold) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.3));
     display: inline-block;
@@ -1310,95 +1352,72 @@
   .about-stat-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    margin-top: 0;
+    gap: 60px 80px;
+    margin-top: 60px;
     width: 100%;
   }
 
   .about-stat {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 35px 25px;
-    border-radius: 12px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    padding: 0 0 25px 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: visible;
+    transition: all 0.4s ease;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(5px);
+    justify-content: flex-end;
   }
 
   .about-stat::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(0, 113, 227, 0.15) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-
-  .about-stat:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(0, 113, 227, 0.3);
-    transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 113, 227, 0.1);
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--gold);
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .about-stat:hover::before {
-    opacity: 1;
+    width: 100%;
   }
 
   .about-stat .num {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 3.2rem;
+    font-size: 4rem;
     line-height: 1;
     color: var(--white);
-    margin-bottom: 15px;
-    letter-spacing: 1px;
-    position: relative;
-    z-index: 1;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-    transition: transform 0.5s ease;
+    margin-bottom: 4px;
+    transition: color 0.4s ease;
   }
 
   .about-stat:hover .num {
-    transform: scale(1.1);
     color: var(--gold);
-    text-shadow: 0 0 25px rgba(212, 175, 55, 0.4);
+  }
+
+  .stat-divider {
+    display: none;
   }
 
   .about-stat .desc {
     font-family: 'Oswald', sans-serif;
     font-size: 0.75rem;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
-    letter-spacing: 3px;
-    position: relative;
-    z-index: 1;
-    transition: color 0.5s ease;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+    transition: all 0.4s ease;
   }
 
   .about-stat:hover .desc {
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--white);
+    letter-spacing: 3px;
   }
 
-  /* Stat Icons/Particles */
-  .stat-glow {
-    position: absolute;
-    bottom: -10px;
-    right: -10px;
-    width: 60px;
-    height: 60px;
-    background: var(--gold);
-    filter: blur(40px);
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-
-  .about-stat:hover .stat-glow {
-    opacity: 0.2;
+  .about-stat::after {
+    display: none;
   }
 
   .about-content {
@@ -1418,85 +1437,56 @@
     flex-direction: column;
     gap: 25px;
   }
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .about-stat:hover {
-    background: rgba(0, 113, 227, 0.05);
-    border-color: rgba(0, 113, 227, 0.2);
-    transform: translateY(-5px);
-  }
-
-  .about-stat .num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.8rem;
-    line-height: 1;
-    color: var(--white);
-    margin-bottom: 12px;
-    letter-spacing: 1px;
-  }
-
-  .stat-divider {
-    width: 30px;
-    height: 2px;
-    background: var(--gold);
-    margin-bottom: 12px;
-  }
-
-  .about-stat .desc {
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 2px;
-  }
-    display: block;
-  }
-  .about-stat .desc {
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
-    color: var(--muted); margin-top: 6px;
-  }
 
   /* DETAILS */
   #details {
-    padding: 120px 0;
+    padding: 160px 0;
     background: linear-gradient(180deg, transparent, rgba(107,33,232,0.04), transparent);
   }
   .details-inner { max-width: 1400px; margin: 0 auto; }
   .details-header { text-align: left; margin-bottom: 80px; }
   .details-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 1px; background: var(--card-border);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-top: 60px;
   }
   .detail-card {
-    background: var(--deep);
-    padding: 52px 40px;
-    position: relative; overflow: hidden;
-    transition: background 0.4s;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 48px 40px;
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
   }
-  .detail-card:hover { background: rgba(107,33,232,0.06); }
-  .detail-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--purple), transparent);
-    opacity: 0; transition: opacity 0.4s;
+  .detail-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(37, 99, 235, 0.05);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
   }
-  .detail-card:hover::before { opacity: 1; }
   .detail-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 5rem; color: rgba(255,255,255,0.03);
-    position: absolute; top: 20px; right: 28px;
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    font-size: 6rem;
+    opacity: 0.03;
+    font-weight: 700;
     line-height: 1;
+    font-family: 'Bebas Neue', sans-serif;
   }
   .detail-icon {
-    width: 40px; height: 40px;
-    border: 1px solid var(--gold);
-    display: flex; align-items: center; justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 24px;
+    border-radius: 8px;
   }
-  .detail-icon svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; }
+  .detail-icon svg { width: 22px; height: 22px; stroke: var(--gold); fill: none; }
   .detail-card h3 {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.8rem; letter-spacing: 0.05em;
@@ -1509,30 +1499,36 @@
 
   /* COMMITTEES */
   #committees {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     max-width: 1400px; margin: 0 auto;
   }
   .committees-grid {
     display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 16px; margin-top: 60px;
+    gap: 28px; margin-top: 60px;
   }
   .committee-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     padding: 40px 28px;
     position: relative; overflow: hidden;
-    transition: all 0.4s;
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+    z-index: 1;
   }
   .committee-card::after {
     content: '';
     position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(107,33,232,0.08), rgba(192,38,211,0.04));
-    opacity: 0; transition: opacity 0.4s;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(107, 33, 232, 0.05));
+    opacity: 0; transition: opacity 0.5s ease;
+    z-index: -1;
   }
-  .committee-card:hover { border-color: rgba(107,33,232,0.4); }
+  .committee-card:hover {
+    border-color: rgba(37, 99, 235, 0.4);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  }
   .committee-card:hover::after { opacity: 1; }
   .committee-tag {
     font-family: 'Oswald', sans-serif;
@@ -1559,8 +1555,8 @@
 
   /* EXPERIENCE */
   #experience {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     background: linear-gradient(180deg, transparent, rgba(107,33,232,0.05), rgba(192,38,211,0.03), transparent);
@@ -1593,27 +1589,67 @@
   }
   .exp-item:hover h4, .exp-item.active h4 { color: var(--white); }
   .experience-showcase {
-    background: var(--card-bg);
+    background: #08080a;
     border: 1px solid var(--card-border);
-    aspect-ratio: 4/3;
-    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 16/9;
     position: relative; overflow: hidden;
+    border-radius: 12px;
   }
   .showcase-visual {
     position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 50% 50%,
-      rgba(107,33,232,0.2) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.98);
+    transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .showcase-visual.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .visual-gradient {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(37,99,235,0.15) 0%, transparent 70%);
   }
   .showcase-text {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 4rem; color: rgba(255,255,255,0.06);
+    font-size: 5rem; 
+    color: var(--white);
+    opacity: 0.15;
     text-align: center; letter-spacing: 0.05em;
+    line-height: 0.9;
+    z-index: 3;
+    transition: all 0.5s ease;
+  }
+  .showcase-visual.active .showcase-text {
+    opacity: 0.25;
+    transform: scale(1.05);
+  }
+  .showcase-static-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 8rem;
+    color: rgba(255,255,255,0.02);
+    text-align: center;
+    line-height: 0.8;
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  @media (max-width: 1024px) {
+    .experience-grid { grid-template-columns: 1fr; gap: 40px; }
   }
 
   /* VENUE */
   #venue {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     max-width: 1400px; margin: 0 auto;
@@ -1634,8 +1670,12 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     z-index: 1;
+    will-change: transform;
+    transition: transform 0.1s ease-out;
   }
   .venue-visual::before {
     content: '';
@@ -1679,8 +1719,8 @@
 
   /* SECRETARIAT CAROUSEL */
   #secretariat {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     max-width: 1400px;
@@ -1780,11 +1820,22 @@
   }
   
   /* Specialty Avatars */
+  .sec-card--sg {
+    width: 336px; /* 280 * 1.2 */
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.05);
+  }
   .sec-card--sg .sec-avatar {
+    width: 110px;
+    height: 110px;
     background: linear-gradient(135deg, var(--gold), #fef08a);
     border-color: var(--gold);
     color: var(--black);
     box-shadow: 0 0 35px rgba(212,175,55,0.15);
+  }
+  .sec-card--sg:hover {
+    border-color: var(--gold);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.6), 0 0 30px rgba(212, 175, 55, 0.15);
   }
   .sec-card--dsg .sec-avatar {
     background: linear-gradient(135deg, #2563eb, #61dafb);
@@ -1856,136 +1907,160 @@
   #oc-applications {
     padding: 100px 0;
   }
-  .oc-inner { max-width: 1000px; margin: 0 auto; text-align: center; }
-  .oc-header { text-align: center; margin-bottom: 50px; }
-  .oc-header .section-label { justify-content: center; }
+  .oc-inner { 
+    max-width: 1400px; 
+    margin: 0 auto; 
+    padding: 0 60px;
+  }
   
-  .oc-card {
-    position: relative;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 60px 40px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 100%);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 4px;
-    overflow: hidden;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(10px);
+  .oc-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
   }
-  .oc-card:hover { 
-    border-color: rgba(0,113,227,0.25);
-    background: linear-gradient(180deg, rgba(0,113,227,0.04) 0%, rgba(255,255,255,0) 100%);
-    transform: translateY(-8px);
-  }
-  .oc-card-glow {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(0,113,227,0.08) 0%, transparent 70%);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-  }
-  .oc-card:hover .oc-card-glow { opacity: 1; }
 
-  .oc-card-content { 
-    position: relative; z-index: 1;
-    display: flex; flex-direction: column; align-items: center;
+  /* Left Side: Text and Perks */
+  .oc-text-content {
+    text-align: left;
   }
-  .oc-icon {
-    width: 64px; height: 64px;
-    margin-bottom: 30px;
-    display: flex; align-items: center; justify-content: center;
-    border: 1px solid rgba(0,113,227,0.2);
-    border-radius: 2px;
-    background: rgba(0,113,227,0.05);
-    transition: all 0.4s ease;
-  }
-  .oc-card:hover .oc-icon {
-    border-color: var(--gold);
-    box-shadow: 0 0 25px rgba(0,113,227,0.2);
-    transform: scale(1.05);
-  }
-  .oc-icon svg { width: 24px; height: 24px; stroke: var(--gold); stroke-width: 1.5; }
-  
-  .oc-card-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 3.8rem;
-    letter-spacing: 0.05em;
+
+  .oc-text-content .section-label {
+    justify-content: flex-start;
     margin-bottom: 24px;
-    color: var(--white);
-    text-transform: uppercase;
-    line-height: 1;
+    color: var(--gold);
   }
-  .oc-card-body {
-    font-size: 1.15rem;
-    line-height: 1.8;
+
+  .oc-text-content .section-title {
+    text-align: left;
+    font-size: 4.5rem;
+    line-height: 0.95;
+    margin-bottom: 32px;
+  }
+
+  .oc-text-content .section-body {
+    text-align: left;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 48px;
     color: var(--muted);
-    max-width: 720px;
-    margin-bottom: 40px;
-    font-weight: 300;
+    max-width: 500px;
   }
+
   .oc-perks {
     display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 52px;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 48px;
   }
+
   .oc-perk {
-    padding: 8px 18px;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 2px;
-    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
     font-family: 'Oswald', sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: rgba(255,255,255,0.5);
-    transition: all 0.3s ease;
-    background: transparent;
-  }
-  .oc-card:hover .oc-perk {
-    border-color: rgba(255,255,255,0.12);
-  }
-  .oc-perk:hover { 
-    border-color: var(--gold) !important; 
+    letter-spacing: 0.1em;
     color: var(--white);
-    background: rgba(0,113,227,0.08); 
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
   }
-  .oc-btn { 
-    display: inline-flex;
-    padding: 14px 40px;
-    background: linear-gradient(135deg, #0071e3 0%, #47a1ff 50%, #0071e3 100%);
-    background-size: 200% auto;
-    color: white;
-    text-decoration: none;
-    font-family: 'SF Pro Display', -apple-system, 'Oswald', sans-serif;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.9rem;
-    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0, 113, 227, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    outline: none;
-    animation: buttonGradient 4s linear infinite;
+
+  .oc-perk::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--gold);
   }
-  .oc-btn:hover {
-    transform: translateY(-4px) scale(1.02);
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 20px 40px rgba(0, 113, 227, 0.5), 0 0 20px rgba(0, 113, 227, 0.3);
+
+  .oc-perk:hover {
+    opacity: 1;
   }
-  .oc-btn:active {
-    transform: translateY(-1px) scale(0.98);
-    transition: all 0.1s;
+
+  /* Right Side: Subtle Card */
+  .oc-card {
+    position: relative;
+    padding: 60px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 24px;
+    overflow: hidden;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center;
+  }
+
+  .oc-card:hover {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.1);
+    transform: translateY(-5px);
+  }
+
+  .oc-card-glow {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, rgba(0,113,227,0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+
+  .oc-card:hover .oc-card-glow {
+    opacity: 1;
+  }
+
+  .oc-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 32px;
+    color: var(--gold);
+    opacity: 0.8;
+  }
+
+  .oc-card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    color: var(--white);
+  }
+
+  .oc-card-body {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .oc-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  @media (max-width: 1024px) {
+    .oc-layout {
+      grid-template-columns: 1fr;
+      gap: 60px;
+    }
+    .oc-text-content, .oc-text-content .section-title, .oc-text-content .section-body {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .oc-text-content .section-label {
+      justify-content: center;
+    }
+    .oc-perks {
+      align-items: center;
+    }
   }
 
   /* SPONSORS */
   #sponsors {
-    padding-top: 100px;
-    padding-bottom: 100px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     border-top: 1px solid var(--card-border);
@@ -2122,7 +2197,54 @@
   .footer-col ul li a:hover { color: var(--white); }
   .footer-bottom {
     display: flex; align-items: center; justify-content: space-between;
-    padding-top: 28px; border-top: 1px solid var(--card-border);
+    padding-top: 50px; border-top: 1px solid rgba(255,255,255,0.05);
+    margin-top: 40px;
+    position: relative;
+  }
+  .footer-date-pill {
+    position: absolute;
+    left: 50%; top: 75%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 24px;
+    border-radius: 4px;
+    display: flex; align-items: center; gap: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    cursor: default;
+    box-shadow: 0 0 20px rgba(0, 102, 255, 0.05);
+  }
+  .footer-date-pill:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #0066ff;
+    box-shadow: 0 0 30px rgba(0, 102, 255, 0.2);
+  }
+  .footer-date-pill .pill-dot {
+    width: 3px; height: 3px;
+    background: #0066ff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #0066ff;
+    animation: bluePulse 2s infinite;
+  }
+  .footer-date-pill span {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(0, 102, 255, 0.4);
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  @keyframes bluePulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.4; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pillPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
   }
   .footer-copy {
     font-family: 'Oswald', sans-serif;
@@ -2308,7 +2430,10 @@
     .about-stat-grid { grid-template-columns: 1fr 1fr; padding: 20px; }
 
     /* Details & Committees */
-    .details-grid { grid-template-columns: 1fr; gap: 20px; }
+    .details-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
     .committees-grid { grid-template-columns: 1fr; gap: 20px; }
     .committee-card { padding: 30px; }
 
@@ -2677,11 +2802,12 @@
     </svg>
   </button>
   <ul class="nav-links" id="navLinks">
+    <li><a href="#hero">Home</a></li>
     <li><a href="#about">About</a></li>
+    <li><a href="#experience">Format</a></li>
     <li><a href="#committees">Committees</a></li>
-    <li><a href="#secretariat">Secretariat</a></li>
     <li><a href="#venue">Venue</a></li>
-    <li><a href="#register" class="nav-cta" style="display: none;">Register Now</a></li>
+    <li><a href="#secretariat">Secretariat</a></li>
   </ul>
   <a href="javascript:void(0)" class="nav-cta" onclick="openSelection()">Register Now</a>
 </nav>
@@ -2692,7 +2818,7 @@
   <div class="hero-grid"></div>
   <canvas class="particles-canvas" id="particles"></canvas>
 
-  <div class="hero-eyebrow">The Premier Diplomatic Conference</div>
+  <div class="hero-eyebrow">June 12th — 14th 2026</div>
   <h1 class="hero-title">
     <span>RESOLVE</span>
     <span class="mun">MUN</span>
@@ -2702,22 +2828,22 @@
   <div class="hero-meta">
     <div class="hero-meta-item">
       <span class="label">Edition</span>
-      <span class="value">2026</span>
+      <span class="value" data-target="2026">0</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
       <span class="label">Delegates</span>
-      <span class="value">500+</span>
+      <span class="value" data-target="500">0</span><span class="value-suffix">+</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
       <span class="label">Committees</span>
-      <span class="value">8</span>
+      <span class="value" data-target="8">0</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
       <span class="label">Days</span>
-      <span class="value">3</span>
+      <span class="value" data-target="3">0</span>
     </div>
   </div>
 
@@ -2754,8 +2880,8 @@
 </div>
 
 <!-- ABOUT -->
-<section>
-<div id="about">
+<section id="about">
+<div class="about-inner">
   <div class="about-visual reveal">
     <div class="emblem-wrapper">
       <div class="logo-halo"></div>
@@ -2771,23 +2897,23 @@
     
     <div class="about-stat-grid">
       <div class="about-stat">
-        <div class="stat-glow"></div>
         <span class="num">500+</span>
+        <div class="stat-divider"></div>
         <span class="desc">Delegates</span>
       </div>
       <div class="about-stat">
-        <div class="stat-glow"></div>
         <span class="num">8</span>
+        <div class="stat-divider"></div>
         <span class="desc">Committees</span>
       </div>
       <div class="about-stat">
-        <div class="stat-glow"></div>
         <span class="num">₹1.25L</span>
+        <div class="stat-divider"></div>
         <span class="desc">Cash Rewards</span>
       </div>
       <div class="about-stat">
-        <div class="stat-glow"></div>
         <span class="num">3</span>
+        <div class="stat-divider"></div>
         <span class="desc">Days of Diplomacy</span>
       </div>
     </div>
@@ -2806,67 +2932,85 @@
 
 <div class="glow-line"></div>
 
-<!-- DETAILS -->
-<section id="details">
-  <div class="details-inner">
-    <div class="details-header reveal">
-      <div class="section-label">Conference Details</div>
-      <h2 class="section-title">THE ESSENTIALS</h2>
-    </div>
-    <div class="details-grid">
-      <div class="detail-card reveal">
-        <span class="detail-num">01</span>
-        <div class="detail-icon">
-          <svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+<!-- WHAT DEFINES RESOLVE -->
+<section id="experience" class="reveal">
+  <div class="experience-inner">
+    <div class="section-label reveal">Conference Highlights</div>
+    <h2 class="section-title reveal">WHAT DEFINES RESOLVE</h2>
+    <div class="experience-grid">
+      <div class="experience-list reveal">
+        <div class="exp-item active" data-exp="01">
+          <span class="exp-num">01</span>
+          <div>
+            <h4>COMMITTEES</h4>
+            <div style="font-size: 1.1rem; color: var(--white); margin-top: 4px; font-family: 'Oswald', sans-serif;">8 Distinct Committees</div>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-top: 5px; line-height: 1.4;">The conference features eight specialized committees spanning international councils, national assemblies, and unique debate formats.</p>
+          </div>
         </div>
-        <h3>Date & Duration</h3>
-        <p>Three intensive days of diplomacy, debate, and deliberation. Precise dates to be announced — mark your calendar.</p>
+        <div class="exp-item" data-exp="02">
+          <span class="exp-num">02</span>
+          <div>
+            <h4>DELEGATE SCALE</h4>
+            <div style="font-size: 1.1rem; color: var(--white); margin-top: 4px; font-family: 'Oswald', sans-serif;">500 Delegates</div>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-top: 5px; line-height: 1.4;">A balanced delegate size creates competitive debate while ensuring meaningful participation.</p>
+          </div>
+        </div>
+        <div class="exp-item" data-exp="03">
+          <span class="exp-num">03</span>
+          <div>
+            <h4>AWARDS</h4>
+            <div style="font-size: 1.1rem; color: var(--white); margin-top: 4px; font-family: 'Oswald', sans-serif;">₹1.25L in Awards</div>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-top: 5px; line-height: 1.4;">Recognizing outstanding diplomacy, negotiation, and leadership across committees.</p>
+          </div>
+        </div>
+        <div class="exp-item" data-exp="04">
+          <span class="exp-num">04</span>
+          <div>
+            <h4>CONFERENCE LENGTH</h4>
+            <div style="font-size: 1.1rem; color: var(--white); margin-top: 4px; font-family: 'Oswald', sans-serif;">3 Days of Debate</div>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-top: 5px; line-height: 1.4;">Held from 12–14 June 2026, the conference provides three full days of committee sessions and negotiations.</p>
+          </div>
+        </div>
+        <div class="exp-item" data-exp="05">
+          <span class="exp-num">05</span>
+          <div>
+            <h4>COMMITTEE VARIETY</h4>
+            <div style="font-size: 1.1rem; color: var(--white); margin-top: 4px; font-family: 'Oswald', sans-serif;">Multiple Debate Formats</div>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-top: 5px; line-height: 1.4;">Delegates experience both traditional debate committees and specialized formats designed for strategic diplomacy.</p>
+          </div>
+        </div>
       </div>
-      <div class="detail-card reveal reveal-delay-1">
-        <span class="detail-num">02</span>
-        <div class="detail-icon">
-          <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <div class="experience-showcase reveal reveal-delay-2">
+        <div class="showcase-visual active" id="exp-vis-01">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">8<br>COMMITTEES</div>
         </div>
-        <h3>Venue</h3>
-        <p>A world-class conference facility befitting the calibre of debate. Full venue details coming soon.</p>
+        <div class="showcase-visual" id="exp-vis-02">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">500<br>DELEGATES</div>
+        </div>
+        <div class="showcase-visual" id="exp-vis-03">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">₹1.25L<br>AWARDS</div>
+        </div>
+        <div class="showcase-visual" id="exp-vis-04">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">3 DAYS<br>OF DEBATE</div>
+        </div>
+        <div class="showcase-visual" id="exp-vis-05">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">STRATEGIC<br>DIPLOMACY</div>
+        </div>
+        <div class="showcase-static-bg">RESOLVE<br>MUN<br>2026</div>
       </div>
-      <div class="detail-card reveal reveal-delay-2">
-        <span class="detail-num">03</span>
-        <div class="detail-icon">
-          <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        </div>
-        <h3>Delegate Count</h3>
-        <p>Limited to 500 delegates across 8 specialized committees, ensuring high-quality debate and meaningful participation.</p>
-      </div>
-      <div class="detail-card reveal reveal-delay-3">
-        <span class="detail-num">04</span>
-        <div class="detail-icon">
-          <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        </div>
-        <h3>Awards</h3>
-        <p>Best Delegate, Outstanding Delegate, Verbal Commendation, and Best Position Paper awards across all committees.</p>
-      </div>
-      <div class="detail-card reveal">
-        <span class="detail-num">05</span>
-        <div class="detail-icon">
-          <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <h3>Registration Fee</h3>
-        <p>Tiered registration available. Early bird pricing and institutional group rates available for schools and universities.</p>
-      </div>
-      <div class="detail-card reveal reveal-delay-1">
-        <span class="detail-num">06</span>
-        <div class="detail-icon">
-          <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <h3>Social Night</h3>
-<p>After a day of intense debate, delegates come together for an exclusive evening social on Day 2 — an opportunity to connect, celebrate, and build friendships that extend far beyond the conference.</p>
     </div>
   </div>
 </section>
 
+<div class="glow-line"></div>
+
 <!-- COMMITTEES -->
-<section id="committees">
+<section id="committees" class="reveal">
   <div class="section-label reveal">Committees</div>
   <h2 class="section-title reveal">THE ARENA OF<br>GLOBAL DEBATE</h2>
   <p class="section-body reveal" style="max-width: 600px;">Eight specialized committees, each tackling the world's most consequential challenges. Full committee topics and study guides coming soon.</p>
@@ -2925,44 +3069,8 @@
 
 <div class="glow-line"></div>
 
-<!-- EXPERIENCE -->
-<section id="experience">
-  <div class="experience-inner">
-    <div class="section-label reveal">The Experience</div>
-    <h2 class="section-title reveal">MORE THAN A<br>CONFERENCE</h2>
-    <div class="experience-grid">
-      <div class="experience-list reveal">
-        <div class="exp-item active">
-          <span class="exp-num">01</span>
-          <h4>Opening Ceremony</h4>
-        </div>
-        <div class="exp-item">
-          <span class="exp-num">02</span>
-          <h4>Committee Sessions</h4>
-        </div>
-        <div class="exp-item">
-          <span class="exp-num">03</span>
-          <h4>Crisis Simulations</h4>
-        </div>
-        <div class="exp-item">
-          <span class="exp-num">04</span>
-          <h4>Delegate Social</h4>
-        </div>
-        <div class="exp-item">
-          <span class="exp-num">05</span>
-          <h4>Awards Gala</h4>
-        </div>
-      </div>
-      <div class="experience-showcase reveal reveal-delay-2">
-        <div class="showcase-visual"></div>
-        <div class="showcase-text">RESOLVE<br>MUN<br>2026</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- VENUE -->
-<section id="venue">
+<section id="venue" class="reveal">
   <div class="section-label reveal">Venue</div>
   <h2 class="section-title reveal">A STAGE WORTHY<br>OF THE DEBATE</h2>
   <div class="venue-layout">
@@ -2986,8 +3094,10 @@
   </div>
 </section>
 
+<div class="glow-line"></div>
+
 <!-- SECRETARIAT -->
-<section id="secretariat">
+<section id="secretariat" class="reveal">
   <div class="sec-header reveal">
     <div class="section-label">Secretariat</div>
     <h2 class="section-title">MEET THE TEAM</h2>
@@ -3138,6 +3248,8 @@
   </div>
 </section>
 
+<div class="glow-line"></div>
+
 <!-- SPONSORS -->
 <section id="sponsors">
   <div class="sponsors-inner reveal" style="text-align: center;">
@@ -3165,30 +3277,32 @@
 <!-- OC APPLICATIONS -->
 <section id="oc-applications">
   <div class="oc-inner">
-    <div class="oc-header reveal" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-      <div class="section-label" style="justify-content: center; margin-bottom: 24px;">
-        Organizing Committee
+    <div class="oc-layout">
+      <!-- Left: Narrative -->
+      <div class="oc-text-content reveal">
+        <div class="section-label">Organizing Committee</div>
+        <h2 class="section-title">JOIN THE<br>ARCHITECTS</h2>
+        <p class="section-body">Help build one of Hyderabad's most ambitious Model United Nations conferences from the ground up.</p>
+        
+        <div class="oc-perks">
+          <div class="oc-perk">Elite Leadership Roles</div>
+          <div class="oc-perk">Strategic Logistics & Planning</div>
+          <div class="oc-perk">Global Networking Context</div>
+          <div class="oc-perk">Exclusive Certification</div>
+        </div>
       </div>
-      <h2 class="section-title" style="text-align: center;">JOIN THE ORGANIZING<br>COMMITTEE</h2>
-      <p class="section-body" style="max-width: 580px; margin: 0 auto; text-align: center;">Help build one of Hyderabad's most ambitious Model United Nations conferences.</p>
-    </div>
-    <div class="oc-card reveal">
-      <div class="oc-card-glow"></div>
-      <div class="oc-card-content" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+
+      <!-- Right: Action Card -->
+      <div class="oc-card reveal reveal-delay-2">
+        <div class="oc-card-glow"></div>
         <div class="oc-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </div>
-        <h3 class="oc-card-title">Be Part of the Team</h3>
-        <p class="oc-card-body" style="margin-left: auto; margin-right: auto;">The Organizing Committee is the backbone of Resolve MUN. From logistics to design, content to technology — every department is an opportunity to lead, create, and leave a mark on one of Hyderabad's premier conferences.</p>
-        <div class="oc-perks" style="justify-content: center;">
-          <span class="oc-perk">Leadership Experience</span>
-          <span class="oc-perk">Certificate of Participation</span>
-          <span class="oc-perk">Professional Network</span>
-          <span class="oc-perk">Behind-the-Scenes Access</span>
-        </div>
+        <h3 class="oc-card-title">Apply to OC</h3>
+        <p class="oc-card-body">We are looking for dedicated individuals to lead our departments in logistics, design, and diplomacy.</p>
         <button class="btn-primary oc-btn" onclick="openOcRegistration()"><span>Apply for OC</span></button>
       </div>
     </div>
@@ -3435,6 +3549,10 @@
     </div>
   </div>
 
+</section>
+
+<div class="glow-line"></div>
+
 <!-- CTA -->
 <section id="register">
   <div class="cta-inner">
@@ -3489,7 +3607,13 @@
     </div>
   </div>
   <div class="footer-bottom">
-    <p class="footer-copy">© 2025 Resolve MUN. All rights reserved.</p>
+    <p class="footer-copy">© 2026 Resolve MUN. All rights reserved.</p>
+    
+    <div class="footer-date-pill" onclick="const target = document.getElementById('countdown'); const navHeight = document.getElementById('navbar').offsetHeight; const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navHeight; window.scrollTo({ top: targetPosition, behavior: 'smooth' });" style="cursor: pointer;">
+      <div class="pill-dot"></div>
+      <span>June 12th — 14th 2026</span>
+    </div>
+
     <span class="footer-tagline">RESOLVE · REFORM · RECONCILE</span>
   </div>
 </footer>
@@ -4435,6 +4559,58 @@
 
   window.addEventListener('scroll', () => {
     navbar.classList.toggle('scrolled', window.scrollY > 60);
+    
+    // Active Navigation Highlighting
+    const sections = ['hero', 'about', 'experience', 'committees', 'venue', 'secretariat'];
+    let current = '';
+
+    const pageYOffset = window.pageYOffset;
+
+    sections.forEach(s => {
+      const section = document.getElementById(s);
+      if (section) {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        if (pageYOffset >= sectionTop - 250) {
+          current = s;
+        }
+      }
+    });
+
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.classList.remove('active');
+      const href = link.getAttribute('href').substring(1);
+      if (href === current) {
+        link.classList.add('active');
+      }
+    });
+    
+    // Venue Parallax Effect
+    const venueVisual = document.querySelector('.venue-visual');
+    if (venueVisual) {
+      const img = venueVisual.querySelector('img');
+      if (img) {
+        const rect = venueVisual.getBoundingClientRect();
+        const viewHeight = window.innerHeight;
+        
+        // Only calculate if section is in view
+        if (rect.top < viewHeight && rect.bottom > 0) {
+          // Calculate how far through the element the scroll is (0 to 1)
+          const elementHeight = rect.height;
+          const elementVisible = viewHeight - rect.top;
+          const scrollFraction = Math.max(0, Math.min(1, elementVisible / (viewHeight + elementHeight)));
+          
+          // Delay movement until the section is fully established on screen
+          // Movement starts after the initial reveal and landing
+          let moveAmount = 0;
+          if (scrollFraction > 0.45) { // Threshold for "reading part"
+            moveAmount = (scrollFraction - 0.45) * 50; 
+          }
+          
+          img.style.transform = `translateY(${moveAmount}px)`;
+        }
+      }
+    }
   });
 
   // SCROLL REVEAL
@@ -4444,10 +4620,10 @@
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
   // COUNTDOWN — target date: June 12, 2026 00:00
-  const target = new Date('2026-06-12T00:00:00');
+  const countdownTarget = new Date('2026-06-12T00:00:00');
   function updateCountdown() {
     const now = new Date();
-    const diff = target - now;
+    const diff = countdownTarget - now;
     if (diff <= 0) {
       document.getElementById('cd-days').textContent = '00';
       document.getElementById('cd-hours').textContent = '00';
@@ -4622,27 +4798,97 @@
 
   // EXPERIENCE tabs
   const expItems = document.querySelectorAll('.exp-item');
-  const showcaseText = document.querySelector('.showcase-text');
-  const expContent = [
-    'OPENING<br>CEREMONY',
-    'COMMITTEE<br>SESSIONS',
-    'CRISIS<br>SIMULATIONS',
-    'DELEGATE<br>SOCIAL',
-    'AWARDS<br>GALA'
-  ];
-  expItems.forEach((item, idx) => {
-    item.addEventListener('click', () => {
-      expItems.forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-      if (showcaseText) {
-        showcaseText.style.opacity = '0';
-        setTimeout(() => {
-          showcaseText.innerHTML = expContent[idx] || 'RESOLVE<br>MUN<br>2026';
-          showcaseText.style.opacity = '1';
-        }, 200);
+  const expVisuals = document.querySelectorAll('.showcase-visual');
+  let currentExpIdx = 0;
+  let expAutoPlayTimer;
+
+  const updateExp = (index) => {
+    // Update items
+    expItems.forEach(i => i.classList.remove('active'));
+    expItems[index].classList.add('active');
+
+    // Update visuals
+    const expId = expItems[index].getAttribute('data-exp');
+    expVisuals.forEach(v => {
+      v.classList.remove('active');
+      if (v.id === `exp-vis-${expId}`) {
+        v.classList.add('active');
       }
     });
+    
+    currentExpIdx = index;
+  };
+
+  const startAutoPlay = () => {
+    stopAutoPlay();
+    expAutoPlayTimer = setInterval(() => {
+      let nextIdx = (currentExpIdx + 1) % expItems.length;
+      updateExp(nextIdx);
+    }, 2000);
+  };
+
+  const stopAutoPlay = () => {
+    if (expAutoPlayTimer) clearInterval(expAutoPlayTimer);
+  };
+
+  expItems.forEach((item, idx) => {
+    item.addEventListener('mouseenter', () => {
+      stopAutoPlay();
+      updateExp(idx);
+    });
+    
+    item.addEventListener('mouseleave', () => {
+      startAutoPlay();
+    });
+
+    item.addEventListener('click', () => {
+      stopAutoPlay();
+      updateExp(idx);
+      // Optional: don't restart autoplay on click to let user "stick" to a slide
+      // startAutoPlay(); 
+    });
   });
+
+  // Start the 2-second rotation initially
+  startAutoPlay();
+
+  // HERO META NUMBER SCROLL EFFECT
+  const animateValue = (obj, start, end, duration) => {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      obj.innerHTML = Math.floor(progress * (end - start) + start);
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  };
+
+  const observerOptions = {
+    threshold: 0.5
+  };
+
+  const heroMetaObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const valueElements = entry.target.querySelectorAll('.value');
+        valueElements.forEach(el => {
+          const target = parseInt(el.getAttribute('data-target'));
+          if (!isNaN(target)) {
+            animateValue(el, 0, target, 2000);
+          }
+        });
+        heroMetaObserver.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  const heroMeta = document.querySelector('.hero-meta');
+  if (heroMeta) {
+    heroMetaObserver.observe(heroMeta);
+  }
 
   // SECRETARIAT INFINITE SCROLL & MOUSE DRAG & WHEEL SUPPORT
   const track = document.getElementById('secTrack');
