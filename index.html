@@ -110,8 +110,26 @@
     letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--muted); text-decoration: none;
     transition: color 0.3s;
+    position: relative;
+    padding: 8px 0;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--gold);
+    transition: width 0.3s ease;
   }
   .nav-links a:hover { color: var(--white); }
+  .nav-links a:hover::after, .nav-links a.active::after {
+    width: 100%;
+  }
+  .nav-links a.active {
+    color: var(--white);
+  }
   .nav-cta {
     font-family: 'SF Pro Display', -apple-system, 'Oswald', sans-serif;
     font-size: 0.72rem;
@@ -602,6 +620,7 @@
 
   .hero-bg {
     z-index: -3;
+    transition: transform 0.1s ease-out; /* fallback */
     background:
       radial-gradient(ellipse 80% 60% at 50% -10%, rgba(107,33,232,0.25) 0%, transparent 60%),
       radial-gradient(ellipse 60% 40% at 80% 40%, rgba(192,38,211,0.1) 0%, transparent 50%),
@@ -609,6 +628,10 @@
       radial-gradient(ellipse 60% 40% at 90% 90%, rgba(107,33,232,0.15) 0%, transparent 60%),
       radial-gradient(ellipse 40% 40% at 10% 20%, rgba(0,113,227,0.08) 0%, transparent 40%),
       #050505;
+  }
+
+  .emblem-wrapper, .experience-showcase {
+    will-change: transform;
   }
 
   .hero-grid {
@@ -649,18 +672,24 @@
     font-size: clamp(5rem, 14vw, 14rem);
     line-height: 0.88; letter-spacing: 0.02em;
     color: var(--white);
-    opacity: 0; transform: translateY(30px);
-    transition: all 1s cubic-bezier(0.165, 0.84, 0.44, 1) 0.5s;
     position: relative;
-  }
-  body.loaded .hero-title {
-    opacity: 1; transform: translateY(0);
   }
   .hero-title span {
     display: block;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.9s cubic-bezier(0.165, 0.84, 0.44, 1);
     background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.7) 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+  body.loaded .hero-title span:nth-child(1) {
+    opacity: 1; transform: translateY(0);
+    transition-delay: 0.6s;
+  }
+  body.loaded .hero-title span:nth-child(2) {
+    opacity: 1; transform: translateY(0);
+    transition-delay: 0.8s;
   }
   .hero-title .mun {
     background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
@@ -704,6 +733,13 @@
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.4rem; letter-spacing: 0.08em;
     color: var(--white);
+    display: inline-block;
+  }
+  .value-suffix {
+    font-size: 1rem;
+    color: var(--gold);
+    vertical-align: super;
+    margin-left: 2px;
   }
   .hero-meta-divider {
     width: 1px; height: 40px;
@@ -920,7 +956,7 @@
   }
 
   /* SECTIONS */
-  section { position: relative; padding: 100px 60px; }
+  section { position: relative; padding: 160px 60px; }
 
   .section-label {
     font-family: 'Oswald', sans-serif;
@@ -1103,6 +1139,7 @@
   .title-accent {
     background: linear-gradient(90deg, var(--white) 30%, var(--gold) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.15));
     display: inline-block;
@@ -1288,6 +1325,7 @@
   .title-accent {
     background: linear-gradient(90deg, var(--white) 0%, var(--gold) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.3));
     display: inline-block;
@@ -1418,6 +1456,9 @@
     flex-direction: column;
     gap: 25px;
   }
+
+  .about-stat {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1450,7 +1491,6 @@
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.5);
     letter-spacing: 2px;
-  }
     display: block;
   }
   .about-stat .desc {
@@ -1461,42 +1501,53 @@
 
   /* DETAILS */
   #details {
-    padding: 120px 0;
+    padding: 160px 0;
     background: linear-gradient(180deg, transparent, rgba(107,33,232,0.04), transparent);
   }
   .details-inner { max-width: 1400px; margin: 0 auto; }
   .details-header { text-align: left; margin-bottom: 80px; }
   .details-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 1px; background: var(--card-border);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-top: 60px;
   }
   .detail-card {
-    background: var(--deep);
-    padding: 52px 40px;
-    position: relative; overflow: hidden;
-    transition: background 0.4s;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 48px 40px;
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
   }
-  .detail-card:hover { background: rgba(107,33,232,0.06); }
-  .detail-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--purple), transparent);
-    opacity: 0; transition: opacity 0.4s;
+  .detail-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(37, 99, 235, 0.05);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
   }
-  .detail-card:hover::before { opacity: 1; }
   .detail-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 5rem; color: rgba(255,255,255,0.03);
-    position: absolute; top: 20px; right: 28px;
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    font-size: 6rem;
+    opacity: 0.03;
+    font-weight: 700;
     line-height: 1;
+    font-family: 'Bebas Neue', sans-serif;
   }
   .detail-icon {
-    width: 40px; height: 40px;
-    border: 1px solid var(--gold);
-    display: flex; align-items: center; justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 24px;
+    border-radius: 8px;
   }
-  .detail-icon svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; }
+  .detail-icon svg { width: 22px; height: 22px; stroke: var(--gold); fill: none; }
   .detail-card h3 {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.8rem; letter-spacing: 0.05em;
@@ -1507,32 +1558,105 @@
     color: rgba(255,255,255,0.45); font-weight: 300;
   }
 
+  /* THE RESOLVE STANDARD */
+  #standard {
+    background: linear-gradient(90deg, #050507 0%, #0a0a0f 100%);
+    overflow: hidden;
+  }
+  .standard-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 100px;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .standard-narrative {
+    max-width: 680px;
+  }
+  .standard-narrative h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4.8rem;
+    line-height: 1;
+    margin-bottom: 32px;
+    color: var(--white);
+    letter-spacing: -1px;
+  }
+  .standard-text {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.6rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.85);
+    font-style: italic;
+    margin-bottom: 24px;
+  }
+  .standard-subtext {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 540px;
+  }
+  .standard-visual {
+    position: relative;
+    height: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .standard-orb {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 50%;
+    position: relative;
+    animation: orbFloat 6s ease-in-out infinite;
+  }
+  .standard-orb::after {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 50%;
+    animation: orbPulse 4s ease-in-out infinite;
+  }
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.6; }
+  }
+
   /* COMMITTEES */
   #committees {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     max-width: 1400px; margin: 0 auto;
   }
   .committees-grid {
     display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 16px; margin-top: 60px;
+    gap: 28px; margin-top: 60px;
   }
   .committee-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     padding: 40px 28px;
     position: relative; overflow: hidden;
-    transition: all 0.4s;
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+    z-index: 1;
   }
   .committee-card::after {
     content: '';
     position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(107,33,232,0.08), rgba(192,38,211,0.04));
-    opacity: 0; transition: opacity 0.4s;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(107, 33, 232, 0.05));
+    opacity: 0; transition: opacity 0.5s ease;
+    z-index: -1;
   }
-  .committee-card:hover { border-color: rgba(107,33,232,0.4); }
+  .committee-card:hover {
+    border-color: rgba(37, 99, 235, 0.4);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  }
   .committee-card:hover::after { opacity: 1; }
   .committee-tag {
     font-family: 'Oswald', sans-serif;
@@ -1559,8 +1683,8 @@
 
   /* EXPERIENCE */
   #experience {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     background: linear-gradient(180deg, transparent, rgba(107,33,232,0.05), rgba(192,38,211,0.03), transparent);
@@ -1593,27 +1717,67 @@
   }
   .exp-item:hover h4, .exp-item.active h4 { color: var(--white); }
   .experience-showcase {
-    background: var(--card-bg);
+    background: #08080a;
     border: 1px solid var(--card-border);
-    aspect-ratio: 4/3;
-    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 16/9;
     position: relative; overflow: hidden;
+    border-radius: 12px;
   }
   .showcase-visual {
     position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 50% 50%,
-      rgba(107,33,232,0.2) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.98);
+    transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .showcase-visual.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .visual-gradient {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(37,99,235,0.15) 0%, transparent 70%);
   }
   .showcase-text {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 4rem; color: rgba(255,255,255,0.06);
+    font-size: 5rem; 
+    color: var(--white);
+    opacity: 0.15;
     text-align: center; letter-spacing: 0.05em;
+    line-height: 0.9;
+    z-index: 3;
+    transition: all 0.5s ease;
+  }
+  .showcase-visual.active .showcase-text {
+    opacity: 0.25;
+    transform: scale(1.05);
+  }
+  .showcase-static-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 8rem;
+    color: rgba(255,255,255,0.02);
+    text-align: center;
+    line-height: 0.8;
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  @media (max-width: 1024px) {
+    .experience-grid { grid-template-columns: 1fr; gap: 40px; }
   }
 
   /* VENUE */
   #venue {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     max-width: 1400px; margin: 0 auto;
@@ -1634,8 +1798,12 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     z-index: 1;
+    will-change: transform;
+    transition: transform 0.1s ease-out;
   }
   .venue-visual::before {
     content: '';
@@ -1679,8 +1847,8 @@
 
   /* SECRETARIAT CAROUSEL */
   #secretariat {
-    padding-top: 120px;
-    padding-bottom: 120px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     max-width: 1400px;
@@ -1780,11 +1948,22 @@
   }
   
   /* Specialty Avatars */
+  .sec-card--sg {
+    width: 336px; /* 280 * 1.2 */
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.05);
+  }
   .sec-card--sg .sec-avatar {
+    width: 110px;
+    height: 110px;
     background: linear-gradient(135deg, var(--gold), #fef08a);
     border-color: var(--gold);
     color: var(--black);
     box-shadow: 0 0 35px rgba(212,175,55,0.15);
+  }
+  .sec-card--sg:hover {
+    border-color: var(--gold);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.6), 0 0 30px rgba(212, 175, 55, 0.15);
   }
   .sec-card--dsg .sec-avatar {
     background: linear-gradient(135deg, #2563eb, #61dafb);
@@ -1854,7 +2033,7 @@
 
   /* OC APPLICATIONS SECTION */
   #oc-applications {
-    padding: 100px 0;
+    padding: 160px 0;
   }
   .oc-inner { max-width: 1000px; margin: 0 auto; text-align: center; }
   .oc-header { text-align: center; margin-bottom: 50px; }
@@ -1984,8 +2163,8 @@
 
   /* SPONSORS */
   #sponsors {
-    padding-top: 100px;
-    padding-bottom: 100px;
+    padding-top: 160px;
+    padding-bottom: 160px;
     padding-left: 0;
     padding-right: 0;
     border-top: 1px solid var(--card-border);
@@ -2308,7 +2487,10 @@
     .about-stat-grid { grid-template-columns: 1fr 1fr; padding: 20px; }
 
     /* Details & Committees */
-    .details-grid { grid-template-columns: 1fr; gap: 20px; }
+    .details-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
     .committees-grid { grid-template-columns: 1fr; gap: 20px; }
     .committee-card { padding: 30px; }
 
@@ -2677,11 +2859,14 @@
     </svg>
   </button>
   <ul class="nav-links" id="navLinks">
+    <li><a href="#hero">Home</a></li>
     <li><a href="#about">About</a></li>
+    <li><a href="#details">The Essentials</a></li>
+    <li><a href="#standard">The Standard</a></li>
     <li><a href="#committees">Committees</a></li>
-    <li><a href="#secretariat">Secretariat</a></li>
+    <li><a href="#experience">Experience</a></li>
     <li><a href="#venue">Venue</a></li>
-    <li><a href="#register" class="nav-cta" style="display: none;">Register Now</a></li>
+    <li><a href="#secretariat">Secretariat</a></li>
   </ul>
   <a href="javascript:void(0)" class="nav-cta" onclick="openSelection()">Register Now</a>
 </nav>
@@ -2702,22 +2887,22 @@
   <div class="hero-meta">
     <div class="hero-meta-item">
       <span class="label">Edition</span>
-      <span class="value">2026</span>
+      <span class="value" data-target="2026">0</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
       <span class="label">Delegates</span>
-      <span class="value">500+</span>
+      <span class="value" data-target="500">0</span><span class="value-suffix">+</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
       <span class="label">Committees</span>
-      <span class="value">8</span>
+      <span class="value" data-target="8">0</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
       <span class="label">Days</span>
-      <span class="value">3</span>
+      <span class="value" data-target="3">0</span>
     </div>
   </div>
 
@@ -2807,7 +2992,7 @@
 <div class="glow-line"></div>
 
 <!-- DETAILS -->
-<section id="details">
+<section id="details" class="reveal">
   <div class="details-inner">
     <div class="details-header reveal">
       <div class="section-label">Conference Details</div>
@@ -2819,54 +3004,76 @@
         <div class="detail-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </div>
-        <h3>Date & Duration</h3>
-        <p>Three intensive days of diplomacy, debate, and deliberation. Precise dates to be announced — mark your calendar.</p>
+        <h3>DATE & DURATION</h3>
+        <p>Three days of high-level diplomacy, negotiation, and debate. Resolve MUN runs as an intensive conference experience designed to simulate the pace and complexity of real international decision-making.</p>
       </div>
       <div class="detail-card reveal reveal-delay-1">
         <span class="detail-num">02</span>
         <div class="detail-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
         </div>
-        <h3>Venue</h3>
-        <p>A world-class conference facility befitting the calibre of debate. Full venue details coming soon.</p>
+        <h3>VENUE</h3>
+        <p>Hosted at a premier academic campus designed for conferences and large-scale debates. Delegates will experience professional committee rooms and an environment built for serious dialogue.</p>
       </div>
       <div class="detail-card reveal reveal-delay-2">
         <span class="detail-num">03</span>
         <div class="detail-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         </div>
-        <h3>Delegate Count</h3>
-        <p>Limited to 500 delegates across 8 specialized committees, ensuring high-quality debate and meaningful participation.</p>
+        <h3>DELEGATE CAPACITY</h3>
+        <p>Limited to approximately <strong>500 delegates</strong> across eight specialized committees. This ensures every participant receives meaningful speaking time and engagement.</p>
       </div>
       <div class="detail-card reveal reveal-delay-3">
         <span class="detail-num">04</span>
         <div class="detail-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         </div>
-        <h3>Awards</h3>
-        <p>Best Delegate, Outstanding Delegate, Verbal Commendation, and Best Position Paper awards across all committees.</p>
+        <h3>AWARDS</h3>
+        <p>Prestigious awards recognizing excellence in diplomacy and research: • Best Delegate • Outstanding Delegate • Special Mention • Honourable Mention</p>
       </div>
       <div class="detail-card reveal">
         <span class="detail-num">05</span>
         <div class="detail-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
-        <h3>Registration Fee</h3>
-        <p>Tiered registration available. Early bird pricing and institutional group rates available for schools and universities.</p>
+        <h3>REGISTRATION</h3>
+        <p>Flexible registration tiers for individual delegates and school delegations. Early registrations unlock priority committee placement and reduced conference fees.</p>
       </div>
       <div class="detail-card reveal reveal-delay-1">
         <span class="detail-num">06</span>
         <div class="detail-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
-        <h3>Social Night</h3>
-<p>After a day of intense debate, delegates come together for an exclusive evening social on Day 2 — an opportunity to connect, celebrate, and build friendships that extend far beyond the conference.</p>
+        <h3>DELEGATE SOCIAL</h3>
+        <p>On the evening of Day 2, delegates gather for a curated networking event designed to foster friendships, collaboration, and memorable conference moments.</p>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- THE RESOLVE STANDARD -->
+<section id="standard" class="reveal">
+  <div class="standard-grid">
+    <div class="standard-narrative reveal">
+      <div class="section-label">Institutional Excellence</div>
+      <h2 class="section-title">THE RESOLVE<br><span class="title-accent">STANDARD</span></h2>
+      <div class="title-line-divider"></div>
+      <p class="standard-text">"Diplomacy should not be a rehearsal. It is an arena of consequence where intellectual rigor meets uncompromising ambition."</p>
+      <p class="standard-subtext">As a premier private conference, Resolve MUN establishes a new benchmark for excellence. We move beyond simple participation to demand high-level research, nuanced debate, and strategic coalition-building. This is not just a simulation—it is the training ground for those who intend to lead.</p>
+    </div>
+    <div class="standard-visual reveal reveal-delay-2">
+      <div class="standard-orb">
+        <div class="light-node" style="top: 20%; left: 80%; animation: twinkle 3s infinite;"></div>
+        <div class="light-node" style="top: 70%; left: 20%; animation: twinkle 4s infinite;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
 <!-- COMMITTEES -->
-<section id="committees">
+<section id="committees" class="reveal">
   <div class="section-label reveal">Committees</div>
   <h2 class="section-title reveal">THE ARENA OF<br>GLOBAL DEBATE</h2>
   <p class="section-body reveal" style="max-width: 600px;">Eight specialized committees, each tackling the world's most consequential challenges. Full committee topics and study guides coming soon.</p>
@@ -2926,43 +3133,62 @@
 <div class="glow-line"></div>
 
 <!-- EXPERIENCE -->
-<section id="experience">
+<section id="experience" class="reveal">
   <div class="experience-inner">
     <div class="section-label reveal">The Experience</div>
     <h2 class="section-title reveal">MORE THAN A<br>CONFERENCE</h2>
     <div class="experience-grid">
       <div class="experience-list reveal">
-        <div class="exp-item active">
+        <div class="exp-item active" data-exp="01">
           <span class="exp-num">01</span>
           <h4>Opening Ceremony</h4>
         </div>
-        <div class="exp-item">
+        <div class="exp-item" data-exp="02">
           <span class="exp-num">02</span>
           <h4>Committee Sessions</h4>
         </div>
-        <div class="exp-item">
+        <div class="exp-item" data-exp="03">
           <span class="exp-num">03</span>
           <h4>Crisis Simulations</h4>
         </div>
-        <div class="exp-item">
+        <div class="exp-item" data-exp="04">
           <span class="exp-num">04</span>
           <h4>Delegate Social</h4>
         </div>
-        <div class="exp-item">
+        <div class="exp-item" data-exp="05">
           <span class="exp-num">05</span>
           <h4>Awards Gala</h4>
         </div>
       </div>
       <div class="experience-showcase reveal reveal-delay-2">
-        <div class="showcase-visual"></div>
-        <div class="showcase-text">RESOLVE<br>MUN<br>2026</div>
+        <div class="showcase-visual active" id="exp-vis-01">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">OPENING<br>CEREMONY</div>
+        </div>
+        <div class="showcase-visual" id="exp-vis-02">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">COMMITTEE<br>SESSIONS</div>
+        </div>
+        <div class="showcase-visual" id="exp-vis-03">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">CRISIS<br>SIMULATIONS</div>
+        </div>
+        <div class="showcase-visual" id="exp-vis-04">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">DELEGATE<br>SOCIAL</div>
+        </div>
+        <div class="showcase-visual" id="exp-vis-05">
+          <div class="visual-gradient"></div>
+          <div class="showcase-text">AWARDS<br>GALA</div>
+        </div>
+        <div class="showcase-static-bg">RESOLVE<br>MUN<br>2026</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- VENUE -->
-<section id="venue">
+<section id="venue" class="reveal">
   <div class="section-label reveal">Venue</div>
   <h2 class="section-title reveal">A STAGE WORTHY<br>OF THE DEBATE</h2>
   <div class="venue-layout">
@@ -2987,7 +3213,7 @@
 </section>
 
 <!-- SECRETARIAT -->
-<section id="secretariat">
+<section id="secretariat" class="reveal">
   <div class="sec-header reveal">
     <div class="section-label">Secretariat</div>
     <h2 class="section-title">MEET THE TEAM</h2>
@@ -3815,21 +4041,46 @@
   const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
 
   if (!isTouchDevice && hasFinePointer) {
+    const heroBg = document.querySelector('.hero-bg');
+    const emblem = document.querySelector('.emblem-wrapper');
+    const showcase = document.querySelector('.experience-showcase');
+
+    let targetPX = 0, targetPY = 0;
+    let currentPX = 0, currentPY = 0;
+
     document.addEventListener('mousemove', e => {
       mx = e.clientX; my = e.clientY;
+      
+      // Calculate parallax offset (-0.5 to 0.5 range)
+      const nx = (e.clientX / window.innerWidth) - 0.5;
+      const ny = (e.clientY / window.innerHeight) - 0.5;
+      targetPX = nx * 30; // Max 15px each way
+      targetPY = ny * 30;
+
       // Show cursor on first move
       if (cursor.style.opacity === '0' || cursor.style.opacity === '') {
         cursor.style.opacity = '1';
         cursorRing.style.opacity = '1';
       }
     });
-    function animateCursor() {
+
+    function animateFrame() {
+      // Smooth cursor
       rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
       cursor.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
       cursorRing.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
-      requestAnimationFrame(animateCursor);
+      
+      // Smooth parallax
+      currentPX += (targetPX - currentPX) * 0.08;
+      currentPY += (targetPY - currentPY) * 0.08;
+
+      if (heroBg) heroBg.style.transform = `translate3d(${currentPX}px, ${currentPY}px, 0) scale(1.1)`;
+      if (emblem) emblem.style.transform = `translate3d(${-currentPX * 0.5}px, ${-currentPY * 0.5}px, 0)`;
+      if (showcase) showcase.style.transform = `translate3d(${currentPX * 0.3}px, ${currentPY * 0.3}px, 0)`;
+
+      requestAnimationFrame(animateFrame);
     }
-    animateCursor();
+    animateFrame();
 
     // Reset basic styles to work with transform3d
     cursor.style.left = '0'; cursor.style.top = '0';
@@ -4435,6 +4686,66 @@
 
   window.addEventListener('scroll', () => {
     navbar.classList.toggle('scrolled', window.scrollY > 60);
+    
+    // Active Navigation Highlighting
+    const sections = ['hero', 'about', 'details', 'standard', 'committees', 'experience', 'venue', 'secretariat'];
+    let current = '';
+
+    // If we're at the very bottom of the page, it shouldn't hold the last section highlight necessarily
+    // unless the bottom section is clearly visible. If we pass the last section, clear current.
+    const scrollBottom = window.innerHeight + window.pageYOffset;
+    const pageHeight = document.documentElement.scrollHeight;
+
+    sections.forEach(s => {
+      const section = document.getElementById(s);
+      if (section) {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        // If the top of the section is above our scroll line (plus offset)
+        if (pageYOffset >= sectionTop - 250) {
+          current = s;
+        }
+        // If we have scrolled past the section entirely, clear it
+        if (pageYOffset > (sectionTop + sectionHeight - 100)) {
+           if (current === s) current = '';
+        }
+      }
+    });
+
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.classList.remove('active');
+      const href = link.getAttribute('href').substring(1);
+      if (href === current) {
+        link.classList.add('active');
+      }
+    });
+    
+    // Venue Parallax Effect
+    const venueVisual = document.querySelector('.venue-visual');
+    if (venueVisual) {
+      const img = venueVisual.querySelector('img');
+      if (img) {
+        const rect = venueVisual.getBoundingClientRect();
+        const viewHeight = window.innerHeight;
+        
+        // Only calculate if section is in view
+        if (rect.top < viewHeight && rect.bottom > 0) {
+          // Calculate how far through the element the scroll is (0 to 1)
+          const elementHeight = rect.height;
+          const elementVisible = viewHeight - rect.top;
+          const scrollFraction = Math.max(0, Math.min(1, elementVisible / (viewHeight + elementHeight)));
+          
+          // Delay movement until the section is fully established on screen
+          // Movement starts after the initial reveal and landing
+          let moveAmount = 0;
+          if (scrollFraction > 0.45) { // Threshold for "reading part"
+            moveAmount = (scrollFraction - 0.45) * 50; 
+          }
+          
+          img.style.transform = `translateY(${moveAmount}px)`;
+        }
+      }
+    }
   });
 
   // SCROLL REVEAL
@@ -4622,27 +4933,97 @@
 
   // EXPERIENCE tabs
   const expItems = document.querySelectorAll('.exp-item');
-  const showcaseText = document.querySelector('.showcase-text');
-  const expContent = [
-    'OPENING<br>CEREMONY',
-    'COMMITTEE<br>SESSIONS',
-    'CRISIS<br>SIMULATIONS',
-    'DELEGATE<br>SOCIAL',
-    'AWARDS<br>GALA'
-  ];
-  expItems.forEach((item, idx) => {
-    item.addEventListener('click', () => {
-      expItems.forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-      if (showcaseText) {
-        showcaseText.style.opacity = '0';
-        setTimeout(() => {
-          showcaseText.innerHTML = expContent[idx] || 'RESOLVE<br>MUN<br>2026';
-          showcaseText.style.opacity = '1';
-        }, 200);
+  const expVisuals = document.querySelectorAll('.showcase-visual');
+  let currentExpIdx = 0;
+  let expAutoPlayTimer;
+
+  const updateExp = (index) => {
+    // Update items
+    expItems.forEach(i => i.classList.remove('active'));
+    expItems[index].classList.add('active');
+
+    // Update visuals
+    const expId = expItems[index].getAttribute('data-exp');
+    expVisuals.forEach(v => {
+      v.classList.remove('active');
+      if (v.id === `exp-vis-${expId}`) {
+        v.classList.add('active');
       }
     });
+    
+    currentExpIdx = index;
+  };
+
+  const startAutoPlay = () => {
+    stopAutoPlay();
+    expAutoPlayTimer = setInterval(() => {
+      let nextIdx = (currentExpIdx + 1) % expItems.length;
+      updateExp(nextIdx);
+    }, 2000);
+  };
+
+  const stopAutoPlay = () => {
+    if (expAutoPlayTimer) clearInterval(expAutoPlayTimer);
+  };
+
+  expItems.forEach((item, idx) => {
+    item.addEventListener('mouseenter', () => {
+      stopAutoPlay();
+      updateExp(idx);
+    });
+    
+    item.addEventListener('mouseleave', () => {
+      startAutoPlay();
+    });
+
+    item.addEventListener('click', () => {
+      stopAutoPlay();
+      updateExp(idx);
+      // Optional: don't restart autoplay on click to let user "stick" to a slide
+      // startAutoPlay(); 
+    });
   });
+
+  // Start the 2-second rotation initially
+  startAutoPlay();
+
+  // HERO META NUMBER SCROLL EFFECT
+  const animateValue = (obj, start, end, duration) => {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      obj.innerHTML = Math.floor(progress * (end - start) + start);
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  };
+
+  const observerOptions = {
+    threshold: 0.5
+  };
+
+  const heroMetaObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const valueElements = entry.target.querySelectorAll('.value');
+        valueElements.forEach(el => {
+          const target = parseInt(el.getAttribute('data-target'));
+          if (!isNaN(target)) {
+            animateValue(el, 0, target, 2000);
+          }
+        });
+        heroMetaObserver.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  const heroMeta = document.querySelector('.hero-meta');
+  if (heroMeta) {
+    heroMetaObserver.observe(heroMeta);
+  }
 
   // SECRETARIAT INFINITE SCROLL & MOUSE DRAG & WHEEL SUPPORT
   const track = document.getElementById('secTrack');
