@@ -1609,7 +1609,7 @@
     position: relative;
   }
   .coming-soon-overlay::after {
-    content: 'Coming Soon';
+    content: 'Applications Starting Soon! Follow @mun.resolve on Instagram';
     display: block !important;
     position: absolute;
     top: 50%;
@@ -1631,9 +1631,52 @@
   }
 
   /* Specific Adjustments */
-  .secretariat-coming-soon { height: 600px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); border-radius: 40px; margin-top: 60px; }
+  .secretariat-coming-soon { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: rgba(0, 0, 0, 0.4); 
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 40px; 
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  .secretariat-coming-soon::after {
+    font-size: 1.1rem !important;
+    padding: 15px 35px !important;
+    background: rgba(0, 113, 227, 0.2) !important;
+    box-shadow: 0 10px 40px rgba(0, 113, 227, 0.3);
+  }
   .cash-prize-coming-soon { border: 1px dashed rgba(0, 113, 227, 0.3); padding: 10px; border-radius: 12px; }
-  .oc-coming-soon { padding: 40px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 20px; margin-top: 40px; text-align: center; }
+  .oc-coming-soon { 
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+  .oc-coming-soon::after {
+    font-size: 1.1rem !important;
+    padding: 15px 35px !important;
+    background: rgba(0, 113, 227, 0.2) !important;
+  }
   .committee-card::after {
     content: '';
     position: absolute; inset: 0;
@@ -2015,8 +2058,6 @@
     margin-right: -50vw;
     background: rgba(255,255,255,0.01);
     /* Dual layer mask for smoother fade out */
-    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
@@ -4602,11 +4643,11 @@
       if (secTrack) {
         // Blur the individual track or the whole section
         secTrack.classList.add('is-coming-soon');
-        const secHeader = document.querySelector('.sec-header');
-        if (secHeader) {
+        const container = document.querySelector('.sec-carousel-container');
+        if (container) {
           const banner = document.createElement('div');
           banner.className = 'secretariat-coming-soon coming-soon-overlay';
-          secTrack.parentNode.insertBefore(banner, secTrack);
+          container.appendChild(banner);
         }
       }
 
@@ -4626,12 +4667,13 @@
       // 5. OC Applications Section
       const ocSection = document.getElementById('oc-applications');
       if (ocSection) {
+        ocSection.style.position = 'relative'; // Ensure absolute positioning works
         const ocInner = ocSection.querySelector('.oc-inner');
         if (ocInner) {
           ocInner.classList.add('is-coming-soon');
           const banner = document.createElement('div');
           banner.className = 'oc-coming-soon coming-soon-overlay';
-          ocInner.parentNode.insertBefore(banner, ocInner);
+          ocSection.appendChild(banner);
         }
       }
     }
