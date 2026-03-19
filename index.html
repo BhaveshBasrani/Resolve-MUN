@@ -10,7 +10,7 @@
   true  - Reveal everything
   false - Hide applications, blur IFI/Illuminati/Secretariat/Cash Prize
 -->
-<script>window.isLive = true;</script>
+<script>window.isLive = false;</script>
 <link rel="icon" type="image/svg+xml" href="images/Logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
@@ -1543,44 +1543,140 @@
     cursor: pointer;
   }
 
-  /* Committee Modal Specifics */
+  /* Coming Soon Waitlist Redesign */
   .comm-modal-content {
-    max-width: 500px;
+    max-width: 480px;
+    padding: 60px 50px;
+    background: rgba(5, 5, 7, 0.95);
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
     text-align: center;
-    padding: 60px 40px;
-    background: linear-gradient(135deg, #0a0a0a 0%, #111 100%);
-    border: 1px solid rgba(79, 172, 254, 0.3);
-    box-shadow: 0 0 50px rgba(79, 172, 254, 0.1);
+    position: relative;
+    overflow: hidden;
   }
+
+  .comm-modal-content::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(51, 14, 146, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
   .comm-modal-icon {
-    font-size: 3rem;
+    font-size: 1.2rem;
     margin-bottom: 24px;
-    display: inline-block;
-    filter: drop-shadow(0 0 15px rgba(79, 172, 254, 0.5));
-    animation: float 3s infinite ease-in-out;
+    opacity: 0.5;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-family: 'Oswald', sans-serif;
+    color: var(--white);
   }
+
   .comm-modal-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.5rem;
-    letter-spacing: 2px;
+    font-size: 3.5rem;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
     color: var(--white);
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    font-weight: 400;
   }
+
   .comm-modal-agenda {
-    font-family: 'Oswald', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 3px;
-    color: #4facfe;
-    text-transform: uppercase;
-    margin-bottom: 30px;
-    display: block;
-    opacity: 0.8;
-  }
-  .comm-modal-text {
     font-family: 'Crimson Pro', serif;
     font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.6;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 24px;
+    display: block;
+  }
+
+  .comm-modal-text {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.7;
+    margin-bottom: 40px;
+    font-weight: 300;
+  }
+
+  /* Minimal Waitlist Component */
+  .waitlist-form {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    padding: 6px 6px 6px 20px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .waitlist-form:focus-within {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .waitlist-form input {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    width: 100%;
+    outline: none;
+  }
+
+  .waitlist-form input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+  }
+
+  .waitlist-btn {
+    background: var(--white);
+    color: var(--black);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .waitlist-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+  }
+
+  .waitlist-btn:active {
+    transform: scale(0.98);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+
+  .modal-close:hover {
+    color: var(--white);
   }
 
   /* COMING SOON STATES (When isLive is false) */
@@ -3228,14 +3324,26 @@
 <div class="modal-overlay" id="commModal">
   <div class="modal-content comm-modal-content">
     <button class="modal-close" onclick="closeCommModal()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
     </button>
-    <div class="comm-modal-icon">📜</div>
-    <h2 class="comm-modal-title" id="commModalTitle">UNGA - DISEC</h2>
-    <span class="comm-modal-agenda">Agenda Revealing Soon</span>
-    <p class="comm-modal-text">The Secretariat is meticulously crafting the agendas to ensure the highest quality of debate and diplomatic engagement. Stay tuned for the official release.</p>
-    <div style="margin-top: 40px;">
-      <button class="btn-primary" onclick="closeCommModal()"><span>Understood</span></button>
+    <div class="comm-modal-icon" id="commModalIcon">SECRETARIAT</div>
+    <h2 class="comm-modal-title" id="commModalTitle">RESOLVE 2026</h2>
+    <span class="comm-modal-agenda" id="commModalAgenda">Registrations opening soon.</span>
+    <p class="comm-modal-text" id="commModalText">
+      The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.
+    </p>
+    
+    <div id="waitlistContainer">
+      <form class="waitlist-form" id="waitlistForm">
+        <input type="email" id="waitlistEmail" placeholder="Enter your email address" required>
+        <button type="submit" class="waitlist-btn" id="waitlistSubmitBtn">Notify Me</button>
+      </form>
+      <p id="waitlistSuccess" style="display: none; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 0.9rem; margin-top: 20px; opacity: 0.7;">
+        You've been added to the priority list. We will be in touch.
+      </p>
     </div>
   </div>
 </div>
@@ -4052,17 +4160,24 @@
   const selectionModal = document.getElementById('selectionModal');
 
   function openCommModal(title, icon) {
-    // Reset modal content to default "Coming Soon" state first
-    document.getElementById('commModalTitle').innerText = title;
-    document.querySelector('.comm-modal-icon').innerText = icon;
-    document.querySelector('.comm-modal-agenda').innerText = "Agenda Revealing Soon";
-    document.querySelector('.comm-modal-text').innerText = "The Secretariat is meticulously crafting the agendas to ensure the highest quality of debate and diplomatic engagement. Stay tuned for the official release.";
+    // Reset modal content
+    const mIcon = document.getElementById('commModalIcon');
+    const mTitle = document.getElementById('commModalTitle');
+    const mAgenda = document.getElementById('commModalAgenda');
+    const mText = document.getElementById('commModalText');
+    const waitlist = document.getElementById('waitlistContainer');
+
+    mIcon.innerText = "COMMITTEE";
+    mTitle.innerText = title;
+    mAgenda.innerText = "Agenda revealing soon.";
+    mText.innerText = "The Secretariat is meticulously crafting the agendas to ensure the highest quality of debate and diplomatic engagement. Stay tuned for the official release.";
+    waitlist.style.display = 'none';
 
     if (typeof window.isLive !== 'undefined' && !window.isLive && (title === 'IFI' || title === 'ILLUMINATI')) {
-      document.getElementById('commModalTitle').innerText = title + " (Classified)";
-      document.querySelector('.comm-modal-icon').innerText = "🔒";
-      document.querySelector('.comm-modal-agenda').innerText = "Access Denied";
-      document.querySelector('.comm-modal-text').innerText = "This committee is currently under high-level diplomatic embargo. Reveal scheduled soon.";
+      mIcon.innerText = "CLASSIFIED";
+      mTitle.innerText = title;
+      mAgenda.innerText = "Access Denied.";
+      mText.innerText = "This committee is currently under high-level diplomatic embargo. Reveal scheduled soon.";
       document.getElementById('commModal').classList.add('active');
       document.body.style.overflow = 'hidden';
       return;
@@ -4072,17 +4187,58 @@
   }
 
   function openSelection() {
+    const mIcon = document.getElementById('commModalIcon');
+    const mTitle = document.getElementById('commModalTitle');
+    const mAgenda = document.getElementById('commModalAgenda');
+    const mText = document.getElementById('commModalText');
+    const waitlist = document.getElementById('waitlistContainer');
+
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "Registrations";
-      document.querySelector('.comm-modal-icon').innerText = "⏳";
-      document.querySelector('.comm-modal-agenda').innerText = "Opening Soon";
-      document.querySelector('.comm-modal-text').innerText = "Delegate and Delegation registrations are currently being prepared. We are fine-tuning the experience to ensure a seamless process. Stay tuned!";
+      mIcon.innerText = "SECRETARIAT";
+      mTitle.innerText = "RESOLVE 2026";
+      mAgenda.innerText = "Registrations opening soon.";
+      mText.innerText = "The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.";
+      waitlist.style.display = 'block';
+      
       document.getElementById('commModal').classList.add('active');
       document.body.style.overflow = 'hidden';
       return;
     }
     selectionModal.classList.add('active');
     document.body.style.overflow = 'hidden';
+  }
+
+  // Waitlist Logic
+  const waitlistForm = document.getElementById('waitlistForm');
+  if (waitlistForm) {
+    waitlistForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('waitlistSubmitBtn');
+      const success = document.getElementById('waitlistSuccess');
+      const emailInput = document.getElementById('waitlistEmail');
+      const email = emailInput.value;
+      
+      btn.innerText = "Adding...";
+      btn.disabled = true;
+
+      const data = {
+        type: 'WAITLIST_ENTRY',
+        email: email
+      };
+
+      try {
+        // Re-using your existing Google Sheet fetch function!
+        await submitToGoogleSheet('Sheet', data);
+        
+        // Hide form and show success message smoothly
+        waitlistForm.style.display = 'none';
+        success.style.display = 'block';
+      } catch (err) {
+        alert('Network error. Please try again.');
+        btn.innerText = "Notify Me";
+        btn.disabled = false;
+      }
+    });
   }
 
   function closeCommModal() {
@@ -4102,11 +4258,7 @@
 
   function selectPathway(type) {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "Registrations";
-      document.querySelector('.comm-modal-icon').innerText = "⏳";
-      document.querySelector('.comm-modal-agenda').innerText = "Opening Soon";
-      document.querySelector('.comm-modal-text').innerText = "Standard and Delegation applications are being processed. The portal will go live shortly.";
-      document.getElementById('commModal').classList.add('active');
+      openSelection();
       return;
     }
     closeSelection();
@@ -4166,10 +4318,18 @@
 
   function openOcRegistration() {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "OC Applications";
-      document.querySelector('.comm-modal-icon').innerText = "🏗️";
-      document.querySelector('.comm-modal-agenda').innerText = "Recruitment Closed";
-      document.querySelector('.comm-modal-text').innerText = "Organizing Committee recruitment starts shortly. Keep following us for updates!";
+      const mIcon = document.getElementById('commModalIcon');
+      const mTitle = document.getElementById('commModalTitle');
+      const mAgenda = document.getElementById('commModalAgenda');
+      const mText = document.getElementById('commModalText');
+      const waitlist = document.getElementById('waitlistContainer');
+
+      mIcon.innerText = "ORGANIZING COMMITTEE";
+      mTitle.innerText = "BUILD RESOLVE";
+      mAgenda.innerText = "Recruitment starting soon.";
+      mText.innerText = "The operations team is the backbone of our summit. Leave your contact to be notified the moment the portal for the Organizing Committee opens.";
+      waitlist.style.display = 'block';
+
       document.getElementById('commModal').classList.add('active');
       document.body.style.overflow = 'hidden';
       return;
@@ -4270,12 +4430,7 @@
 
   function openRegistration() {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "Registrations";
-      document.querySelector('.comm-modal-icon').innerText = "⏳";
-      document.querySelector('.comm-modal-agenda').innerText = "Opening Soon";
-      document.querySelector('.comm-modal-text').innerText = "Delegate and Delegation registrations are currently being prepared. Stay tuned!";
-      document.getElementById('commModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSelection();
       return;
     }
     regModal.classList.add('active');
@@ -4481,7 +4636,7 @@
     document.documentElement.classList.add('native-cursor');
   }
 
-  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh7vsxqCB4JybJQw03Et-wW9yt6RXAI4LTtGuEYJsXY3fcXj1okTT09gqvD7PtrVVFMg/exec';
+  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwUxQJV4QugrlmE2tVUuDAx8DAJnDBiVIZ6hj7ErCJos2CyW_EEqRqi0IrF1oTGy6dI0g/exec';
   const GOOGLE_SHEET_TAB_DELEGATE = 'Sheet1';
   const GOOGLE_SHEET_TAB_OC = 'Sheet2';
 
