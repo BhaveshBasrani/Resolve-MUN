@@ -41,7 +41,7 @@
   }
 
   @media (pointer: fine) {
-    body, a, button, input, select, textarea, label {
+    .custom-cursor-enabled body, .custom-cursor-enabled a, .custom-cursor-enabled button, .custom-cursor-enabled input, .custom-cursor-enabled select, .custom-cursor-enabled textarea, .custom-cursor-enabled label {
       cursor: none !important;
     }
   }
@@ -2621,8 +2621,11 @@
   }
 
   /* GLOBAL CURSOR HIDE */
-  * {
+  .custom-cursor-enabled * {
     cursor: none !important;
+  }
+  .native-cursor, .native-cursor * {
+    cursor: auto !important;
   }
 
   /* MOBILE RESPONSIVENESS */
@@ -3077,7 +3080,7 @@
 
       <!-- STEP 2: COMMITTEE PREFERENCE -->
       <div class="form-step" id="step2">
-        <a href="https://docs.google.com/spreadsheets/d/your-google-sheet-id/edit" target="_blank" class="btn-matrix">
+        <a href="https://docs.google.com/spreadsheets/d/1JrzFidrz45R9u22V8imxnAY324AM25OmWESxStL3ASU/edit?usp=sharing" target="_blank" class="btn-matrix">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           Country Matrices
         </a>
@@ -4434,11 +4437,14 @@
   const cursorRing = document.getElementById('cursorRing');
   let mx = 0, my = 0, rx = 0, ry = 0;
 
-  // Custom cursor logic only for non-touch devices with a fine pointer (mouse/trackpad)
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+  // Enable custom cursor whenever an interactive fine pointer is available.
+  const hasInteractivePointer =
+    window.matchMedia('(any-pointer: fine)').matches &&
+    window.matchMedia('(any-hover: hover)').matches;
 
-  if (!isTouchDevice && hasFinePointer) {
+  if (hasInteractivePointer) {
+    document.documentElement.classList.add('custom-cursor-enabled');
+    document.documentElement.classList.remove('native-cursor');
     document.addEventListener('mousemove', e => {
       mx = e.clientX; my = e.clientY;
       // Show cursor on first move
@@ -4471,8 +4477,27 @@
   } else {
     cursor.style.display = 'none';
     cursorRing.style.display = 'none';
-    // Ensure native cursor is shown if touch/non-fine pointer
-    document.body.style.cursor = 'auto';
+    document.documentElement.classList.remove('custom-cursor-enabled');
+    document.documentElement.classList.add('native-cursor');
+  }
+
+  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwPWT8Cg1-B8Dwx6dJCbgBjG1GmIb5vwwOgr5zP9ifGoKoi69sXvM_kPQISxmSgEMdXdg/exec';
+  const GOOGLE_SHEET_TAB_DELEGATE = 'Sheet1';
+  const GOOGLE_SHEET_TAB_OC = 'Sheet2';
+
+  async function submitToGoogleSheet(sheetName, payload) {
+    const requestBody = {
+      sheetName,
+      submittedAt: new Date().toISOString(),
+      ...payload
+    };
+
+    await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(requestBody)
+    });
   }
 
   // Helper to attach hover effects to elements
@@ -4522,6 +4547,7 @@
     btn.innerHTML = 'Submitting...';
 
   const data = {
+    type: 'DELEGATE_REGISTRATION',
     name: document.getElementById("regName").value,
     grade: document.getElementById("regGrade").value,
     phone: document.getElementById("regPhone").value,
@@ -4532,33 +4558,29 @@
     experience: document.getElementById("regExp").value,
 
     pref1_committee: document.getElementById("pref1_committee").value,
-    pref1_country: document.getElementById("pref1_country").value,
+    pref1_portfolio1: document.getElementById("pref1_port1")?.value || "",
+    pref1_portfolio2: document.getElementById("pref1_port2")?.value || "",
+    pref1_role: document.getElementById("pref1_role")?.value || "",
 
     pref2_committee: document.getElementById("pref2_committee").value,
-    pref2_country: document.getElementById("pref2_country").value,
+    pref2_portfolio1: document.getElementById("pref2_port1")?.value || "",
+    pref2_portfolio2: document.getElementById("pref2_port2")?.value || "",
+    pref2_role: document.getElementById("pref2_role")?.value || "",
 
     pref3_committee: document.getElementById("pref3_committee").value,
-    pref3_country: document.getElementById("pref3_country").value,
+    pref3_portfolio1: document.getElementById("pref3_port1")?.value || "",
+    pref3_portfolio2: document.getElementById("pref3_port2")?.value || "",
+    pref3_role: document.getElementById("pref3_role")?.value || "",
 
-    payment_method: document.getElementById("payment_method")?.value || "",
-    payment_amount: document.getElementById("payment_amount")?.value || "",
-    payment_utr: document.getElementById("payment_utr")?.value || "",
-    payment_screenshot: document.getElementById("payment_screenshot")?.value || "",
-    payment_date: document.getElementById("payment_date")?.value || "",
-
-    emergency_name: document.getElementById("emergency_name")?.value || "",
-    emergency_phone: document.getElementById("emergency_phone")?.value || "",
-
-    referral: document.getElementById("referral_source")?.value || ""
+    payment_txn_id: document.getElementById("regTxnID")?.value || "",
+    payment_screenshot_link: document.getElementById("regDriveLink")?.value || "",
+    payment_utr: document.getElementById("regUTR")?.value || "",
+    emergency_name: document.getElementById("regEmergencyName")?.value || "",
+    emergency_phone: document.getElementById("regEmergencyPhone")?.value || ""
   };
 
     try {
-      await fetch('https://script.google.com/macros/s/AKfycbwPWT8Cg1-B8Dwx6dJCbgBjG1GmIb5vwwOgr5zP9ifGoKoi69sXvM_kPQISxmSgEMdXdg/exec', {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(data)
-      });
+      await submitToGoogleSheet(GOOGLE_SHEET_TAB_DELEGATE, data);
       alert('Registration Submitted Successfully! The Secretariat will review your application and notify you soon.');
       clearFormData();
       closeRegistration();
@@ -4932,7 +4954,7 @@
 
     try {
       console.log('Sending Delegation Data:', data);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await submitToGoogleSheet(GOOGLE_SHEET_TAB_DELEGATE, data);
       alert('Delegation Registered Successfully! All ' + size + ' delegates have been enrolled. The Secretariat will contact the Faculty Adviser shortly.');
       delRegForm.reset();
       clearDelFormData();
@@ -5072,9 +5094,8 @@
     };
 
     try {
-      // Simulate submission or connect to your backend/gas
       console.log('OC Data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulating network delay
+      await submitToGoogleSheet(GOOGLE_SHEET_TAB_OC, data);
       
       alert('Application Submitted Successfully! The Secretariat will review your OC application soon.');
       ocRegForm.reset();
