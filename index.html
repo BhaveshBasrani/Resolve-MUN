@@ -2656,22 +2656,48 @@
     background: transparent;
     border: none;
     color: var(--white);
-    z-index: 101;
+    z-index: 1001; /* Highest z-index */
     cursor: pointer;
+    position: relative;
+    padding: 10px;
+    width: 44px;
+    height: 44px;
   }
+  
+  .mobile-menu-btn span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--white);
+    margin: 6px auto;
+    transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 2px;
+  }
+
+  .mobile-menu-btn.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+  .mobile-menu-btn.active span:nth-child(2) {
+    opacity: 0;
+  }
+  .mobile-menu-btn.active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
   .nav-links.mobile-active {
     display: flex !important;
     position: fixed;
     top: 0; right: 0; bottom: 0;
-    width: 70%;
-    background: rgba(5, 5, 7, 0.98);
-    backdrop-filter: blur(20px);
+    width: 75%; /* Optimized for mobile reach */
+    height: 100vh !important; /* Force full height */
+    background: #050507 !important; /* Solid background */
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: 40px;
-    z-index: 99;
-    border-left: 1px solid var(--card-border);
+    z-index: 1000;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    box-shadow: -15px 0 45px rgba(0,0,0,0.9);
     animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes slideIn {
@@ -2685,8 +2711,20 @@
     section { padding: 80px 20px !important; }
     #hero { padding: 140px 20px 60px !important; min-height: auto; }
     
+    /* --- SIDEBAR GLITCH FIX --- */
+    nav.scrolled {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background: #050507 !important;
+    }
+    
+    .nav-links.mobile-active {
+      height: 100vh !important;
+      bottom: auto !important;
+    }
+    
     /* HERO SECTION */
-    .hero-title { font-size: clamp(3.5rem, 14vw, 5rem) !important; line-height: 1.1; letter-spacing: -0.02em; }
+    .hero-title { font-size: clamp(3.2rem, 12vw, 4.5rem) !important; line-height: 1.1; letter-spacing: -0.02em; }
     .hero-tagline { font-size: 0.7rem !important; opacity: 0.8; letter-spacing: 0.2em !important; }
     .hero-eyebrow { font-size: 0.55rem; letter-spacing: 0.15em; line-height: 1.5; }
     
@@ -2727,11 +2765,11 @@
     
     /* Reveal "POOL COMING" or other overlays properly */
     .about-stat .coming-soon-overlay::after { 
-      font-size: 0.65rem !important; 
-      padding: 5px !important; 
+      font-size: 0.7rem !important; 
+      padding: 10px !important; 
       white-space: normal !important; 
       width: 90%; 
-      line-height: 1.3;
+      line-height: 1.4;
       left: 50% !important;
       top: 50% !important;
       transform: translate(-50%, -50%) !important;
@@ -2753,24 +2791,24 @@
     /* 2. SECRETARIAT CAROUSEL OVERLAY FIX */
     .sec-carousel-container { width: 100vw !important; margin-left: -20px !important; padding: 20px 0; overflow-x: hidden; position: relative; left: 0; }
     .sec-track { padding-left: 20px !important; }
-    .sec-card { width: 260px; height: 320px; padding: 25px 15px; margin: 0 8px; }
+    .sec-card { width: 280px; height: 350px; padding: 25px 15px; margin: 0 10px; }
     .secretariat-coming-soon::after { 
-      white-space: normal !important; text-align: center; width: 90% !important; max-width: 300px; line-height: 1.5; 
-      padding: 15px 20px !important; box-sizing: border-box;
+      white-space: normal !important; text-align: center; width: 85% !important; max-width: 300px; line-height: 1.5; 
+      padding: 20px !important; box-sizing: border-box; font-size: 1rem !important;
     }
 
     /* OC APPLICATIONS */
     .oc-inner, .oc-layout { width: 100%; padding: 0; box-sizing: border-box; overflow-wrap: break-word; }
     .oc-layout { grid-template-columns: 1fr; gap: 40px; }
-    .oc-coming-soon::after { white-space: normal !important; text-align: center; width: 90%; max-width: 300px; line-height: 1.5; }
+    .oc-coming-soon::after { white-space: normal !important; text-align: center; width: 85%; max-width: 300px; line-height: 1.5; padding: 20px !important; font-size: 1rem !important; }
     .oc-card { padding: 30px 20px; }
-    .oc-card-title { font-size: 2rem; }
+    .oc-card-title { font-size: 1.8rem; }
     
     /* CTA ACTIONS */
-    #register .cta-actions { display: flex; flex-direction: column; gap: 16px; width: 100%; padding: 0; }
+    #register .cta-actions { display: flex; flex-direction: column; gap: 16px; width: 100%; padding: 0 20px; }
     #register .cta-actions .btn-primary, 
     #register .cta-actions .btn-secondary { 
-      width: 100% !important; max-width: 100%; box-sizing: border-box; white-space: normal; padding: 16px; height: auto; text-align: center; 
+      width: 100% !important; max-width: 300px; margin: 0 auto; box-sizing: border-box; white-space: normal; padding: 16px; height: auto; text-align: center; 
     }
 
     /* 1. FOOTER BOTTOM CENTERING */
@@ -2809,15 +2847,15 @@
     .nav-links.mobile-active .nav-cta { display: flex !important; margin-top: 20px; }
     .cursor, .cursor-ring { display: none !important; }
     * { cursor: auto !important; }
-    .particles-canvas { opacity: 0.3; }
-  }
-
-  @media (max-width: 480px) {
+  .particles-canvas { opacity: 0 !important; pointer-events: none; }
+  
+  /* Sidebar stacking fix */
+  nav { z-index: 1000 !important; background: #050507 !important; }
     section { padding: 60px 15px !important; }
-    .about-stat-grid { grid-template-columns: 1fr !important; }
+    #about .about-stat-grid { grid-template-columns: 1fr 1fr !important; }
     .hero-title { font-size: clamp(2.8rem, 12vw, 3.5rem) !important; }
     .countdown-num { font-size: 1.6rem !important; }
-    .sec-card { width: 240px; } 
+    .sec-card { width: 260px; } 
     .letter-container { padding: 60px 20px 30px 20px; }
     .letter-container::before { height: 40px; left: 15px; top: 65px; }
     .letter-container::after { font-size: 1.6rem; left: 12px; top: 55px; }
@@ -3155,11 +3193,9 @@
     RESOLVE MUN
   </a>
   <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12" class="line-1"></line>
-      <line x1="3" y1="6" x2="21" y2="6" class="line-2"></line>
-      <line x1="3" y1="18" x2="21" y2="18" class="line-3"></line>
-    </svg>
+    <span></span>
+    <span></span>
+    <span></span>
   </button>
   <ul class="nav-links" id="navLinks">
     <li><a href="#hero">Home</a></li>
@@ -4993,6 +5029,7 @@
   const navLinks = document.getElementById('navLinks');
 
   mobileMenuBtn.addEventListener('click', () => {
+    mobileMenuBtn.classList.toggle('active');
     navLinks.classList.toggle('mobile-active');
     // Lock background scroll
     document.body.style.overflow = navLinks.classList.contains('mobile-active') ? 'hidden' : '';
@@ -5001,6 +5038,7 @@
   // Close menu when a link is clicked
   navLinks.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
+      mobileMenuBtn.classList.remove('active');
       navLinks.classList.remove('mobile-active');
       // Unlock background scroll
       document.body.style.overflow = '';
