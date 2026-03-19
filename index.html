@@ -4048,21 +4048,13 @@
   const regModal = document.getElementById('regModal');
   const selectionModal = document.getElementById('selectionModal');
 
-  function openSelection() {
-    if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "Coming Soon";
-      document.querySelector('.comm-modal-icon').innerText = "⏳";
-      document.querySelector('.comm-modal-agenda').innerText = "Applications Closed";
-      document.querySelector('.comm-modal-text').innerText = "Delegate and Delegation registrations are currently being prepared. Stay tuned!";
-      document.getElementById('commModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-      return;
-    }
-    selectionModal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
   function openCommModal(title, icon) {
+    // Reset modal content to default "Coming Soon" state first
+    document.getElementById('commModalTitle').innerText = title;
+    document.querySelector('.comm-modal-icon').innerText = icon;
+    document.querySelector('.comm-modal-agenda').innerText = "Agenda Revealing Soon";
+    document.querySelector('.comm-modal-text').innerText = "The Secretariat is meticulously crafting the agendas to ensure the highest quality of debate and diplomatic engagement. Stay tuned for the official release.";
+
     if (typeof window.isLive !== 'undefined' && !window.isLive && (title === 'IFI' || title === 'ILLUMINATI')) {
       document.getElementById('commModalTitle').innerText = title + " (Classified)";
       document.querySelector('.comm-modal-icon').innerText = "🔒";
@@ -4072,9 +4064,21 @@
       document.body.style.overflow = 'hidden';
       return;
     }
-    document.getElementById('commModalTitle').innerText = title;
-    document.querySelector('.comm-modal-icon').innerText = icon;
     document.getElementById('commModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openSelection() {
+    if (typeof window.isLive !== 'undefined' && !window.isLive) {
+      document.getElementById('commModalTitle').innerText = "Registrations";
+      document.querySelector('.comm-modal-icon').innerText = "⏳";
+      document.querySelector('.comm-modal-agenda').innerText = "Opening Soon";
+      document.querySelector('.comm-modal-text').innerText = "Delegate and Delegation registrations are currently being prepared. We are fine-tuning the experience to ensure a seamless process. Stay tuned!";
+      document.getElementById('commModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    selectionModal.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
 
@@ -4095,12 +4099,12 @@
 
   function selectPathway(type) {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "Coming Soon";
+      document.getElementById('commModalTitle').innerText = "Registrations";
       document.querySelector('.comm-modal-icon').innerText = "⏳";
-      document.querySelector('.comm-modal-agenda').innerText = "Registrations Closed";
-      document.querySelector('.comm-modal-text').innerText = "All applications are currently under internal maintenance. We will open recruitment shortly.";
+      document.querySelector('.comm-modal-agenda').innerText = "Opening Soon";
+      document.querySelector('.comm-modal-text').innerText = "Standard and Delegation applications are being processed. The portal will go live shortly.";
       document.getElementById('commModal').classList.add('active');
-      return; // Keep selection modal open or close it based on preference
+      return;
     }
     closeSelection();
     if (type === 'delegate') {
@@ -4159,9 +4163,9 @@
 
   function openOcRegistration() {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "Coming Soon";
-      document.querySelector('.comm-modal-icon').innerText = "⏳";
-      document.querySelector('.comm-modal-agenda').innerText = "Applications Closed";
+      document.getElementById('commModalTitle').innerText = "OC Applications";
+      document.querySelector('.comm-modal-icon').innerText = "🏗️";
+      document.querySelector('.comm-modal-agenda').innerText = "Recruitment Closed";
       document.querySelector('.comm-modal-text').innerText = "Organizing Committee recruitment starts shortly. Keep following us for updates!";
       document.getElementById('commModal').classList.add('active');
       document.body.style.overflow = 'hidden';
@@ -4251,9 +4255,9 @@
 
   function openRegistration() {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      document.getElementById('commModalTitle').innerText = "Coming Soon";
+      document.getElementById('commModalTitle').innerText = "Registrations";
       document.querySelector('.comm-modal-icon').innerText = "⏳";
-      document.querySelector('.comm-modal-agenda').innerText = "Applications Closed";
+      document.querySelector('.comm-modal-agenda').innerText = "Opening Soon";
       document.querySelector('.comm-modal-text').innerText = "Delegate and Delegation registrations are currently being prepared. Stay tuned!";
       document.getElementById('commModal').classList.add('active');
       document.body.style.overflow = 'hidden';
@@ -5655,6 +5659,9 @@
             { filter: 'brightness(1) saturate(1)' }
         ], { duration: 5000 });
     }
+
+
+
 
     container.addEventListener('click', (e) => {
         if(isDragging) e.preventDefault();
