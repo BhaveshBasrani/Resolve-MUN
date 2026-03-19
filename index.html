@@ -10,7 +10,7 @@
   true  - Reveal everything
   false - Hide applications, blur IFI/Illuminati/Secretariat/Cash Prize
 -->
-<script>window.isLive = false;</script>
+<script>window.isLive = true;</script>
 <link rel="icon" type="image/svg+xml" href="images/Logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
@@ -2627,6 +2627,7 @@
 
   /* MOBILE RESPONSIVENESS */
   @media (max-width: 1024px) {
+    html, body { overflow-x: hidden !important; width: 100%; position: relative; }
     section { padding-left: 24px; padding-right: 24px; }
     .section-label { justify-content: center; }
     .section-title, .section-body { text-align: center; }
@@ -2643,6 +2644,10 @@
     
     .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
     .sec-grid { grid-template-columns: repeat(3, 1fr); }
+
+    /* Performance Tweak: Slow down heavy animations on tablets */
+    .orbit-ring-1, .orbit-ring-2, .orbit-ring-3 { animation-duration: 40s !important; }
+    .particles-canvas { opacity: 0.5; }
   }
 
   /* Hamburguer Menu */
@@ -2675,119 +2680,147 @@
   }
 
   @media (max-width: 768px) {
-    .mobile-menu-btn { display: block; }
-    .nav-cta { display: none; } /* Hide register button in desktop-nav on phone */
-    .nav-links.mobile-active .nav-cta { display: flex !important; }
-
-    /* Cursor handling on mobile */
-    .cursor, .cursor-ring { display: none !important; }
-    * { cursor: auto !important; }
-    body { cursor: auto !important; }
-
-    /* Layout Adjustments */
-    main, section { padding: 60px 20px !important; }
-    #hero { padding: 120px 20px 60px !important; min-height: auto; }
+    /* 1. Global Layout & Spacing */
+    html, body { overflow-x: hidden !important; width: 100%; position: relative; }
+    section { padding: 80px 20px !important; }
+    #hero { padding: 140px 20px 60px !important; min-height: auto; }
     
-    /* Hero Adjustments */
-    .hero-title { font-size: clamp(3.5rem, 15vw, 5rem); }
-    .hero-eyebrow { font-size: 0.55rem; letter-spacing: 0.15em; width: 90%; margin: 0 auto; line-height: 1.4; }
-    .hero-meta { 
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px; 
-      justify-content: center;
-      background: rgba(255,255,255,0.03);
-      padding: 15px;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 320px;
-      margin: 20px auto;
+    /* HERO SECTION */
+    .hero-title { font-size: clamp(3.5rem, 14vw, 5rem) !important; line-height: 1.1; letter-spacing: -0.02em; }
+    .hero-tagline { font-size: 0.7rem !important; opacity: 0.8; letter-spacing: 0.2em !important; }
+    .hero-eyebrow { font-size: 0.55rem; letter-spacing: 0.15em; line-height: 1.5; }
+    
+    .section-title, #about .section-title { 
+      font-size: clamp(2.2rem, 9vw, 2.6rem) !important; 
+      text-align: center !important; 
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      margin-bottom: 20px !important;
     }
-    .hero-meta-item {
-      padding: 8px;
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 8px;
+    .section-body { text-align: center !important; font-size: 1rem !important; margin: 0 auto 30px !important; line-height: 1.6 !important; }
+    .section-label { justify-content: center !important; margin-bottom: 15px !important; }
+    .title-line-divider { margin: 0 auto 24px !important; }
+    
+    /* 5 & 6. ABOUT SECTION REORDERING & CENTERING */
+    #about .about-inner, #about .about-visual, #about .about-content { display: contents; }
+    #about { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 80px; gap: 0; }
+    #about .section-label { order: 1; justify-content: center; margin: 0 auto 15px auto !important; width: 100%; }
+    #about .section-title { order: 2; text-align: center; margin-bottom: 20px !important; width: 100%; }
+    #about .title-line-divider { order: 3; margin: 0 auto 30px auto !important; }
+    #about .emblem-wrapper { order: 4; margin: 0 auto 30px auto !important; width: 100%; }
+    #about .section-body { order: 5; text-align: center; margin-bottom: 20px !important; width: 100%; }
+    #about .about-stat-grid { order: 6; width: 100%; margin-top: 30px !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; padding: 15px !important; border-radius: 16px; }
+    
+    .emblem-wrapper, .emblem-container { min-height: 220px !important; overflow: hidden; }
+    .logo-halo, .emblem-glow { width: 220px !important; height: 220px !important; animation: none !important; opacity: 0.4; }
+    .emblem-main, .emblem-logo { width: 100% !important; max-width: 200px !important; animation-duration: 10s !important; }
+    
+    /* Simplify or Disable Rings for Performance */
+    .orbit-ring-1, .orbit-ring-2, .orbit-ring-3 { border-color: rgba(37, 99, 235, 0.05); }
+    .orbit-ring-3 { display: none; }
+    .orbit-ring-1 { width: 260px; height: 260px; animation-duration: 30s !important; }
+    .orbit-ring-2 { width: 320px; height: 320px; animation-duration: 45s !important; }
+    
+    .about-stat { padding: 15px 10px !important; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 110px; }
+    .about-stat .num { font-size: 1.8rem !important; margin-bottom: 5px; }
+    .about-stat .desc { font-size: 0.65rem !important; letter-spacing: 1px !important; line-height: 1.2; text-align: center; width: 100%; white-space: normal !important; display: block; }
+    
+    /* Reveal "POOL COMING" or other overlays properly */
+    .about-stat .coming-soon-overlay::after { 
+      font-size: 0.65rem !important; 
+      padding: 5px !important; 
+      white-space: normal !important; 
+      width: 90%; 
+      line-height: 1.3;
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      word-break: break-word !important;
+    }
+
+    /* VENUE & COMMITTEES */
+    .venue-layout { grid-template-columns: 1fr; gap: 20px; }
+    .venue-visual { width: 100%; max-width: 100%; margin: 0 auto; border-radius: 12px; overflow: hidden; height: 250px; }
+    .venue-visual img { object-fit: cover; width: 100%; height: 100%; }
+    
+    /* 3. VENUE TAGS CENTERING */
+    .venue-tags { justify-content: center; text-align: center; margin-top: 20px; }
+
+    /* 4. COMMITTEES GRID (Up and Down Stack) */
+    .committees-grid { grid-template-columns: 1fr !important; gap: 20px; }
+    .committee-card { padding: 30px 24px; text-align: center; }
+
+    /* 2. SECRETARIAT CAROUSEL OVERLAY FIX */
+    .sec-carousel-container { width: 100vw !important; margin-left: -20px !important; padding: 20px 0; overflow-x: hidden; position: relative; left: 0; }
+    .sec-track { padding-left: 20px !important; }
+    .sec-card { width: 260px; height: 320px; padding: 25px 15px; margin: 0 8px; }
+    .secretariat-coming-soon::after { 
+      white-space: normal !important; text-align: center; width: 90% !important; max-width: 300px; line-height: 1.5; 
+      padding: 15px 20px !important; box-sizing: border-box;
+    }
+
+    /* OC APPLICATIONS */
+    .oc-inner, .oc-layout { width: 100%; padding: 0; box-sizing: border-box; overflow-wrap: break-word; }
+    .oc-layout { grid-template-columns: 1fr; gap: 40px; }
+    .oc-coming-soon::after { white-space: normal !important; text-align: center; width: 90%; max-width: 300px; line-height: 1.5; }
+    .oc-card { padding: 30px 20px; }
+    .oc-card-title { font-size: 2rem; }
+    
+    /* CTA ACTIONS */
+    #register .cta-actions { display: flex; flex-direction: column; gap: 16px; width: 100%; padding: 0; }
+    #register .cta-actions .btn-primary, 
+    #register .cta-actions .btn-secondary { 
+      width: 100% !important; max-width: 100%; box-sizing: border-box; white-space: normal; padding: 16px; height: auto; text-align: center; 
+    }
+
+    /* 1. FOOTER BOTTOM CENTERING */
+    .footer-top { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+    .footer-brand, .footer-logo-link, .logo-text { display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; text-align: center; }
+    .footer-col { text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .footer-col ul { padding: 0; list-style: none; }
+    .footer-bottom { flex-direction: column !important; align-items: center !important; gap: 20px !important; text-align: center; }
+    .footer-date-pill { position: relative !important; left: auto !important; top: auto !important; transform: none !important; margin: 0 auto; }
+
+    /* Other Mobile Fixes */
+    .hero-meta { 
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; 
+      width: 100%; max-width: 320px; margin: 25px auto;
+      background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;
     }
     .hero-meta-divider { display: none; }
-    .hero-actions { flex-direction: column; width: 100%; max-width: 280px; margin: 30px auto 0; gap: 12px; }
-    .btn-primary, .btn-secondary { width: 100%; text-align: center; justify-content: center; padding: 14px 20px; font-size: 0.75rem; }
-
-    /* Countdown Fix */
-    #countdown {
-      padding: 40px 10px;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .countdown-label { 
-      margin-right: 0; 
-      margin-bottom: 0; 
-      font-size: 0.65rem; 
-      opacity: 0.8;
-    }
-    .countdown-units-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      width: 100%;
-    }
-    .countdown-unit { min-width: 65px; }
-    .countdown-num { font-size: 2.2rem; }
-    .countdown-sep { display: block; font-size: 1.5rem; opacity: 0.2; }
-    #about { grid-template-columns: 1fr; gap: 60px; text-align: center; }
-    .section-label { justify-content: center; }
-    .about-visual { order: 2; }
-    .section-banner { width: 100%; max-width: 340px; margin: 0 auto; height: 400px; }
-    .about-stat-grid { grid-template-columns: 1fr 1fr; padding: 20px; }
-
-    /* Details & Committees */
-    .details-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-    .committees-grid { grid-template-columns: 1fr; gap: 20px; }
-    .committee-card { padding: 30px; }
-
-    /* Experience */
-    .experience-grid { grid-template-columns: 1fr; gap: 40px; }
-    .experience-showcase { height: 300px; }
-    .showcase-text { font-size: 3rem; }
-
-    /* Venue */
-    .venue-layout { grid-template-columns: 1fr; gap: 40px; }
-    .venue-visual { height: 250px; }
-
-    /* Secretariat */
-    .sec-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
-    .sec-card { padding: 30px 15px; }
-
-    /* OC mobile */
-    #oc-applications { padding: 60px 20px !important; }
-    .oc-card { padding: 32px 20px; }
-    .oc-perks { gap: 8px; }
-    .delegation-actions .btn-primary, .delegation-actions .btn-secondary { width: 100%; text-align: center; justify-content: center; }
-    .sec-tier-label { font-size: 0.6rem; letter-spacing: 0.2em; }
-    .sec-grid--top .sec-card { min-width: 160px; max-width: 200px; }
-
-    /* Footer */
-    .footer-top { grid-template-columns: 1fr; text-align: center; gap: 40px; }
-    .footer-brand p { max-width: 100%; }
-    .footer-bottom { flex-direction: column; gap: 20px; text-align: center; }
-
-    /* Modal Mobile Fixes */
-    .modal-content { padding: 40px 20px; width: 95%; border-radius: 20px; }
-    .modal-title { font-size: 1.8rem; padding: 10px 20px; }
-    .form-group[style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 24px !important; }
-    .form-actions { flex-direction: column; gap: 12px; }
-    .btn-next, .btn-back { width: 100%; }
-    #pref1_portfolios, #pref2_portfolios, #pref3_portfolios { grid-template-columns: 1fr !important; }
+    .hero-meta-item { padding: 8px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; }
+    .hero-actions { flex-direction: column; width: 100%; max-width: 300px; margin: 0 auto; gap: 12px; }
+    
+    #countdown { padding: 40px 10px !important; flex-direction: column; gap: 20px; }
+    .countdown-units-wrapper { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
+    .countdown-num { font-size: 1.8rem !important; }
+    .countdown-sep { display: none; }
+    
+    .form-group input, .form-group select, .form-group textarea { height: 52px; }
+    .modal-content { padding: 30px 20px; width: 94%; max-width: 420px; border-radius: 20px; }
+    .form-group[style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+    
+    .letter-container { padding: 80px 30px 40px 30px; margin: 40px 10px 0; border-radius: 24px; }
+    .letter-container::before { height: 60px; left: 18px; top: 85px; width: 1.5px; }
+    .letter-container::after { font-size: 2.2rem; left: 12px; top: 70px; opacity: 0.6; }
+    
+    .mobile-menu-btn { display: block; }
+    .nav-cta { display: none; } 
+    .nav-links.mobile-active .nav-cta { display: flex !important; margin-top: 20px; }
+    .cursor, .cursor-ring { display: none !important; }
+    * { cursor: auto !important; }
+    .particles-canvas { opacity: 0.3; }
   }
 
   @media (max-width: 480px) {
-    .sec-grid { grid-template-columns: 1fr; }
-    .countdown-unit { min-width: 60px; }
-    .countdown-num { font-size: 1.5rem; }
-    .cta-title { font-size: 3.5rem; }
+    section { padding: 60px 15px !important; }
+    .about-stat-grid { grid-template-columns: 1fr !important; }
+    .hero-title { font-size: clamp(2.8rem, 12vw, 3.5rem) !important; }
+    .countdown-num { font-size: 1.6rem !important; }
+    .sec-card { width: 240px; } 
+    .letter-container { padding: 60px 20px 30px 20px; }
+    .letter-container::before { height: 40px; left: 15px; top: 65px; }
+    .letter-container::after { font-size: 1.6rem; left: 12px; top: 55px; }
   }
 
   /* EASTER EGG STYLES */
@@ -4961,12 +4994,16 @@
 
   mobileMenuBtn.addEventListener('click', () => {
     navLinks.classList.toggle('mobile-active');
+    // Lock background scroll
+    document.body.style.overflow = navLinks.classList.contains('mobile-active') ? 'hidden' : '';
   });
 
   // Close menu when a link is clicked
   navLinks.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
       navLinks.classList.remove('mobile-active');
+      // Unlock background scroll
+      document.body.style.overflow = '';
     });
   });
 
@@ -5381,6 +5418,34 @@
 
       track.style.transform = `translateX(${currentX}px)`;
     });
+
+    // --- TOUCH DRAG LOGIC FOR MOBILE ---
+    container.addEventListener('touchstart', (e) => {
+      isDown = true;
+      isDragging = false;
+      container.classList.add('active');
+      startX = e.touches[0].pageX - container.offsetLeft;
+      scrollLeft = currentX;
+    }, {passive: true});
+
+    container.addEventListener('touchend', () => {
+      isDown = false;
+      container.classList.remove('active');
+    });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!isDown) return;
+      isDragging = true;
+      const x = e.touches[0].pageX - container.offsetLeft;
+      const walk = (x - startX) * 1.5; // Slightly faster multiplier for touch responsiveness
+      currentX = scrollLeft + walk;
+
+      // Infinite loop wrap during drag
+      if (currentX > 0) currentX -= trackWidth;
+      if (currentX < -trackWidth) currentX += trackWidth;
+
+      track.style.transform = `translateX(${currentX}px)`;
+    }, {passive: true});
 
     // --- WHEEL / TRACKPAD LOGIC ---
     container.addEventListener('wheel', (e) => {
