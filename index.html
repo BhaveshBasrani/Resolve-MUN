@@ -4228,11 +4228,23 @@
       const saved = JSON.parse(raw);
       formFieldIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el && saved[id]) el.value = saved[id];
+        if (el && saved[id]) {
+          el.value = saved[id];
+        }
       });
       // Re-trigger committee UI updates so containers/roles show correctly
       [1, 2, 3].forEach(n => {
-        if (saved['pref' + n + '_committee']) updatePortfolioOptions(n);
+        const commVal = saved['pref' + n + '_committee'];
+        if (commVal) {
+          updatePortfolioOptions(n);
+          // Special handling for Portfolios/Role fields that were dynamically generated/hidden
+          const port1 = document.getElementById('pref' + n + '_port1');
+          const port2 = document.getElementById('pref' + n + '_port2');
+          const role = document.getElementById('pref' + n + '_role');
+          if (port1 && saved['pref' + n + '_port1']) port1.value = saved['pref' + n + '_port1'];
+          if (port2 && saved['pref' + n + '_port2']) port2.value = saved['pref' + n + '_port2'];
+          if (role && saved['pref' + n + '_role']) role.value = saved['pref' + n + '_role'];
+        }
       });
     } catch(_) {}
   }
@@ -4667,7 +4679,7 @@
   function updateDelegateFields() {
     const container = document.getElementById('delegateInputsContainer');
     const size = parseInt(document.getElementById('delSize').value) || 0;
-    if (size < 8) return; 
+    if (size < 5) return; 
 
     // Look for values in localStorage first, then in current DOM
     let savedValues = {};
@@ -4872,8 +4884,8 @@
       // Special check for Step 1: Minimum Size
       if (currentStepNum === 1) {
         const size = parseInt(document.getElementById('delSize').value);
-        if (isNaN(size) || size < 8) {
-          alert('Minimum delegation size is 8 delegates.');
+        if (isNaN(size) || size < 5) {
+          alert('Minimum delegation size is 5 delegates.');
           document.getElementById('delSize').style.borderBottomColor = '#ff4444';
           isValid = false;
         }
