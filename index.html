@@ -3999,7 +3999,7 @@
 
           <div class="form-group">
             <label for="delSize">Number of Delegates</label>
-            <input type="number" id="delSize" name="delSize" min="5" value="5" placeholder="Minimum 5 delegates" required oninput="updateDelPrice(); updateDelegateFields();">
+            <input type="number" id="delSize" name="delSize" min="8" value="8" placeholder="Minimum 8 delegates" required oninput="updateDelPrice(); updateDelegateFields();">
           </div>
 
           <button type="button" class="btn-next" onclick="nextDelStep(2)">
@@ -4820,7 +4820,7 @@
 
   function updateDelPrice() {
     const size = parseInt(document.getElementById('delSize').value) || 0;
-    const totalPrice = size * 1999;
+    const totalPrice = size * 2049;
     const display = document.getElementById('delTotalPriceDisplay');
     if (display) {
       display.innerText = `Total Amount: ₹${totalPrice.toLocaleString()}`;
@@ -4857,7 +4857,7 @@
   function updateDelegateFields() {
     const container = document.getElementById('delegateInputsContainer');
     const size = parseInt(document.getElementById('delSize').value) || 0;
-    if (size < 5) return; 
+    if (size < 8) return; 
 
     // Look for values in localStorage first, then in current DOM
     let savedValues = {};
@@ -5062,8 +5062,8 @@
       // Special check for Step 1: Minimum Size
       if (currentStepNum === 1) {
         const size = parseInt(document.getElementById('delSize').value);
-        if (isNaN(size) || size < 5) {
-          alert('Minimum delegation size is 5 delegates.');
+        if (isNaN(size) || size < 8) {
+          alert('Minimum delegation size is 8 delegates.');
           document.getElementById('delSize').style.borderBottomColor = '#ff4444';
           isValid = false;
         }
@@ -5105,7 +5105,7 @@
       delegates: delegates,
       txnID: document.getElementById("delTxnID").value,
       driveLink: document.getElementById("delDriveLink").value,
-      totalAmount: size * 2300
+      totalAmount: size * 2049
     };
 
     try {
