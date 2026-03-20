@@ -10,7 +10,12 @@
   true  - Reveal everything
   false - Hide applications, blur IFI/Illuminati/Secretariat/Cash Prize
 -->
-<script>window.isLive = false;</script>
+<script>
+  window.isLive = false;
+  // RECAPTCHA CONFIGURATION (v3)
+  window.RECAPTCHA_SITE_KEY = "6LfwO5AsAAAAAMULyrB2ew05-bR8wo0q2cVCv6tZ";
+</script>
+<script src="https://www.google.com/recaptcha/api.js?render=6LfwO5AsAAAAAMULyrB2ew05-bR8wo0q2cVCv6tZ" async defer></script>
 <link rel="icon" type="image/svg+xml" href="images/Logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
@@ -3337,9 +3342,11 @@
     </p>
     
     <div id="waitlistContainer">
-      <form class="waitlist-form" id="waitlistForm">
-        <input type="email" id="waitlistEmail" placeholder="Enter your email address" required>
-        <button type="submit" class="waitlist-btn" id="waitlistSubmitBtn">Notify Me</button>
+      <form id="waitlistForm">
+        <div class="waitlist-form">
+          <input type="email" id="waitlistEmail" placeholder="Enter your email address" required>
+          <button type="submit" class="waitlist-btn" id="waitlistSubmitBtn">Notify Me</button>
+        </div>
       </form>
       <p id="waitlistSuccess" style="display: none; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 0.9rem; margin-top: 20px; opacity: 0.7;">
         You've been added to the priority list. We will be in touch.
@@ -4129,7 +4136,34 @@
   </div>
 </footer>
 
+<!-- RECAPTCHA CONFIGURATION
+     Site Key:   YOUR_RECAPTCHA_SITE_KEY
+     Secret Key: YOUR_RECAPTCHA_SECRET_KEY
+-->
+
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  /**
+   * RECAPTCHA v3 EXECUTION
+   * This function gets a token from Google and should be called before form submission.
+   */
+  async function getRecaptchaToken(actionName) {
+    return new Promise((resolve, reject) => {
+      if (typeof grecaptcha === 'undefined') {
+        console.error('reCAPTCHA not loaded');
+        resolve(null);
+        return;
+      }
+      grecaptcha.ready(() => {
+        grecaptcha.execute(window.RECAPTCHA_SITE_KEY, {action: actionName})
+          .then(token => resolve(token))
+          .catch(err => {
+            console.error('reCAPTCHA execution failed:', err);
+            resolve(null);
+          });
+      });
+    });
+  }
+
   // INITIAL LOADING SCREEN
   window.addEventListener('load', () => {
     const loader = document.getElementById('loading-screen');
@@ -4702,8 +4736,12 @@
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
 
+    // Get reCAPTCHA v3 token
+    const token = await getRecaptchaToken('delegate_registration');
+
   const data = {
     type: 'DELEGATE_REGISTRATION',
+    recaptcha_token: token,
     name: document.getElementById("regName").value,
     grade: document.getElementById("regGrade").value,
     phone: document.getElementById("regPhone").value,
@@ -5083,6 +5121,9 @@
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
 
+    // Get reCAPTCHA v3 token
+    const token = await getRecaptchaToken('delegation_application');
+
     const size = parseInt(document.getElementById("delSize").value);
     const delegates = [];
     for(let i=1; i<=size; i++) {
@@ -5097,6 +5138,7 @@
 
     const data = {
       type: 'DELEGATION_APPLICATION',
+      recaptcha_token: token,
       instName: document.getElementById("delInstName").value,
       adviserName: document.getElementById("delAdviserName").value,
       adviserPhone: document.getElementById("delAdviserPhone").value,
@@ -5233,8 +5275,12 @@
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
 
+    // Get reCAPTCHA v3 token
+    const token = await getRecaptchaToken('oc_application');
+
     const data = {
       type: 'OC_APPLICATION',
+      recaptcha_token: token,
       name: document.getElementById("ocName").value,
       dob: document.getElementById("ocDob").value,
       phone: document.getElementById("ocPhone").value,
@@ -5857,5 +5903,6 @@
     });
   }
 </script>
+
 </body>
 </html>
