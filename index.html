@@ -4255,12 +4255,14 @@
       btn.innerText = "Adding...";
       btn.disabled = true;
 
-      const data = {
-        type: 'WAITLIST_ENTRY',
-        email: email
-      };
-
       try {
+        const token = await getRecaptchaToken('waitlist_submission');
+        const data = {
+          type: 'WAITLIST_ENTRY',
+          email: email,
+          recaptcha_token: token
+        };
+
         // Re-using your existing Google Sheet fetch function!
         await submitToGoogleSheet('Sheet', data);
         
@@ -4670,7 +4672,7 @@
     document.documentElement.classList.add('native-cursor');
   }
 
-  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyl_mhHWsEJyUx7CEa4tO55jBKzz1jQZ72br0VIHdZ_2n_8JElrsQ1ZEKrJ_1BNgxDD/exec';
+  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzAzK6evrY8Zv3srhKA_vBM58jRExHgLWStVpKjHi2y98KRUl76pNsZDsASkQ97C35aXg/exec';
   const GOOGLE_SHEET_TAB_DELEGATE = 'Sheet1';
   const GOOGLE_SHEET_TAB_OC = 'Sheet2';
   const GOOGLE_SHEET_TAB_DELEGATION = 'Sheet3';
@@ -5584,6 +5586,8 @@
   let expAutoPlayTimer;
 
   const updateExp = (index) => {
+    if (!expItems.length || !expItems[index]) return;
+    
     // Update items
     expItems.forEach(i => i.classList.remove('active'));
     expItems[index].classList.add('active');
@@ -5601,6 +5605,7 @@
   };
 
   const startAutoPlay = () => {
+    if (!expItems.length) return;
     stopAutoPlay();
     expAutoPlayTimer = setInterval(() => {
       let nextIdx = (currentExpIdx + 1) % expItems.length;
