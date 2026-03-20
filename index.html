@@ -4612,6 +4612,7 @@
   // HERO SCROLL FADE
   const heroScroll = document.querySelector('.hero-scroll');
   window.addEventListener('scroll', () => {
+    if (!heroScroll) return;
     // Fades and translates smoothly based on scroll distance
     const scrollPos = window.scrollY;
     const threshold = 150; 
@@ -5804,6 +5805,7 @@
     let resolveKeyBuffer = "";
     
     window.addEventListener('keydown', (e) => {
+        if (!e.key) return;
         const key = e.key.toLowerCase();
         if ("resolve".includes(key)) {
             const expected = "resolve"[resolveKeyBuffer.length];
