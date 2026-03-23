@@ -4270,7 +4270,7 @@
         waitlistForm.style.display = 'none';
         success.style.display = 'block';
       } catch (err) {
-        alert('Network error. Please try again.');
+        alert("Submission Error: " + err.message);
         btn.innerText = "Notify Me";
         btn.disabled = false;
       }
@@ -4685,12 +4685,16 @@
       ...payload
     };
 
-    await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+    const response = await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(requestBody)
     });
+
+    const result = await response.json();
+    if (result.status === "error") {
+      throw new Error(result.message);
+    }
   }
 
   // Helper to attach hover effects to elements
@@ -4782,15 +4786,12 @@
       clearFormData();
       closeRegistration();
     } catch (err) {
-      alert('Submission failed. Please check your connection and try again.');
-      console.error(err);
+      alert("Submission Error: " + err.message);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Registration';
-
-  }
-
-});
+    }
+  });
   // Hero section register button (Scroll only)
   const heroRegBtn = document.querySelector('.hero-reg-btn');
   if (heroRegBtn) {
@@ -5161,7 +5162,7 @@
       clearDelFormData();
       closeDelRegistration();
     } catch (err) {
-      alert('Submission failed. Please try again.');
+      alert("Submission Error: " + err.message);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Delegation';
@@ -5307,7 +5308,7 @@
       clearOcFormData();
       closeOcRegistration();
     } catch (err) {
-      alert('Submission failed. Please try again.');
+      alert("Submission Error: " + err.message);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Application';
