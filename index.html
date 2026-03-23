@@ -11,7 +11,7 @@
   false - Hide applications, blur IFI/Illuminati/Secretariat/Cash Prize
 -->
 <script>
-  window.isLive = false;
+  window.isLive = true;
   // RECAPTCHA CONFIGURATION (v3)
   window.RECAPTCHA_SITE_KEY = "6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH";
 </script>
@@ -558,6 +558,49 @@
   }
   .form-group .error-msg {
     color: #ff4444; font-size: 0.75rem; margin-top: 4px; display: none;
+  }
+
+  /* MODERN FILE UPLOAD UI */
+  .file-upload-wrapper {
+    position: relative;
+    width: 100%;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: none !important;
+    transition: all 0.3s ease;
+  }
+  .file-upload-wrapper:hover {
+    border-color: var(--gold);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .file-upload-btn {
+    background: var(--gold);
+    color: var(--black);
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 15px;
+    pointer-events: none;
+  }
+  .file-name {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+  .file-upload-input {
+    display: none;
   }
 
   .form-actions {
@@ -3343,13 +3386,13 @@
           </div>
           <div>
             <label for="regPhone">Phone Number</label>
-            <input type="tel" id="regPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required>
+            <input type="tel" id="regPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
         </div>
         
         <div class="form-group">
           <label for="regEmail">Email Address</label>
-          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required>
+          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
         </div>
 
         <div class="form-group">
@@ -3359,7 +3402,7 @@
 
         <div class="form-group">
           <label for="regAddress">Address</label>
-          <textarea id="regAddress" name="address" autocomplete="street-address" rows="1" placeholder="Full residential address" required style="resize: none;"></textarea>
+          <textarea id="regAddress" name="address" autocomplete="address-line1" rows="1" placeholder="Full residential address" required style="resize: none;"></textarea>
         </div>
 
         <div class="form-group">
@@ -3374,11 +3417,11 @@
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div>
             <label for="regEmergencyName">Emergency Contact Name</label>
-            <input type="text" id="regEmergencyName" name="emergency-name" autocomplete="off" placeholder="Parent / Guardian name" required>
+            <input type="text" id="regEmergencyName" name="emergency-name" autocomplete="name" placeholder="Parent / Guardian name" required>
           </div>
           <div>
             <label for="regEmergencyPhone">Emergency Contact Phone</label>
-            <input type="tel" id="regEmergencyPhone" name="emergency-phone" autocomplete="off" placeholder="10-digit number" required>
+            <input type="tel" id="regEmergencyPhone" name="emergency-phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
         </div>
 
@@ -3516,8 +3559,12 @@
           </div>
 
           <div class="form-group">
-            <label>3. PAYMENT SCREENSHOT (DRIVE LINK)</label>
-            <input type="url" id="regDriveLink" placeholder="Paste link here" required>
+            <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+            <label class="file-upload-wrapper" for="regDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="regDriveLink" class="file-upload-input" accept="image/*" required>
+            </label>
           </div>
 
           <div class="form-group">
@@ -4112,13 +4159,13 @@
             </div>
             <div>
               <label for="ocPhone">Contact No (WhatsApp)</label>
-              <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required>
+              <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
             </div>
           </div>
           
           <div class="form-group">
             <label for="ocEmail">Email ID</label>
-            <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required>
+            <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
           </div>
 
           <div class="form-group">
@@ -4194,8 +4241,12 @@
             </div>
 
             <div class="form-group">
-              <label>3. PAYMENT SCREENSHOT (DRIVE LINK)</label>
-              <input type="url" id="ocDriveLink" placeholder="Paste link to screenshot here" required>
+              <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+              <label class="file-upload-wrapper" for="ocDriveLink">
+                <span class="file-upload-btn">Choose File</span>
+                <span class="file-name">No file chosen</span>
+                <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*" required>
+              </label>
             </div>
 
             <div class="form-group">
@@ -4244,11 +4295,11 @@
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <label for="ebPhone">Phone (WhatsApp)</label>
-              <input type="tel" id="ebPhone" placeholder="10-digit number" required autocomplete="tel">
+              <input type="tel" id="ebPhone" placeholder="10-digit number" required autocomplete="tel" pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
             </div>
             <div>
               <label for="ebEmail">Email Address</label>
-              <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email">
+              <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
             </div>
           </div>
 
@@ -4325,8 +4376,12 @@
           </div>
 
           <div class="form-group">
-            <label for="ebCv">Link to CV / Portfolio (Drive/LinkedIn)</label>
-            <input type="url" id="ebCv" placeholder="Provide a drive link to your MUN CV" required>
+            <label for="ebCv">Upload CV / Portfolio (PDF or Image)</label>
+            <label class="file-upload-wrapper" for="ebCv">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="ebCv" class="file-upload-input" accept=".pdf,image/*" required>
+            </label>
           </div>
 
           <div class="form-actions">
@@ -4370,11 +4425,11 @@
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <label for="delAdviserPhone">Adviser Phone</label>
-              <input type="tel" id="delAdviserPhone" name="adviserPhone" autocomplete="tel" placeholder="10-digit number" required>
+              <input type="tel" id="delAdviserPhone" name="adviserPhone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
             </div>
             <div>
               <label for="delAdviserEmail">Adviser Email</label>
-              <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required>
+              <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
             </div>
           </div>
 
@@ -4427,8 +4482,12 @@
             </div>
 
             <div class="form-group">
-              <label>PAYMENT SCREENSHOT (DRIVE LINK)</label>
-              <input type="url" id="delDriveLink" placeholder="Paste link to screenshot here" required>
+              <label>UPLOAD PAYMENT SCREENSHOT</label>
+              <label class="file-upload-wrapper" for="delDriveLink">
+                <span class="file-upload-btn">Choose File</span>
+                <span class="file-name">No file chosen</span>
+                <input type="file" id="delDriveLink" class="file-upload-input" accept="image/*" required>
+              </label>
             </div>
           </div>
 
@@ -4749,6 +4808,37 @@
     }
   });
 
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File is too large. Max size 5MB.");
+        reject(new Error("File too large"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Modern File Upload Handler
+  document.querySelectorAll('.file-upload-input').forEach(input => {
+    input.addEventListener('change', function() {
+      const wrapper = this.closest('.file-upload-wrapper');
+      const fileNameSpan = wrapper.querySelector('.file-name');
+      if (this.files && this.files.length > 0) {
+        fileNameSpan.textContent = this.files[0].name;
+        fileNameSpan.style.color = 'var(--gold-light)';
+        wrapper.style.borderColor = 'var(--gold)';
+      } else {
+        fileNameSpan.textContent = "No file chosen";
+        fileNameSpan.style.color = 'var(--muted)';
+        wrapper.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      }
+    });
+  });
+
   const closeModal = document.getElementById('closeModal');
   const regForm = document.getElementById('regForm');
 
@@ -4821,6 +4911,7 @@
       openSelection();
       return;
     }
+    restoreFormData();
     regModal.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -5025,12 +5116,12 @@
     document.documentElement.classList.add('native-cursor');
   }
 
-  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz3xbb781cM5CjlGGDxnxbfFGhwJAxs0BZmnDFL143x7lCpoiiIxPhy18dHjHYNwIbk/exec';
+  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx4tC6z3lPSFozr3EMcN8eaIO5tCQixHVaIh5j14NiFtKTM45o-rhR70rszyRINllIx/exec';
   const GOOGLE_SHEET_TAB_DELEGATE = 'Sheet1';
   const GOOGLE_SHEET_TAB_OC = 'Sheet2';
   const GOOGLE_SHEET_TAB_EB = 'Sheet4';
   const GOOGLE_SHEET_TAB_DELEGATION = 'Sheet3';
-  const GOOGLE_SHEET_TAB_WAITLIST = 'Sheet5';
+  const GOOGLE_SHEET_TAB_WAITLIST = 'Sheet';
 
   async function submitToGoogleSheet(sheetName, payload) {
     const requestBody = {
@@ -5094,47 +5185,64 @@
   regForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
+    const closeBtn = document.getElementById('closeModal');
+    const backBtns = e.target.querySelectorAll('.btn-back');
+    
+    // Submission Hardening
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
-
-    // Get reCAPTCHA v3 token
-    const token = await getRecaptchaToken('delegate_registration');
-
-  const data = {
-    type: 'DELEGATE_REGISTRATION',
-    recaptcha_token: token,
-    name: document.getElementById("regName").value,
-    grade: document.getElementById("regGrade").value,
-    phone: document.getElementById("regPhone").value,
-    email: document.getElementById("regEmail").value,
-    institute: document.getElementById("regInstitute").value,
-    address: document.getElementById("regAddress").value,
-    transport: document.getElementById("regTransport").value,
-    experience: document.getElementById("regExp").value,
-
-    pref1_committee: document.getElementById("pref1_committee").value,
-    pref1_portfolio1: document.getElementById("pref1_port1")?.value || "",
-    pref1_portfolio2: document.getElementById("pref1_port2")?.value || "",
-    pref1_role: document.getElementById("pref1_role")?.value || "",
-
-    pref2_committee: document.getElementById("pref2_committee").value,
-    pref2_portfolio1: document.getElementById("pref2_port1")?.value || "",
-    pref2_portfolio2: document.getElementById("pref2_port2")?.value || "",
-    pref2_role: document.getElementById("pref2_role")?.value || "",
-
-    pref3_committee: document.getElementById("pref3_committee").value,
-    pref3_portfolio1: document.getElementById("pref3_port1")?.value || "",
-    pref3_portfolio2: document.getElementById("pref3_port2")?.value || "",
-    pref3_role: document.getElementById("pref3_role")?.value || "",
-
-    payment_txn_id: document.getElementById("regTxnID")?.value || "",
-    payment_screenshot_link: document.getElementById("regDriveLink")?.value || "",
-    payment_utr: document.getElementById("regUTR")?.value || "",
-    emergency_name: document.getElementById("regEmergencyName")?.value || "",
-    emergency_phone: document.getElementById("regEmergencyPhone")?.value || ""
-  };
+    if(closeBtn) closeBtn.style.pointerEvents = 'none';
+    backBtns.forEach(b => b.disabled = true);
 
     try {
+      // Get reCAPTCHA v3 token
+      const token = await getRecaptchaToken('delegate_registration');
+
+      // Get file data
+      const fileInput = document.getElementById("regDriveLink");
+      let fileBase64 = "";
+      let fileName = "";
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileBase64 = await fileToBase64(file);
+        fileName = file.name;
+      }
+
+    const data = {
+      type: 'DELEGATE_REGISTRATION',
+      recaptcha_token: token,
+      name: document.getElementById("regName").value,
+      grade: document.getElementById("regGrade").value,
+      phone: document.getElementById("regPhone").value,
+      email: document.getElementById("regEmail").value,
+      institute: document.getElementById("regInstitute").value,
+      address: document.getElementById("regAddress").value,
+      transport: document.getElementById("regTransport").value,
+      experience: document.getElementById("regExp").value,
+
+      pref1_committee: document.getElementById("pref1_committee").value,
+      pref1_portfolio1: document.getElementById("pref1_port1")?.value || "",
+      pref1_portfolio2: document.getElementById("pref1_port2")?.value || "",
+      pref1_role: document.getElementById("pref1_role")?.value || "",
+
+      pref2_committee: document.getElementById("pref2_committee").value,
+      pref2_portfolio1: document.getElementById("pref2_port1")?.value || "",
+      pref2_portfolio2: document.getElementById("pref2_port2")?.value || "",
+      pref2_role: document.getElementById("pref2_role")?.value || "",
+
+      pref3_committee: document.getElementById("pref3_committee").value,
+      pref3_portfolio1: document.getElementById("pref3_port1")?.value || "",
+      pref3_portfolio2: document.getElementById("pref3_port2")?.value || "",
+      pref3_role: document.getElementById("pref3_role")?.value || "",
+
+      payment_txn_id: document.getElementById("regTxnID")?.value || "",
+      payment_screenshot_file: fileBase64,
+      payment_screenshot_name: fileName,
+      payment_utr: document.getElementById("regUTR")?.value || "",
+      emergency_name: document.getElementById("regEmergencyName")?.value || "",
+      emergency_phone: document.getElementById("regEmergencyPhone")?.value || ""
+    };
+
       await submitToGoogleSheet(GOOGLE_SHEET_TAB_DELEGATE, data);
       alert('Registration Submitted Successfully! The Secretariat will review your application and notify you soon.');
       clearFormData();
@@ -5144,6 +5252,8 @@
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Registration';
+      if(closeBtn) closeBtn.style.pointerEvents = 'all';
+      backBtns.forEach(b => b.disabled = false);
     }
   });
   // Hero section register button (Scroll only)
@@ -5288,11 +5398,11 @@
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
            <div>
             <label>Contact Number</label>
-            <input type="tel" name="del_phone_${i}" placeholder="Phone number" required autocomplete="tel" value="${savedValues[`del_phone_${i}`] || ''}">
+            <input type="tel" name="del_phone_${i}" placeholder="Phone number" required autocomplete="tel" value="${savedValues[`del_phone_${i}`] || ''}" pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
            </div>
            <div>
             <label>Email ID</label>
-            <input type="email" name="del_email_${i}" placeholder="Email" required autocomplete="email" value="${savedValues[`del_email_${i}`] || ''}">
+            <input type="email" name="del_email_${i}" placeholder="Email" required autocomplete="email" value="${savedValues[`del_email_${i}`] || ''}" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
            </div>
         </div>
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -5489,39 +5599,56 @@
   delRegForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
+    const closeBtn = document.getElementById('closeDelModal');
+    const backBtns = e.target.querySelectorAll('.btn-back');
+
+    // Submission Hardening
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
-
-    // Get reCAPTCHA v3 token
-    const token = await getRecaptchaToken('delegation_application');
-
-    const size = parseInt(document.getElementById("delSize").value);
-    const delegates = [];
-    for(let i=1; i<=size; i++) {
-        delegates.push({
-            name: e.target[`del_name_${i}`].value,
-            phone: e.target[`del_phone_${i}`].value,
-            email: e.target[`del_email_${i}`].value,
-            pref: e.target[`del_pref_${i}`].value,
-            country: e.target[`del_country_${i}`].value
-        });
-    }
-
-    const data = {
-      type: 'DELEGATION_APPLICATION',
-      recaptcha_token: token,
-      instName: document.getElementById("delInstName").value,
-      adviserName: document.getElementById("delAdviserName").value,
-      adviserPhone: document.getElementById("delAdviserPhone").value,
-      adviserEmail: document.getElementById("delAdviserEmail").value,
-      size: size,
-      delegates: delegates,
-      txnID: document.getElementById("delTxnID").value,
-      driveLink: document.getElementById("delDriveLink").value,
-      totalAmount: size * 2049
-    };
+    if(closeBtn) closeBtn.style.pointerEvents = 'none';
+    backBtns.forEach(b => b.disabled = true);
 
     try {
+      // Get reCAPTCHA v3 token
+      const token = await getRecaptchaToken('delegation_application');
+
+      const size = parseInt(document.getElementById("delSize").value);
+      const delegates = [];
+      for(let i=1; i<=size; i++) {
+          delegates.push({
+              name: e.target[`del_name_${i}`].value,
+              phone: e.target[`del_phone_${i}`].value,
+              email: e.target[`del_email_${i}`].value,
+              pref: e.target[`del_pref_${i}`].value,
+              country: e.target[`del_country_${i}`].value
+          });
+      }
+
+      // Get file data
+      const fileInput = document.getElementById("delDriveLink");
+      let fileBase64 = "";
+      let fileName = "";
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileBase64 = await fileToBase64(file);
+        fileName = file.name;
+      }
+
+      const data = {
+        type: 'DELEGATION_APPLICATION',
+        recaptcha_token: token,
+        instName: document.getElementById("delInstName").value,
+        adviserName: document.getElementById("delAdviserName").value,
+        adviserPhone: document.getElementById("delAdviserPhone").value,
+        adviserEmail: document.getElementById("delAdviserEmail").value,
+        size: size,
+        delegates: delegates,
+        txnID: document.getElementById("delTxnID").value,
+        payment_file: fileBase64,
+        payment_file_name: fileName,
+        totalAmount: size * 2049
+      };
+
       console.log('Sending Delegation Data:', data);
       await submitToGoogleSheet(GOOGLE_SHEET_TAB_DELEGATION, data);
       alert('Delegation Registered Successfully! All ' + size + ' delegates have been enrolled. The Secretariat will contact the Faculty Adviser shortly.');
@@ -5533,6 +5660,8 @@
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Delegation';
+      if(closeBtn) closeBtn.style.pointerEvents = 'all';
+      backBtns.forEach(b => b.disabled = false);
     }
   });
 
@@ -5604,6 +5733,7 @@
       document.body.style.overflow = 'hidden';
       return;
     }
+    restoreOcFormData();
     const ocModal = document.getElementById('ocModal');
     if (ocModal) {
       ocModal.classList.add('active');
@@ -5663,30 +5793,47 @@
   ocRegForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
+    const closeBtn = document.getElementById('closeOcModal');
+    const backBtns = e.target.querySelectorAll('.btn-back');
+
+    // Submission Hardening
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
-
-    // Get reCAPTCHA v3 token
-    const token = await getRecaptchaToken('oc_application');
-
-    const data = {
-      type: 'OC_APPLICATION',
-      recaptcha_token: token,
-      name: document.getElementById("ocName").value,
-      dob: document.getElementById("ocDob").value,
-      phone: document.getElementById("ocPhone").value,
-      email: document.getElementById("ocEmail").value,
-      institute: document.getElementById("ocInst").value,
-      instagram: document.getElementById("ocInsta").value,
-      munCount: document.getElementById("ocMunCount").value,
-      why: document.getElementById("ocWhy").value,
-      attributes: document.getElementById("ocAttributes").value,
-      txnID: document.getElementById("ocTxnID").value,
-      driveLink: document.getElementById("ocDriveLink").value,
-      utr: document.getElementById("ocUTR").value
-    };
+    if(closeBtn) closeBtn.style.pointerEvents = 'none';
+    backBtns.forEach(b => b.disabled = true);
 
     try {
+      // Get reCAPTCHA v3 token
+      const token = await getRecaptchaToken('oc_application');
+
+      // Get file data
+      const fileInput = document.getElementById("ocDriveLink");
+      let fileBase64 = "";
+      let fileName = "";
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileBase64 = await fileToBase64(file);
+        fileName = file.name;
+      }
+
+      const data = {
+        type: 'OC_APPLICATION',
+        recaptcha_token: token,
+        name: document.getElementById("ocName").value,
+        dob: document.getElementById("ocDob").value,
+        phone: document.getElementById("ocPhone").value,
+        email: document.getElementById("ocEmail").value,
+        institute: document.getElementById("ocInst").value,
+        instagram: document.getElementById("ocInsta").value,
+        munCount: document.getElementById("ocMunCount").value,
+        why: document.getElementById("ocWhy").value,
+        attributes: document.getElementById("ocAttributes").value,
+        txnID: document.getElementById("ocTxnID").value,
+        payment_file: fileBase64,
+        payment_file_name: fileName,
+        utr: document.getElementById("ocUTR").value
+      };
+
       console.log('OC Data:', data);
       await submitToGoogleSheet(GOOGLE_SHEET_TAB_OC, data);
       
@@ -5699,6 +5846,8 @@
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Application';
+      if(closeBtn) closeBtn.style.pointerEvents = 'all';
+      backBtns.forEach(b => b.disabled = false);
     }
   });
 
@@ -5959,6 +6108,7 @@
       document.body.style.overflow = 'hidden';
       return;
     }
+    restoreEbFormData();
     if (ebModal) {
       ebModal.classList.add('active');
       document.body.style.overflow = 'hidden';
@@ -6005,27 +6155,44 @@
   ebRegForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
+    const closeBtn = document.getElementById('closeEbModal');
+    const backBtns = e.target.querySelectorAll('.btn-back');
+
+    // Submission Hardening
     btn.disabled = true;
     btn.innerHTML = 'Submitting Application...';
-
-    const token = await getRecaptchaToken('eb_application');
-
-    const data = {
-      type: 'EB_APPLICATION',
-      recaptcha_token: token,
-      name: document.getElementById("ebName").value,
-      phone: document.getElementById("ebPhone").value,
-      email: document.getElementById("ebEmail").value,
-      institute: document.getElementById("ebInst").value,
-      role: document.getElementById("ebRole").value,
-      experience: document.getElementById("ebExp").value,
-      why: document.getElementById("ebWhy").value,
-      pref1: document.getElementById("ebPref1").value,
-      pref2: document.getElementById("ebPref2").value,
-      cvLink: document.getElementById("ebCv").value
-    };
+    if(closeBtn) closeBtn.style.pointerEvents = 'none';
+    backBtns.forEach(b => b.disabled = true);
 
     try {
+      const token = await getRecaptchaToken('eb_application');
+
+      // Get file data
+      const fileInput = document.getElementById("ebCv");
+      let fileBase64 = "";
+      let fileName = "";
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileBase64 = await fileToBase64(file);
+        fileName = file.name;
+      }
+
+      const data = {
+        type: 'EB_APPLICATION',
+        recaptcha_token: token,
+        name: document.getElementById("ebName").value,
+        phone: document.getElementById("ebPhone").value,
+        email: document.getElementById("ebEmail").value,
+        institute: document.getElementById("ebInst").value,
+        role: document.getElementById("ebRole").value,
+        experience: document.getElementById("ebExp").value,
+        why: document.getElementById("ebWhy").value,
+        pref1: document.getElementById("ebPref1").value,
+        pref2: document.getElementById("ebPref2").value,
+        cv_file: fileBase64,
+        cv_file_name: fileName
+      };
+
       // Reusing GOOGLE_SHEET_TAB_EB for EB applications
       await submitToGoogleSheet(GOOGLE_SHEET_TAB_EB, data); 
       alert('EB Application Submitted Successfully! The Secretariat will review your profile and contact you for an interview.');
@@ -6037,6 +6204,8 @@
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit EB Application';
+      if(closeBtn) closeBtn.style.pointerEvents = 'all';
+      backBtns.forEach(b => b.disabled = false);
     }
   });
 
