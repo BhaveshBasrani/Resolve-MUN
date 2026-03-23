@@ -1774,6 +1774,11 @@
     box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   }
 
+  /* Specific Banner Text for Committees */
+  .committee-card.coming-soon-overlay::after {
+    content: 'COMMITTEE REVEALING SOON' !important;
+  }
+
   /* Specific Adjustments */
   .secretariat-coming-soon { 
     position: absolute;
@@ -4120,7 +4125,7 @@
           </svg>
         </div>
         <h3 class="eb-card-title">Apply for EB</h3>
-        <p class="eb-card-body">Join us as a Chairperson, Vice-Chairperson, or Director. Applications are now open for experienced MUNers.</p>
+        <p class="eb-card-body">Join us as a Chairperson, Vice-Chairperson, or Rapporteur. Applications are now open for experienced MUNers.</p>
         <button class="btn-primary eb-btn" onclick="openEbRegistration()"><span>Apply for EB</span></button>
       </div>
     </div>
@@ -4322,7 +4327,6 @@
               <option value="" disabled selected>Select a role</option>
               <option value="Chairperson">Chairperson</option>
               <option value="Vice-Chairperson">Vice-Chairperson</option>
-              <option value="Director">Director</option>
               <option value="Rapporteur">Rapporteur</option>
             </select>
           </div>
@@ -6101,7 +6105,7 @@
       mIcon.innerText = "EXECUTIVE BOARD";
       mTitle.innerText = "LEAD THE DEBATE";
       mAgenda.innerText = "Recruitment starting soon.";
-      mText.innerText = "The Executive Board is the academic pillar of our summit. Leave your contact to be notified the moment the portal for Chairperson and Director applications opens.";
+      mText.innerText = "The Executive Board is the academic pillar of our summit. Leave your contact to be notified the moment the portal for EB applications opens.";
       waitlist.style.display = 'block';
 
       document.getElementById('commModal').classList.add('active');
