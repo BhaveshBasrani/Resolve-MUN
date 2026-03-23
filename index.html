@@ -68,7 +68,6 @@
   }
 
   /* Force hide cursor on everything */
-  
 
   html { scroll-behavior: smooth; }
 
@@ -1710,25 +1709,26 @@
     position: relative;
   }
   .coming-soon-overlay::after {
-    content: 'Applications Starting Soon! Follow @mun.resolve on Instagram';
+    content: 'REGISTRATIONS OPENING SOON';
     display: block !important;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(51, 14, 92, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(51, 14, 92, 0.4);
-    color: #4facfe;
-    padding: 10px 20px;
-    border-radius: 100px;
+    background: rgba(51, 14, 92, 0.4);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    padding: 12px 28px;
+    border-radius: 4px;
     font-family: 'Oswald', sans-serif;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
+    font-size: 0.9rem;
+    letter-spacing: 3px;
     text-transform: uppercase;
     z-index: 10;
     pointer-events: none;
     white-space: nowrap;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   }
 
   /* Specific Adjustments */
@@ -1742,21 +1742,27 @@
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    background: rgba(0, 0, 0, 0.4); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.7); 
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 40px; 
     box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
     pointer-events: none;
   }
   .secretariat-coming-soon::after {
+    content: 'ADMISSIONS OPENING SOON' !important;
+    font-family: 'Oswald', sans-serif !important;
+    letter-spacing: 4px !important;
     font-size: 1.1rem !important;
-    padding: 15px 35px !important;
-    background: rgba(51, 14, 92, 0.2) !important;
-    box-shadow: 0 10px 40px rgba(51, 14, 92, 0.3);
+    padding: 18px 40px !important;
+    background: rgba(51, 14, 92, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
+    color: var(--white);
+    border-radius: 4px;
   }
-  .cash-prize-coming-soon { border: 1px dashed rgba(51, 14, 92, 0.3); padding: 10px; border-radius: 12px; }
+  .cash-prize-coming-soon { border: 1px dashed rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px; }
   .oc-coming-soon { 
     position: absolute;
     top: 50%;
@@ -1768,15 +1774,50 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    background: rgba(0, 0, 0, 0.6);
     pointer-events: none;
+    border-radius: 12px;
   }
   .oc-coming-soon::after {
-    font-size: 1.1rem !important;
-    padding: 15px 35px !important;
-    background: rgba(51, 14, 92, 0.2) !important;
+    content: 'RECRUITMENT OPENING SOON' !important;
+    font-family: 'Oswald', sans-serif !important;
+    letter-spacing: 3px !important;
+    font-size: 1rem !important;
+    padding: 16px 35px !important;
+    background: rgba(51, 14, 92, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--white);
+    border-radius: 4px;
+  }
+  .eb-coming-soon { 
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    background: rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    border-radius: 12px;
+  }
+  .eb-coming-soon::after {
+    content: 'EB PORTAL OPENING SOON' !important;
+    font-family: 'Oswald', sans-serif !important;
+    letter-spacing: 3px !important;
+    font-size: 1rem !important;
+    padding: 16px 35px !important;
+    background: rgba(51, 14, 92, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--white);
+    border-radius: 4px;
   }
   .committee-card::after {
     content: '';
@@ -2450,6 +2491,155 @@
     justify-content: center;
   }
 
+  /* EB APPLICATIONS SECTION */
+  .eb-inner { 
+    max-width: 1400px; 
+    margin: 0 auto; 
+    padding: 0 60px;
+  }
+  
+  .eb-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .eb-text-content {
+    text-align: left;
+  }
+
+  .eb-text-content .section-label {
+    justify-content: flex-start;
+    margin-bottom: 24px;
+    color: var(--gold);
+  }
+
+  .eb-text-content .section-title {
+    text-align: left;
+    font-size: 4.5rem;
+    line-height: 0.95;
+    margin-bottom: 32px;
+  }
+
+  .eb-text-content .section-body {
+    text-align: left;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 48px;
+    color: var(--muted);
+    max-width: 500px;
+  }
+
+  .eb-perks {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .eb-perk {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--white);
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+
+  .eb-perk::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--gold);
+  }
+
+  .eb-perk:hover {
+    opacity: 1;
+  }
+
+  .eb-card {
+    position: relative;
+    padding: 60px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 24px;
+    overflow: hidden;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center;
+  }
+
+  .eb-card:hover {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.1);
+    transform: translateY(-5px);
+  }
+
+  .eb-card-glow {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, rgba(51,14,92,0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+
+  .eb-card:hover .eb-card-glow {
+    opacity: 1;
+  }
+
+  .eb-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 32px;
+    color: var(--gold);
+    opacity: 0.8;
+  }
+
+  .eb-card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    color: var(--white);
+  }
+
+  .eb-card-body {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .eb-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  @media (max-width: 1024px) {
+    .eb-layout {
+      grid-template-columns: 1fr;
+      gap: 60px;
+    }
+    .eb-text-content, .eb-text-content .section-title, .eb-text-content .section-body {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .eb-text-content .section-label {
+      justify-content: center;
+    }
+    .eb-perks {
+      align-items: center;
+    }
+  }
+
   @media (max-width: 1024px) {
     .oc-layout {
       grid-template-columns: 1fr;
@@ -2712,6 +2902,12 @@
     opacity: 0.4;
   }
 
+  .glow-line--blue {
+    background: linear-gradient(90deg, transparent, #4facfe, #00f2fe, transparent) !important;
+    opacity: 0.6 !important;
+    box-shadow: 0 0 20px rgba(79, 172, 254, 0.2);
+  }
+
   /* NOISE OVERLAY */
   body::before {
     content: '';
@@ -2752,6 +2948,11 @@
     /* Performance Tweak: Slow down heavy animations on tablets */
     .orbit-ring-1, .orbit-ring-2, .orbit-ring-3 { animation-duration: 40s !important; }
     .particles-canvas { opacity: 0.5; }
+    
+    .oc-layout, .eb-layout {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
   }
 
   /* Hamburguer Menu */
@@ -3072,7 +3273,7 @@
       </button>
       
       <div class="modal-header">
-        <h2 class="modal-title">REGISTER FOR RESOLVE</h2>
+        <h2 class="modal-title">JOIN RESOLVE NOW!</h2>
         <span class="modal-subtitle">CHOOSE YOUR PATHWAY</span>
       </div>
 
@@ -3099,6 +3300,14 @@
             <p>Join the team behind the scenes helping to plan and execute the conference.</p>
           </div>
           <button class="btn-primary" onclick="selectPathway('oc')"><span>Apply for OC</span></button>
+        </div>
+
+        <div class="selection-card">
+          <div>
+            <h3>EB</h3>
+            <p>Chair prestigious committees and lead diplomatic dialogue.</p>
+          </div>
+          <button class="btn-primary" onclick="selectPathway('eb')"><span>Apply for EB</span></button>
         </div>
       </div>
     </div>
@@ -3513,17 +3722,20 @@
     
     <div class="letter-container reveal reveal-delay-2">
       <div class="letter-content">
-        <p>Dear Delegates, Faculty Advisors, and Distinguished Guests,</p>
-        <p>It is with immense pride and a profound sense of responsibility that I welcome you to <strong>Resolve MUN 2026</strong>. In an era defined by rapid global transformation and complex geopolitical challenges, the need for diplomatic dialogue and collaborative problem-solving has never been more urgent.</p>
-        <p>At Resolve MUN, we have built a platform centered around three core pillars: <strong>Resolve</strong>, to stand firm in our commitment to justice; <strong>Reform</strong>, to adapt and improve our global systems; and <strong>Reconcile</strong>, to heal the fractures within our international community. We believe that true leadership does not solely reside in the strength of one's arguments, but in the empathy required to listen, and the courage required to bridge the divides that separate us.</p>
-        <p>Our committees have been meticulously designed to push the boundaries of traditional debate. We invite you to step beyond comfort zones, to think critically about the status quo, and to act decisively in the face of uncertainty. Over the course of three days, you will not just represent a vision; you will attempt to materialize it.</p>
-        <p>We look forward to witnessing the impact of your diplomacy. Let us embark on this journey with an open mind and a steadfast commitment to global progress.</p>
+        <p>It is my privilege to welcome you to <strong>Resolve Model United Nations 2026</strong>.</p>
+        <p>Resolve was never meant to be just another conference. From the start, the idea was simple. If we were going to do this, we would do it properly. That meant focusing on quality, being intentional with every decision, and not compromising where it actually matters.</p>
+        <p>In a circuit where numbers often take priority, we chose to care more about what happens inside the room. Every committee has been put together with that in mind. Our Executive Board is made up of some of the strongest individuals in the Hyderabad circuit, and the expectation they bring is clear. <strong>Come prepared, think critically, and be ready to engage seriously.</strong></p>
+        <p>There is a certain standard attached to Resolve. Not because we say it, but because of how the conference is built. The pace will be demanding. The debate will be competitive. You will be pushed to do more than just speak. You will have to think, adapt, and actually understand what you are doing.</p>
+        <p>At the same time, Resolve is not just about committee sessions. The experience matters. The people you meet, the conversations you have, and the overall atmosphere are just as important. We have put equal effort into making sure that side of the conference feels just as strong.</p>
+        <p>As Secretary-General, I see Resolve as something we are building, not just hosting. If we get this right, it sets a standard going forward. That is the goal.</p>
+        <p>This conference is not meant to be easy.<br><strong>It is meant to be worth it.</strong></p>
+        <p>I look forward to welcoming you to Resolve MUN 2026.</p>
       </div>
       <div class="letter-signature">
         <div class="sig-avatar">NB</div>
         <div class="sig-details">
           <h4>Niveditt Basrani</h4>
-          <span>Secretary General — Resolve MUN 2026</span>
+          <span>Secretary-General — Resolve Model United Nations 2026</span>
         </div>
       </div>
     </div>
@@ -3832,6 +4044,42 @@
   </div>
 </section>
 
+<div class="glow-line glow-line--blue" style="margin: 80px 0;"></div>
+
+<!-- EB APPLICATIONS -->
+<section id="eb-applications">
+  <div class="eb-inner">
+    <div class="eb-layout">
+      <!-- Left: Narrative -->
+      <div class="eb-text-content reveal">
+        <div class="section-label">Executive Board</div>
+        <h2 class="section-title">LEAD THE<br>DIALOGUE</h2>
+        <p class="section-body">Shape the academic landscape of Resolve MUN. We are inviting seasoned debaters to chair our prestigious committees.</p>
+        
+        <div class="eb-perks">
+          <div class="eb-perk">Academic Authority</div>
+          <div class="eb-perk">Strategic Committee Management</div>
+          <div class="eb-perk">Mentorship & Evaluation</div>
+          <div class="eb-perk">Honorarium & Benefits</div>
+        </div>
+      </div>
+
+      <!-- Right: Action Card -->
+      <div class="eb-card reveal reveal-delay-2">
+        <div class="eb-card-glow"></div>
+        <div class="eb-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+        </div>
+        <h3 class="eb-card-title">Apply for EB</h3>
+        <p class="eb-card-body">Join us as a Chairperson, Vice-Chairperson, or Director. Applications are now open for experienced MUNers.</p>
+        <button class="btn-primary eb-btn" onclick="openEbRegistration()"><span>Apply for EB</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
 
   <!-- OC APPLICATION MODAL -->
   <div class="modal-overlay" id="ocModal">
@@ -3963,6 +4211,127 @@
           <div class="form-actions">
             <button type="button" class="btn-back" onclick="nextOcStep(2)">Back</button>
             <button type="submit" class="btn-next">Submit Application</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EB APPLICATION MODAL -->
+  <div class="modal-overlay" id="ebModal">
+    <canvas class="modal-particles" id="ebModalParticles"></canvas>
+    <div class="modal-content">
+      <button class="modal-close" id="closeEbModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
+      <div class="modal-header">
+        <h2 class="modal-title">EB APPLICATIONS</h2>
+        <span class="modal-subtitle">Executive Board Recruitment</span>
+      </div>
+      
+      <form id="ebRegForm">
+        <!-- STEP 1: PERSONAL DETAILS -->
+        <div class="form-step active" id="ebStep1">
+          <div class="form-group">
+            <label for="ebName">Full Name</label>
+            <input type="text" id="ebName" placeholder="Enter your full name" required autocomplete="name">
+          </div>
+          
+          <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <label for="ebPhone">Phone (WhatsApp)</label>
+              <input type="tel" id="ebPhone" placeholder="10-digit number" required autocomplete="tel">
+            </div>
+            <div>
+              <label for="ebEmail">Email Address</label>
+              <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ebInst">Institution / School / College</label>
+            <input type="text" id="ebInst" placeholder="Name of your current school/college" required>
+          </div>
+
+          <button type="button" class="btn-next" onclick="nextEbStep(2)">
+            Next: Experience
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- STEP 2: EXPERIENCE -->
+        <div class="form-step" id="ebStep2">
+          <div class="form-group">
+            <label for="ebRole">Preferred Role</label>
+            <select id="ebRole" required>
+              <option value="" disabled selected>Select a role</option>
+              <option value="Chairperson">Chairperson</option>
+              <option value="Vice-Chairperson">Vice-Chairperson</option>
+              <option value="Director">Director</option>
+              <option value="Rapporteur">Rapporteur</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ebExp">MUN Experience (Detailed Summary)</label>
+            <textarea id="ebExp" placeholder="List committees chaired, awards won, and notable MUN experience" required style="height: 120px;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="ebWhy">Why should we select you?</label>
+            <textarea id="ebWhy" placeholder="Tell us about your moderation style and committee management skills" required style="height: 100px;"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-back" onclick="nextEbStep(1)">Back</button>
+            <button type="button" class="btn-next" onclick="nextEbStep(3)">Committees</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: PREFERENCES -->
+        <div class="form-step" id="ebStep3">
+          <p style="font-size: 0.8rem; color: var(--gold); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Committee Preferences</p>
+          
+          <div class="form-group">
+            <label>Preference 1</label>
+            <select id="ebPref1" required>
+              <option value="" disabled selected>Select Committee</option>
+              <option value="DISEC">DISEC</option>
+              <option value="LOKSABHA">Lok Sabha</option>
+              <option value="UNHRC">UNHRC</option>
+              <option value="CCC">CCC</option>
+              <option value="UNCSW">UNCSW</option>
+              <option value="IFI">IFI</option>
+              <option value="IP">IP (International Press)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Preference 2</label>
+            <select id="ebPref2" required>
+              <option value="" disabled selected>Select Committee</option>
+              <option value="DISEC">DISEC</option>
+              <option value="LOKSABHA">Lok Sabha</option>
+              <option value="UNHRC">UNHRC</option>
+              <option value="CCC">CCC</option>
+              <option value="UNCSW">UNCSW</option>
+              <option value="IFI">IFI</option>
+              <option value="IP">IP (International Press)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ebCv">Link to CV / Portfolio (Drive/LinkedIn)</label>
+            <input type="url" id="ebCv" placeholder="Provide a drive link to your MUN CV" required>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-back" onclick="nextEbStep(2)">Back</button>
+            <button type="submit" class="btn-next">Submit EB Application</button>
           </div>
         </div>
       </form>
@@ -4113,19 +4482,19 @@
     <div class="footer-col">
       <h5>Delegate</h5>
       <ul>
-        <li><a href="#">Register</a></li>
-        <li><a href="#">Position Papers</a></li>
-        <li><a href="#">Rules of Procedure</a></li>
-        <li><a href="#">Delegate Guide</a></li>
+        <li><a href="#hero">Home</a></li>
+        <li><a href="javascript:void(0)" onclick="openSelection()">Register</a></li>
+        <li><a href="javascript:void(0)" onclick="openCommModal('Background Guides', '📚')">Background Guides</a></li>
+        <li><a href="javascript:void(0)" onclick="openCommModal('Delegate Guide', '📖')">Delegate Guide</a></li>
       </ul>
     </div>
     <div class="footer-col">
       <h5>Connect</h5>
       <ul>
-        <li><a href="#">Instagram</a></li>
+        <li><a href="https://www.instagram.com/mun.resolve" target="_blank">Instagram</a></li>
         <li><a href="#">LinkedIn</a></li>
-        <li><a href="#">Email Us</a></li>
-        <li><a href="#">Sponsorship</a></li>
+        <li><a href="mailto:resolve.mun@gmail.com">Email Us</a></li>
+        <li><a href="https://sales.sponsormyevent.com/resolve-model-united-nations-hyderabad" target="_blank">Sponsorship</a></li>
       </ul>
     </div>
   </div>
@@ -4208,15 +4577,28 @@
 
     mIcon.innerText = "COMMITTEE";
     mTitle.innerText = title;
-    mAgenda.innerText = "Agenda revealing soon.";
-    mText.innerText = "The Secretariat is meticulously crafting the agendas to ensure the highest quality of debate and diplomatic engagement. Stay tuned for the official release.";
-    waitlist.style.display = 'none';
+    
+    if (title === 'Background Guides') {
+        mIcon.innerText = "RESOURCES";
+        mAgenda.innerText = "Research documentation in progress.";
+        mText.innerText = "The Secretariat is finalizing the comprehensive background guides and study material to ensure delegates have the necessary depth for substantive debate. Access will be granted shortly.";
+        waitlist.style.display = 'none';
+    } else if (title === 'Delegate Guide') {
+        mIcon.innerText = "HANDBOOK";
+        mAgenda.innerText = "Protocol briefing pending.";
+        mText.innerText = "The official Resolve delegate handbook, covering rules of procedure, logistical details, and diplomatic protocol, is being polished for release. Stay tuned for the complete briefing.";
+        waitlist.style.display = 'none';
+    } else {
+        mAgenda.innerText = "Agenda revealing soon.";
+        mText.innerText = "The Secretariat is meticulously crafting the agendas and study guides to ensure the highest quality of debate and diplomatic engagement. All technical documentation will be released according to the summit timeline.";
+        waitlist.style.display = 'none';
+    }
 
     if (typeof window.isLive !== 'undefined' && !window.isLive && (title === 'IFI' || title === 'ILLUMINATI')) {
       mIcon.innerText = "CLASSIFIED";
       mTitle.innerText = title;
       mAgenda.innerText = "Access Denied.";
-      mText.innerText = "This committee is currently under high-level diplomatic embargo. Reveal scheduled soon.";
+      mText.innerText = "This committee is currently under high-level diplomatic embargo. Official dossiers and clearance levels will be disclosed in the upcoming phase.";
       document.getElementById('commModal').classList.add('active');
       document.body.style.overflow = 'hidden';
       return;
@@ -4249,6 +4631,25 @@
 
   // Waitlist Logic
   const waitlistForm = document.getElementById('waitlistForm');
+  const WAITLIST_STORAGE_KEY = 'resolveMunWaitlist';
+
+  function restoreWaitlistData() {
+    const saved = localStorage.getItem(WAITLIST_STORAGE_KEY);
+    if (saved) {
+      const el = document.getElementById('waitlistEmail');
+      if (el) el.value = saved;
+    }
+  }
+
+  function saveWaitlistData() {
+    const el = document.getElementById('waitlistEmail');
+    if (el) localStorage.setItem(WAITLIST_STORAGE_KEY, el.value);
+  }
+
+  document.addEventListener('DOMContentLoaded', restoreWaitlistData);
+  const wEmailEl = document.getElementById('waitlistEmail');
+  if (wEmailEl) wEmailEl.addEventListener('input', saveWaitlistData);
+
   if (waitlistForm) {
     waitlistForm.addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -4269,11 +4670,12 @@
         };
 
         // Re-using your existing Google Sheet fetch function!
-        await submitToGoogleSheet('Sheet', data);
+        await submitToGoogleSheet(GOOGLE_SHEET_TAB_WAITLIST, data);
         
         // Hide form and show success message smoothly
         waitlistForm.style.display = 'none';
         success.style.display = 'block';
+        localStorage.removeItem(WAITLIST_STORAGE_KEY);
       } catch (err) {
         alert("Submission Error: " + err.message);
         btn.innerText = "Notify Me";
@@ -4299,7 +4701,13 @@
 
   function selectPathway(type) {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      openSelection();
+      if (type === 'oc') {
+        openOcRegistration();
+      } else if (type === 'eb') {
+        openEbRegistration();
+      } else {
+        openSelection();
+      }
       return;
     }
     closeSelection();
@@ -4309,12 +4717,14 @@
       openDelRegistration();
     } else if (type === 'oc') {
       openOcRegistration();
+    } else if (type === 'eb') {
+      openEbRegistration();
     }
   }
 
   function openDelRegistration() {
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      selectPathway('delegation');
+      openSelection();
       return;
     }
     const delModal = document.getElementById('delModal');
@@ -4324,82 +4734,19 @@
     }
   }
 
-  function openRegistration() {
-    if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      selectPathway('delegate');
-      return;
-    }
-    regModal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    // Trigger canvas if needed
-  }
-
-  function openOcRegistration() {
-    if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      selectPathway('oc');
-      return;
-    }
-    const ocModal = document.getElementById('ocModal');
-    if (ocModal) {
-      ocModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-  }
-
-  function closeDelRegistration() {
-    const delModal = document.getElementById('delModal');
-    if (delModal) {
-      delModal.classList.remove('active');
-      document.body.style.overflow = '';
-      if (typeof nextDelStep === 'function') nextDelStep(1);
-      const delForm = document.getElementById('delForm');
-      if (delForm) delForm.reset();
-    }
-  }
-
-  function openOcRegistration() {
-    if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      const mIcon = document.getElementById('commModalIcon');
-      const mTitle = document.getElementById('commModalTitle');
-      const mAgenda = document.getElementById('commModalAgenda');
-      const mText = document.getElementById('commModalText');
-      const waitlist = document.getElementById('waitlistContainer');
-
-      mIcon.innerText = "ORGANIZING COMMITTEE";
-      mTitle.innerText = "BUILD RESOLVE";
-      mAgenda.innerText = "Recruitment starting soon.";
-      mText.innerText = "The operations team is the backbone of our summit. Leave your contact to be notified the moment the portal for the Organizing Committee opens.";
-      waitlist.style.display = 'block';
-
-      document.getElementById('commModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-      return;
-    }
-    const ocModal = document.getElementById('ocModal');
-    if (ocModal) {
-      ocModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-  }
-
-  function closeOcRegistration() {
-    const ocModal = document.getElementById('ocModal');
-    if (ocModal) {
-      ocModal.classList.remove('active');
-      document.body.style.overflow = '';
-      if (typeof nextOcStep === 'function') nextOcStep(1);
-      const ocForm = document.getElementById('ocForm');
-      if (ocForm) ocForm.reset();
-    }
-  }
-
   window.addEventListener('click', (event) => {
     if (event.target === selectionModal) closeSelection();
     if (event.target === regModal) closeRegistration();
     const dModal = document.getElementById('delModal');
     const oModal = document.getElementById('ocModal');
+    const eModal = document.getElementById('ebModal');
     if (event.target === dModal) closeDelRegistration();
     if (event.target === oModal) closeOcRegistration();
+    if (event.target === eModal) closeEbRegistration();
+    if (event.target === document.getElementById('commModal')) {
+      document.getElementById('commModal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
   });
 
   const closeModal = document.getElementById('closeModal');
@@ -4681,7 +5028,9 @@
   const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz3xbb781cM5CjlGGDxnxbfFGhwJAxs0BZmnDFL143x7lCpoiiIxPhy18dHjHYNwIbk/exec';
   const GOOGLE_SHEET_TAB_DELEGATE = 'Sheet1';
   const GOOGLE_SHEET_TAB_OC = 'Sheet2';
+  const GOOGLE_SHEET_TAB_EB = 'Sheet4';
   const GOOGLE_SHEET_TAB_DELEGATION = 'Sheet3';
+  const GOOGLE_SHEET_TAB_WAITLIST = 'Sheet5';
 
   async function submitToGoogleSheet(sheetName, payload) {
     const requestBody = {
@@ -5040,6 +5389,19 @@
           ocSection.appendChild(banner);
         }
       }
+
+      // 6. EB Applications Section
+      const ebSection = document.getElementById('eb-applications');
+      if (ebSection) {
+        ebSection.style.position = 'relative';
+        const ebInner = ebSection.querySelector('.eb-inner');
+        if (ebInner) {
+          ebInner.classList.add('is-coming-soon');
+          const banner = document.createElement('div');
+          banner.className = 'eb-coming-soon coming-soon-overlay';
+          ebSection.appendChild(banner);
+        }
+      }
     }
   });
 
@@ -5175,12 +5537,7 @@
   });
 
   // Handle outside click for Delegation Modal
-  window.addEventListener('click', (e) => {
-    const dModal = document.getElementById('delModal');
-    const oModal = document.getElementById('ocModal');
-    if (e.target === dModal) closeDelRegistration();
-    if (e.target === oModal) closeOcRegistration();
-  });
+  // (Main listener at line 4719-4735 handles all modals centralizing here)
 
   // OC MODAL LOGIC
   const ocModal = document.getElementById('ocModal');
@@ -5229,10 +5586,35 @@
   // Restore on load
   document.addEventListener('DOMContentLoaded', restoreOcFormData);
 
+  function openOcRegistration() {
+    if (typeof window.isLive !== 'undefined' && !window.isLive) {
+      const mIcon = document.getElementById('commModalIcon');
+      const mTitle = document.getElementById('commModalTitle');
+      const mAgenda = document.getElementById('commModalAgenda');
+      const mText = document.getElementById('commModalText');
+      const waitlist = document.getElementById('waitlistContainer');
+
+      mIcon.innerText = "ORGANIZING COMMITTEE";
+      mTitle.innerText = "BUILD RESOLVE";
+      mAgenda.innerText = "Recruitment starting soon.";
+      mText.innerText = "The operations team is the backbone of our summit. Leave your contact to be notified the moment the portal for the Organizing Committee opens.";
+      waitlist.style.display = 'block';
+
+      document.getElementById('commModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    const ocModal = document.getElementById('ocModal');
+    if (ocModal) {
+      ocModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
   if (openOcBtn && ocModal) {
     openOcBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      openSelection(); // Transition to selection instead of directly opening OC
+      openOcRegistration();
     });
   }
 
@@ -5514,6 +5896,155 @@
   }
   drawParticles();
 
+  // EB MODAL LOGIC
+  const ebModal = document.getElementById('ebModal');
+  const ebRegForm = document.getElementById('ebRegForm');
+
+  // AUTO-SAVE EB form fields to localStorage
+  const EB_STORAGE_KEY = 'resolveMunEbRegForm';
+  const ebFormFieldIds = [
+    'ebName', 'ebPhone', 'ebEmail', 'ebInst', 'ebRole', 
+    'ebExp', 'ebWhy', 'ebPref1', 'ebPref2', 'ebCv'
+  ];
+
+  function saveEbFormData() {
+    const saved = {};
+    ebFormFieldIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) saved[id] = el.value;
+    });
+    localStorage.setItem(EB_STORAGE_KEY, JSON.stringify(saved));
+  }
+
+  function restoreEbFormData() {
+    const raw = localStorage.getItem(EB_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw);
+      ebFormFieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && saved[id]) el.value = saved[id];
+      });
+    } catch(_) {}
+  }
+
+  function clearEbFormData() {
+    localStorage.removeItem(EB_STORAGE_KEY);
+  }
+
+  // Listen for EB form changes to save
+  ebFormFieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', saveEbFormData);
+  });
+
+  // Restore on load
+  document.addEventListener('DOMContentLoaded', restoreEbFormData);
+
+  function openEbRegistration() {
+    if (typeof window.isLive !== 'undefined' && !window.isLive) {
+      const mIcon = document.getElementById('commModalIcon');
+      const mTitle = document.getElementById('commModalTitle');
+      const mAgenda = document.getElementById('commModalAgenda');
+      const mText = document.getElementById('commModalText');
+      const waitlist = document.getElementById('waitlistContainer');
+
+      mIcon.innerText = "EXECUTIVE BOARD";
+      mTitle.innerText = "LEAD THE DEBATE";
+      mAgenda.innerText = "Recruitment starting soon.";
+      mText.innerText = "The Executive Board is the academic pillar of our summit. Leave your contact to be notified the moment the portal for Chairperson and Director applications opens.";
+      waitlist.style.display = 'block';
+
+      document.getElementById('commModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    if (ebModal) {
+      ebModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeEbRegistration() {
+    if (ebModal) {
+      ebModal.classList.remove('active');
+      document.body.style.overflow = '';
+      nextEbStep(1);
+      ebRegForm.reset();
+    }
+  }
+
+  const closeEbBtn = document.getElementById('closeEbModal');
+  if (closeEbBtn) {
+    closeEbBtn.addEventListener('click', closeEbRegistration);
+  }
+
+  function nextEbStep(stepNum) {
+    const currentStep = document.querySelector('#ebModal .form-step.active');
+    const currentStepNum = parseInt(currentStep.id.replace('ebStep', ''));
+    
+    if (stepNum > currentStepNum) {
+      const inputs = currentStep.querySelectorAll('input[required], select[required], textarea[required]');
+      let isValid = true;
+      inputs.forEach(input => {
+        if (!input.value.trim()) {
+          input.style.borderBottomColor = '#ff4444';
+          isValid = false;
+        } else {
+          input.style.borderBottomColor = '';
+        }
+      });
+      if (!isValid) return;
+    }
+
+    document.querySelectorAll('#ebModal .form-step').forEach(step => step.classList.remove('active'));
+    const targetStep = document.getElementById('ebStep' + stepNum);
+    if (targetStep) targetStep.classList.add('active');
+  }
+
+  ebRegForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = 'Submitting Application...';
+
+    const token = await getRecaptchaToken('eb_application');
+
+    const data = {
+      type: 'EB_APPLICATION',
+      recaptcha_token: token,
+      name: document.getElementById("ebName").value,
+      phone: document.getElementById("ebPhone").value,
+      email: document.getElementById("ebEmail").value,
+      institute: document.getElementById("ebInst").value,
+      role: document.getElementById("ebRole").value,
+      experience: document.getElementById("ebExp").value,
+      why: document.getElementById("ebWhy").value,
+      pref1: document.getElementById("ebPref1").value,
+      pref2: document.getElementById("ebPref2").value,
+      cvLink: document.getElementById("ebCv").value
+    };
+
+    try {
+      // Reusing GOOGLE_SHEET_TAB_EB for EB applications
+      await submitToGoogleSheet(GOOGLE_SHEET_TAB_EB, data); 
+      alert('EB Application Submitted Successfully! The Secretariat will review your profile and contact you for an interview.');
+      ebRegForm.reset();
+      clearEbFormData();
+      closeEbRegistration();
+    } catch (err) {
+      alert("Submission Error: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Submit EB Application';
+    }
+  });
+
+  // Handle outside click for EB Modal
+  window.addEventListener('click', (e) => {
+    if (e.target === ebModal) closeEbRegistration();
+  });
+
   // MODAL PARTICLES (Interaction)
   function initModalParticles(canvasId) {
     const mCanvas = document.getElementById(canvasId);
@@ -5585,6 +6116,7 @@
   initModalParticles('modalParticles');
   initModalParticles('ocModalParticles');
   initModalParticles('delModalParticles');
+  initModalParticles('ebModalParticles');
 
   // EXPERIENCE tabs
   const expItems = document.querySelectorAll('.exp-item');
