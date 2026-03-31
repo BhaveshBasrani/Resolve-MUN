@@ -4210,14 +4210,20 @@
               <input type="date" id="ocDob" name="dob" autocomplete="bday" required>
             </div>
             <div>
-              <label for="ocPhone">Contact No (WhatsApp)</label>
-              <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+              <label for="ocGrade">Grade / Class</label>
+              <input type="text" id="ocGrade" name="grade" placeholder="e.g. 10th, 1st Year" required>
             </div>
           </div>
           
-          <div class="form-group">
-            <label for="ocEmail">Email ID</label>
-            <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+          <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <label for="ocPhone">Contact No (WhatsApp)</label>
+              <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            </div>
+            <div>
+              <label for="ocEmail">Email ID</label>
+              <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@ [a-z0-9.-]+\.[a-z]{2,}$">
+            </div>
           </div>
 
           <div class="form-group">
@@ -4268,12 +4274,12 @@
         <!-- STEP 3: PAYMENT -->
         <div class="form-step" id="ocStep3">
           <div class="payment-banner">
-            <h3>Registration Fee: ₹899</h3>
+            <h3>Registration Fee: ₹999</h3>
           </div>
 
           <div class="payment-card">
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. SCAN TO PAY (laurusschool@icici)</label>
+              <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. SCAN TO PAY</label>
               <div style="text-align: center;">
                 <div class="qr-container">
                   <img src="images/QR.svg" alt="OC Payment QR Code">
@@ -4289,25 +4295,25 @@
 
             <div class="form-group">
               <label>2. TRANSACTION ID</label>
-              <input type="text" id="ocTxnID" placeholder="Enter Transaction ID" required>
+              <input type="text" id="ocTxnID" name="txnID" placeholder="Enter Transaction ID" required>
             </div>
 
             <div class="form-group">
-              <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+              <label>3. UTR ID (Optional)</label>
+              <input type="text" id="ocUTR" name="utr" placeholder="Enter 12-digit UTR ID">
+            </div>
+
+            <div class="form-group">
+              <label>4. UPLOAD PAYMENT SCREENSHOT*</label>
               <label class="file-upload-wrapper" for="ocDriveLink">
                 <span class="file-upload-btn">Choose File</span>
                 <span class="file-name">No file chosen</span>
                 <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*" required>
               </label>
             </div>
-
-            <div class="form-group">
-              <label>4. UTR NUMBER (OPTIONAL)</label>
-              <input type="text" id="ocUTR" placeholder="Enter 12-digit UTR">
-            </div>
             
             <p style="text-align: center; font-size: 0.75rem; color: #ff4444; opacity: 0.8; margin-bottom: 20px;">
-              * Payments without total amount or screenshot link will not be accepted.
+              * Applications without a payment screenshot will not be processed.
             </p>
           </div>
 
@@ -4520,7 +4526,7 @@
                 <img src="images/QR.svg" alt="Delegation Payment QR Code">
               </div>
               <div class="upi-box">
-                <span id="delUpiID">laurusschool@icici</span>
+                <span id="delUpiID">6301550628@nyes</span>
                 <button type="button" class="copy-btn" onclick="copyDelUPI()">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
@@ -5722,8 +5728,8 @@
   // AUTO-SAVE OC form fields to localStorage
   const OC_STORAGE_KEY = 'resolveMunOcRegForm';
   const ocFormFieldIds = [
-    'ocName', 'ocDob', 'ocPhone', 'ocEmail', 'ocInst', 'ocInsta',
-    'ocMunCount', 'ocWhy', 'ocAttributes', 'ocTxnID', 'ocDriveLink', 'ocUTR'
+    'ocName', 'ocDob', 'ocGrade', 'ocPhone', 'ocEmail', 'ocInst', 'ocInsta', 
+    'ocMunCount', 'ocWhy', 'ocAttributes', 'ocTxnID', 'ocUTR', 'ocDriveLink'
   ];
 
   function saveOcFormData() {
@@ -5848,18 +5854,18 @@
         type: 'OC_APPLICATION',
         recaptcha_token: token,
         name: document.getElementById("ocName").value,
-        dob: document.getElementById("ocDob").value,
+        grade: document.getElementById("ocGrade").value,
         phone: document.getElementById("ocPhone").value,
         email: document.getElementById("ocEmail").value,
+        dob: document.getElementById("ocDob").value,
         institute: document.getElementById("ocInst").value,
         instagram: document.getElementById("ocInsta").value,
         munCount: document.getElementById("ocMunCount").value,
         why: document.getElementById("ocWhy").value,
         attributes: document.getElementById("ocAttributes").value,
         txnID: document.getElementById("ocTxnID").value,
-        payment_file: fileBase64,
-        payment_file_name: fileName,
-        utr: document.getElementById("ocUTR").value
+        utr: document.getElementById("ocUTR").value,
+        payment_screenshot_link: fileBase64
       };
 
       console.log('OC Data:', data);
