@@ -847,7 +847,6 @@
   }
   .btn-primary:hover {
     transform: translateY(-4px) scale(1.02);
-    border-color: rgba(255, 255, 255, 0.4);
     box-shadow: 0 20px 40px rgba(51, 14, 92, 0.5), 0 0 20px rgba(51, 14, 92, 0.3);
   }
   .btn-primary:hover::before {
@@ -1874,9 +1873,8 @@
     z-index: -1;
   }
   .committee-card:hover {
-    border-color: rgba(51, 14, 92, 0.4);
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(51, 14, 92, 0.2);
   }
   .committee-card:hover::after { opacity: 1; }
   .committee-tag {
@@ -1957,21 +1955,35 @@
     margin: 80px auto 0;
     position: relative;
     padding: 100px 90px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0.02) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: #020205;
+    border: 1px solid rgba(124, 58, 237, 0.1);
     border-radius: 40px;
     backdrop-filter: blur(40px);
     z-index: 1;
     overflow: visible;
     box-shadow: 
-      0 40px 100px -20px rgba(0, 0, 0, 0.8),
-      inset 0 0 80px rgba(124, 58, 237, 0.03);
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+      0 40px 100px -20px rgba(0, 0, 0, 0.9),
+      0 0 40px rgba(124, 58, 237, 0.05),
+      inset 0 0 80px rgba(124, 58, 237, 0.02);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease;
   }
 
   .letter-container:hover {
-    border-color: rgba(124, 58, 237, 0.2);
+    border-color: rgba(124, 58, 237, 0.3);
     transform: translateY(-5px);
+    box-shadow: 
+      0 45px 110px -20px rgba(0, 0, 0, 0.95),
+      0 0 50px rgba(124, 58, 237, 0.1),
+      inset 0 0 80px rgba(124, 58, 237, 0.03);
+  }
+
+  /* Responsive Padding Adjustments */
+  @media (max-width: 768px) {
+    .letter-container {
+      padding: 60px 40px;
+      margin-top: 40px;
+      border-radius: 24px;
+    }
   }
 
   /* Subtle Architectural Quote Accents */
@@ -2006,8 +2018,8 @@
   .letter-content {
     font-family: 'Crimson Pro', serif;
     font-size: 1.25rem;
-    line-height: 1.9;
-    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.95;
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 300;
   }
 
@@ -2020,17 +2032,19 @@
   }
 
   .letter-container:hover .letter-content p {
-    color: rgba(255, 255, 255, 0.95);
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .letter-content p:first-child {
     font-style: italic;
-    font-size: 1.4rem;
-    color: var(--gold-light);
+    font-size: 1.5rem;
+    color: #7c3aed;
     margin-bottom: 50px;
     opacity: 1;
     font-weight: 400;
     letter-spacing: 0.02em;
+    line-height: 1.6;
+    text-shadow: 0 0 1px rgba(124, 58, 237, 0.3);
   }
 
   .letter-content p strong {
@@ -2071,15 +2085,16 @@
   .sig-avatar {
     width: 72px;
     height: 72px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(51, 14, 92, 0.05));
-    border: 1px solid rgba(124, 58, 237, 0.2);
+    border-radius: 12px;
+    background: #050507;
+    border: 1px solid rgba(124, 58, 237, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.8rem;
-    color: var(--gold-light);
+    color: #7c3aed;
+    text-shadow: 0 0 12px rgba(124, 58, 237, 0.6);
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
@@ -2290,10 +2305,9 @@
     border-radius: 8px; /* Slightly more rounded */
   }
   .sec-card:hover { 
-    border-color: rgba(212, 175, 55, 0.4); 
     background: rgba(255,255,255,0.03);
     transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(124, 58, 237, 0.1);
   }
   .sec-avatar {
     width: 96px;
@@ -2915,10 +2929,11 @@
 
   /* REVEAL ANIMATIONS */
   .reveal {
-    opacity: 0; transform: translateY(40px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
+    opacity: 0; 
+    transform: translateY(40px) scale(0.98);
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal.visible { opacity: 1; transform: translateY(0) scale(1); }
   .reveal-delay-1 { transition-delay: 0.1s; }
   .reveal-delay-2 { transition-delay: 0.2s; }
   .reveal-delay-3 { transition-delay: 0.3s; }
@@ -4677,7 +4692,7 @@
     const waitlist = document.getElementById('waitlistContainer');
 
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      mIcon.innerText = "SECRETARIAT";
+      mIcon.innerText = "EARLY BIRD";
       mTitle.innerText = "RESOLVE 2026";
       mAgenda.innerText = "Registrations opening soon.";
       mText.innerText = "The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.";
@@ -5490,10 +5505,11 @@
         }
       });
 
-      // 5. OC Applications Section
+      // 5. OC Applications Section (BYPASSED - Always Active)
+      /* 
       const ocSection = document.getElementById('oc-applications');
       if (ocSection) {
-        ocSection.style.position = 'relative'; // Ensure absolute positioning works
+        ocSection.style.position = 'relative'; 
         const ocInner = ocSection.querySelector('.oc-inner');
         if (ocInner) {
           ocInner.classList.add('is-coming-soon');
@@ -5502,6 +5518,7 @@
           ocSection.appendChild(banner);
         }
       }
+      */
 
       // 6. EB Applications Section
       const ebSection = document.getElementById('eb-applications');
@@ -5719,23 +5736,6 @@
   document.addEventListener('DOMContentLoaded', restoreOcFormData);
 
   function openOcRegistration() {
-    if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      const mIcon = document.getElementById('commModalIcon');
-      const mTitle = document.getElementById('commModalTitle');
-      const mAgenda = document.getElementById('commModalAgenda');
-      const mText = document.getElementById('commModalText');
-      const waitlist = document.getElementById('waitlistContainer');
-
-      mIcon.innerText = "ORGANIZING COMMITTEE";
-      mTitle.innerText = "BUILD RESOLVE";
-      mAgenda.innerText = "Recruitment starting soon.";
-      mText.innerText = "The operations team is the backbone of our summit. Leave your contact to be notified the moment the portal for the Organizing Committee opens.";
-      waitlist.style.display = 'block';
-
-      document.getElementById('commModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-      return;
-    }
     restoreOcFormData();
     const ocModal = document.getElementById('ocModal');
     if (ocModal) {
@@ -5940,7 +5940,10 @@
   // SCROLL REVEAL
   const observer = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.1 });
+  }, { 
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
   // COUNTDOWN — target date: June 12, 2026 00:00
