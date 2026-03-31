@@ -94,10 +94,12 @@
     transition: background 0.4s, padding 0.4s;
   }
   nav.scrolled {
-    background: rgba(5,5,7,0.92);
-    backdrop-filter: blur(20px);
+    background: rgba(15, 15, 20, 0.45);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
     padding: 16px 60px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   }
   .nav-logo {
     font-family: 'Bebas Neue', sans-serif;
@@ -307,8 +309,10 @@
 
   .modal-content {
     width: 100%; max-width: 630px;
-    background: rgba(7, 7, 18, 0.85);
-    border: 1px solid var(--card-border);
+    background: rgba(15, 15, 20, 0.45);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 60px;
     position: relative;
     border-radius: 24px;
@@ -319,7 +323,7 @@
     cursor: none !important;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none;  /* IE and Edge */
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
   .modal-content::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
@@ -1579,13 +1583,16 @@
     gap: 28px; margin-top: 60px;
   }
   .committee-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
+    background: rgba(15, 15, 20, 0.45);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 40px 28px;
     position: relative; overflow: hidden;
-    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 1;
     cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   /* Coming Soon Waitlist Redesign */
@@ -2294,15 +2301,18 @@
     margin: 0 15px;
     text-align: center;
     padding: 40px 20px;
-    border: 1px solid var(--card-border);
-    background: rgba(15, 15, 20, 0.4); /* Slightly deeper and transparent */
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 15, 20, 0.45);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    border-radius: 8px; /* Slightly more rounded */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
   .sec-card:hover { 
     background: rgba(255,255,255,0.03);
@@ -3207,7 +3217,19 @@
     .countdown-sep { display: none; }
     
     .form-group input, .form-group select, .form-group textarea { height: 52px; }
-    .modal-content { padding: 30px 20px; width: 94%; max-width: 420px; border-radius: 20px; }
+    .modal-content { 
+      padding: 30px 20px; 
+      width: 92%; 
+      max-width: 420px; 
+      border-radius: 20px; 
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .modal-title {
+      font-size: clamp(1.8rem, 8vw, 2.2rem) !important;
+      padding: 10px 20px;
+    }
+    .modal-header { margin-bottom: 25px; }
     .form-group[style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 12px !important; }
     
     .letter-container { padding: 80px 30px 40px 30px; margin: 40px 10px 0; border-radius: 24px; }
@@ -4671,15 +4693,8 @@
         waitlist.style.display = 'none';
     }
 
-    if (typeof window.isLive !== 'undefined' && !window.isLive && (title === 'IFI' || title === 'ILLUMINATI')) {
-      mIcon.innerText = "CLASSIFIED";
-      mTitle.innerText = title;
-      mAgenda.innerText = "Access Denied.";
-      mText.innerText = "This committee is currently under high-level diplomatic embargo. Official dossiers and clearance levels will be disclosed in the upcoming phase.";
-      document.getElementById('commModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-      return;
-    }
+    /* IFI and ILLUMINATI BYPASS - Now accessible via standard modal logic */
+    
     document.getElementById('commModal').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -5471,13 +5486,15 @@
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       // 1. All applications are made Coming Soon (Handled by JS alerts/modals in open functions)
       
-      // 2. IFI and Iluminati are blurred and it says Coming Soon
+      // 2. IFI and Iluminati are NO LONGER blurred (Bypassed)
+      /*
       document.querySelectorAll('.committee-card').forEach(card => {
         const name = card.querySelector('.committee-name').innerText;
         if (name === 'IFI' || name === 'ILLUMINATI') {
           card.classList.add('is-coming-soon', 'coming-soon-overlay');
         }
       });
+      */
 
       // 3. The Secretariat is also blured and coming soon
       const secTrack = document.getElementById('secTrack');
