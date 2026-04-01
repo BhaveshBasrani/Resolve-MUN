@@ -70,31 +70,140 @@
 
   html { scroll-behavior: smooth; }
 
-  /* CUSTOM CURSOR */
-  .cursor {
-    position: fixed; width: 6px; height: 6px;
-    background: #ffffff; border-radius: 50%;
-    pointer-events: none; z-index: 10002;
-    mix-blend-mode: difference;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .cursor-ring {
-    position: fixed; width: 36px; height: 36px;
-    background: #ffffff; border-radius: 50%;
-    pointer-events: none; z-index: 10002;
-    mix-blend-mode: difference;
-    opacity: 0;
-    transition: opacity 0.3s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  /* CINEMATIC GAMING CURSOR (HUD) */
+  .cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    z-index: 10002;
+    display: none;
     will-change: transform;
+    transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
   }
-  .cursor-hover-state {
-    transform: scale(1.8);
+
+  .cursor-dot::before,
+  .cursor-dot::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: var(--gold-light);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px var(--gold-light);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, width 0.3s ease, height 0.3s ease;
+  }
+
+  /* Horizontal bar of the cross */
+  .cursor-dot::before {
+    width: 100%;
+    height: 1.5px;
+  }
+
+  /* Vertical bar of the cross */
+  .cursor-dot::after {
+    width: 1.5px;
+    height: 100%;
+  }
+
+  .cursor-reticle {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 50px;
+    height: 50px;
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10001;
+    display: none;
+    will-change: transform;
+    transition: width 0.4s cubic-bezier(0.19, 1, 0.22, 1), height 0.4s cubic-bezier(0.19, 1, 0.22, 1), border 0.4s ease, opacity 0.3s ease;
+  }
+
+  /* Sub-elements for detail */
+  .cursor-reticle::before, .cursor-reticle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid var(--gold-light);
+    pointer-events: none;
+  }
+
+  .cursor-reticle::before {
+    width: 110%;
+    height: 110%;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+    animation: hudRotate 4s linear infinite;
+  }
+
+  .cursor-reticle::after {
+    width: 70%;
+    height: 70%;
+    border-left-color: transparent;
+    border-right-color: transparent;
+    animation: hudRotate 2.5s linear infinite reverse;
+    opacity: 0.5;
+  }
+
+  @keyframes hudRotate {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  .custom-cursor-enabled .cursor-dot,
+  .custom-cursor-enabled .cursor-reticle {
+    display: block;
+  }
+
+  /* Cinematic Hover States */
+  .cursor-reticle.locked {
+    width: 65px;
+    height: 65px;
+    border-color: var(--gold-light);
+    background: rgba(124, 58, 237, 0.05);
+  }
+
+  .cursor-reticle.locked::before {
+    animation-duration: 1s;
+    border-width: 2px;
+  }
+
+  .cursor-dot.locked {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .cursor-dot.locked::before,
+  .cursor-dot.locked::after {
+    background: #fff;
+    box-shadow: 0 0 20px #fff;
+  }
+
+  /* Interaction (Click) */
+  .cursor-reticle.firing {
+    transform: translate3d(var(--x), var(--y), 0) translate(-50%, -50%) scale(0.85) !important;
+    border-color: #fff;
     background: rgba(255, 255, 255, 0.1);
   }
-  .cursor-ring.hovered {
-    transform: scale(1.5) translateZ(0);
-    opacity: 0.8;
+
+  .cursor-dot.firing {
+    transform: translate3d(var(--x), var(--y), 0) translate(-50%, -50%) scale(1.5);
+  }
+  
+  .cursor-dot.firing::before,
+  .cursor-dot.firing::after {
+    background: #fff;
+  }
+
+  .cursor-dot.hidden-state, .cursor-reticle.hidden-state {
+    opacity: 0 !important;
   }
 
   /* NAV */
@@ -3668,8 +3777,8 @@
   </div>
 </div>
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursorRing"></div>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-reticle" id="cursorReticle"></div>
 
 <!-- NAV -->
 <nav id="navbar">
@@ -5117,105 +5226,98 @@
     }
   }, { passive: true });
 
-  // CURSOR
-  const cursor = document.getElementById('cursor');
-  const cursorRing = document.getElementById('cursorRing');
+  // CINEMATIC CURSOR LOGIC
+  const cursorDot = document.getElementById('cursorDot');
+  const cursorReticle = document.getElementById('cursorReticle');
   let mx = 0, my = 0, rx = 0, ry = 0;
+  let isMoving = false;
 
-  // Enable custom cursor whenever an interactive fine pointer is available.
   const hasInteractivePointer =
     window.matchMedia('(any-pointer: fine)').matches &&
     window.matchMedia('(any-hover: hover)').matches;
 
   if (hasInteractivePointer) {
     document.documentElement.classList.add('custom-cursor-enabled');
-    document.documentElement.classList.remove('native-cursor');
-    document.addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      // Show cursor on first move
-      if (cursor.style.opacity === '0' || cursor.style.opacity === '') {
-        cursor.style.opacity = '1';
-        cursorRing.style.opacity = '1';
-      }
-    });
-    function animateCursor() {
-      rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
-      cursor.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
+
+    const animateCursor = () => {
+      // Reticle trailing using linear interpolation (lerp)
+      // Faster lerp for more fluid gaming feel (0.15 - 0.2)
+      rx += (mx - rx) * 0.18;
+      ry += (my - ry) * 0.18;
+
+      // Update dot position using custom properties for scale flexibility
+      cursorDot.style.setProperty('--mx', `${mx}px`);
+      cursorDot.style.setProperty('--my', `${my}px`);
+      cursorDot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
       
-      // Let the 'hovered' class handle scale via CSS transition, we just lerp the position
-      cursorRing.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
+      // Update reticle smooth position
+      cursorReticle.style.setProperty('--x', `${rx}px`);
+      cursorReticle.style.setProperty('--y', `${ry}px`);
+      cursorReticle.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
+      
       requestAnimationFrame(animateCursor);
-    }
-    animateCursor();
-
-    // Reset basic styles to work with transform3d
-    cursor.style.left = '0'; cursor.style.top = '0';
-    cursorRing.style.left = '0'; cursorRing.style.top = '0';
-
-    // Toggle cursor visibility based on mouse presence
-    document.addEventListener('mouseenter', () => {
-      cursor.style.opacity = '1';
-      cursorRing.style.opacity = '1';
-    });
-    document.addEventListener('mouseleave', () => {
-      cursor.style.opacity = '0';
-      cursorRing.style.opacity = '0';
-    });
-  } else {
-    cursor.style.display = 'none';
-    cursorRing.style.display = 'none';
-    document.documentElement.classList.remove('custom-cursor-enabled');
-    document.documentElement.classList.add('native-cursor');
-  }
-
-  const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw7DimADzITheiQkSL6EvbuPSmCS1uQoKhXWhh2GTX_QwAWqFkPCf1h37J6fLhNxl10/exec';
-  const GOOGLE_SHEET_TAB_DELEGATE = 'Sheet1';
-  const GOOGLE_SHEET_TAB_OC = 'Sheet2';
-  const GOOGLE_SHEET_TAB_EB = 'Sheet4';
-  const GOOGLE_SHEET_TAB_DELEGATION = 'Sheet3';
-  const GOOGLE_SHEET_TAB_WAITLIST = 'Sheet';
-
-  async function submitToGoogleSheet(sheetName, payload) {
-    const requestBody = {
-      sheetName,
-      submittedAt: new Date().toISOString(),
-      ...payload
     };
 
-    const response = await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(requestBody)
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; 
+      my = e.clientY;
+      
+      if (!isMoving) {
+        isMoving = true;
+        cursorDot.style.opacity = '1';
+        cursorReticle.style.opacity = '1';
+        animateCursor();
+      }
     });
 
-    const result = await response.json();
-    if (result.status === "error") {
-      throw new Error(result.message);
-    }
+    // Firing Logic (Click) - Immediate scaling visual feedback
+    document.addEventListener('mousedown', () => {
+      cursorReticle.classList.add('firing');
+      cursorDot.classList.add('firing');
+    });
+
+    document.addEventListener('mouseup', () => {
+      cursorReticle.classList.remove('firing');
+      cursorDot.classList.remove('firing');
+    });
+
+    // Handle cursor leaving and entering the page
+    document.addEventListener('mouseenter', () => {
+      cursorDot.classList.remove('hidden-state');
+      cursorReticle.classList.remove('hidden-state');
+    });
+
+    document.addEventListener('mouseleave', () => {
+      cursorDot.classList.add('hidden-state');
+      cursorReticle.classList.add('hidden-state');
+    });
+  } else {
+    if (cursorDot) cursorDot.style.display = 'none';
+    if (cursorReticle) cursorReticle.style.display = 'none';
+    document.documentElement.classList.remove('custom-cursor-enabled');
   }
 
-  // Helper to attach hover effects to elements
-  function updateHoverListeners() {
-    const targetSelectors = 'a, button, input, select, textarea, .modal-close, .committee-card, .sec-card';
+  // Update HUD target interaction
+  const updateInteractables = () => {
+    const targetSelectors = 'a, button, .committee-card, input, select, textarea, label, [role="button"], .clickable, .sec-card';
     document.querySelectorAll(targetSelectors).forEach(el => {
       if (el.dataset.hasCursorListener) return;
       el.addEventListener('mouseenter', () => {
-        cursorRing.classList.add('hovered');
+        cursorReticle.classList.add('locked');
+        cursorDot.classList.add('locked'); 
       });
       el.addEventListener('mouseleave', () => {
-        cursorRing.classList.remove('hovered');
+        cursorReticle.classList.remove('locked');
+        cursorDot.classList.remove('locked');
       });
       el.dataset.hasCursorListener = 'true';
     });
-  }
+  };
 
-  updateHoverListeners();
+  updateInteractables();
 
-  // Use MutationObserver to handle dynamically appearing modal elements
-  const cursorObserver = new MutationObserver(() => {
-    updateHoverListeners();
-  });
-  cursorObserver.observe(document.body, { childList: true, subtree: true });
+  const cursorMutationObserver = new MutationObserver(updateInteractables);
+  cursorMutationObserver.observe(document.body, { childList: true, subtree: true });
 
   // Attach to registration triggers
   document.querySelectorAll('.nav-cta').forEach(btn => {
