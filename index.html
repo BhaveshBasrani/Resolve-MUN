@@ -4971,7 +4971,7 @@
         };
 
         // Re-using your existing Google Sheet fetch function!
-        await submitToGoogleSheet(GOOGLE_SHEET_TAB_WAITLIST, data);
+        await submitToGoogleSheet(data);
         
         // Hide form and show success message smoothly
         waitlistForm.style.display = 'none';
@@ -5063,6 +5063,22 @@
       reader.onerror = (error) => reject(error);
     });
   };
+
+const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7DimADzITheiQkSL6EvbuPSmCS1uQoKhXWhh2GTX_QwAWqFkPCf1h37J6fLhNxl10/exec"; // I will replace this later
+
+async function submitToGoogleSheet(data) {
+  try {
+    const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    });
+    return true;
+  } catch (error) {
+    console.error('Error submitting to Google Sheets:', error);
+    throw new Error('Failed to connect to the server.');
+  }
+}
 
   // Modern File Upload Handler
   document.querySelectorAll('.file-upload-input').forEach(input => {
@@ -5453,29 +5469,21 @@
       experience: document.getElementById("regExp").value,
 
       pref1_committee: document.getElementById("pref1_committee").value,
-      pref1_portfolio1: document.getElementById("pref1_port1")?.value || "",
-      pref1_portfolio2: document.getElementById("pref1_port2")?.value || "",
-      pref1_role: document.getElementById("pref1_role")?.value || "",
-
+      pref1_portfolio1: document.getElementById("pref1_role")?.value || document.getElementById("pref1_port1")?.value || "",
+      
       pref2_committee: document.getElementById("pref2_committee").value,
-      pref2_portfolio1: document.getElementById("pref2_port1")?.value || "",
-      pref2_portfolio2: document.getElementById("pref2_port2")?.value || "",
-      pref2_role: document.getElementById("pref2_role")?.value || "",
-
+      pref2_portfolio1: document.getElementById("pref2_role")?.value || document.getElementById("pref2_port1")?.value || "",
+      
       pref3_committee: document.getElementById("pref3_committee").value,
-      pref3_portfolio1: document.getElementById("pref3_port1")?.value || "",
-      pref3_portfolio2: document.getElementById("pref3_port2")?.value || "",
-      pref3_role: document.getElementById("pref3_role")?.value || "",
+      pref3_portfolio1: document.getElementById("pref3_role")?.value || document.getElementById("pref3_port1")?.value || "",
 
-      payment_txn_id: document.getElementById("regTxnID")?.value || "",
+      payment_utr: document.getElementById("regTxnID")?.value || document.getElementById("regUTR")?.value || "",
       payment_screenshot_link: fileBase64,
-      payment_screenshot_name: fileName,
-      payment_utr: document.getElementById("regUTR")?.value || "",
       emergency_name: document.getElementById("regEmergencyName")?.value || "",
       emergency_phone: document.getElementById("regEmergencyPhone")?.value || ""
     };
 
-      await submitToGoogleSheet(GOOGLE_SHEET_TAB_DELEGATE, data);
+      await submitToGoogleSheet(data);
       alert('Registration Submitted Successfully! The Secretariat will review your application and notify you soon.');
       clearFormData();
       closeRegistration();
@@ -5881,12 +5889,11 @@
         delegates: delegates,
         txnID: document.getElementById("delTxnID").value,
         driveLink: fileBase64,
-        payment_file_name: fileName,
         totalAmount: size * 2049
       };
 
       console.log('Sending Delegation Data:', data);
-      await submitToGoogleSheet(GOOGLE_SHEET_TAB_DELEGATION, data);
+      await submitToGoogleSheet(data);
       alert('Delegation Registered Successfully! All ' + size + ' delegates have been enrolled. The Secretariat will contact the Faculty Adviser shortly.');
       delRegForm.reset();
       clearDelFormData();
@@ -6048,13 +6055,11 @@
         munCount: document.getElementById("ocMunCount").value,
         why: document.getElementById("ocWhy").value,
         attributes: document.getElementById("ocAttributes").value,
-        txnID: document.getElementById("ocTxnID").value,
-        utr: document.getElementById("ocUTR").value,
         payment_screenshot_link: fileBase64
       };
 
       console.log('OC Data:', data);
-      await submitToGoogleSheet(GOOGLE_SHEET_TAB_OC, data);
+      await submitToGoogleSheet(data);
       
       alert('Application Submitted Successfully! The Secretariat will review your OC application soon.');
       ocRegForm.reset();
@@ -6406,17 +6411,17 @@
         phone: document.getElementById("ebPhone").value,
         email: document.getElementById("ebEmail").value,
         institute: document.getElementById("ebInst").value,
-        role: document.getElementById("ebRole").value,
+        position: document.getElementById("ebRole").value,
         experience: document.getElementById("ebExp").value,
         why: document.getElementById("ebWhy").value,
-        pref1: document.getElementById("ebPref1").value,
-        pref2: document.getElementById("ebPref2").value,
+        committees: document.getElementById("ebPref1").value + " & " + document.getElementById("ebPref2").value,
         cv_file: fileBase64,
-        cv_file_name: fileName
+        dob: "",
+        munCount: ""
       };
 
       // Reusing GOOGLE_SHEET_TAB_EB for EB applications
-      await submitToGoogleSheet(GOOGLE_SHEET_TAB_EB, data); 
+      await submitToGoogleSheet(data); 
       alert('EB Application Submitted Successfully! The Secretariat will review your profile and contact you for an interview.');
       ebRegForm.reset();
       clearEbFormData();
