@@ -5744,7 +5744,8 @@ async function submitToGoogleSheet(data) {
       }
       */
 
-      // 6. EB Applications Section
+      // 6. EB Applications Section (BYPASSED - Always Active)
+      /* 
       const ebSection = document.getElementById('eb-applications');
       if (ebSection) {
         ebSection.style.position = 'relative';
@@ -5756,6 +5757,7 @@ async function submitToGoogleSheet(data) {
           ebSection.appendChild(banner);
         }
       }
+      */
     }
   });
 
@@ -6318,23 +6320,6 @@ async function submitToGoogleSheet(data) {
   document.addEventListener('DOMContentLoaded', restoreEbFormData);
 
   function openEbRegistration() {
-    if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      const mIcon = document.getElementById('commModalIcon');
-      const mTitle = document.getElementById('commModalTitle');
-      const mAgenda = document.getElementById('commModalAgenda');
-      const mText = document.getElementById('commModalText');
-      const waitlist = document.getElementById('waitlistContainer');
-
-      mIcon.innerText = "EXECUTIVE BOARD";
-      mTitle.innerText = "LEAD THE DEBATE";
-      mAgenda.innerText = "Recruitment starting soon.";
-      mText.innerText = "The Executive Board is the academic pillar of our summit. Leave your contact to be notified the moment the portal for EB applications opens.";
-      waitlist.style.display = 'block';
-
-      document.getElementById('commModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-      return;
-    }
     restoreEbFormData();
     if (ebModal) {
       ebModal.classList.add('active');
