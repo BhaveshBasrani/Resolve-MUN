@@ -3441,7 +3441,26 @@
     .nav-links.mobile-active .nav-cta { display: flex !important; margin-top: 20px; }
     .cursor, .cursor-ring { display: none !important; }
     * { cursor: auto !important; }
-  .particles-canvas { opacity: 0 !important; pointer-events: none; }
+    .particles-canvas { opacity: 0 !important; pointer-events: none; }
+
+    /* Performance Optimizations for Mobile */
+    .modal-overlay, .modal-content, .nav.scrolled, .sec-card, .committee-card, .letter-container, .oc-card, .eb-card {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background-color: rgba(5, 5, 7, 0.95) !important;
+    }
+    .hero-grid, .hero-bg {
+      animation: none !important;
+    }
+    .about-stat-grid {
+      box-shadow: none !important;
+    }
+    .custom-cursor-enabled * {
+      cursor: auto !important;
+    }
+    .glow-line {
+      display: none !important; /* Glow lines are GPU heavy */
+    }
   
   /* Sidebar stacking fix */
   nav { z-index: 1000 !important; background: #050507 !important; }
@@ -6268,7 +6287,9 @@ async function submitToGoogleSheet(data) {
   
   function initParticles() {
     particles = [];
-    let numberOfParticles = (W * H) / 15000;
+    // Lower particle count on mobile for performance
+    let particleDensity = (window.innerWidth < 768) ? 30000 : 15000;
+    let numberOfParticles = (W * H) / particleDensity;
     for (let i = 0; i < numberOfParticles; i++) {
       particles.push(new Particle());
     }
