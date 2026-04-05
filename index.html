@@ -3530,6 +3530,8 @@
 
   @media (max-width: 768px) {
     .resolve-event-text { font-size: 18vw; letter-spacing: 2vw; }
+    .eb-card, .oc-card { padding: 40px 20px !important; }
+    .eb-btn, .oc-btn { width: 100% !important; padding: 16px 20px !important; }
   }
 </style>
 </head>
@@ -5336,6 +5338,15 @@ async function submitToGoogleSheet(data) {
   const hasInteractivePointer =
     window.matchMedia('(any-pointer: fine)').matches &&
     window.matchMedia('(any-hover: hover)').matches;
+
+  // Force hide cursor on touch interaction
+  window.addEventListener('touchstart', function onFirstTouch() {
+    document.documentElement.classList.remove('custom-cursor-enabled');
+    if (cursorDot) cursorDot.style.display = 'none';
+    if (cursorReticle) cursorReticle.style.display = 'none';
+    // Remove listener after first touch
+    window.removeEventListener('touchstart', onFirstTouch);
+  }, { passive: true });
 
   if (hasInteractivePointer) {
     document.documentElement.classList.add('custom-cursor-enabled');
