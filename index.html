@@ -78,7 +78,7 @@
     width: 14px;
     height: 14px;
     pointer-events: none;
-    z-index: 10002;
+    z-index: 200000;
     display: none;
     will-change: transform;
     transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
@@ -117,7 +117,7 @@
     border: 1px solid rgba(124, 58, 237, 0.3);
     border-radius: 50%;
     pointer-events: none;
-    z-index: 10001;
+    z-index: 199999;
     display: none;
     will-change: transform;
     transition: width 0.4s cubic-bezier(0.19, 1, 0.22, 1), height 0.4s cubic-bezier(0.19, 1, 0.22, 1), border 0.4s ease, opacity 0.3s ease;
@@ -690,40 +690,71 @@
     margin-top: 10px;
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    padding: 10px 15px;
+    border-radius: 8px;
+    padding: 8px;
     cursor: none !important;
     transition: all 0.3s ease;
+    overflow: hidden;
+    min-height: 54px;
   }
   .file-upload-wrapper:hover {
-    border-color: var(--gold);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--gold-light);
+    background: rgba(255, 255, 255, 0.08);
   }
   .file-upload-btn {
     background: var(--gold);
-    color: var(--black);
-    padding: 6px 12px;
-    border-radius: 3px;
+    color: var(--white);
+    padding: 10px 18px;
+    border-radius: 6px;
     font-family: 'Oswald', sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-right: 15px;
+    letter-spacing: 0.1em;
     pointer-events: none;
+    white-space: nowrap;
+    margin-right: 15px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   .file-name {
     font-family: 'Crimson Pro', serif;
-    font-size: 0.9rem;
-    color: var(--muted);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-transform: none;
+    letter-spacing: 0.03em;
     flex: 1;
+    padding-right: 10px;
   }
   .file-upload-input {
-    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer !important;
+    z-index: 2;
+  }
+
+  @media (max-width: 600px) {
+    .file-upload-wrapper {
+      padding: 6px;
+      min-height: 48px;
+    }
+    .file-upload-btn {
+      padding: 8px 14px;
+      font-size: 0.7rem;
+      margin-right: 10px;
+    }
+    .file-name {
+      font-size: 0.75rem;
+    }
   }
 
   .form-actions {
@@ -3753,12 +3784,85 @@
     .resolve-event-text { font-size: 18vw; letter-spacing: 2vw; }
     .eb-card, .oc-card { padding: 40px 20px !important; }
     .eb-btn, .oc-btn { width: 100% !important; padding: 16px 20px !important; }
+    /* Mobile optimization for modals */
+    .modal-content {
+      width: 95% !important;
+      max-height: 90vh !important;
+      padding: 30px 15px !important;
+      margin: 10px auto !important;
+    }
+    .form-group { margin-bottom: 15px !important; }
+    .form-group[style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+      gap: 15px !important;
+    }
+    .payment-banner h3 { font-size: 1.2rem !important; }
+    .upi-box { padding: 10px !important; }
+    #upiID, #delUpiID { font-size: 0.8rem !important; }
+  }
+
+  /* CUSTOM ALERT SYSTEM */
+  #custom-alert-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20000;
+    width: 90%;
+    max-width: 400px;
+    pointer-events: none;
+  }
+
+  .custom-alert {
+    background: rgba(10, 10, 20, 0.95);
+    border: 1px solid var(--gold-light);
+    color: var(--white);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--gold-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: alertSlideIn 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    pointer-events: auto;
+    backdrop-filter: blur(10px);
+  }
+
+  .custom-alert.error { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+  .custom-alert.success { border-color: #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.2); }
+
+  .custom-alert-content { font-family: 'Oswald', sans-serif; font-size: 0.9rem; letter-spacing: 0.05em; font-weight: 500; }
+  
+  .custom-alert-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    margin-left: 15px;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    transition: color 0.3s;
+  }
+
+  .custom-alert-close:hover { color: var(--white); }
+
+  @keyframes alertSlideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes alertSlideOut {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-30px); opacity: 0; }
   }
 </style>
 </head>
 <body data-cursor="none">
 
-<!-- LOADING SCREEN -->
+<!-- CUSTOM ALERT CONTAINER -->
+<div id="custom-alert-container"></div>
 <div id="loading-screen">
   <img src="images/Logo.svg" alt="Resolve MUN Logo" class="loader-logo">
   <div class="loader-bar-container">
@@ -3880,6 +3984,17 @@
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div>
+            <label for="regDob">Date of Birth</label>
+            <input type="date" id="regDob" required autocomplete="bday">
+          </div>
+          <div>
+            <label for="regReferral">Referral Code (Optional)</label>
+            <input type="text" id="regReferral" placeholder="e.g. RES-123" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div>
             <label for="regEmergencyName">Emergency Contact Name</label>
             <input type="text" id="regEmergencyName" name="emergency-name" autocomplete="name" placeholder="Parent / Guardian name" required>
           </div>
@@ -3997,7 +4112,8 @@
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner">
-          <h3>Registration Fee: ₹2149</h3>
+          <h3>Registration Fee: ₹2349</h3>
+          <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
         <div class="payment-card">
@@ -4005,7 +4121,7 @@
             <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
             <div style="text-align: center;">
               <div class="qr-container">
-                <img src="images\QR(new).svg" alt="Payment QR Code">
+                <img src="images/QR_Del.svg" alt="Payment QR Code">
               </div>
               <div class="upi-box">
                 <span id="upiID">bhoomianilbasrani@okhdfcbank</span>
@@ -4103,8 +4219,6 @@
     <li><a href="#committees">Committees</a></li>
     <li><a href="#venue">Venue</a></li>
     <li><a href="#secretariat">Secretariat</a></li>
-    <li><a href="javascript:void(0)" onclick="openOcRegistration()">OC Registration</a></li>
-    <li><a href="javascript:void(0)" onclick="openEbRegistration()">EB Application</a></li>
   </ul>
   <a href="javascript:void(0)" class="nav-cta" onclick="openSelection()">Register Now</a>
 </nav>
@@ -4382,13 +4496,7 @@
         <div class="sec-name">Jayakrishna</div>
         <div class="sec-role">OC Head</div>
       </div>
-
       <!-- Sec -->
-      <div class="sec-card">
-        <div class="sec-avatar">JJ</div>
-        <div class="sec-name">Joshua Joel</div>
-        <div class="sec-role">USG Finance</div>
-      </div>
       <div class="sec-card">
         <div class="sec-avatar">MH</div>
         <div class="sec-name">Mahathi</div>
@@ -4473,11 +4581,6 @@
         <div class="sec-avatar">HM</div>
         <div class="sec-name">Harshita Muchhal</div>
         <div class="sec-role">USG Culturals</div>
-      </div>
-      <div class="sec-card">
-        <div class="sec-avatar">OK</div>
-        <div class="sec-name">Om Suraj Kashikar</div>
-        <div class="sec-role">USG Technology</div>
       </div>
       <div class="sec-card">
         <div class="sec-avatar">VR</div>
@@ -4777,6 +4880,17 @@
             </div>
           </div>
 
+          <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <label for="ebDob">Date of Birth</label>
+              <input type="date" id="ebDob" required autocomplete="bday">
+            </div>
+            <div>
+              <label for="ebReferral">Referral Code (Optional)</label>
+              <input type="text" id="ebReferral" placeholder="e.g. RES-123" autocomplete="off">
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="ebInst">Institution / School / College</label>
             <input type="text" id="ebInst" placeholder="Name of your current school/college" required>
@@ -4797,6 +4911,17 @@
               <option value="Chairperson">Chairperson</option>
               <option value="Vice-Chairperson">Vice-Chairperson</option>
               <option value="Rapporteur">Rapporteur</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ebMunCount">Number of MUNs attended</label>
+            <select id="ebMunCount" required>
+              <option value="" disabled selected>Select an option</option>
+              <option value="15-20">15-20</option>
+              <option value="21-30">21-30</option>
+              <option value="31-50">31-50</option>
+              <option value="51+">51 & More</option>
             </select>
           </div>
 
@@ -4932,14 +5057,12 @@
         <!-- STEP 3: PAYMENT & CONFIRMATION -->
         <div class="form-step" id="delStep3">
           <div class="payment-banner">
-            <h3 id="delTotalPriceDisplay">Total Amount: ₹9,995</h3>
-            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">(₹1999 per delegate)</p>
-          </div>
-
-          <div class="payment-card">
+            <h3 id="delTotalPriceDisplay">Total Amount: ₹17,592</h3>
+            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">(₹2199 per delegate)</p>
+          <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 8px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
             <div style="text-align: center; margin-bottom: 20px;">
               <div class="qr-container">
-                <img src="images\QR(new).svg" alt="Delegation Payment QR Code">
+                <img src="images/QR_Del.svg" alt="Delegation Payment QR Code">
               </div>
               <div class="upi-box">
                 <span id="delUpiID">bhoomianilbasrani@okhdfcbank</span>
@@ -5049,6 +5172,44 @@
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   /**
+   * CUSTOM ALERT SYSTEM
+   */
+  function showCustomAlert(message, type = 'default', duration = 4000) {
+    const container = document.getElementById('custom-alert-container');
+    if (!container) return;
+
+    const alert = document.createElement('div');
+    alert.className = `custom-alert ${type}`;
+    
+    alert.innerHTML = `
+      <div class="custom-alert-content">${message}</div>
+      <button class="custom-alert-close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    `;
+
+    container.appendChild(alert);
+
+    const closeBtn = alert.querySelector('.custom-alert-close');
+    const closeAlert = () => {
+      alert.style.animation = 'alertSlideOut 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards';
+      setTimeout(() => alert.remove(), 400);
+    };
+
+    closeBtn.onclick = closeAlert;
+    setTimeout(closeAlert, duration);
+  }
+
+  // Override window.alert
+  const originalAlert = window.alert;
+  window.alert = function(message) {
+    showCustomAlert(message);
+  };
+
+  /**
    * RECAPTCHA v3 EXECUTION
    * This function gets a token from Google and should be called before form submission.
    */
@@ -5140,6 +5301,7 @@
     const mText = document.getElementById('commModalText');
     const waitlist = document.getElementById('waitlistContainer');
 
+    /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       mIcon.innerText = "SUMMIT STATUS";
       mTitle.innerText = "RESOLVE 2026";
@@ -5151,6 +5313,7 @@
       document.body.style.overflow = 'hidden';
       return;
     }
+    */
     selectionModal.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -5226,6 +5389,7 @@
   if (closeSelectionModalBtn) closeSelectionModalBtn.onclick = closeSelection;
 
   function selectPathway(type) {
+    /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       if (type === 'oc') {
         openOcRegistration();
@@ -5236,6 +5400,7 @@
       }
       return;
     }
+    */
     closeSelection();
     if (type === 'delegate') {
       openRegistration();
@@ -5249,10 +5414,12 @@
   }
 
   function openDelRegistration() {
+    /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       openSelection();
       return;
     }
+    */
     const delModal = document.getElementById('delModal');
     if (delModal) {
       delModal.classList.add('active');
@@ -5277,8 +5444,9 @@
 
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File is too large. Max size 5MB.");
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        showCustomAlert("⚠️ FILE TOO LARGE: The maximum allowed size is 5MB. Please compress your screenshot.", "error");
         reject(new Error("File too large"));
         return;
       }
@@ -5310,8 +5478,21 @@ async function submitToGoogleSheet(data) {
     input.addEventListener('change', function() {
       const wrapper = this.closest('.file-upload-wrapper');
       const fileNameSpan = wrapper.querySelector('.file-name');
+      
       if (this.files && this.files.length > 0) {
-        fileNameSpan.textContent = this.files[0].name;
+        const file = this.files[0];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (file.size > maxSize) {
+          showCustomAlert(`⚠️ ERROR: "${file.name}" exceeds 5MB limit.`, "error");
+          this.value = ''; // Reset the input
+          fileNameSpan.textContent = "FILE TOO LARGE (MAX 5MB)";
+          fileNameSpan.style.color = "#ef4444";
+          wrapper.style.borderColor = "#ef4444";
+          return;
+        }
+
+        fileNameSpan.textContent = file.name;
         fileNameSpan.style.color = 'var(--gold-light)';
         wrapper.style.borderColor = 'var(--gold)';
       } else {
@@ -5329,7 +5510,7 @@ async function submitToGoogleSheet(data) {
   const STORAGE_KEY = 'resolveMunRegForm';
   const formFieldIds = [
     'regName','regGrade','regPhone','regEmail','regInstitute','regAddress',
-    'regTransport','regEmergencyName','regEmergencyPhone','regExp',
+    'regTransport','regDob', 'regReferral', 'regEmergencyName','regEmergencyPhone','regExp',
     'pref1_committee','pref1_port1','pref1_port2','pref1_role',
     'pref2_committee','pref2_port1','pref2_port2','pref2_role',
     'pref3_committee','pref3_port1','pref3_port2','pref3_role',
@@ -5390,10 +5571,12 @@ async function submitToGoogleSheet(data) {
   });
 
   function openRegistration() {
+    /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       openSelection();
       return;
     }
+    */
     restoreFormData();
     regModal.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -5800,7 +5983,7 @@ async function submitToGoogleSheet(data) {
 
   function updateDelPrice() {
     const size = parseInt(document.getElementById('delSize').value) || 0;
-    const totalPrice = size * 2049;
+    const totalPrice = size * 2199;
     const display = document.getElementById('delTotalPriceDisplay');
     if (display) {
       display.innerText = `Total Amount: ₹${totalPrice.toLocaleString()}`;
@@ -6125,7 +6308,7 @@ async function submitToGoogleSheet(data) {
         delegates: delegates,
         txnID: document.getElementById("delTxnID").value,
         driveLink: fileBase64,
-        totalAmount: size * 2049
+        totalAmount: size * 2199
       };
 
       console.log('Sending Delegation Data:', data);
@@ -6517,7 +6700,7 @@ async function submitToGoogleSheet(data) {
   // AUTO-SAVE EB form fields to localStorage
   const EB_STORAGE_KEY = 'resolveMunEbRegForm';
   const ebFormFieldIds = [
-    'ebName', 'ebPhone', 'ebEmail', 'ebInst', 'ebRole', 
+    'ebName', 'ebPhone', 'ebEmail', 'ebDob', 'ebReferral', 'ebInst', 'ebRole', 'ebMunCount',
     'ebExp', 'ebWhy', 'ebPref1', 'ebPref2', 'ebCv'
   ];
 
@@ -6637,8 +6820,9 @@ async function submitToGoogleSheet(data) {
         why: document.getElementById("ebWhy").value,
         committees: document.getElementById("ebPref1").value + " & " + document.getElementById("ebPref2").value,
         cv_file: fileBase64,
-        dob: "",
-        munCount: ""
+        dob: document.getElementById("ebDob").value,
+        referral: document.getElementById("ebReferral").value,
+        munCount: document.getElementById("ebMunCount").value
       };
 
       // Reusing GOOGLE_SHEET_TAB_EB for EB applications
