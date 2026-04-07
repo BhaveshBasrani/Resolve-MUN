@@ -4801,7 +4801,7 @@
               <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. SCAN TO PAY</label>
               <div style="text-align: center;">
                 <div class="qr-container">
-                  <img src="images\QR(new).svg" alt="OC Payment QR Code">
+                  <img src="images/QR_OC.svg" alt="OC Payment QR Code">
                 </div>
                 <div class="upi-box">
                   <span id="ocUpiID">bhoomianilbasrani@okhdfcbank</span>
@@ -5062,7 +5062,7 @@
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 8px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
             <div style="text-align: center; margin-bottom: 20px;">
               <div class="qr-container">
-                <img src="images/QR_Del.svg" alt="Delegation Payment QR Code">
+                <img src="images/QR_Dele.svg" alt="Delegation Payment QR Code">
               </div>
               <div class="upi-box">
                 <span id="delUpiID">bhoomianilbasrani@okhdfcbank</span>
@@ -5414,6 +5414,7 @@
   }
 
   function openDelRegistration() {
+    restoreDelFormData();
     /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       openSelection();
@@ -5559,7 +5560,7 @@ async function submitToGoogleSheet(data) {
   }
 
   // Restore on load
-  restoreFormData();
+  document.addEventListener('DOMContentLoaded', restoreFormData);
 
   // Save on every input/change
   formFieldIds.forEach(id => {
@@ -5571,6 +5572,7 @@ async function submitToGoogleSheet(data) {
   });
 
   function openRegistration() {
+    restoreFormData();
     /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       openSelection();
@@ -5673,7 +5675,9 @@ async function submitToGoogleSheet(data) {
     if (committee === 'IP') {
       if (portfolioDiv) {
         portfolioDiv.style.display = 'none';
-        portfolioDiv.querySelectorAll('input').forEach(input => input.required = false);
+        portfolioDiv.querySelectorAll('input').forEach(input => {
+          input.required = false;
+        });
       }
       if (roleSelect) {
         roleSelect.style.display = 'block';
@@ -5682,7 +5686,14 @@ async function submitToGoogleSheet(data) {
     } else {
       if (portfolioDiv) {
         portfolioDiv.style.display = 'grid';
-        portfolioDiv.querySelectorAll('input').forEach(input => input.required = true);
+        portfolioDiv.querySelectorAll('input').forEach(input => {
+          input.required = true;
+          if (committee === 'IFI') {
+            input.placeholder = input.id.includes('port1') ? "Portfolio Preference 1" : "Portfolio Preference 2";
+          } else {
+            input.placeholder = input.id.includes('port1') ? "Country Preference 1" : "Country Preference 2";
+          }
+        });
       }
       if (roleSelect) {
         roleSelect.style.display = 'none';
@@ -5935,7 +5946,7 @@ async function submitToGoogleSheet(data) {
   const DEL_STORAGE_KEY = 'resolveMunDelRegForm';
   const delFormFieldIds = [
     'delInstName', 'delAdviserName', 'delAdviserPhone', 'delAdviserEmail', 'delSize',
-    'delHeadName', 'delHeadPhone', 'delHeadEmail', 'delPreviousExp', 'delTxnID', 'delDriveLink'
+    'delTxnID'
   ];
 
   function saveDelFormData() {
@@ -5965,10 +5976,15 @@ async function submitToGoogleSheet(data) {
       // Restore static fields
       delFormFieldIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el && saved[id]) el.value = saved[id];
+        if (el && saved[id]) {
+          el.value = saved[id];
+        }
       });
 
-      // Roster will be restored by updateDelegateFields via the savedValues logic
+      // Update price display
+      updateDelPrice();
+      // Re-generate delegate fields which will use the saved values
+      updateDelegateFields();
     } catch(_) {}
   }
 
@@ -5976,9 +5992,16 @@ async function submitToGoogleSheet(data) {
     localStorage.removeItem(DEL_STORAGE_KEY);
   }
 
+  // Restore on load
+  document.addEventListener('DOMContentLoaded', restoreDelFormData);
+
+  // Attach listeners to static fields
   delFormFieldIds.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', saveDelFormData);
+    if (el) {
+      el.addEventListener('input', saveDelFormData);
+      el.addEventListener('change', saveDelFormData);
+    }
   });
 
   function updateDelPrice() {
@@ -5988,6 +6011,7 @@ async function submitToGoogleSheet(data) {
     if (display) {
       display.innerText = `Total Amount: ₹${totalPrice.toLocaleString()}`;
     }
+    saveDelFormData();
   }
 
   function updateDelPortfolioOptions(index) {
@@ -5997,10 +6021,11 @@ async function submitToGoogleSheet(data) {
 
     const committee = committeeSelect.value;
     const isIP = committee === 'IP';
+    const isIFI = committee === 'IFI';
     
     // Smoothly update the label and input type
     container.innerHTML = `
-      <label id="del_label_${index}">${isIP ? 'Role Preference' : 'Country Preference'}</label>
+      <label id="del_label_${index}">${isIP ? 'Role Preference' : (isIFI ? 'Portfolio Preference' : 'Country Preference')}</label>
       ${isIP ? `
         <select name="del_country_${index}" required>
           <option value="" disabled selected>Select Role</option>
@@ -6009,12 +6034,16 @@ async function submitToGoogleSheet(data) {
           <option value="Caricaturist">Caricaturist</option>
         </select>
       ` : `
-        <input type="text" name="del_country_${index}" placeholder="Preferred Country" required>
+        <input type="text" name="del_country_${index}" placeholder="${isIFI ? 'Preferred Portfolio' : 'Preferred Country'}" required>
       `}
     `;
 
-    // Re-attach save listener
-    container.querySelector('input, select').addEventListener('input', saveDelFormData);
+    // Re-attach save listeners
+    container.querySelectorAll('input, select').forEach(input => {
+      input.addEventListener('input', saveDelFormData);
+      input.addEventListener('change', saveDelFormData);
+    });
+    saveDelFormData();
   }
 
   function updateDelegateFields() {
@@ -6077,7 +6106,7 @@ async function submitToGoogleSheet(data) {
             </select>
            </div>
            <div id="del_portfolio_container_${i}">
-            <label id="del_label_${i}">${savedValues[`del_pref_${i}`] === 'IP' ? 'Role Preference' : 'Country Preference'}</label>
+            <label id="del_label_${i}">${savedValues[`del_pref_${i}`] === 'IP' ? 'Role Preference' : (savedValues[`del_pref_${i}`] === 'IFI' ? 'Portfolio Preference' : 'Country Preference')}</label>
             ${savedValues[`del_pref_${i}`] === 'IP' ? `
               <select name="del_country_${i}" required>
                 <option value="" disabled ${!savedValues[`del_country_${i}`] ? 'selected' : ''}>Select Role</option>
@@ -6086,7 +6115,7 @@ async function submitToGoogleSheet(data) {
                 <option value="Caricaturist" ${savedValues[`del_country_${i}`] === 'Caricaturist' ? 'selected' : ''}>Caricaturist</option>
               </select>
             ` : `
-              <input type="text" name="del_country_${i}" placeholder="Preferred Country" required value="${savedValues[`del_country_${i}`] || ''}">
+              <input type="text" name="del_country_${i}" placeholder="${savedValues[`del_pref_${i}`] === 'IFI' ? 'Preferred Portfolio' : 'Preferred Country'}" required value="${savedValues[`del_country_${i}`] || ''}">
             `}
            </div>
         </div>
@@ -6096,6 +6125,7 @@ async function submitToGoogleSheet(data) {
       // Re-attach listeners for new inputs to persist to localStorage if needed
       fieldset.querySelectorAll('input, select').forEach(input => {
         input.addEventListener('input', saveDelFormData);
+        input.addEventListener('change', saveDelFormData);
       });
     }
   }
@@ -6371,7 +6401,10 @@ async function submitToGoogleSheet(data) {
   // Listen for OC form changes to save
   ocFormFieldIds.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', saveOcFormData);
+    if (el) {
+      el.addEventListener('input', saveOcFormData);
+      el.addEventListener('change', saveOcFormData);
+    }
   });
 
   // Restore on load
@@ -6732,7 +6765,10 @@ async function submitToGoogleSheet(data) {
   // Listen for EB form changes to save
   ebFormFieldIds.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', saveEbFormData);
+    if (el) {
+      el.addEventListener('input', saveEbFormData);
+      el.addEventListener('change', saveEbFormData);
+    }
   });
 
   // Restore on load
