@@ -683,6 +683,35 @@
     color: #ff4444; font-size: 0.75rem; margin-top: 4px; display: none;
   }
 
+  #delegateInputsContainer {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    will-change: transform;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  #delegateInputsContainer::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #delegateInputsContainer::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+  }
+
+  #delegateInputsContainer::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+  }
+
+  #delegateInputsContainer::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
+    background-clip: content-box;
+  }
+
   /* MODERN FILE UPLOAD UI */
   .file-upload-wrapper {
     position: relative;
