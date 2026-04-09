@@ -5369,8 +5369,18 @@
       
       // AUTO-OPEN REGISTRATION VIA URL PARAMETER ?open=registration
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('open') === 'registration') {
+      const openParam = urlParams.get('open');
+      
+      if (openParam === 'registration' || openParam === 'selection') {
         setTimeout(openSelection, 500);
+      } else if (openParam === 'delegate') {
+        setTimeout(openRegistration, 500);
+      } else if (openParam === 'eb') {
+        setTimeout(openEbRegistration, 500);
+      } else if (openParam === 'oc') {
+        setTimeout(openOcRegistration, 500);
+      } else if (openParam === 'delegation') {
+        setTimeout(openDelRegistration, 500);
       }
     }, 1500); 
   });
