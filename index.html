@@ -5366,6 +5366,12 @@
       loader.classList.add('hidden');
       document.body.classList.add('loaded');
       document.body.style.overflow = '';
+      
+      // AUTO-OPEN REGISTRATION VIA URL PARAMETER ?open=registration
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('open') === 'registration') {
+        setTimeout(openSelection, 500);
+      }
     }, 1500); 
   });
 
