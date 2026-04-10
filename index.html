@@ -4065,7 +4065,7 @@
         
         <div class="form-group">
           <label for="regEmail">Email Address</label>
-          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
         </div>
 
         <div class="form-group">
@@ -4979,7 +4979,7 @@
             </div>
             <div>
               <label for="ebEmail">Email Address</label>
-              <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+              <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
             </div>
           </div>
 
@@ -5130,7 +5130,7 @@
             </div>
             <div>
               <label for="delAdviserEmail">Adviser Email</label>
-              <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+              <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
             </div>
           </div>
 
@@ -5298,7 +5298,7 @@
      Secret Key: YOUR_RECAPTCHA_SECRET_KEY
 -->
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
   /**
    * CUSTOM ALERT SYSTEM
    */
@@ -6234,7 +6234,7 @@ async function submitToGoogleSheet(data) {
            </div>
            <div>
             <label>Email ID</label>
-            <input type="email" name="del_email_${i}" placeholder="Email" required autocomplete="email" value="${savedValues[`del_email_${i}`] || ''}" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+            <input type="email" name="del_email_${i}" placeholder="Email" required autocomplete="email" value="${savedValues[`del_email_${i}`] || ''}" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
            </div>
         </div>
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
