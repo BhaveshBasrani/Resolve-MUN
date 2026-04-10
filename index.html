@@ -6041,13 +6041,16 @@ async function submitToGoogleSheet(data) {
       experience: document.getElementById("regExp").value,
 
       pref1_committee: document.getElementById("pref1_committee").value,
-      pref1_portfolio1: document.getElementById("pref1_role")?.value || document.getElementById("pref1_port1")?.value || "",
+      pref1_country: document.getElementById("pref1_role")?.value || 
+                     (document.getElementById("pref1_port1")?.value + " / " + document.getElementById("pref1_port2")?.value) || "",
       
       pref2_committee: document.getElementById("pref2_committee").value,
-      pref2_portfolio1: document.getElementById("pref2_role")?.value || document.getElementById("pref2_port1")?.value || "",
+      pref2_country: document.getElementById("pref2_role")?.value || 
+                     (document.getElementById("pref2_port1")?.value + " / " + document.getElementById("pref2_port2")?.value) || "",
       
       pref3_committee: document.getElementById("pref3_committee").value,
-      pref3_portfolio1: document.getElementById("pref3_role")?.value || document.getElementById("pref3_port1")?.value || "",
+      pref3_country: document.getElementById("pref3_role")?.value || 
+                     (document.getElementById("pref3_port1")?.value + " / " + document.getElementById("pref3_port2")?.value) || "",
 
       payment_utr: document.getElementById("regTxnID")?.value || document.getElementById("regUTR")?.value || "",
       payment_screenshot_link: fileBase64,
