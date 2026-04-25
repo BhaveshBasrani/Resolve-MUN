@@ -1113,6 +1113,12 @@
     transform: translateY(-1px) scale(0.98);
     transition: all 0.1s;
   }
+  .btn-primary:disabled {
+    opacity: 0.6;
+    filter: blur(0.8px);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
   .btn-primary span { position: relative; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
 
   .btn-secondary {
@@ -4015,7 +4021,7 @@
             <h3>OC</h3>
             <p>Join the team behind the scenes helping to plan and execute the conference.</p>
           </div>
-          <button class="btn-primary" onclick="selectPathway('oc')"><span>Apply for OC</span></button>
+          <button class="btn-primary" disabled><span style="opacity: 0.6;">Registrations Closed</span></button>
         </div>
 
         <div class="selection-card">
@@ -4023,7 +4029,7 @@
             <h3>EB</h3>
             <p>Chair prestigious committees and lead diplomatic dialogue.</p>
           </div>
-          <button class="btn-primary" onclick="selectPathway('eb')"><span>Apply for EB</span></button>
+          <button class="btn-primary" disabled><span style="opacity: 0.6;">Applications Closed</span></button>
         </div>
       </div>
     </div>
@@ -4758,7 +4764,7 @@
         </div>
         <h3 class="oc-card-title">Apply to OC</h3>
         <p class="oc-card-body">We are looking for dedicated individuals to lead our departments in logistics, design, and diplomacy.</p>
-        <button class="btn-primary oc-btn" onclick="openOcRegistration()"><span>Apply for OC</span></button>
+        <button class="btn-primary oc-btn" disabled><span>OC Registrations Closed</span></button>
       </div>
     </div>
   </div>
@@ -4794,7 +4800,7 @@
         </div>
         <h3 class="eb-card-title">Apply for EB</h3>
         <p class="eb-card-body">Join us as a Chairperson, Vice-Chairperson, or Rapporteur. Applications are now open for experienced MUNers.</p>
-        <button class="btn-primary eb-btn" onclick="openEbRegistration()"><span>Apply for EB</span></button>
+        <button class="btn-primary eb-btn" disabled><span>EB Applications Closed</span></button>
       </div>
     </div>
   </div>
@@ -6558,6 +6564,8 @@ async function submitToGoogleSheet(data) {
   document.addEventListener('DOMContentLoaded', restoreOcFormData);
 
   function openOcRegistration() {
+    alert("OC Registrations are now closed.");
+    return;
     restoreOcFormData();
     const ocModal = document.getElementById('ocModal');
     if (ocModal) {
@@ -6922,6 +6930,8 @@ async function submitToGoogleSheet(data) {
   document.addEventListener('DOMContentLoaded', restoreEbFormData);
 
   function openEbRegistration() {
+    alert("EB Applications are now closed.");
+    return;
     restoreEbFormData();
     if (ebModal) {
       ebModal.classList.add('active');
