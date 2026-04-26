@@ -5170,8 +5170,8 @@
         <!-- STEP 3: PAYMENT & CONFIRMATION -->
         <div class="form-step" id="delStep3">
           <div class="payment-banner">
-            <h3 id="delTotalPriceDisplay">Total Amount: ₹17,592</h3>
-            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">(₹2199 per delegate)</p>
+            <h3 id="delTotalPriceDisplay">Total Amount: ₹16,792</h3>
+            <p style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">(₹2099 per delegate)</p>
             <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 8px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
           </div>
 
@@ -6159,7 +6159,7 @@ async function submitToGoogleSheet(data) {
 
   function updateDelPrice() {
     const size = parseInt(document.getElementById('delSize').value) || 0;
-    const totalPrice = size * 2199;
+    const totalPrice = size * 2099;
     const display = document.getElementById('delTotalPriceDisplay');
     if (display) {
       display.innerText = `Total Amount: ₹${totalPrice.toLocaleString()}`;
@@ -6491,7 +6491,7 @@ async function submitToGoogleSheet(data) {
         txnID: document.getElementById("delTxnID").value,
         utr: document.getElementById("delUTR") ? document.getElementById("delUTR").value : '',
         driveLink: fileBase64,
-        totalAmount: size * 2199
+        totalAmount: size * 2099
       };
 
       console.log('Sending Delegation Data:', data);
