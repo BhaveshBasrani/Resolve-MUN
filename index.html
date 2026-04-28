@@ -4021,7 +4021,7 @@
             <h3>OC</h3>
             <p>Join the team behind the scenes helping to plan and execute the conference.</p>
           </div>
-          <button class="btn-primary" disabled><span style="opacity: 0.6;">Registrations Closed</span></button>
+          <button class="btn-primary" onclick="selectPathway('oc')"><span>Apply for OC</span></button>
         </div>
 
         <div class="selection-card">
@@ -4764,7 +4764,7 @@
         </div>
         <h3 class="oc-card-title">Apply to OC</h3>
         <p class="oc-card-body">We are looking for dedicated individuals to lead our departments in logistics, design, and diplomacy.</p>
-        <button class="btn-primary oc-btn" disabled><span>OC Registrations Closed</span></button>
+        <button class="btn-primary oc-btn" onclick="openOcRegistration()"><span>Apply for OC</span></button>
       </div>
     </div>
   </div>
@@ -4901,7 +4901,7 @@
         <!-- STEP 3: PAYMENT -->
         <div class="form-step" id="ocStep3">
           <div class="payment-banner">
-            <h3>Registration Fee: ₹1299</h3>
+            <h3>Registration Fee: ₹1699</h3>
             <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
           </div>
 
@@ -5402,7 +5402,7 @@
     ocApplyBtn.addEventListener('click', function(e) {
       if (OC_APPLICATION_LINK === '#oc-applications') {
         e.preventDefault();
-        alert('OC Applications opening soon! Check back for updates.');
+        openOcRegistration();
       }
     });
   }
@@ -6564,8 +6564,6 @@ async function submitToGoogleSheet(data) {
   document.addEventListener('DOMContentLoaded', restoreOcFormData);
 
   function openOcRegistration() {
-    alert("OC Registrations are now closed.");
-    return;
     restoreOcFormData();
     const ocModal = document.getElementById('ocModal');
     if (ocModal) {
