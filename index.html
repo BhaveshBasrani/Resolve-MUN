@@ -1309,7 +1309,7 @@
   }
   .section-label::before, .section-label::after {
     content: ''; display: block; width: 40px; height: 1px;
-    background: var(--gold); opacity: 0.6;
+    background: linear-gradient(90deg, transparent, var(--gold));
   }
   .section-label::after { display: none; } /* Default hide after */
 
@@ -1318,26 +1318,18 @@
 
   .section-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(3rem, 6vw, 6rem);
-    line-height: 0.9; letter-spacing: 0.02em;
-    color: var(--white);
-    margin-bottom: 28px;
-    text-align: left;
+    font-size: clamp(3rem, 7vw, 7rem);
+    line-height: 0.95; letter-spacing: 0.02em;
+    color: var(--white); margin-bottom: 40px;
   }
 
   .section-body {
-    font-size: 1.1rem; line-height: 1.8;
-    color: rgba(255,255,255,0.5);
-    font-weight: 300;
-    text-align: left;
+    font-size: 1.15rem; line-height: 1.8;
+    color: rgba(255,255,255,0.45); font-weight: 300;
   }
 
   /* ABOUT */
-  #about {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 100px 60px;
-  }
+  #about { position: relative; padding: 100px 60px; }
 
   .about-inner {
     display: grid;
@@ -3918,6 +3910,36 @@
     100% { transform: translateY(20vh); opacity: 0; }
   }
 
+  @media (max-width: 1024px) {
+    #hero { padding: 120px 40px 60px; }
+    .hero-title { font-size: clamp(4rem, 12vw, 10rem); }
+    .hero-meta { gap: 32px; flex-wrap: wrap; justify-content: center; }
+  }
+
+  @media (max-width: 768px) {
+    section { padding: 80px 30px; }
+    .hero-eyebrow { font-size: 0.6rem; letter-spacing: 0.25em; margin-bottom: 20px; }
+    .hero-title { font-size: 5.5rem; }
+    .hero-tagline { font-size: 0.85rem; letter-spacing: 0.3em; margin-top: 20px; }
+    .hero-meta { gap: 24px; margin-top: 40px; }
+    .hero-meta-item .value { font-size: 1.2rem; }
+    .hero-actions { flex-direction: column; width: 100%; max-width: 320px; gap: 16px; margin-top: 48px; }
+    .hero-reg-btn, .btn-secondary { min-width: 0; width: 100%; padding: 14px 20px; }
+    .hero-scroll { display: none; }
+    #countdown { padding: 40px 20px; flex-direction: column; gap: 32px; }
+    .countdown-label { margin-right: 0; text-align: center; }
+    .countdown-num { font-size: 2.5rem; }
+    .countdown-unit { min-width: 60px; }
+  }
+
+  @media (max-width: 600px) {
+    .hero-title { font-size: 4.2rem; }
+    .hero-meta { gap: 16px; }
+    .hero-meta-divider { display: none; }
+    .hero-meta-item { flex: 1 1 40%; }
+    .hero-meta-item .label { font-size: 0.55rem; }
+  }
+
   @media (max-width: 768px) {
     .resolve-event-text { font-size: 18vw; letter-spacing: 2vw; }
     .eb-card, .oc-card { padding: 40px 20px !important; }
@@ -4370,9 +4392,9 @@
   <div class="hero-eyebrow">June 12th — 14th 2026</div>
   <h1 class="hero-title">
     <span>RESOLVE</span>
-    <span class="mun">MUN 2026</span>
+    <span class="mun">MUN</span>
   </h1>
-  <p class="hero-tagline">Experience the Best Model United Nations in Hyderabad. <strong>Resolve.</strong> &nbsp;Reform. &nbsp;<strong>Reconcile.</strong></p>
+  <p class="hero-tagline"><strong>Resolve.</strong> &nbsp;Reform. &nbsp;<strong>Reconcile.</strong></p>
 
   <div class="hero-meta">
     <div class="hero-meta-item">
