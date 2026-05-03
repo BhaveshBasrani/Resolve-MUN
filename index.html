@@ -5663,9 +5663,16 @@ async function submitToGoogleSheet(data) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     });
-    return true;
+
+    const result = await response.json();
+    if (!response.ok || !result || result.status !== 'success') {
+      throw new Error((result && result.message) ? result.message : 'Submission failed on server.');
+    }
+
+    return result;
   } catch (error) {
     console.error('Error submitting to Google Sheets:', error);
+    if (error instanceof Error) throw error;
     throw new Error('Failed to connect to the server.');
   }
 }
@@ -6103,7 +6110,8 @@ async function submitToGoogleSheet(data) {
       payment_utr: document.getElementById("regTxnID")?.value || document.getElementById("regUTR")?.value || "",
       payment_screenshot_link: fileBase64,
       emergency_name: document.getElementById("regEmergencyName")?.value || "",
-      emergency_phone: document.getElementById("regEmergencyPhone")?.value || ""
+      emergency_phone: document.getElementById("regEmergencyPhone")?.value || "",
+      referral: document.getElementById("regReferral")?.value || ""
     };
 
       await submitToGoogleSheet(data);
@@ -6702,6 +6710,7 @@ async function submitToGoogleSheet(data) {
         munCount: document.getElementById("ocMunCount").value,
         why: document.getElementById("ocWhy").value,
         attributes: document.getElementById("ocAttributes").value,
+        payment_utr: document.getElementById("ocTxnID")?.value || document.getElementById("ocUTR")?.value || "",
         payment_screenshot_link: fileBase64
       };
 
