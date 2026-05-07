@@ -4069,7 +4069,7 @@
             <h3>Delegation</h3>
             <p>Register a group of students representing your school or university.</p>
           </div>
-          <button class="btn-primary" onclick="selectPathway('delegation')" style="opacity: 0.6; cursor: not-allowed;"><span>Temporarily Closed</span></button>
+          <button class="btn-primary" onclick="selectPathway('delegation')"><span>Sign Up Group</span></button>
         </div>
 
         <div class="selection-card">
@@ -5585,10 +5585,6 @@
   if (closeSelectionModalBtn) closeSelectionModalBtn.onclick = closeSelection;
 
   function selectPathway(type) {
-    if (type === 'delegation') {
-      alert("Delegate and Delegation registrations are temporarily closed. Please check back soon!");
-      return;
-    }
     /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       if (type === 'oc') {
