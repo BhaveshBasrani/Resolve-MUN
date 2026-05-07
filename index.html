@@ -4061,7 +4061,7 @@
             <h3>Delegate</h3>
             <p>Register as an individual representing a specific country or person in a committee.</p>
           </div>
-          <button class="btn-primary" onclick="selectPathway('delegate')" style="opacity: 0.6; cursor: not-allowed;"><span>Temporarily Closed</span></button>
+          <button class="btn-primary" onclick="selectPathway('delegate')"><span>Register Now</span></button>
         </div>
 
         <div class="selection-card">
@@ -4273,7 +4273,7 @@
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner">
-          <h3>Registration Fee: ₹2599</h3>
+          <h3>Registration Fee: ₹2999</h3>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
@@ -5585,7 +5585,7 @@
   if (closeSelectionModalBtn) closeSelectionModalBtn.onclick = closeSelection;
 
   function selectPathway(type) {
-    if (type === 'delegate' || type === 'delegation') {
+    if (type === 'delegation') {
       alert("Delegate and Delegation registrations are temporarily closed. Please check back soon!");
       return;
     }
