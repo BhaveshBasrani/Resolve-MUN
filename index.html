@@ -110,7 +110,7 @@
   false - Hide applications, blur Illuminati/Secretariat/Cash Prize
 -->
 <script>
-  window.isLive = false;
+  window.isLive = true;
   window.RECAPTCHA_SITE_KEY = "6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH";
 </script>
 <script src="https://www.google.com/recaptcha/api.js?render=6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH" async defer></script>
@@ -5429,7 +5429,7 @@
       qrImage.style.transition = 'opacity 0.3s ease';
 
       // The standard UPI string (used as a fallback)
-      const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
+      const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&orgid=400011`;
 
       try {
           const data = JSON.stringify({
@@ -6266,6 +6266,8 @@ async function submitToGoogleSheet(data) {
       address: document.getElementById("regAddress").value,
       transport: document.getElementById("regTransport").value,
       experience: document.getElementById("regExp").value,
+      payment_utr: document.getElementById("regUTR")?.value || "",
+      payment_screenshot_link: fileBase64,
 
       pref1_committee: document.getElementById("pref1_committee").value,
       pref1_country: document.getElementById("pref1_role")?.value || 
@@ -6719,9 +6721,9 @@ async function submitToGoogleSheet(data) {
         adviserEmail: document.getElementById("delAdviserEmail").value,
         size: size,
         delegates: delegates,
-        txnID: document.getElementById("delTxnID").value,
-        utr: document.getElementById("delUTR") ? document.getElementById("delUTR").value : '',
-        driveLink: fileBase64,
+        txnID: document.getElementById("delTxnID")?.value || "",
+        utr: document.getElementById("delUTR")?.value || "",
+        payment_screenshot_link: fileBase64,
         totalAmount: size * 2199
       };
 
