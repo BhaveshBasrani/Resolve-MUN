@@ -5393,90 +5393,43 @@
 
   // 1. Dynamic QR Generator
   // 1. Dynamic QR Generator (RapidAPI)
-  // 1. Dynamic QR Generator (Robust Asynchronous Version)
+  // 1. Dynamic QR Generator (Ad-Blocker Safe & Bulletproof)
   async function generateDynamicQR(amountStr, imgElementId, upiTextElementId) {
-      // Clean amount string: remove currency symbol, commas, and handle empty values
+      // 1. Clean the amount
       let cleanAmount = "2999";
       if (amountStr) {
           cleanAmount = String(amountStr).replace(/[^0-9.]/g, '');
       }
       
-      // Rotate between names and IDs to match the bank account
+      // 2. Define the rotating UPI IDs
       const PAYEES = [
           { pa: "narenjmf@icici", pn: "ELAPANTI NARENDHAR RAJU" },
           { pa: "bhoomianilbasrani@okhdfcbank", pn: "Bhoomi Basrani" },
           { pa: "sujatha.g22@okhdfcbank", pn: "Sujatha Gubbala" }
       ]; 
       
+      // 3. Handle rotation
       let count = parseInt(localStorage.getItem('resolve_pay_count') || '0');
-      // Increment count immediately so each call (including refreshes) gets a new ID
       count++;
       localStorage.setItem('resolve_pay_count', count.toString());
 
       let currentPayee = PAYEES[count % PAYEES.length];
       
-      // Update the text display status
+      // 4. Update UI Text
       const upiText = document.getElementById(upiTextElementId);
       if (upiText) {
-          upiText.innerText = 'Generating QR...';
+          upiText.innerText = currentPayee.pa;
       }
 
       const qrImage = document.getElementById(imgElementId);
       if (!qrImage) return;
 
-      // Visual feedback that QR is generating
-      qrImage.style.opacity = '0.3';
-      qrImage.style.transition = 'opacity 0.3s ease';
+      // 5. Construct the UPI Link
+      const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
+      const safeEncodedData = encodeURIComponent(upiString);
 
-      // The standard UPI string (used as a fallback)
-      const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&orgid=400011`;
-
-      try {
-          const data = JSON.stringify({
-              upiId: currentPayee.pa,
-              payeeName: currentPayee.pn,
-              transactionNote: 'Resolve MUN Registration',
-              amount: cleanAmount,
-              currency: 'INR',
-              size: 250
-          });
-
-          const response = await fetch('https://upi-payment-qr-generator.p.rapidapi.com/generate-upi-qr', {
-              method: 'POST',
-              headers: {
-                  'x-rapidapi-key': 'f51329e6bcmsh6ef3cc27459e1b3p152c02jsn4768a50bdd76',
-                  'x-rapidapi-host': 'upi-payment-qr-generator.p.rapidapi.com',
-                  'Content-Type': 'application/json'
-              },
-              body: data
-          });
-
-          if (response.ok) {
-              const base64Data = await response.text(); 
-              
-              // Ensure it has the correct data URI prefix if the API doesn't provide it
-              let finalSrc = base64Data.replace(/"/g, '');
-              if (!finalSrc.startsWith('data:image')) {
-                  finalSrc = 'data:image/png;base64,' + finalSrc;
-              }
-              
-              qrImage.src = finalSrc;
-          } else {
-              throw new Error("RapidAPI response not OK");
-          }
-      } catch (error) {
-          console.warn("RapidAPI failed, falling back to static QR generation.", error);
-          
-          // FALLBACK: If RapidAPI fails (e.g., CORS block or limit), use simple QR generation
-          const safeEncodedData = encodeURIComponent(upiString);
-          qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${safeEncodedData}&color=330e5c`;
-      } finally {
-          // Always restore opacity and update text, regardless of success or failure
-          qrImage.style.opacity = '1';
-          if (upiText) {
-              upiText.innerText = currentPayee.pa;
-          }
-      }
+      // 6. Generate QR using QuickChart (Safe from Ad-Blockers)
+      qrImage.src = `https://quickchart.io/qr?size=250&text=${safeEncodedData}&dark=330e5c`;
   }
 
   // 2. Form Validation Error Handling
