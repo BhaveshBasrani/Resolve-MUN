@@ -5393,6 +5393,7 @@
 
   // 1. Dynamic QR Generator
   // 1. Dynamic QR Generator (RapidAPI)
+  // 1. Dynamic QR Generator (Robust Asynchronous Version)
   async function generateDynamicQR(amountStr, imgElementId, upiTextElementId) {
       // Clean amount string: remove currency symbol, commas, and handle empty values
       let cleanAmount = "2999";
@@ -5414,7 +5415,7 @@
 
       let currentPayee = PAYEES[count % PAYEES.length];
       
-      // Update the text display immediately
+      // Update the text display status
       const upiText = document.getElementById(upiTextElementId);
       if (upiText) {
           upiText.innerText = 'Generating QR...';
@@ -5427,16 +5428,19 @@
       qrImage.style.opacity = '0.3';
       qrImage.style.transition = 'opacity 0.3s ease';
 
-      const data = JSON.stringify({
-          upiId: currentPayee.pa,
-          payeeName: currentPayee.pn,
-          transactionNote: 'Resolve MUN Registration',
-          amount: cleanAmount,
-          currency: 'INR',
-          size: 250
-      });
+      // The standard UPI string (used as a fallback)
+      const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
 
       try {
+          const data = JSON.stringify({
+              upiId: currentPayee.pa,
+              payeeName: currentPayee.pn,
+              transactionNote: 'Resolve MUN Registration',
+              amount: cleanAmount,
+              currency: 'INR',
+              size: 250
+          });
+
           const response = await fetch('https://upi-payment-qr-generator.p.rapidapi.com/generate-upi-qr', {
               method: 'POST',
               headers: {
@@ -5457,26 +5461,21 @@
               }
               
               qrImage.src = finalSrc;
-              qrImage.style.opacity = '1';
-
-              // Update the text ONLY after the QR is successfully generated
-              if (upiText) {
-                  upiText.innerText = currentPayee.pa;
-              }
           } else {
-              console.error("QR Generation Failed:", response.statusText);
-              if (upiText) {
-                  upiText.innerText = 'Generation Failed. Try Again.';
-              }
-              qrImage.alt = "Failed to load QR. Please use the UPI ID below.";
-          } else {
-              console.error("QR Generation Failed:", response.statusText);
-              qrImage.alt = "Failed to load QR. Please use the UPI ID below.";
-              qrImage.style.opacity = '1';
+              throw new Error("RapidAPI response not OK");
           }
       } catch (error) {
-          console.error("API Error:", error);
+          console.warn("RapidAPI failed, falling back to static QR generation.", error);
+          
+          // FALLBACK: If RapidAPI fails (e.g., CORS block or limit), use simple QR generation
+          const safeEncodedData = encodeURIComponent(upiString);
+          qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${safeEncodedData}&color=330e5c`;
+      } finally {
+          // Always restore opacity and update text, regardless of success or failure
           qrImage.style.opacity = '1';
+          if (upiText) {
+              upiText.innerText = currentPayee.pa;
+          }
       }
   }
 
