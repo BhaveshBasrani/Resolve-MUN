@@ -60,7 +60,7 @@
     "offers": {
       "@type": "Offer",
       "url": "https://resolvemun.in",
-      "price": "2999",
+      "price": "2399",
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock",
       "validFrom": "2026-01-01"
@@ -666,7 +666,10 @@
   }
   .refresh-qr-btn:hover {
     opacity: 1;
-    transform: rotate(180deg);
+    transform: none;
+  }
+  .payment-card .refresh-qr-btn {
+    display: none !important;
   }
   .copy-btn {
     background: transparent;
@@ -4300,7 +4303,7 @@
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner">
-          <h3>Registration Fee: ₹2999</h3>
+          <h3>Registration Fee: ₹2399</h3>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
@@ -4309,11 +4312,11 @@
             <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
             <div style="text-align: center;">
               <div class="qr-container">
-                <img id="paymentQRImage" src="images/QR_Delegate_2999_BKUP.svg" alt="Payment QR Code">
+                <img id="paymentQRImage" src="images/QR_Delegate_2599.svg" alt="Payment QR Code">
               </div>
               <div class="upi-box">
                 <span id="upiID">bhoomianilbasrani@okhdfcbank</span>
-                <button type="button" class="refresh-qr-btn" onclick="generateDynamicQR('2999', 'paymentQRImage', 'upiID')" title="Regenerate QR">
+                <button type="button" class="refresh-qr-btn" onclick="generateDynamicQR('2399', 'paymentQRImage', 'upiID')" title="Regenerate QR">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 </button>
                 <button type="button" class="copy-btn" onclick="copyUPI()">
@@ -4988,7 +4991,7 @@
               <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. SCAN TO PAY</label>
               <div style="text-align: center;">
                 <div class="qr-container">
-                  <img id="ocPaymentQRImage" src="images/QR_OC_1899.svg" alt="OC Payment QR Code">
+                  <img id="ocPaymentQRImage" src="images/QR_Delegate_2599.svg" alt="OC Payment QR Code">
                 </div>
                 <div class="upi-box">
                   <span id="ocUpiID">bhoomianilbasrani@okhdfcbank</span>
@@ -5259,7 +5262,7 @@
               <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
               <div style="text-align: center;">
                 <div class="qr-container">
-                  <img id="delPaymentQRImage" src="images/QR_Delegation.svg" alt="Delegation Payment QR Code">
+                  <img id="delPaymentQRImage" src="images/QR_Delegate_2599.svg" alt="Delegation Payment QR Code">
                 </div>
                 <div class="upi-box">
                   <span id="delUpiID">bhoomianilbasrani@okhdfcbank</span>
@@ -5396,26 +5399,32 @@
   // 1. Dynamic QR Generator (Ad-Blocker Safe & Bulletproof)
   async function generateDynamicQR(amountStr, imgElementId, upiTextElementId) {
       // 1. Clean the amount
-      let cleanAmount = "2999";
+      let cleanAmount = "2399";
       if (amountStr) {
           cleanAmount = String(amountStr).replace(/[^0-9.]/g, '');
       }
       
-      // 2. Define the rotating UPI IDs
+      // 2. Use Bhoomi's UPI ID for every payment QR.
+      const currentPayee = {
+        pa: "bhoomianilbasrani@okhdfcbank",
+        pn: "Bhoomi Basrani"
+      };
+      /*
+      // Old payee rotation disabled on purpose.
       const PAYEES = [
           { pa: "narenjmf@icici", pn: "ELAPANTI NARENDHAR RAJU" },
           { pa: "bhoomianilbasrani@okhdfcbank", pn: "Bhoomi Basrani" },
           { pa: "sujatha.g22@okhdfcbank", pn: "Sujatha Gubbala" }
-      ]; 
-      
-      // 3. Handle rotation
+      ];
+
       let count = parseInt(localStorage.getItem('resolve_pay_count') || '0');
       count++;
       localStorage.setItem('resolve_pay_count', count.toString());
 
       let currentPayee = PAYEES[count % PAYEES.length];
+      */
       
-      // 4. Update UI Text
+      // 3. Update UI Text
       const upiText = document.getElementById(upiTextElementId);
       if (upiText) {
           upiText.innerText = currentPayee.pa;
@@ -5424,11 +5433,11 @@
       const qrImage = document.getElementById(imgElementId);
       if (!qrImage) return;
 
-      // 5. Construct the UPI Link
+      // 4. Construct the UPI Link
       const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
       const safeEncodedData = encodeURIComponent(upiString);
 
-      // 6. Generate QR using QuickChart (Safe from Ad-Blockers)
+      // 5. Generate QR using QuickChart (Safe from Ad-Blockers)
       qrImage.src = `https://quickchart.io/qr?size=250&text=${safeEncodedData}`;
   }
 
@@ -5968,7 +5977,7 @@ async function submitToGoogleSheet(data) {
     }
 
     if (stepNum === 3) {
-      generateDynamicQR("2999", "paymentQRImage", "upiID");
+      generateDynamicQR("2399", "paymentQRImage", "upiID");
     }
 
     modal.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
