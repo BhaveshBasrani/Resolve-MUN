@@ -60,7 +60,7 @@
     "offers": {
       "@type": "Offer",
       "url": "https://resolvemun.in",
-      "price": "2349",
+      "price": "2699",
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock",
       "validFrom": "2026-01-01"
@@ -4303,7 +4303,7 @@
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner">
-          <h3>Registration Fee: ₹2349</h3>
+          <h3>Registration Fee: ₹2699</h3>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
@@ -4316,7 +4316,7 @@
               </div>
               <div class="upi-box">
                 <span id="upiID">bhoomianilbasrani@okhdfcbank</span>
-                <button type="button" class="refresh-qr-btn" onclick="generateDynamicQR('2349', 'paymentQRImage', 'upiID')" title="Regenerate QR">
+                <button type="button" class="refresh-qr-btn" onclick="generateDynamicQR('2699', 'paymentQRImage', 'upiID')" title="Regenerate QR">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 </button>
                 <button type="button" class="copy-btn" onclick="copyUPI()">
@@ -5399,7 +5399,7 @@
   // 1. Dynamic QR Generator (Ad-Blocker Safe & Bulletproof)
   async function generateDynamicQR(amountStr, imgElementId, upiTextElementId) {
       // 1. Clean the amount
-      let cleanAmount = "2349";
+      let cleanAmount = "2699";
       if (amountStr) {
           cleanAmount = String(amountStr).replace(/[^0-9.]/g, '');
       }
@@ -5977,7 +5977,7 @@ async function submitToGoogleSheet(data) {
     }
 
     if (stepNum === 3) {
-      generateDynamicQR("2349", "paymentQRImage", "upiID");
+      generateDynamicQR("2699", "paymentQRImage", "upiID");
     }
 
     modal.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
