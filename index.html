@@ -136,6 +136,40 @@
     --card-border: rgba(255,255,255,0.1);
   }
 
+  /* --- Smoothness & Haptic Enhancements --- */
+  /* Improve interactive feedback and reduce jank by targeting interactive elements only */
+  button, a, .btn-primary, .btn-secondary, .copy-btn, .nav-cta {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 180ms cubic-bezier(.2,.9,.3,1), box-shadow 180ms, background-color 180ms;
+    will-change: transform, box-shadow;
+  }
+
+  .btn-primary:active, .btn-secondary:active {
+    transform: translateY(1px) scale(.996);
+  }
+
+  .committee-card {
+    transition: transform 350ms cubic-bezier(.2,.9,.3,1), box-shadow 350ms, opacity 250ms;
+    will-change: transform, opacity, box-shadow;
+  }
+
+  .modal-overlay .modal-content {
+    transition: transform 380ms cubic-bezier(.2,.9,.3,1), opacity 280ms;
+    will-change: transform, opacity;
+  }
+
+  .cursor-dot, .cursor-reticle {
+    transition: transform 180ms linear, opacity 180ms linear;
+    will-change: transform, opacity;
+  }
+
+  .interaction-press { transform: scale(0.985) !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   html { scroll-behavior: smooth; }
@@ -501,9 +535,11 @@
     z-index: 1;
   }
   .selection-card p {
-    font-size: 0.9rem;
-    color: var(--muted);
-    line-height: 1.5;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.96rem;
+    color: rgba(245, 245, 247, 0.72);
+    line-height: 1.75;
+    letter-spacing: 0.01em;
     margin-bottom: 20px;
     position: relative;
     z-index: 1;
@@ -1970,8 +2006,13 @@
     color: var(--white); margin-bottom: 12px;
   }
   .detail-card p {
-    font-size: 1rem; line-height: 1.7;
-    color: rgba(255,255,255,0.45); font-weight: 300;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.98rem;
+    line-height: 1.78;
+    color: rgba(255,255,255,0.56);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    text-wrap: pretty;
   }
 
   /* COMMITTEES */
@@ -2091,13 +2132,17 @@
   }
 
   .comm-modal-text {
-    font-family: 'Crimson Pro', serif;
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.6;
-    margin-bottom: 40px;
-    font-weight: 300;
-    max-width: 90%;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.98rem;
+    color: rgba(245, 245, 247, 0.78);
+    line-height: 1.95;
+    margin: 0 auto 42px;
+    font-weight: 400;
+    max-width: 34rem;
+    letter-spacing: 0.005em;
+    text-align: left;
+    text-wrap: pretty;
+    padding: 0 0.75rem;
   }
 
   /* Redesigned Waitlist Component */
@@ -3069,9 +3114,11 @@
   }
 
   .oc-card-body {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: var(--muted);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.98rem;
+    line-height: 1.78;
+    color: rgba(245, 245, 247, 0.68);
+    letter-spacing: 0.01em;
     margin-bottom: 40px;
   }
 
@@ -3200,9 +3247,11 @@
   }
 
   .eb-card-body {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: var(--muted);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.98rem;
+    line-height: 1.78;
+    color: rgba(245, 245, 247, 0.68);
+    letter-spacing: 0.01em;
     margin-bottom: 40px;
   }
 
@@ -3816,11 +3865,13 @@
       line-height: 1.4;
     }
     .comm-modal-text {
-      font-size: 1rem !important;
-      line-height: 1.6 !important;
-      margin-bottom: 35px !important;
+      font-size: 0.96rem !important;
+      line-height: 1.9 !important;
+      margin-bottom: 34px !important;
       width: 100% !important;
       max-width: 100% !important;
+      text-align: left !important;
+      padding: 0 0.25rem !important;
     }
     .waitlist-form {
       flex-direction: column !important;
@@ -4521,7 +4572,7 @@
       <span class="terms-modal-subtitle">Resolve Model United Nations 2026</span>
     </div>
     <div class="terms-body">
-      <p><strong>Last Updated:</strong> May 2026</p>
+      <p><strong>Last Updated:</strong> March 2026</p>
       <p>Welcome to Resolve Model United Nations 2026 (“Resolve MUN”, “Conference”, “we”, “our”, or “us”). 
          By registering for, accessing, participating in, attending, or engaging with Resolve MUN 2026 in any capacity, you (“participant”, “delegate”, “attendee”, “school”, “faculty advisor”, “parent/guardian”, or “visitor”) acknowledge that you have read, understood, and agreed to comply with the following Terms &amp; Conditions.</p>
       <p>If you do not agree to these Terms &amp; Conditions, you must not register for or participate in Resolve MUN 2026.</p>
@@ -5584,6 +5635,7 @@
         <li><a href="#">LinkedIn</a></li>
         <li><a href="mailto:resolve.mun@gmail.com">Email Us</a></li>
         <li><a href="https://sales.sponsormyevent.com/resolve-model-united-nations-hyderabad" target="_blank">Sponsorship</a></li>
+        <li><a href="javascript:void(0)" onclick="openTermsModal()">Terms &amp; Conditions</a></li>
       </ul>
     </div>
   </div>
@@ -5858,6 +5910,22 @@
     return valid;
   }
 
+  // Lightweight haptic + smooth interaction handler
+  (function initHaptics() {
+    try {
+      const selector = '.btn-primary, .btn-secondary, .copy-btn, .nav-cta, .committee-card, .refresh-qr-btn';
+      document.addEventListener('pointerdown', (e) => {
+        const el = e.target.closest ? e.target.closest(selector) : null;
+        if (!el) return;
+        // brief vibration where supported
+        if (navigator.vibrate) navigator.vibrate(8);
+        // add visual press class
+        el.classList && el.classList.add('interaction-press');
+        setTimeout(() => el.classList && el.classList.remove('interaction-press'), 160);
+      }, { passive: true });
+    } catch (err) { /* noop */ }
+  })();
+
   /**
    * RECAPTCHA v3 EXECUTION
    * This function gets a token from Google and should be called before form submission.
@@ -5935,6 +6003,8 @@
 
     mIcon.innerText = "COMMITTEE";
     mTitle.innerText = title;
+    mTitle.style.textTransform = 'uppercase';
+    mTitle.style.letterSpacing = '-0.01em';
 
     if (title === 'Background Guides') {
       mIcon.innerText = "OVERVIEW";
@@ -5970,6 +6040,14 @@
       mIcon.innerText = "AGENDA";
       mAgenda.innerText = "Strengthening Access to Justice";
       mText.innerText = "Deliberation on strengthening access to justice, promoting inclusive legal systems, eliminating discriminatory laws and practices with special emphasis on structural barriers.";
+      waitlist.style.display = 'none';
+    } else if (title === 'ILLUMINATI') {
+      mIcon.innerText = "AGENDA";
+      mTitle.innerHTML = 'Illuminati<br>';
+      mTitle.style.textTransform = 'none';
+      mTitle.style.letterSpacing = '0.02em';
+      mAgenda.innerText = "REVEALING THE MANDATE";
+      mText.innerText = "Our academic team is meticulously defining the scope of debate for Illuminati. All technical documentation, including the agenda specifics and topic briefs, will be unveiled during the next phase of the summit lifecycle.";
       waitlist.style.display = 'none';
     } else {
       mIcon.innerText = "AGENDA";
@@ -7469,6 +7547,21 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
   const ctx = canvas.getContext('2d');
   let W, H, particles = [];
 
+  // Adaptive performance profile: 'high' | 'medium' | 'low'
+  const PERFORMANCE_PROFILE = (function detectPerformanceProfile(){
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'low';
+      const deviceMemory = navigator.deviceMemory || 4; // GB
+      const threads = navigator.hardwareConcurrency || 4;
+      const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      // Simple heuristic
+      if (!isMobile && (deviceMemory >= 8 || threads >= 8)) return 'high';
+      if ((deviceMemory >= 4 && threads >= 4) && !isMobile) return 'medium';
+      if (isMobile && deviceMemory >= 4 && threads >= 4) return 'medium';
+      return 'low';
+    } catch (e) { return 'medium'; }
+  })();
+
   class Particle {
     constructor() {
       this.reset();
@@ -7519,15 +7612,22 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
   }
 
   function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    W = Math.floor(window.innerWidth);
+    H = Math.floor(window.innerHeight);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     initParticles();
   }
   
   function initParticles() {
     particles = [];
     // Lower particle count on mobile for performance
-    let particleDensity = (window.innerWidth < 768) ? 30000 : 15000;
+    // Slightly increase density divisor to reduce particle count for smoother FPS
+    let particleDensity = (window.innerWidth < 768) ? 36000 : 18000;
     let numberOfParticles = (W * H) / particleDensity;
     for (let i = 0; i < numberOfParticles; i++) {
         particles.push(new Particle());
@@ -7549,21 +7649,136 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
   }
 
   window.addEventListener('resize', resize);
-  resize();
+  // Don't start drawing immediately; choose best renderer for device
+  function initAdaptiveParticles() {
+    const supportsWebGL2 = (() => {
+      try {
+        const c = document.createElement('canvas');
+        return !!(c.getContext('webgl2'));
+      } catch (_) { return false; }
+    })();
 
-  function drawParticles() {
-    if (canvas && canvas.dataset.visible !== 'true') {
-        requestAnimationFrame(drawParticles);
+    const deviceIsHighEnd = (() => {
+      const hc = navigator.hardwareConcurrency || 2;
+      const dm = navigator.deviceMemory || 0;
+      return (hc >= 6) || (dm >= 4);
+    })();
+
+    // If WebGL2 available and device seems powerful, use GPU particles
+    if (supportsWebGL2 && deviceIsHighEnd) {
+      try {
+        initWebGLParticles();
         return;
+      } catch (err) {
+        console.warn('WebGL particle init failed, falling back to canvas:', err);
+      }
     }
-    ctx.clearRect(0, 0, W, H);
-    for (let i = 0; i < particles.length; i++) {
-      particles[i].update();
-      particles[i].draw();
-    }
-    requestAnimationFrame(drawParticles);
+
+    // Fallback: use existing canvas particle system (already defined above)
+    resize();
+    requestAnimationFrame(function drawParticles() {
+      if (canvas && canvas.dataset.visible !== 'true') {
+        setTimeout(() => requestAnimationFrame(drawParticles), 600);
+        return;
+      }
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+      }
+      requestAnimationFrame(drawParticles);
+    });
   }
-  drawParticles();
+
+  // Simple GPU particle renderer using WebGL2 (best-effort, minimal implementation)
+  function initWebGLParticles() {
+    const glCanvas = canvas; // reuse the same DOM canvas
+    const gl = glCanvas.getContext('webgl2', { antialias: false });
+    if (!gl) throw new Error('WebGL2 not available');
+
+    // Resize for DPR
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const w = Math.floor(window.innerWidth), h = Math.floor(window.innerHeight);
+    glCanvas.width = w * dpr; glCanvas.height = h * dpr;
+    glCanvas.style.width = w + 'px'; glCanvas.style.height = h + 'px';
+    gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+
+    // Shaders: simple point render with circular point in fragment
+    const vs = `#version 300 es
+    in vec2 a_pos; in float a_size; in float a_op;
+    uniform vec2 u_resolution;
+    out float v_op;
+    void main(){
+      vec2 zeroToOne = a_pos / u_resolution;
+      vec2 clipSpace = zeroToOne * 2.0 - 1.0;
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+      gl_PointSize = a_size;
+      v_op = a_op;
+    }`;
+
+    const fs = `#version 300 es
+    precision mediump float;
+    in float v_op; out vec4 outColor;
+    void main(){
+      vec2 c = gl_PointCoord - 0.5;
+      float r = dot(c,c);
+      float alpha = smoothstep(0.25, 0.24, r) * v_op;
+      outColor = vec4(0.376, 0.647, 0.98, alpha);
+    }`;
+
+    function compile(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+    const prog = gl.createProgram(); gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog); if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+
+    const maxParticles = Math.max(200, Math.floor((w * h) / 12000));
+    const posBuffer = gl.createBuffer();
+    const sizeBuffer = gl.createBuffer();
+    const opBuffer = gl.createBuffer();
+
+    const a_pos = gl.getAttribLocation(prog, 'a_pos');
+    const a_size = gl.getAttribLocation(prog, 'a_size');
+    const a_op = gl.getAttribLocation(prog, 'a_op');
+    const u_resolution = gl.getUniformLocation(prog, 'u_resolution');
+
+    // Create particle state on CPU
+    const P = new Float32Array(maxParticles * 2);
+    const S = new Float32Array(maxParticles);
+    const O = new Float32Array(maxParticles);
+    const VX = new Float32Array(maxParticles);
+    const VY = new Float32Array(maxParticles);
+    for (let i=0;i<maxParticles;i++){ P[i*2]=Math.random()*w; P[i*2+1]=Math.random()*h; S[i]=Math.random()*2+1; O[i]=Math.random()*0.6+0.2; VX[i]=(Math.random()-0.5)*0.6; VY[i]=(Math.random()-0.5)*0.6; }
+
+    gl.useProgram(prog);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    function updateAndDraw(){
+      // Update CPU-side quickly
+      for (let i=0;i<maxParticles;i++){
+        let x = P[i*2] + VX[i]; let y = P[i*2+1] + VY[i];
+        if (x<0) x += w; if (x> w) x -= w; if (y<0) y += h; if (y>h) y -= h;
+        P[i*2]=x; P[i*2+1]=y;
+      }
+
+      // Upload buffers
+      gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer); gl.bufferData(gl.ARRAY_BUFFER, P, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(a_pos); gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, 0, 0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, sizeBuffer); gl.bufferData(gl.ARRAY_BUFFER, S, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(a_size); gl.vertexAttribPointer(a_size, 1, gl.FLOAT, false, 0, 0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, opBuffer); gl.bufferData(gl.ARRAY_BUFFER, O, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(a_op); gl.vertexAttribPointer(a_op, 1, gl.FLOAT, false, 0, 0);
+
+      gl.uniform2f(u_resolution, w, h);
+      gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.POINTS, 0, maxParticles);
+      requestAnimationFrame(updateAndDraw);
+    }
+
+    requestAnimationFrame(updateAndDraw);
+  }
+
+  // Start the adaptive particle system now that both paths are defined
+  initAdaptiveParticles();
 
   // EB MODAL LOGIC
   const ebModal = document.getElementById('ebModal');
@@ -7732,16 +7947,25 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
     if (!mCanvas) return;
     const mCtx = mCanvas.getContext('2d');
     let mW, mH, mParticles = [];
+    const modalEl = mCanvas.closest && mCanvas.closest('.modal-overlay');
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
     
     function mResize() {
-      mW = mCanvas.width = window.innerWidth;
-      mH = mCanvas.height = window.innerHeight;
+      mW = Math.floor(window.innerWidth);
+      mH = Math.floor(window.innerHeight);
+      // Use devicePixelRatio for crisp rendering without stretching layout
+      mCanvas.width = mW * dpr;
+      mCanvas.height = mH * dpr;
+      mCanvas.style.width = mW + 'px';
+      mCanvas.style.height = mH + 'px';
+      mCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       createMParticles();
     }
     
     function createMParticles() {
       mParticles = [];
-      const count = window.innerWidth < 768 ? 60 : 120;
+      // Reduce particle count for better performance and more premium feel
+      const count = window.innerWidth < 768 ? 30 : 80;
       for(let i = 0; i < count; i++) {
         mParticles.push({
           x: Math.random() * mW,
@@ -7757,24 +7981,37 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
     }
 
     function drawMParticles() {
+      // If modal isn't visible/active, pause expensive drawing and poll infrequently
+      const isActive = modalEl ? modalEl.classList.contains('active') : true;
+      if (!isActive) {
+        // clear the canvas less frequently when hidden
+        mCtx.clearRect(0, 0, mW, mH);
+        setTimeout(() => requestAnimationFrame(drawMParticles), 600);
+        return;
+      }
+
       mCtx.clearRect(0, 0, mW, mH);
-      mParticles.forEach(p => {
+      for (let i = 0; i < mParticles.length; i++) {
+        const p = mParticles[i];
         p.x += p.vx; p.y += p.vy;
         if (p.x < 0) p.x = mW; if (p.x > mW) p.x = 0;
         if (p.y < 0) p.y = mH; if (p.y > mH) p.y = 0;
 
-        let dx = mx - p.x;
-        let dy = my - p.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        
-        if (dist < 150) {
-          p.size = p.baseSize * (1 + (150 - dist) / 50);
-          p.x -= dx * 0.01;
-          p.y -= dy * 0.01;
+        const dx = mx - p.x;
+        const dy = my - p.y;
+        const dist2 = dx*dx + dy*dy;
+        const maxDistance = 150;
+        const maxDist2 = maxDistance * maxDistance;
+        if (dist2 < maxDist2) {
+          const dist = Math.sqrt(dist2);
+          p.size = p.baseSize * (1 + (maxDistance - dist) / 50);
+          const inv = dist > 0 ? 1 / dist : 0;
+          p.x -= (dx * inv) * 0.01;
+          p.y -= (dy * inv) * 0.01;
           mCtx.beginPath();
           mCtx.moveTo(p.x, p.y);
           mCtx.lineTo(mx, my);
-          mCtx.strokeStyle = `rgba(51, 14, 92, ${0.1 * (1 - dist/150)})`;
+          mCtx.strokeStyle = `rgba(51, 14, 92, ${0.1 * (1 - dist/maxDistance)})`;
           mCtx.stroke();
         } else {
           p.size = p.baseSize;
@@ -7784,7 +8021,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
         mCtx.arc(p.x, p.y, p.size, 0, Math.PI*2);
         mCtx.fillStyle = `rgba(96, 165, 250, ${p.o})`;
         mCtx.fill();
-      });
+      }
       requestAnimationFrame(drawMParticles);
     }
     
