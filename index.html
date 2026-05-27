@@ -5606,9 +5606,7 @@
     AETHERXR2026: 2499,
     DIYA: 2499,
     NYA200: 2699,
-    SCUBE: 2699,
-    ABHILASH: 2699,
-    BHAVESH: 2699, 
+    SCUBE: 2699
   };
 
   function normalizeReferralCode(code) {
@@ -5844,26 +5842,51 @@
 
     mIcon.innerText = "COMMITTEE";
     mTitle.innerText = title;
-    
+
     if (title === 'Background Guides') {
-        mIcon.innerText = "OVERVIEW";
-        mAgenda.innerText = "CRAFTING THE BLUEPRINT";
-        mText.innerText = "The Secretariat is currently finalizing the comprehensive background guides and study material to ensure all delegates have the depth required for high-level diplomatic discourse. These resources will be released as per the official summit timeline.";
-        waitlist.style.display = 'none';
+      mIcon.innerText = "OVERVIEW";
+      mAgenda.innerText = "CRAFTING THE BLUEPRINT";
+      mText.innerText = "The Secretariat is currently finalizing the comprehensive background guides and study material to ensure all delegates have the depth required for high-level diplomatic discourse. These resources will be released as per the official summit timeline.";
+      waitlist.style.display = 'none';
     } else if (title === 'Delegate Guide') {
-        mIcon.innerText = "HANDBOOK";
-        mAgenda.innerText = "ESTABLISHING PROTOCOL";
-        mText.innerText = "From diplomatic etiquette to the intricacies of the rules of procedure, the official Resolve 2026 handbook is being polished to provide you with a seamless conference experience. The complete briefing will be available shortly.";
-        waitlist.style.display = 'none';
+      mIcon.innerText = "HANDBOOK";
+      mAgenda.innerText = "ESTABLISHING PROTOCOL";
+      mText.innerText = "From diplomatic etiquette to the intricacies of the rules of procedure, the official Resolve 2026 handbook is being polished to provide you with a seamless conference experience. The complete briefing will be available shortly.";
+      waitlist.style.display = 'none';
+    } else if (title === 'LOK SABHA') {
+      mIcon.innerText = "AGENDA";
+      mAgenda.innerText = "Deliberation on Border Security & Trade";
+      mText.innerText = "Deliberation on the recent developments in border security with special emphasis on India’s trade relations and foreign policy amidst the west Asian conflict with recent developments.";
+      waitlist.style.display = 'none';
+    } else if (title === 'CCC') {
+      mIcon.innerText = "AGENDA";
+      mAgenda.innerText = "Freeze Date";
+      mText.innerText = "Freeze date: 12 July, 2026";
+      waitlist.style.display = 'none';
+    } else if (title === 'UNHRC') {
+      mIcon.innerText = "AGENDA";
+      mAgenda.innerText = "Human Rights of Seafarers";
+      mText.innerText = "Promoting and protecting the enjoyment of human rights by seafarers.";
+      waitlist.style.display = 'none';
+    } else if (title.includes('DISEC') || title === 'UNGA - DISEC') {
+      mIcon.innerText = "AGENDA";
+      mAgenda.innerText = "Regulating ASAT & Dual-Use Space Tech (PAROS)";
+      mText.innerText = "Discussion on regulating Anti-Satellite Weapons, Offensive Counter-Space capabilities and Dual-Use Space Technologies within the Framework of Preventing an Arms Race in Outer Space (PAROS).";
+      waitlist.style.display = 'none';
+    } else if (title === 'UNCSW') {
+      mIcon.innerText = "AGENDA";
+      mAgenda.innerText = "Strengthening Access to Justice";
+      mText.innerText = "Deliberation on strengthening access to justice, promoting inclusive legal systems, eliminating discriminatory laws and practices with special emphasis on structural barriers.";
+      waitlist.style.display = 'none';
     } else {
-        mIcon.innerText = "AGENDA";
-        mAgenda.innerText = "REVEALING THE MANDATE";
-        mText.innerText = "Our academic team is meticulously defining the scope of debate for " + title + ". All technical documentation, including the agenda specifics and topic briefs, will be unveiled during the next phase of the summit lifecycle.";
-        waitlist.style.display = 'none';
+      mIcon.innerText = "AGENDA";
+      mAgenda.innerText = "REVEALING THE MANDATE";
+      mText.innerText = "Our academic team is meticulously defining the scope of debate for " + title + ". All technical documentation, including the agenda specifics and topic briefs, will be unveiled during the next phase of the summit lifecycle.";
+      waitlist.style.display = 'none';
     }
 
     /* ILLUMINATI BYPASS - Now accessible via standard modal logic */
-    
+
     document.getElementById('commModal').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
