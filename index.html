@@ -446,6 +446,11 @@
     100% { left: 140%; }
   }
 
+  /* Spinner animation used by submit overlay */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
   /* SELECTION MODAL */
   .selection-grid {
     display: grid;
@@ -4153,6 +4158,15 @@
 </head>
 <body data-cursor="none">
 
+<!-- SUBMIT SPINNER (hidden by default) -->
+<div id="submitSpinner" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;">
+  <div style="text-align:center;color:#fff;">
+    <div style="width:72px;height:72px;border-radius:50%;border:6px solid rgba(255,255,255,0.12);border-top-color:#7c3aed;animation:spin 1s linear infinite;margin:0 auto 12px;"></div>
+    <div style="font-family: 'Oswald', sans-serif;letter-spacing:0.06em;font-weight:600;font-size:16px;">Submitting...</div>
+  </div>
+</div>
+
+
 <!-- CUSTOM ALERT CONTAINER -->
 <div id="custom-alert-container"></div>
 <div id="loading-screen">
@@ -5765,6 +5779,85 @@
     showCustomAlert(message);
   };
 
+  // Submission spinner and simple client-side validation helpers
+  function showSpinner() {
+    const s = document.getElementById('submitSpinner');
+    if (s) s.style.display = 'flex';
+  }
+
+  function hideSpinner() {
+    const s = document.getElementById('submitSpinner');
+    if (s) s.style.display = 'none';
+  }
+
+  function validateForm(formEl) {
+    if (!formEl) return true;
+    let valid = true;
+    const inputs = formEl.querySelectorAll('input[required], select[required], textarea[required]');
+    inputs.forEach(input => {
+      clearError(input);
+      const val = input.value ? String(input.value).trim() : '';
+      if (!val) {
+        showError(input, 'This field is required.');
+        valid = false;
+        return;
+      }
+
+      // Email validation
+      if (input.type === 'email' || /email/i.test(input.id) || /email/i.test(input.name)) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(val)) {
+          showError(input, 'Enter a valid email address.');
+          valid = false;
+          return;
+        }
+      }
+
+      // Phone validation
+      if (input.type === 'tel') {
+        const phoneVal = val.replace(/\D/g, '');
+        const phoneRegex = /^[1-9][0-9]{9}$/;
+        if (!phoneRegex.test(phoneVal)) {
+          showError(input, 'Enter a valid 10-digit phone number.');
+          valid = false;
+          return;
+        }
+      }
+
+      // UTR validation (12 digits expected if field mentions UTR)
+      if (/utr/i.test(input.id) || /utr/i.test(input.name) || /txn|transaction/i.test(input.id) && /utr/i.test(input.placeholder || '')) {
+        const digits = val.replace(/\D/g, '');
+        if (digits.length !== 12) {
+          showError(input, 'Enter a valid 12-digit UTR.');
+          valid = false;
+          return;
+        }
+      }
+
+      // File input validation (if required)
+      if (input.type === 'file') {
+        if (input.files && input.files.length > 0) {
+          const f = input.files[0];
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          const allowed = ['image/png', 'image/jpeg', 'application/pdf'];
+          if (f.size > maxSize) {
+            showError(input, 'File too large (max 5MB).');
+            valid = false;
+            return;
+          }
+          if (allowed.indexOf(f.type) === -1) {
+            showError(input, 'Unsupported file type (jpg, png, pdf allowed).');
+            valid = false;
+            return;
+          }
+        }
+      }
+    });
+
+    if (!valid) showCustomAlert('Please correct the highlighted fields before submitting.', 'error', 4000);
+    return valid;
+  }
+
   /**
    * RECAPTCHA v3 EXECUTION
    * This function gets a token from Google and should be called before form submission.
@@ -5868,7 +5961,7 @@
       mAgenda.innerText = "Human Rights of Seafarers";
       mText.innerText = "Promoting and protecting the enjoyment of human rights by seafarers.";
       waitlist.style.display = 'none';
-    } else if (title.includes('DISEC') || title === 'UNGA - DISEC') {
+    } else if (title.includes('DISEC') || title === 'DISEC') {
       mIcon.innerText = "AGENDA";
       mAgenda.innerText = "Regulating ASAT & Dual-Use Space Tech (PAROS)";
       mText.innerText = "Discussion on regulating Anti-Satellite Weapons, Offensive Counter-Space capabilities and Dual-Use Space Technologies within the Framework of Preventing an Arms Race in Outer Space (PAROS).";
@@ -5962,8 +6055,10 @@
       const emailInput = document.getElementById('waitlistEmail');
       const email = emailInput.value;
       
+      if (!validateForm(e.target)) return;
       btn.innerText = "Adding...";
       btn.disabled = true;
+      showSpinner();
 
       try {
         const token = await getRecaptchaToken('waitlist_submission');
@@ -5973,17 +6068,18 @@
           recaptcha_token: token
         };
 
-        // Re-using your existing Google Sheet fetch function!
-        await submitToGoogleSheet(data);
-        
+        // Re-using your existing Google Sheet fetch function with retries
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 10000 });
         // Hide form and show success message smoothly
         waitlistForm.style.display = 'none';
         success.style.display = 'block';
         localStorage.removeItem(WAITLIST_STORAGE_KEY);
       } catch (err) {
-        alert("Submission Error: " + err.message);
+        showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
         btn.innerText = "Notify Me";
         btn.disabled = false;
+      } finally {
+        hideSpinner();
       }
     });
   }
@@ -6096,6 +6192,44 @@ async function submitToGoogleSheet(data) {
     console.error('Error submitting to Google Sheets:', error);
     if (error instanceof Error) throw error;
     throw new Error('Failed to connect to the server.');
+  }
+}
+
+// Robust submit with timeout and retries
+async function submitToGoogleSheetWithRetry(data, options = {}) {
+   const retries = options.retries ?? 2;
+  const timeoutMs = options.timeoutMs ?? 15000;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(data),
+        signal: controller.signal
+      });
+      clearTimeout(id);
+
+      const result = await response.json().catch(() => null);                         
+      if (response.ok && result && result.status === 'success') {
+        return result;
+      }
+
+      const msg = (result && result.message) ? result.message : 'Server rejected the submission';
+      throw new Error(msg);
+    } catch (err) {
+      clearTimeout(id);
+      const isLast = attempt === retries;
+      if (err.name === 'AbortError') {
+        if (isLast) throw new Error('Request timed out. Please try again.');
+      } else if (isLast) {
+        throw err;
+      }
+      // backoff before retry
+      await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
+    }
   }
 }
 
@@ -6501,6 +6635,7 @@ async function submitToGoogleSheet(data) {
   // Handle form submission
   regForm.addEventListener('submit', async function(e) {
     e.preventDefault();
+    if (!validateForm(e.target)) return;
     const btn = e.target.querySelector('button[type="submit"]');
     const closeBtn = document.getElementById('closeModal');
     const backBtns = e.target.querySelectorAll('.btn-back');
@@ -6510,6 +6645,7 @@ async function submitToGoogleSheet(data) {
     btn.innerHTML = 'Submitting...';
     if(closeBtn) closeBtn.style.pointerEvents = 'none';
     backBtns.forEach(b => b.disabled = true);
+    showSpinner();
 
     try {
       // Get reCAPTCHA v3 token
@@ -6559,17 +6695,18 @@ async function submitToGoogleSheet(data) {
       referral: document.getElementById("regReferral")?.value || ""
     };
 
-      await submitToGoogleSheet(data);
-      alert('Registration Submitted Successfully! The Secretariat will review your application and notify you soon.');
+      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+      showCustomAlert('Registration Submitted Successfully! The Secretariat will review your application and notify you soon.', 'success', 6000);
       clearFormData();
       closeRegistration();
     } catch (err) {
-      alert("Submission Error: " + err.message);
+      showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Registration';
       if(closeBtn) closeBtn.style.pointerEvents = 'all';
       backBtns.forEach(b => b.disabled = false);
+      hideSpinner();
     }
   });
   // Hero section register button (Scroll only)
@@ -6951,11 +7088,13 @@ async function submitToGoogleSheet(data) {
     const closeBtn = document.getElementById('closeDelModal');
     const backBtns = e.target.querySelectorAll('.btn-back');
 
+    if (!validateForm(e.target)) return;
     // Submission Hardening
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
     if(closeBtn) closeBtn.style.pointerEvents = 'none';
     backBtns.forEach(b => b.disabled = true);
+    showSpinner();
 
     try {
       // Get reCAPTCHA v3 token
@@ -6999,18 +7138,19 @@ async function submitToGoogleSheet(data) {
       };
 
       console.log('Sending Delegation Data:', data);
-      await submitToGoogleSheet(data);
-      alert('Delegation Registered Successfully! All ' + size + ' delegates have been enrolled. The Secretariat will contact the Faculty Adviser shortly.');
+      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 20000 });
+      showCustomAlert('Delegation Registered Successfully! All ' + size + ' delegates have been enrolled. The Secretariat will contact the Faculty Adviser shortly.', 'success', 7000);
       delRegForm.reset();
       clearDelFormData();
       closeDelRegistration();
     } catch (err) {
-      alert("Submission Error: " + err.message);
+      showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Delegation';
       if(closeBtn) closeBtn.style.pointerEvents = 'all';
       backBtns.forEach(b => b.disabled = false);
+      hideSpinner();
     }
   });
 
@@ -7152,11 +7292,13 @@ async function submitToGoogleSheet(data) {
     const closeBtn = document.getElementById('closeOcModal');
     const backBtns = e.target.querySelectorAll('.btn-back');
 
+    if (!validateForm(e.target)) return;
     // Submission Hardening
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
     if(closeBtn) closeBtn.style.pointerEvents = 'none';
     backBtns.forEach(b => b.disabled = true);
+    showSpinner();
 
     try {
       // Get reCAPTCHA v3 token
@@ -7190,19 +7332,19 @@ async function submitToGoogleSheet(data) {
       };
 
       console.log('OC Data:', data);
-      await submitToGoogleSheet(data);
-      
-      alert('Application Submitted Successfully! The Secretariat will review your OC application soon.');
+      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+      showCustomAlert('Application Submitted Successfully! The Secretariat will review your OC application soon.', 'success', 6000);
       ocRegForm.reset();
       clearOcFormData();
       closeOcRegistration();
     } catch (err) {
-      alert("Submission Error: " + err.message);
+      showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit Application';
       if(closeBtn) closeBtn.style.pointerEvents = 'all';
       backBtns.forEach(b => b.disabled = false);
+      hideSpinner();
     }
   });
 
@@ -7524,11 +7666,13 @@ async function submitToGoogleSheet(data) {
     const closeBtn = document.getElementById('closeEbModal');
     const backBtns = e.target.querySelectorAll('.btn-back');
 
+    if (!validateForm(e.target)) return;
     // Submission Hardening
     btn.disabled = true;
     btn.innerHTML = 'Submitting Application...';
     if(closeBtn) closeBtn.style.pointerEvents = 'none';
     backBtns.forEach(b => b.disabled = true);
+    showSpinner();
 
     try {
       const token = await getRecaptchaToken('eb_application');
@@ -7561,18 +7705,19 @@ async function submitToGoogleSheet(data) {
       };
 
       // Reusing GOOGLE_SHEET_TAB_EB for EB applications
-      await submitToGoogleSheet(data); 
-      alert('EB Application Submitted Successfully! The Secretariat will review your profile and contact you for an interview.');
+      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 }); 
+      showCustomAlert('EB Application Submitted Successfully! The Secretariat will review your profile and contact you for an interview.', 'success', 6000);
       ebRegForm.reset();
       clearEbFormData();
       closeEbRegistration();
     } catch (err) {
-      alert("Submission Error: " + err.message);
+      showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Submit EB Application';
       if(closeBtn) closeBtn.style.pointerEvents = 'all';
       backBtns.forEach(b => b.disabled = false);
+      hideSpinner();
     }
   });
 
