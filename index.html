@@ -113,6 +113,12 @@
   window.isLive = false;
   window.RECAPTCHA_SITE_KEY = "6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH";
 </script>
+<script>
+  // Add a class when registrations/site is not live so we can hide CTAs via CSS
+  if (typeof window.isLive !== 'undefined' && !window.isLive) {
+    document.documentElement.classList.add('site-not-live');
+  }
+</script>
 <script src="https://www.google.com/recaptcha/api.js?render=6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH" async defer></script>
 <link rel="icon" type="image/webp" href="https://resolvemun.in/images/favicon.ico?v=3">
 <link rel="apple-touch-icon" href="https://resolvemun.in/images/L1.png">
@@ -415,6 +421,16 @@
     transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
     box-shadow: 0 4px 12px rgba(51, 14, 92, 0.2);
     animation: buttonGradient 4s linear infinite;
+  }
+  /* Hide registration CTAs when site is not live */
+  .site-not-live .nav-cta,
+  .site-not-live .hero-reg-btn,
+  .site-not-live a[onclick*="openSelection"],
+  .site-not-live button[onclick*="openSelection"],
+  .site-not-live a[onclick*="openSelectionModal"],
+  .site-not-live button[onclick*="openSelectionModal"] {
+    display: none !important;
+    pointer-events: none !important;
   }
   .nav-cta:hover { 
     transform: translateY(-1px) scale(1.02);
@@ -5666,15 +5682,16 @@
   // UTILITY FUNCTIONS (QR & VALIDATION)
   // ==========================================
 
-  const DELEGATE_BASE_FEE = 2599;
+  const DELEGATE_BASE_FEE = 2749;
   const REFERRAL_CODE_PRICING = {
-    SBXS2026: 2499,
+    SBXS2026: 2599,
     AETHERXR2026: 2499,
-    DIYA: 2499,
-    MAHATHI: 2099,
+    DIYA: 2599,
+   SOLARIS: 2599, 
     NYA200: 2699,
-    SCUBE: 2699
-  };
+    BHAVESH: 2599,
+    SCUBE: 2599
+  }; 
 
   function normalizeReferralCode(code) {
     return (code || '').trim().toUpperCase();
@@ -6087,20 +6104,18 @@
     const mAgenda = document.getElementById('commModalAgenda');
     const mText = document.getElementById('commModalText');
     const waitlist = document.getElementById('waitlistContainer');
-
-    /*
+    // If site isn't live, show the 'coming soon / registrations closed' modal instead
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      mIcon.innerText = "SUMMIT STATUS";
-      mTitle.innerText = "RESOLVE 2026";
-      mAgenda.innerText = "REGISTRATIONS OPENING SOON";
-      mText.innerText = "The premier diplomatic summit is meticulously preparing its corridors. Join the elite waitlist to receive priority access to delegate allocations, committee preferences, and exclusive early-bird benefits.";
-      waitlist.style.display = 'block';
-      
-      document.getElementById('commModal').classList.add('active');
+      if (mIcon) mIcon.innerText = "SUMMIT STATUS";
+      if (mTitle) mTitle.innerText = "RESOLVE 2026";
+      if (mAgenda) mAgenda.innerText = "REGISTRATIONS CLOSED";
+      if (mText) mText.innerText = "Registrations are currently closed. Please join the waitlist or check back later for updates.";
+      if (waitlist) waitlist.style.display = 'block';
+      const cm = document.getElementById('commModal');
+      if (cm) cm.classList.add('active');
       document.body.style.overflow = 'hidden';
       return;
     }
-    */
     selectionModal.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -6179,18 +6194,11 @@
   if (closeSelectionModalBtn) closeSelectionModalBtn.onclick = closeSelection;
 
   function selectPathway(type) {
-    /*
+    // Respect isLive: prevent opening registration flows when disabled
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      if (type === 'oc') {
-        openOcRegistration();
-      } else if (type === 'eb') {
-        openEbRegistration();
-      } else {
-        openSelection();
-      }
+      openSelection();
       return;
     }
-    */
     closeSelection();
     if (type === 'delegate') {
       openRegistration();
@@ -6205,12 +6213,10 @@
 
   function openDelRegistration() {
     restoreDelFormData();
-    /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       openSelection();
       return;
     }
-    */
     const delModal = document.getElementById('delModal');
     if (delModal) {
       delModal.classList.add('active');
@@ -6417,12 +6423,10 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
 
   function openRegistration() {
     restoreFormData();
-    /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       openSelection();
       return;
     }
-    */
     restoreFormData();
     regModal.classList.add('active');
     document.body.style.overflow = 'hidden';
