@@ -4542,7 +4542,11 @@
       <p class="comm-modal-text" id="commModalText">
         The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.
       </p>
-      
+
+      <div style="margin-top:12px;">
+        <button id="commModalBgBtn" class="btn-secondary" style="display:none; margin-right:10px;" onclick="(function(){ if(window.currentCommBg) window.open(window.currentCommBg, '_blank'); })()">Background Guide</button>
+      </div>
+
       <div id="waitlistContainer">
         <form id="waitlistForm">
           <div class="waitlist-form">
@@ -4840,37 +4844,37 @@
 <div class="glow-line"></div>
 
 <!-- COMMITTEES -->
-<section id="committees" class="reveal">
+<section id="committees" class="reveal" style="background: linear-gradient(0deg, rgba(7,6,22,0.6), rgba(7,6,22,0.2)), url('images/committees-bg.svg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
   <div class="section-label reveal">Committees</div>
   <h2 class="section-title reveal">THE ARENA OF<br>HIGH-LEVEL DEBATE</h2>
   <p class="section-body reveal" style="max-width: 600px;">Seven specialized committees, each tackling the world's most consequential challenges. Full committee topics and study guides coming soon.</p>
 
   <div class="committees-grid">
-    <div class="committee-card reveal" onclick="openCommModal('UNGA - DISEC', '📜')">
+    <div class="committee-card reveal" onclick="openCommModal('UNGA - DISEC', '📜', 'documents/DISEC-BG.pdf')">
       <span class="committee-tag">General Assembly</span>
       <div class="committee-name">UNGA - DISEC</div>
       <p class="committee-topic">Disarmament & international security challenges</p>
       <span class="committee-coming">Topic TBA</span>
     </div>
-    <div class="committee-card reveal reveal-delay-1" onclick="openCommModal('CCC', '⚖️')">
+    <div class="committee-card reveal reveal-delay-1" onclick="openCommModal('CCC', '⚖️', 'documents/CCC-BG.pdf')">
       <span class="committee-tag">Crisis Committee</span>
       <div class="committee-name">CCC</div>
       <p class="committee-topic">Continuous crisis simulation & response</p>
       <span class="committee-coming">Topic TBA</span>
     </div>
-    <div class="committee-card reveal reveal-delay-2" onclick="openCommModal('UNHRC', '🌍')">
+    <div class="committee-card reveal reveal-delay-2" onclick="openCommModal('UNHRC', '🌍', 'documents/UNHRC-BG.pdf')">
       <span class="committee-tag">UN Body</span>
       <div class="committee-name">UNHRC</div>
       <p class="committee-topic">Human rights protection & humanitarian law</p>
       <span class="committee-coming">Topic TBA</span>
     </div>
-    <div class="committee-card reveal reveal-delay-3" onclick="openCommModal('UNCSW', '🏛️')">
+    <div class="committee-card reveal reveal-delay-3" onclick="openCommModal('UNCSW', '🏛️', 'documents/UNCSW-BG.pdf')">
       <span class="committee-tag">UN Body</span>
       <div class="committee-name">UNCSW</div>
       <p class="committee-topic">Commission on the Status of Women</p>
       <span class="committee-coming">Topic TBA</span>
     </div>
-    <div class="committee-card reveal" onclick="openCommModal('LOK SABHA', '🇮🇳')">
+    <div class="committee-card reveal" onclick="openCommModal('LOK SABHA', '🇮🇳', 'documents/Lok%20Sabha.pdf')">
       <span class="committee-tag">Indian Parliament</span>
       <div class="committee-name">LOK SABHA</div>
       <p class="committee-topic">Indian legislative debate & policy reform</p>
@@ -5999,7 +6003,7 @@
   const regModal = document.getElementById('regModal');
   const selectionModal = document.getElementById('selectionModal');
 
-  function openCommModal(title, icon) {
+  function openCommModal(title, icon, bgPath) {
     // Reset modal content
     const mIcon = document.getElementById('commModalIcon');
     const mTitle = document.getElementById('commModalTitle');
@@ -6062,8 +6066,20 @@
       waitlist.style.display = 'none';
     }
 
-    /* ILLUMINATI BYPASS - Now accessible via standard modal logic */
+    /* Set current background (if any) and toggle BG button */
+    window.currentCommBg = bgPath || null;
+    var bgBtn = document.getElementById('commModalBgBtn');
+    if (bgBtn) {
+      if (window.currentCommBg) {
+        bgBtn.style.display = 'inline-block';
+        bgBtn.onclick = function(){ window.open(window.currentCommBg, '_blank'); };
+      } else {
+        bgBtn.style.display = 'none';
+        bgBtn.onclick = null;
+      }
+    }
 
+    /* ILLUMINATI BYPASS - Now accessible via standard modal logic */
     document.getElementById('commModal').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
