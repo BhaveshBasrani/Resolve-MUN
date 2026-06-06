@@ -221,6 +221,62 @@
     transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
   }
 
+  /* Cinematic committee prompt */
+  .committee-prompt {
+    position: fixed;
+    inset: 0;
+    z-index: 99998;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    background: radial-gradient(circle at center, rgba(124,58,237,0.12), rgba(5,5,7,0.16) 45%, rgba(5,5,7,0.72) 100%);
+    backdrop-filter: blur(0px) saturate(130%);
+    -webkit-backdrop-filter: blur(0px) saturate(130%);
+  }
+  .committee-prompt.active {
+    opacity: 1;
+    animation: promptBackdrop 2800ms ease forwards;
+    backdrop-filter: blur(8px) saturate(130%);
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
+  }
+  .committee-prompt__text {
+    font-family: 'Bebas Neue', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: clamp(2.3rem, 7vw, 5.5rem);
+    color: var(--white);
+    text-align: center;
+    text-shadow: 0 0 18px rgba(124,58,237,0.45), 0 0 40px rgba(81,14,146,0.35);
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+  }
+  .committee-prompt.active .committee-prompt__text {
+    animation: promptRise 2800ms cubic-bezier(.2,.9,.2,1) forwards;
+  }
+  .committee-prompt__subtext {
+    display: block;
+    margin-top: 10px;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    font-size: clamp(0.8rem, 1.8vw, 1rem);
+    color: rgba(245,245,247,0.75);
+    letter-spacing: 0.28em;
+  }
+  @keyframes promptRise {
+    0% { opacity: 0; transform: translateY(18px) scale(0.96); filter: blur(12px); }
+    16% { opacity: 1; filter: blur(0); }
+    72% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: translateY(-10px) scale(1.02); filter: blur(12px); }
+  }
+
+  @keyframes promptBackdrop {
+    0% { opacity: 0; }
+    12% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
   .cursor-dot::before,
   .cursor-dot::after {
     content: '';
@@ -373,6 +429,7 @@
   .nav-links {
     display: flex; gap: 40px; list-style: none;
   }
+  #committees { scroll-margin-top: 130px; }
   .nav-links a {
     font-family: 'Oswald', sans-serif;
     font-size: 0.72rem; font-weight: 400;
@@ -4129,6 +4186,25 @@
     .resolve-event-text { font-size: 18vw; letter-spacing: 2vw; }
     .eb-card, .oc-card { padding: 40px 20px !important; }
     .eb-btn, .oc-btn { width: 100% !important; padding: 16px 20px !important; }
+    #committees { scroll-margin-top: 96px; }
+    .committee-prompt {
+      padding: 24px;
+      background: radial-gradient(circle at center, rgba(124,58,237,0.14), rgba(5,5,7,0.18) 46%, rgba(5,5,7,0.76) 100%);
+    }
+    .committee-prompt__text {
+      font-size: clamp(1.9rem, 13vw, 3.4rem);
+      letter-spacing: 0.12em;
+      line-height: 0.95;
+      max-width: 10ch;
+    }
+    .committee-prompt__subtext {
+      margin-top: 12px;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      line-height: 1.4;
+    }
+    .committees-grid { gap: 16px; }
+    .committee-card { min-height: 220px; }
     /* Mobile optimization for modals */
     .modal-content {
       width: 95% !important;
@@ -4686,12 +4762,20 @@
     <li><a href="#about">About</a></li>
     <li><a href="#letter">Letter</a></li>
     <li><a href="#committees">Committees</a></li>
+    <li><a href="javascript:void(0)" onclick="openCommitteeIntro()">Background Guides</a></li>
     <li><a href="documents/Delegate Brochure.pdf" target="_blank">Brochure</a></li>
     <li><a href="#venue">Venue</a></li>
     <li><a href="#secretariat">Secretariat</a></li>
   </ul>
   <a href="javascript:void(0)" class="nav-cta" onclick="openSelection()">Register Now</a>
 </nav>
+
+<div class="committee-prompt" id="committeePrompt" aria-hidden="true">
+  <div class="committee-prompt__text">
+    CHOOSE YOUR COMMITTEE
+    <span class="committee-prompt__subtext">Background guides are live</span>
+  </div>
+</div>
 
 <!-- HERO -->
 <section id="hero">
@@ -4854,31 +4938,31 @@
       <span class="committee-tag">General Assembly</span>
       <div class="committee-name">UNGA - DISEC</div>
       <p class="committee-topic">Disarmament & international security challenges</p>
-      <span class="committee-coming">Topic TBA</span>
+      <span class="committee-coming">Arms Control</span>
     </div>
     <div class="committee-card reveal reveal-delay-1" onclick="openCommModal('CCC', '⚖️', 'documents/CCC-BG.pdf')">
       <span class="committee-tag">Crisis Committee</span>
       <div class="committee-name">CCC</div>
       <p class="committee-topic">Continuous crisis simulation & response</p>
-      <span class="committee-coming">Topic TBA</span>
+      <span class="committee-coming">Crisis Simulation</span>
     </div>
     <div class="committee-card reveal reveal-delay-2" onclick="openCommModal('UNHRC', '🌍', 'documents/UNHRC-BG.pdf')">
       <span class="committee-tag">UN Body</span>
       <div class="committee-name">UNHRC</div>
       <p class="committee-topic">Human rights protection & humanitarian law</p>
-      <span class="committee-coming">Topic TBA</span>
+      <span class="committee-coming">Human Rights</span>
     </div>
     <div class="committee-card reveal reveal-delay-3" onclick="openCommModal('UNCSW', '🏛️', 'documents/UNCSW-BG.pdf')">
       <span class="committee-tag">UN Body</span>
       <div class="committee-name">UNCSW</div>
       <p class="committee-topic">Commission on the Status of Women</p>
-      <span class="committee-coming">Topic TBA</span>
+      <span class="committee-coming">Women's Rights</span>
     </div>
     <div class="committee-card reveal" onclick="openCommModal('LOK SABHA', '🇮🇳', 'documents/Lok%20Sabha.pdf')">
       <span class="committee-tag">Indian Parliament</span>
       <div class="committee-name">LOK SABHA</div>
       <p class="committee-topic">Indian legislative debate & policy reform</p>
-      <span class="committee-coming">Topic TBA</span>
+      <span class="committee-coming">Legislative Reform</span>
     </div>
     <div class="committee-card reveal reveal-delay-1 committee-card--special" onclick="openCommModal('INTERNATIONAL PRESS', '📰')">
       <span class="committee-tag" style="color: var(--magenta);">Media Committee</span>
@@ -6130,6 +6214,31 @@
     selectionModal.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
+
+  function openCommitteeIntro() {
+    const prompt = document.getElementById('committeePrompt');
+    const committeeCard = document.querySelector('#committees .committee-card');
+    if (!prompt || !committeeCard) return;
+
+    window.clearTimeout(window.committeePromptTimer);
+    prompt.classList.remove('active');
+    prompt.setAttribute('aria-hidden', 'false');
+    const navbar = document.getElementById('navbar');
+    const navHeight = navbar ? navbar.offsetHeight : 0;
+    const targetTop = Math.max(0, committeeCard.getBoundingClientRect().top + window.scrollY - navHeight - 18);
+    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+
+    window.setTimeout(() => {
+      prompt.classList.add('active');
+    }, 450);
+
+    window.committeePromptTimer = window.setTimeout(() => {
+      prompt.classList.remove('active');
+      prompt.setAttribute('aria-hidden', 'true');
+    }, 3200);
+  }
+
+  window.openCommitteeIntro = openCommitteeIntro;
 
   // Waitlist Logic
   const waitlistForm = document.getElementById('waitlistForm');
