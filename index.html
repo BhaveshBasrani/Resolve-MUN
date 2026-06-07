@@ -3579,12 +3579,19 @@
       radial-gradient(ellipse 60% 50% at 50% 50%, rgba(107,33,232,0.2) 0%, transparent 60%),
       radial-gradient(ellipse 40% 30% at 20% 80%, rgba(192,38,211,0.1) 0%, transparent 50%);
   }
-  .cta-inner { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+  .cta-inner { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 20px; }
   .cta-eyebrow {
     font-family: 'Oswald', sans-serif;
-    font-size: 0.68rem; letter-spacing: 0.35em; text-transform: uppercase;
-    color: var(--gold); margin-bottom: 24px;
+    font-size: 0.68rem; font-weight: 400;
+    letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--gold); margin: 0 0 28px 0;
+    display: inline-flex; align-items: center; justify-content: center; gap: 16px; width: auto; max-width: 100%;
   }
+  .cta-eyebrow::before, .cta-eyebrow::after {
+    content: ''; display: block; width: 40px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold));
+  }
+  .cta-eyebrow::after { background: linear-gradient(90deg, var(--gold), transparent); }
   .cta-title {
     font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(4rem, 9vw, 9rem);
@@ -5828,7 +5835,7 @@
 <!-- CTA -->
 <section id="register">
   <div class="cta-inner">
-    <p class="cta-eyebrow reveal">Limited Spots Available</p>
+    <p class="cta-eyebrow reveal visible">Limited Spots Available</p>
     <h2 class="cta-title reveal">TAKE YOUR<br>SEAT AT<br>THE TABLE</h2>
     <p class="cta-body reveal">
       Resolve MUN is where future statesmen are forged. Join 300+ delegates from all over Hyderabad in three days of rigorous, transformative diplomacy.
@@ -5864,7 +5871,7 @@
       <ul>
         <li><a href="#hero">Home</a></li>
         <li><a href="javascript:void(0)" onclick="openSelection()">Register</a></li>
-        <li><a href="javascript:void(0)" onclick="openCommModal('Background Guides', '📚')">Background Guides</a></li>
+        <li><a href="javascript:void(0)" onclick="openCommitteeIntro()">Background Guides</a></li>
         <li><a href="javascript:void(0)" onclick="openCommModal('Delegate Guide', '📖')">Delegate Guide</a></li>
       </ul>
     </div>
