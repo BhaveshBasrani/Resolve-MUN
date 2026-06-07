@@ -187,6 +187,7 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     -webkit-font-feature-settings: "liga" 1, "kern" 1;
+    font-feature-settings: "liga" 1, "kern" 1;
   }
 
   /* Improve body text readability */
@@ -218,6 +219,27 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.25);
   }
 
+  /* Titles only: increase sizes for readability (affects headings and card titles only) */
+  h1 { font-size: clamp(2.2rem, 1.9rem + 2.8vw, 4.2rem); }
+  h2 { font-size: clamp(1.6rem, 1.4rem + 2.0vw, 3rem); }
+  h3 { font-size: clamp(1.25rem, 1.12rem + 1.2vw, 1.95rem); }
+  h4 { font-size: clamp(1.05rem, 1rem + 0.6vw, 1.25rem); }
+
+  /* Section and component titles */
+  .section-title { font-size: clamp(1.4rem, 1.2rem + 1.6vw, 2rem); font-weight: 700; }
+  .modal-title, .comm-modal-title { font-size: clamp(1.25rem, 1.1rem + 1.0vw, 1.6rem); }
+
+  /* Committee card title/labels */
+  .committee-tag { font-size: 0.98rem; letter-spacing: 0.14em; font-weight: 700; color: var(--gold-light); }
+  .committee-name { font-size: 1.2rem; font-weight: 700; }
+  .committee-topic { font-size: 1rem; }
+
+  /* Secretariat / small card headings */
+  .sec-name, .detail-card h3 { font-size: 1.05rem; font-weight: 700; }
+
+  /* Hero title tweak (keeps hero large but readable) */
+  .hero-title { font-size: clamp(2.6rem, 6vw, 6.2rem); }
+
   /* Subtle lead paragraph style */
   .lead {
     font-size: clamp(1.03rem, 1.04rem + 0.4vw, 1.2rem);
@@ -242,6 +264,51 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+
+  /* Component-level typography refinements for a premium feel */
+  .nav-links a {
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.94);
+    text-transform: none;
+  }
+
+  .nav-cta, .btn-primary, .btn-secondary {
+    font-weight: 700;
+    font-size: 0.98rem;
+    line-height: 1.2;
+    padding: 10px 18px;
+    border-radius: 12px;
+    text-transform: none;
+  }
+
+  .btn-primary {
+    color: #fff;
+    background-image: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
+    box-shadow: 0 6px 18px rgba(81,14,146,0.12);
+  }
+
+  .btn-secondary {
+    color: rgba(255,255,255,0.96);
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Hero text tweaks */
+  .hero-tagline { font-size: clamp(0.95rem, 1rem + 0.6vw, 1.12rem); color: rgba(255,255,255,0.9); font-weight: 400; }
+  .hero-meta .value { font-weight: 600; color: rgba(255,255,255,0.98); }
+
+  /* Modal and card readability */
+  .modal-content { font-size: 1rem; color: rgba(255,255,255,0.97); max-width: 820px; padding: 28px; }
+  .comm-modal-text, .committee-card p { font-size: 1rem; color: rgba(255,255,255,0.92); }
+  .committee-card .committee-name { font-size: 1.08rem; font-weight: 600; }
+  .committee-card .committee-topic { font-size: 0.95rem; color: rgba(255,255,255,0.86); }
+
+  /* Footer and small text balance */
+  footer, .footer { font-size: 0.95rem; color: rgba(255,255,255,0.78); }
+
+  /* Ensure readable contrast for muted labels */
+  .section-label, .title-accent { color: rgba(255,255,255,0.86); }
 
   @media (pointer: fine) {
     .custom-cursor-enabled body, .custom-cursor-enabled a, .custom-cursor-enabled button, .custom-cursor-enabled input, .custom-cursor-enabled select, .custom-cursor-enabled textarea, .custom-cursor-enabled label {
