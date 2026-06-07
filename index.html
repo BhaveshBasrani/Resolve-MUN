@@ -2218,13 +2218,13 @@
   }
 
   .comm-modal-inner {
-    padding: 60px 40px 50px;
+    padding: 48px 36px 42px;
     position: relative;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
   }
 
   /* Refined Subtle Bloom Effect */
@@ -2257,14 +2257,14 @@
   }
 
   .comm-modal-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 4rem;
-    line-height: 0.95;
-    letter-spacing: -0.01em;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: clamp(1.6rem, 4.6vw, 2.6rem);
+    line-height: 1.06;
+    letter-spacing: 0.01em;
     color: var(--white);
-    margin-bottom: 12px;
-    font-weight: 400;
-    text-transform: uppercase;
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    text-transform: none;
     max-width: 100%;
   }
 
@@ -2294,16 +2294,15 @@
 
   .comm-modal-text {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-size: 0.98rem;
-    color: rgba(245, 245, 247, 0.78);
-    line-height: 1.95;
-    margin: 0 auto 42px;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.7;
+    margin: 0 0 24px 0;
     font-weight: 400;
-    max-width: 34rem;
-    letter-spacing: 0.005em;
+    max-width: 46rem;
+    letter-spacing: 0.01em;
     text-align: left;
-    text-wrap: pretty;
-    padding: 0 0.75rem;
+    padding: 0;
   }
 
   /* Redesigned Waitlist Component */
