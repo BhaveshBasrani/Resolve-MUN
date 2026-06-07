@@ -177,8 +177,41 @@
   body {
     background: var(--black);
     color: var(--white);
-    font-family: 'Crimson Pro', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     overflow-x: hidden;
+    font-size: 16px;
+    line-height: 1.65;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Improve body text readability */
+  p, ul, ol, li {
+    color: rgba(255,255,255,0.92);
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  p {
+    margin-bottom: 1.25rem;
+    max-width: 70ch;
+  }
+
+  .section-body p, .modal-content p, .comm-modal-text p {
+    font-size: 1.0625rem; /* ~17px for better reading in sections/modals */
+  }
+
+  strong, b {
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  a {
+    color: var(--gold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   @media (pointer: fine) {
