@@ -41,56 +41,8 @@
     "@type": "Event",
     "name": "Resolve MUN 2026 - Hyderabad's #1 Model United Nations",
     "description": "The premier Model United Nations conference in Hyderabad, featuring 200+ student leaders, intense diplomatic debate, and world-class networking at Laurus The Universal School.",
-
-  /* Premium visual refinements */
-  h1, h2, h3, h4 {
-    font-family: 'Crimson Pro', Georgia, serif;
-    color: rgba(255,255,255,0.98);
-    letter-spacing: 0.02em;
-    line-height: 1.12;
-    margin: 0 0 0.6rem 0;
-  }
-
-  h1 { font-size: clamp(2.2rem, 6vw, 4.5rem); font-weight:700; }
-  h2 { font-size: clamp(1.6rem, 4.4vw, 2.5rem); font-weight:600; }
-  h3 { font-size: clamp(1.2rem, 3.6vw, 1.5rem); font-weight:600; }
-
-  /* Glass-style cards and elevated surfaces */
-  .card, .detail-card, .committee-card, .sec-card, .comm-modal-content, .modal-content {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(4,3,10,0.6);
-    backdrop-filter: blur(8px) saturate(120%);
-  }
-
-  /* Refined CTA */
-  .btn-primary {
-    background: linear-gradient(90deg, rgba(124,58,237,1), rgba(81,14,146,0.95));
-    color: #fff;
-    border: none;
-    padding: 12px 22px;
-    border-radius: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    box-shadow: 0 10px 30px rgba(81,14,146,0.14), inset 0 -2px 6px rgba(0,0,0,0.25);
-    transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms;
-  }
-  .btn-primary:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 18px 42px rgba(81,14,146,0.18); }
-
-  .hero-title { text-shadow: 0 14px 46px rgba(51,14,146,0.32); }
-
-  small, .muted { color: rgba(255,255,255,0.72); }
-
-  /* Slightly more compact readable paragraphs inside cards */
-  .committee-card p, .detail-card p { color: rgba(255,255,255,0.94); font-size: 0.99rem; line-height: 1.7; }
-
-  .modal-content { padding: 28px; }
-
-  /* Subtle accent divider for sections */
-  .title-line-divider { height: 2px; background: linear-gradient(90deg, rgba(124,58,237,0.18), rgba(81,14,146,0.08)); border-radius: 6px; }
-
-  @media (pointer: fine) {/* Lines 185-188 omitted */}
+    "startDate": "2026-06-12T09:00:00+05:30",
+    "endDate": "2026-06-14T18:00:00+05:30",
     "eventStatus": "https://schema.org/EventScheduled",
     "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
     "location": {
@@ -227,28 +179,57 @@
     color: var(--white);
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     overflow-x: hidden;
-    font-size: 16px;
-    line-height: 1.65;
-    font-weight: 400;
+    font-size: clamp(15px, 1rem + 0.3vw, 17px);
+    line-height: 1.72;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    -webkit-font-feature-settings: "liga" 1, "kern" 1;
   }
 
   /* Improve body text readability */
   p, ul, ol, li {
     color: rgba(255,255,255,0.92);
     font-size: 1rem;
-    line-height: 1.8;
+    line-height: 1.85;
+    hyphens: auto;
+    -webkit-font-smoothing: antialiased;
   }
 
   p {
-    margin-bottom: 1.25rem;
-    max-width: 70ch;
+    margin-bottom: 1.35rem;
+    max-width: 72ch;
   }
 
   .section-body p, .modal-content p, .comm-modal-text p {
     font-size: 1.0625rem; /* ~17px for better reading in sections/modals */
+  }
+
+  /* Headings: serif for a premium tone */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Crimson Pro', 'Times New Roman', Georgia, serif;
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.08;
+    text-rendering: optimizeLegibility;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+
+  /* Subtle lead paragraph style */
+  .lead {
+    font-size: clamp(1.03rem, 1.04rem + 0.4vw, 1.2rem);
+    color: rgba(255,255,255,0.95);
+    font-weight: 500;
+    margin-bottom: 1.45rem;
+  }
+
+  /* Muted captions and helper text */
+  .muted, .text-muted, small {
+    color: rgba(255,255,255,0.62);
+    font-size: 0.94rem;
   }
 
   strong, b {
@@ -2218,13 +2199,13 @@
   }
 
   .comm-modal-inner {
-    padding: 48px 36px 42px;
+    padding: 60px 40px 50px;
     position: relative;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
+    align-items: center;
+    text-align: center;
   }
 
   /* Refined Subtle Bloom Effect */
@@ -2257,14 +2238,14 @@
   }
 
   .comm-modal-title {
-    font-family: 'Crimson Pro', Georgia, serif;
-    font-size: clamp(1.6rem, 4.6vw, 2.6rem);
-    line-height: 1.06;
-    letter-spacing: 0.01em;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
     color: var(--white);
-    margin: 0 0 10px 0;
-    font-weight: 700;
-    text-transform: none;
+    margin-bottom: 12px;
+    font-weight: 400;
+    text-transform: uppercase;
     max-width: 100%;
   }
 
@@ -2294,15 +2275,16 @@
 
   .comm-modal-text {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.88);
-    line-height: 1.7;
-    margin: 0 0 24px 0;
+    font-size: 0.98rem;
+    color: rgba(245, 245, 247, 0.78);
+    line-height: 1.95;
+    margin: 0 auto 42px;
     font-weight: 400;
-    max-width: 46rem;
-    letter-spacing: 0.01em;
+    max-width: 34rem;
+    letter-spacing: 0.005em;
     text-align: left;
-    padding: 0;
+    text-wrap: pretty;
+    padding: 0 0.75rem;
   }
 
   /* Redesigned Waitlist Component */
