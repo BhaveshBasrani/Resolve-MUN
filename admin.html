@@ -190,6 +190,11 @@
       box-shadow: 0 0 10px var(--gold-shadow);
     }
 
+    .form-group select option {
+      background-color: var(--deep);
+      color: var(--white);
+    }
+
     .submit-btn {
       width: 100%;
       background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
@@ -1233,7 +1238,15 @@
       document.getElementById('mDelPref2').innerText = `${delegate[colMap.pref2Comm] || "-"} : ${delegate[colMap.pref2Coun] || "-"}`;
       document.getElementById('mDelPref3').innerText = `${delegate[colMap.pref3Comm] || "-"} : ${delegate[colMap.pref3Coun] || "-"}`;
 
-      document.getElementById('allocCommittee').value = delegate[colMap.comm] || delegate[colMap.pref1Comm] || "";
+      const allocatedCommVal = String(delegate[colMap.comm] || delegate[colMap.pref1Comm] || "").trim().toLowerCase();
+      const committeeSelect = document.getElementById('allocCommittee');
+      committeeSelect.value = ""; // default
+      for (let option of committeeSelect.options) {
+        if (option.value.toLowerCase() === allocatedCommVal || option.text.toLowerCase() === allocatedCommVal) {
+          committeeSelect.value = option.value;
+          break;
+        }
+      }
       document.getElementById('allocCountry').value = delegate[colMap.country] || delegate[colMap.pref1Coun] || "";
       document.getElementById('secNotes').value = delegate[colMap.notes] || "";
 
