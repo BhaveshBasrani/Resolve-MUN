@@ -56,6 +56,16 @@ function doPost(e) {
 
 
 
+        // ROUTE DASHBOARD ACTIONS FIRST (bypass normal registration recaptcha)
+
+        if (data.action) {
+
+            return handleDashboardActions(ss, data);
+
+        }
+
+
+
         // 1. RECAPTCHA V3 VERIFICATION
 
         if (!data.recaptcha_token) throw new Error("Security verification missing.");
@@ -583,5 +593,754 @@ function generateLightEmail(type, name) {
 
 
     return { subject, html };
+
+}
+
+
+
+// ==========================================
+
+// DASHBOARD & DELEGATE PORTAL BACKEND LOGIC
+
+// ==========================================
+
+
+
+const ADMIN_SECRET_KEY = "ResolveMUNAdmin2026@Secure";
+
+
+
+function handleDashboardActions(ss, data) {
+
+    const action = data.action;
+
+
+
+    try {
+
+        // Delegate Login (No admin key needed, uses email/password)
+
+        if (action === "DELEGATE_LOGIN") {
+
+            return delegateLogin(ss, data);
+
+        }
+
+
+
+        // All other actions require admin_key validation
+
+        if (data.admin_key !== ADMIN_SECRET_KEY) {
+
+            return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Unauthorized access." })).setMimeType(ContentService.MimeType.JSON);
+
+        }
+
+
+
+        switch (action) {
+
+            case "ADMIN_GET_DATA":
+
+                return adminGetData(ss);
+
+            case "ADMIN_APPROVE_DELEGATE":
+
+                return adminApproveDelegate(ss, data);
+
+            case "ADMIN_CHECKIN_DELEGATE":
+
+                return adminCheckinDelegate(ss, data);
+
+            default:
+
+                return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Invalid action." })).setMimeType(ContentService.MimeType.JSON);
+
+        }
+
+    } catch (e) {
+
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: e.toString() })).setMimeType(ContentService.MimeType.JSON);
+
+    }
+
+}
+
+
+
+function delegateLogin(ss, data) {
+
+    const email = String(data.email || "").trim().toLowerCase();
+
+    const password = String(data.password || "").trim();
+
+
+
+    if (!email || !password) {
+
+        throw new Error("Email/ID and Password are required.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow <= 1) {
+
+        throw new Error("No delegates registered yet.");
+
+    }
+
+
+
+    const maxCols = Math.max(sheet.getLastColumn(), 35);
+
+    const values = sheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
+
+
+
+    for (let i = 0; i < values.length; i++) {
+
+        const row = values[i];
+
+        const rowEmail = String(row[4] || "").trim().toLowerCase();      // Column 5: Email Address
+
+        const rowDelId = String(row[22] || "").trim().toLowerCase();     // Column 23: Delegate ID
+
+        const rowPassword = String(row[31] || "").trim();               // Column 32: Password
+
+
+
+        if ((email === rowEmail || email === rowDelId) && password === rowPassword) {
+
+            const paymentVerified = String(row[25] || "").trim();       // Column 26: Payment Verified
+
+            if (paymentVerified !== "Verified") {
+
+                return ContentService.createTextOutput(JSON.stringify({ 
+
+                    status: "error", 
+
+                    message: "Your registration payment verification is pending. Please contact the Secretariat." 
+
+                })).setMimeType(ContentService.MimeType.JSON);
+
+            }
+
+
+
+            const delegateData = {
+
+                name: row[1],
+
+                email: row[4],
+
+                phone: row[3],
+
+                delegateId: row[22],
+
+                committee: row[23],
+
+                country: row[24],
+
+                checkinDay1: row[32] || "Absent",
+
+                checkinDay2: row[33] || "Absent",
+
+                checkinDay3: row[34] || "Absent"
+
+            };
+
+
+
+            return ContentService.createTextOutput(JSON.stringify({
+
+                status: "success",
+
+                delegate: delegateData
+
+            })).setMimeType(ContentService.MimeType.JSON);
+
+        }
+
+    }
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "error",
+
+        message: "Invalid email/ID or password."
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function adminGetData(ss) {
+
+    const data = {
+
+        waitlist: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.WAITLIST)),
+
+        delegates: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.DELEGATE))
+
+    };
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        data: data
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function adminApproveDelegate(ss, data) {
+
+    const rowIndex = parseInt(data.rowIndex, 10);
+
+    const committee = String(data.allocationCommittee || "").trim();
+
+    const country = String(data.allocationCountry || "").trim();
+
+    const notes = String(data.notes || "").trim();
+
+
+
+    if (isNaN(rowIndex) || rowIndex <= 1) {
+
+        throw new Error("Invalid row index.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    const currentMaxCols = sheet.getMaxColumns();
+
+    if (currentMaxCols < 35) {
+
+        sheet.insertColumnsAfter(currentMaxCols, 35 - currentMaxCols);
+
+    }
+
+
+
+    const lastCol = sheet.getLastColumn();
+
+    const rowRange = sheet.getRange(rowIndex, 1, 1, Math.max(lastCol, 35));
+
+    const rowValues = rowRange.getValues()[0];
+
+
+
+    const recipientName = rowValues[1] || "Delegate";
+
+    const targetEmail = rowValues[4];
+
+
+
+    if (!targetEmail) {
+
+        throw new Error("Delegate email not found on row " + rowIndex);
+
+    }
+
+
+
+    let delegateId = String(rowValues[22] || "").trim();
+
+    let password = String(rowValues[31] || "").trim();
+
+
+
+    if (!delegateId || delegateId === "") {
+
+        delegateId = generateDelegateId(sheet);
+
+    }
+
+    if (!password || password === "") {
+
+        password = generatePassword();
+
+    }
+
+
+
+    sheet.getRange(rowIndex, 22).setValue("Approved");
+
+    sheet.getRange(rowIndex, 23).setValue(delegateId);
+
+    sheet.getRange(rowIndex, 24).setValue(committee);
+
+    sheet.getRange(rowIndex, 25).setValue(country);
+
+    sheet.getRange(rowIndex, 26).setValue("Verified");
+
+    sheet.getRange(rowIndex, 30).setValue(notes);
+
+    sheet.getRange(rowIndex, 32).setValue(password);
+
+    
+
+    if (!sheet.getRange(rowIndex, 33).getValue()) sheet.getRange(rowIndex, 33).setValue("Absent");
+
+    if (!sheet.getRange(rowIndex, 34).getValue()) sheet.getRange(rowIndex, 34).setValue("Absent");
+
+    if (!sheet.getRange(rowIndex, 35).getValue()) sheet.getRange(rowIndex, 35).setValue("Absent");
+
+
+
+    sendCredentialsEmail(targetEmail, recipientName, delegateId, password, committee, country);
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Delegate approved and credentials email sent.",
+
+        delegateId: delegateId,
+
+        password: password
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+
+
+
+
+function adminCheckinDelegate(ss, data) {
+
+    const delegateId = String(data.delegateId || "").trim();
+
+    const day = parseInt(data.day, 10);
+
+    const checkinStatus = String(data.status || "Checked In").trim();
+
+
+
+    if (!delegateId) {
+
+        throw new Error("Delegate ID is required.");
+
+    }
+
+    if (day !== 1 && day !== 2 && day !== 3) {
+
+        throw new Error("Invalid day (must be 1, 2, or 3).");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow <= 1) {
+
+        throw new Error("No delegates registered yet.");
+
+    }
+
+
+
+    const ids = sheet.getRange(2, 23, lastRow - 1, 1).getValues().flat();
+
+    let rowIndex = -1;
+
+    for (let i = 0; i < ids.length; i++) {
+
+        if (String(ids[i]).trim().toLowerCase() === delegateId.toLowerCase()) {
+
+            rowIndex = i + 2;
+
+            break;
+
+        }
+
+    }
+
+
+
+    if (rowIndex === -1) {
+
+        throw new Error("Delegate ID not found: " + delegateId);
+
+    }
+
+
+
+    const targetCol = 32 + day;
+
+    sheet.getRange(rowIndex, targetCol).setValue(checkinStatus);
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Delegate " + delegateId + " checked in for Day " + day + " as " + checkinStatus,
+
+        delegateId: delegateId,
+
+        day: day,
+
+        checkinStatus: checkinStatus
+
+    })).setMimeType(ContentService.MimeType.JSON);
+}
+
+
+
+function generateDelegateId(sheet) {
+
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow <= 1) return "RES-DEL-1001";
+
+    const ids = sheet.getRange(2, 23, lastRow - 1, 1).getValues().flat();
+
+    let maxNum = 1000;
+
+    for (let i = 0; i < ids.length; i++) {
+
+        const id = String(ids[i]);
+
+        if (id.startsWith("RES-DEL-")) {
+
+            const num = parseInt(id.replace("RES-DEL-", ""), 10);
+
+            if (!isNaN(num) && num > maxNum) {
+
+                maxNum = num;
+
+            }
+
+        }
+
+    }
+
+    return "RES-DEL-" + (maxNum + 1);
+
+}
+
+
+
+function generatePassword() {
+
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    let pass = "";
+
+    for (let i = 0; i < 8; i++) {
+
+        pass += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    }
+
+    return pass;
+
+}
+
+
+
+function getSheetDataAsObjects(sheet) {
+
+    if (!sheet) return [];
+
+    const lastRow = sheet.getLastRow();
+
+    const lastCol = sheet.getLastColumn();
+
+    if (lastRow <= 1) return [];
+
+    const values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+
+    const headers = values[0];
+
+    const data = [];
+
+    for (let r = 1; r < values.length; r++) {
+
+        const obj = { rowIndex: r + 1 };
+
+        for (let c = 0; c < headers.length; c++) {
+
+            const headerName = headers[c] || ("Col_" + (c + 1));
+
+            let val = values[r][c];
+
+            if (val instanceof Date) {
+
+                val = val.toISOString();
+
+            }
+
+            obj[headerName] = val;
+
+        }
+
+        data.push(obj);
+
+    }
+
+    return data;
+
+}
+
+
+
+function sendCredentialsEmail(email, name, delegateId, password, committee, country) {
+
+    const logoUrl = "https://resolvemun.in/images/Logo.png";
+
+    const heroUrl = "https://resolvemun.in/images/OG.jpg";
+
+    const loginUrl = "https://resolvemun.in/portal.html";
+
+    const whatsappUrl = "https://chat.whatsapp.com/L3mFzvabjWYJ2wz29Y0M33";
+
+
+
+    const subject = "Resolve MUN 2026 - Your Delegate Credentials & Allocations";
+
+
+
+    const html = `
+
+    <!DOCTYPE html>
+
+    <html>
+
+    <head>
+
+      <meta charset="utf-8">
+
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+      <title>${subject}</title>
+
+    </head>
+
+    <body style="background-color:#050507; margin:0; padding:40px 0; font-family:'Inter', Arial, sans-serif; color:#f5f5f7;">
+
+      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+
+        <tr>
+
+          <td align="center">
+
+            <table width="100%" style="max-width:600px; background-color:#070712; border: 1px solid #330e5c; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(51, 14, 146, 0.25);">
+
+              
+
+              <!-- Header Logo -->
+
+              <tr>
+
+                <td align="center" style="padding:40px 20px; background: linear-gradient(180deg, #1f083d 0%, #070712 100%);">
+
+                  <img src="${logoUrl}" width="160" alt="Resolve MUN Logo" style="display:block;">
+
+                  <p style="color:#7c3aed; font-size:12px; text-transform:uppercase; letter-spacing:2px; margin-top:15px; font-weight:600; margin-bottom:0;">Elite Diplomatic Discourse</p>
+
+                </td>
+
+              </tr>
+
+              
+
+              <!-- Main Content -->
+
+              <tr>
+
+                <td style="padding:40px; background-color:#070712;">
+
+                  <h2 style="color:#ffffff; font-size:24px; font-weight:700; text-align:center; margin-top:0; margin-bottom:10px; font-family:'Crimson Pro', Georgia, serif;">Welcome to the Arena of Diplomacy</h2>
+
+                  <p style="color:rgba(255,255,255,0.7); font-size:15px; line-height:1.6; text-align:center; margin-bottom:30px;">Dear ${name}, your registration has been successfully verified! Below are your official delegate credentials and portfolio allocations.</p>
+
+                  
+
+                  <!-- Allocations Box -->
+
+                  <table width="100%" style="background-color:rgba(255,255,255,0.03); border: 1px solid rgba(124,58,237,0.2); border-radius: 12px; margin-bottom:25px; padding:20px;">
+
+                    <tr>
+
+                      <td style="color:#7c3aed; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding-bottom:5px;">Allocated Committee</td>
+
+                    </tr>
+
+                    <tr>
+
+                      <td style="color:#ffffff; font-size:18px; font-weight:600; padding-bottom:15px;">${committee || "To Be Allocated"}</td>
+
+                    </tr>
+
+                    <tr>
+
+                      <td style="color:#7c3aed; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding-bottom:5px;">Allocated Country / Role</td>
+
+                    </tr>
+
+                    <tr>
+
+                      <td style="color:#ffffff; font-size:18px; font-weight:600;">${country || "To Be Allocated"}</td>
+
+                    </tr>
+
+                  </table>
+
+
+
+                  <!-- Login Credentials Box -->
+
+                  <table width="100%" style="background: linear-gradient(135deg, rgba(51, 14, 92, 0.3) 0%, rgba(124, 58, 237, 0.1) 100%); border: 1px solid rgba(124,58,237,0.3); border-radius: 12px; margin-bottom:30px; padding:20px;">
+
+                    <tr>
+
+                      <td colspan="2" style="color:#ffffff; font-size:16px; font-weight:700; padding-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.1);">Your Login Credentials</td>
+
+                    </tr>
+
+                    <tr>
+
+                      <td style="color:rgba(255,255,255,0.6); font-size:13px; padding-top:15px; padding-bottom:5px; width:40%;">Delegate ID / Email</td>
+
+                      <td style="color:#ffffff; font-size:14px; font-weight:600; padding-top:15px; padding-bottom:5px; text-align:right;">${delegateId} <span style="color:rgba(255,255,255,0.4); font-size:12px;">(or ${email})</span></td>
+
+                    </tr>
+
+                    <tr>
+
+                      <td style="color:rgba(255,255,255,0.6); font-size:13px; padding-bottom:5px;">Password</td>
+
+                      <td style="color:#7c3aed; font-size:16px; font-weight:700; padding-bottom:5px; text-align:right; letter-spacing:1px;">${password}</td>
+
+                    </tr>
+
+                  </table>
+
+
+
+                  <!-- CTA Buttons -->
+
+                  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:20px; margin-bottom:20px;">
+
+                    <tr>
+
+                      <td align="center" style="padding-bottom:15px;">
+
+                        <a href="${loginUrl}" style="display:inline-block; background: linear-gradient(90deg, #510e92 0%, #7c3aed 100%); color:#ffffff; padding:14px 30px; font-size:14px; font-weight:700; text-decoration:none; border-radius:8px; text-transform:uppercase; letter-spacing:1px; box-shadow: 0 4px 15px rgba(124,58,237,0.4);">Access Delegate Portal</a>
+
+                      </td>
+
+                    </tr>
+
+                    <tr>
+
+                      <td align="center">
+
+                        <a href="${whatsappUrl}" style="display:inline-block; background-color:#25d366; color:#ffffff; padding:10px 24px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">💬 Join Official WhatsApp Group</a>
+
+                      </td>
+
+                    </tr>
+
+                  </table>
+
+
+
+                  <p style="color:rgba(255,255,255,0.5); font-size:13px; line-height:1.5; text-align:center; margin-top:30px;">
+
+                    Once logged in to the portal, you will be able to retrieve your unique QR check-in code, view your agenda, and track your attendance for the three days of the conference.
+
+                  </p>
+
+                </td>
+
+              </tr>
+
+              
+
+              <!-- Footer Graphic -->
+
+              <tr>
+
+                <td align="center" style="padding:0 30px 30px 30px;">
+
+                  <img src="${heroUrl}" width="100%" style="border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+
+                </td>
+
+              </tr>
+
+              
+
+              <!-- Footer Details -->
+
+              <tr>
+
+                <td align="center" style="padding:30px; background-color:#050507; border-top:1px solid rgba(255,255,255,0.05);">
+
+                  <h4 style="margin:0 0 5px 0; font-size:14px; color:#ffffff; font-family:'Oswald', sans-serif; letter-spacing:1px;">RESOLVE MUN 2026</h4>
+
+                  <p style="color:#8e8e93; font-size:11px; margin:0;">Laurus The Universal School, Bowrampet, Hyderabad.</p>
+
+                  <p style="color:rgba(124,58,237,0.6); font-size:11px; margin-top:5px; margin-bottom:0;">Please do not reply directly to this email.</p>
+
+                </td>
+
+              </tr>
+
+              
+
+            </table>
+
+          </td>
+
+        </tr>
+
+      </table>
+
+    </body>
+
+    </html>
+
+    `;
+
+
+
+    MailApp.sendEmail({
+
+        to: email,
+
+        subject: subject,
+
+        htmlBody: html
+
+    });
 
 }

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Secretariat Dashboard | Resolve MUN 2026</title>
-  <meta name="description" content="Official Secretariat Admin Dashboard for Resolve MUN 2026. Manage delegate allocations, verify payments, and scan QR passes for check-in.">
+  <meta name="description" content="Official Secretariat Admin Dashboard for Resolve MUN 2026. Manage applications, verify payments, allocate portfolios, and scan QR passes for check-in.">
   <link rel="icon" type="image/webp" href="https://resolvemun.in/images/favicon.ico?v=3">
 
   <!-- Typography -->
@@ -190,11 +190,6 @@
       box-shadow: 0 0 10px var(--gold-shadow);
     }
 
-    .form-group select option {
-      background-color: var(--deep);
-      color: var(--white);
-    }
-
     .submit-btn {
       width: 100%;
       background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
@@ -275,6 +270,8 @@
       border-bottom: 1px solid var(--card-border);
       gap: 10px;
       margin-bottom: 25px;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
 
     .tab-btn {
@@ -289,6 +286,7 @@
       cursor: pointer;
       position: relative;
       transition: all 0.3s;
+      white-space: nowrap;
     }
 
     .tab-btn:hover {
@@ -366,7 +364,7 @@
       color: var(--white);
     }
 
-    /* Table Container */
+    /* Modern Table Container */
     .table-container {
       background: rgba(15, 15, 20, 0.3);
       border: 1px solid var(--card-border);
@@ -434,6 +432,16 @@
     .action-btn:hover {
       background: var(--gold-light);
       transform: translateY(-1px);
+    }
+
+    .action-btn.view-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--card-border);
+      color: var(--white);
+    }
+
+    .action-btn.view-btn:hover {
+      background: rgba(255,255,255,0.1);
     }
 
     /* Modal Styling */
@@ -520,6 +528,13 @@
       text-decoration: underline;
       font-weight: 600;
       margin-top: 5px;
+    }
+
+    /* Delegation Expandable Rows */
+    .expand-row td {
+      background: rgba(255, 255, 255, 0.01);
+      padding: 20px 30px;
+      border-top: 1px solid var(--card-border);
     }
 
     .sub-table-title {
@@ -661,6 +676,7 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* Text Helpers */
     .empty-state {
       padding: 40px;
       text-align: center;
@@ -711,11 +727,11 @@
     <!-- STATS COUNTER BAR -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">Total Delegates</div>
+        <div class="stat-label">Total Applications</div>
         <div class="stat-val" id="statTotal">0</div>
       </div>
       <div class="stat-card verified">
-        <div class="stat-label">Verified & Sent Credentials</div>
+        <div class="stat-label">Verified Delegates</div>
         <div class="stat-val" id="statVerified">0</div>
       </div>
       <div class="stat-card pending">
@@ -723,15 +739,19 @@
         <div class="stat-val" id="statPending">0</div>
       </div>
       <div class="stat-card revenue">
-        <div class="stat-label">Total Fee Collection</div>
+        <div class="stat-label">Revenue Generated</div>
         <div class="stat-val" id="statRevenue">₹0</div>
       </div>
     </div>
 
     <!-- MAIN DASHBOARD TABS -->
     <div class="tabs-header">
-      <button class="tab-btn active" id="tabDelegates" onclick="switchTab('delegatesTab')">Delegates Manager</button>
-      <button class="tab-btn" id="tabScanner" onclick="switchTab('scannerTab')" style="color: var(--blue);">QR Scanner Check-in</button>
+      <button class="tab-btn active" onclick="switchTab('delegatesTab')">Delegates (Sheet1)</button>
+      <button class="tab-btn" onclick="switchTab('delegationsTab')">Delegations (Sheet3)</button>
+      <button class="tab-btn" onclick="switchTab('ocTab')">OC Team (Sheet2)</button>
+      <button class="tab-btn" onclick="switchTab('ebTab')">EB Team (Sheet4)</button>
+      <button class="tab-btn" onclick="switchTab('waitlistTab')">Waitlist</button>
+      <button class="tab-btn" onclick="switchTab('scannerTab')" style="color: var(--blue);">QR Scanner</button>
     </div>
 
     <!-- TABS CONTENTS -->
@@ -740,10 +760,10 @@
       <!-- LOADING INDICATOR -->
       <div id="workspaceLoader" class="main-loader" style="display: none;">
         <div class="spinner-large"></div>
-        Syncing with Master Google Sheet...
+        Syncing data with Google Sheets...
       </div>
 
-      <!-- TAB 1: DELEGATES MANAGER -->
+      <!-- TAB 1: INDIVIDUAL DELEGATES -->
       <div class="tab-content active" id="delegatesTab">
         <div class="filters-bar">
           <input type="text" class="search-input" id="searchDelegates" placeholder="Search by name, email, phone, school or ID..." oninput="filterDelegates()">
@@ -759,12 +779,12 @@
               <tr>
                 <th>Row</th>
                 <th>Name</th>
-                <th>Institution / Type</th>
+                <th>Institution</th>
                 <th>Email / Contact</th>
-                <th>Payment Status</th>
+                <th>Status</th>
                 <th>Delegate ID</th>
                 <th>Allocation (Comm / Role)</th>
-                <th>Attendance</th>
+                <th>Check-in Pass</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -775,7 +795,104 @@
         </div>
       </div>
 
-      <!-- TAB 2: QR SCANNER CHECK-IN -->
+      <!-- TAB 2: GROUP DELEGATIONS -->
+      <div class="tab-content" id="delegationsTab">
+        <div class="filters-bar">
+          <input type="text" class="search-input" id="searchDelegations" placeholder="Search by institution or adviser..." oninput="filterDelegations()">
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>Institution Name</th>
+                <th>Adviser Name</th>
+                <th>Contact details</th>
+                <th>Delegates Count</th>
+                <th>Transaction UTR</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="delegationsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: OC APPLICATIONS -->
+      <div class="tab-content" id="ocTab">
+        <div class="filters-bar">
+          <input type="text" class="search-input" id="searchOC" placeholder="Search by name or email..." oninput="filterOC()">
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Grade</th>
+                <th>Institution</th>
+                <th>MUN Count</th>
+                <th>Transaction UTR</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="ocTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: EB CANDIDATES -->
+      <div class="tab-content" id="ebTab">
+        <div class="filters-bar">
+          <input type="text" class="search-input" id="searchEB" placeholder="Search by name or position..." oninput="filterEB()">
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>Name</th>
+                <th>Institution</th>
+                <th>Applied Position</th>
+                <th>Committee Pref</th>
+                <th>MUNs / EB Exp</th>
+                <th>CV Portfolio</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ebTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 5: WAITLIST -->
+      <div class="tab-content" id="waitlistTab">
+        <div class="table-container" style="max-width: 600px; margin: 0 auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>Timestamp</th>
+                <th>Email Address</th>
+              </tr>
+            </thead>
+            <tbody id="waitlistTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 6: QR SCANNER CHECK-IN -->
       <div class="tab-content" id="scannerTab">
         <div class="scanner-view-container">
           <h2 style="font-family: 'Oswald', sans-serif; text-transform: uppercase;">Check-in Scanner</h2>
@@ -832,7 +949,7 @@
 
   </section>
 
-  <!-- MODAL: VERIFY & ALLOCATE DELEGATE -->
+  <!-- MODAL: APPROVE INDIVIDUAL DELEGATE -->
   <div class="modal-overlay" id="delegateModal">
     <div class="modal-card">
       <div class="modal-header">
@@ -841,17 +958,17 @@
       </div>
       <div class="modal-body">
         
-        <h4 class="sub-table-title" style="margin-bottom: 15px;">Registration Details</h4>
+        <h4 class="sub-table-title" style="margin-bottom: 15px;">Delegate Details</h4>
         <div class="info-row">
           <span class="label">Full Name</span>
           <span class="val" id="mDelName">-</span>
         </div>
         <div class="info-row">
-          <span class="label">Email Address</span>
+          <span class="label">Email</span>
           <span class="val" id="mDelEmail">-</span>
         </div>
         <div class="info-row">
-          <span class="label">Contact Number</span>
+          <span class="label">Phone</span>
           <span class="val" id="mDelPhone">-</span>
         </div>
         <div class="info-row">
@@ -860,7 +977,7 @@
         </div>
         <div class="info-row">
           <span class="label">Registered Amount</span>
-          <span class="val" id="mDelAmount">-</span>
+          <span class="val" id="mDelAmount">₹2999</span>
         </div>
         <div class="info-row">
           <span class="label">UTR / TXN ID</span>
@@ -869,11 +986,11 @@
         <div class="info-row">
           <span class="label">Payment Receipt</span>
           <span class="val">
-            <a href="#" target="_blank" class="screenshot-link" id="mDelReceipt">View Uploaded Attachment</a>
+            <a href="#" target="_blank" class="screenshot-link" id="mDelReceipt">View Screenshot</a>
           </span>
         </div>
         
-        <h4 class="sub-table-title" style="margin-top: 20px; margin-bottom: 15px;">Preferences History</h4>
+        <h4 class="sub-table-title" style="margin-top: 20px; margin-bottom: 15px;">Preference History</h4>
         <div class="info-row">
           <span class="label">Preference 1</span>
           <span class="val" id="mDelPref1">-</span>
@@ -905,17 +1022,87 @@
           </div>
           <div class="form-group">
             <label for="allocCountry">Allocated Country or Role</label>
-            <input type="text" id="allocCountry" placeholder="e.g. USA, Delegate of India, Reporter" required>
+            <input type="text" id="allocCountry" placeholder="e.g., USA, Delegate of India, Reporter" required>
           </div>
           <div class="form-group">
             <label for="secNotes">Secretariat Notes (Internal)</label>
-            <textarea id="secNotes" rows="2" placeholder="Secretariat internal notes..."></textarea>
+            <textarea id="secNotes" rows="2" placeholder="Any internal notes on this application..."></textarea>
           </div>
           <button type="submit" class="submit-btn" style="background: var(--green);" id="modalSubmitBtn">
             Approve & Send Passcode <span id="modalSpinner" style="display: none;" class="spinner-btn"></span>
           </button>
         </form>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: APPROVE DELEGATION -->
+  <div class="modal-overlay" id="delegationModal">
+    <div class="modal-card" style="max-width: 750px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Verify Group Delegation</h3>
+        <button class="close-modal-btn" onclick="closeModal('delegationModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <h4 class="sub-table-title" style="margin-bottom: 15px;">Delegation Details</h4>
+        <div class="info-row">
+          <span class="label">Institution Name</span>
+          <span class="val" id="mGroupName" style="font-weight: 700; color: var(--gold-light);">-</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Faculty Adviser</span>
+          <span class="val" id="mGroupAdviser">-</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Email / Contact</span>
+          <span class="val" id="mGroupContact">-</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Delegates Count</span>
+          <span class="val" id="mGroupCount">0</span>
+        </div>
+        <div class="info-row">
+          <span class="label">UTR Transaction</span>
+          <span class="val" id="mGroupUtr" style="font-family: monospace; color: var(--blue);">-</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Receipt Link</span>
+          <span class="val">
+            <a href="#" target="_blank" class="screenshot-link" id="mGroupReceipt">View Payment File</a>
+          </span>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.06); margin: 25px 0;">
+        
+        <h4 class="sub-table-title" style="margin-bottom: 15px;">Allocate Committees & Roles for Group Members</h4>
+        <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 15px;">Please assign portfolios to all delegates below. When you click approve, they will be registered as individual delegates and sent their logins.</p>
+
+        <form id="groupApprovalForm">
+          <input type="hidden" id="mGroupRowIndex">
+          <div id="groupDelegatesAllocationList">
+            <!-- Populated via JS dynamically -->
+          </div>
+
+          <button type="submit" class="submit-btn" style="background: var(--green); margin-top: 25px;" id="groupModalSubmitBtn">
+            Approve Delegation & Bulk Send Logins <span id="groupModalSpinner" style="display: none;" class="spinner-btn"></span>
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW GENERAL DETAILS -->
+  <div class="modal-overlay" id="generalViewModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="mGenTitle">Application Details</h3>
+        <button class="close-modal-btn" onclick="closeModal('generalViewModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="mGenBody">
+        <!-- populated dynamically -->
       </div>
     </div>
   </div>
@@ -931,12 +1118,14 @@
   </footer>
 
   <script>
-    // Config: replace with Master sheet Apps Script Web App URL
-    const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbye9458WcFRaODxijG9Rlv3LoATz1feM4DUMKClFde0LBlW_c20lXBN4-FMzHC6cKvp/exec";
+    // Config: replace with actual sheet Web App URL
+    const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEatRgqvxNklyeP74lm67pkypoyDM2grzPSq8X2YBOpCfJ6maH1RZcGWAGmDNw6y-P/exec";
 
+    // Auth variables
     let ADMIN_KEY = "";
     let cachedData = null;
 
+    // QR scanner state
     let html5QrcodeScanner = null;
     let scannerActiveDay = 1;
     let selectedScannedDelegate = null;
@@ -951,57 +1140,44 @@
     const alertMessage = document.getElementById('alertMessage');
     const loader = document.getElementById('workspaceLoader');
 
-    // Stats
+    // UI Stats fields
     const statTotal = document.getElementById('statTotal');
     const statVerified = document.getElementById('statVerified');
     const statPending = document.getElementById('statPending');
     const statRevenue = document.getElementById('statRevenue');
 
-    // Table body
+    // Tables body refs
     const delegatesTableBody = document.getElementById('delegatesTableBody');
+    const delegationsTableBody = document.getElementById('delegationsTableBody');
+    const ocTableBody = document.getElementById('ocTableBody');
+    const ebTableBody = document.getElementById('ebTableBody');
+    const waitlistTableBody = document.getElementById('waitlistTableBody');
 
-    // Dynamic key helpers for sheet headers
-    let colMap = {
-      name: "Full Name",
-      email: "Email Address",
-      phone: "Phone Number",
-      institute: "School / Institution",
-      amount: "Payment Amount",
-      utr: "Transaction ID / UTR Number",
-      screenshot: "Payment Screenshot Link",
-      isVerified: "Payment Verified",
-      delegateId: "Delegate ID",
-      comm: "Allocation Committee",
-      country: "Allocation Country",
-      pref1Comm: "Preference 1 Committee",
-      pref1Coun: "Preference 1 Country",
-      pref2Comm: "Preference 2 Committee",
-      pref2Coun: "Preference 2 Country",
-      pref3Comm: "Preference 3 Committee",
-      pref3Coun: "Preference 3 Country",
-      day1: "Check-in Day 1",
-      day2: "Check-in Day 2",
-      day3: "Check-in Day 3",
-      notes: "Secretariat Notes"
-    };
-
+    // Show Custom Alerts
     function showAlert(message, type = 'error') {
       alertMessage.innerText = message;
       alertBar.className = 'alert-bar';
-      if (type === 'success') alertBar.classList.add('success');
+      if (type === 'success') {
+        alertBar.classList.add('success');
+      }
       alertBar.classList.add('active');
-      setTimeout(() => alertBar.classList.remove('active'), 5000);
+      setTimeout(() => {
+        alertBar.classList.remove('active');
+      }, 5000);
     }
 
+    // Modal helpers
     function openModal(id) {
       document.getElementById(id).classList.add('active');
     }
     window.closeModal = function(id) {
       document.getElementById(id).classList.remove('active');
-      if (id === 'scannerTab') stopScanner();
+      if (id === 'scannerTab') {
+        stopScanner();
+      }
     }
 
-    // Auto-login from session
+    // Auto-authenticate if key saved
     document.addEventListener('DOMContentLoaded', () => {
       const savedKey = sessionStorage.getItem('resolve_admin_key');
       if (savedKey) {
@@ -1010,7 +1186,7 @@
       }
     });
 
-    // Authenticate Admin
+    // Handle Login submission
     adminLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const passkey = document.getElementById('adminKeyInput').value.trim();
@@ -1037,7 +1213,9 @@
           cachedData = result.data;
           
           showAlert('Authenticated successfully!', 'success');
-          setTimeout(() => showWorkspace(), 600);
+          setTimeout(() => {
+            showWorkspace();
+          }, 600);
         } else {
           showAlert(result.message || 'Invalid Secret Passkey.');
         }
@@ -1049,18 +1227,20 @@
       }
     });
 
+    // Toggle Workspace views
     function showWorkspace() {
       loginSection.style.display = 'none';
       workspaceSection.style.display = 'block';
       navActionContainer.innerHTML = '<button class="logout-btn" onclick="logoutAdmin()">Logout</button>';
       
       if (cachedData) {
-        renderDelegatesTable(cachedData.delegates);
+        renderAllTables();
       } else {
         syncData();
       }
     }
 
+    // Sync Data with Google sheets
     async function syncData() {
       loader.style.display = 'block';
       try {
@@ -1076,7 +1256,7 @@
         const result = await response.json();
         if (result.status === 'success') {
           cachedData = result.data;
-          renderDelegatesTable(cachedData.delegates);
+          renderAllTables();
           showAlert('Data synchronized successfully.', 'success');
         } else {
           showAlert(result.message || 'Failed to sync data.');
@@ -1089,11 +1269,13 @@
       }
     }
 
+    // Navigation Tabs Toggle
     window.switchTab = function(tabId) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(view => view.classList.remove('active'));
 
-      const activeBtn = document.getElementById(tabId === 'delegatesTab' ? 'tabDelegates' : 'tabScanner');
+      // Find trigger button
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
       if (activeBtn) activeBtn.classList.add('active');
       document.getElementById(tabId).classList.add('active');
 
@@ -1104,6 +1286,7 @@
       }
     };
 
+    // Logout
     window.logoutAdmin = function() {
       sessionStorage.removeItem('resolve_admin_key');
       ADMIN_KEY = "";
@@ -1116,73 +1299,75 @@
       navActionContainer.innerHTML = '<a href="index.html" class="btn-secondary">Website Home</a>';
     };
 
-    // Render Delegate Manager Grids and calculate stats
+    // Stats calculations and table rendering
+    function renderAllTables() {
+      if (!cachedData) return;
+
+      const delegates = cachedData.delegates || [];
+      const delegations = cachedData.delegations || [];
+      const oc = cachedData.oc || [];
+      const eb = cachedData.eb || [];
+      const waitlist = cachedData.waitlist || [];
+
+      // Stat Calculations
+      const verifiedDelegates = delegates.filter(d => String(d["Payment Verified"]).trim() === "Verified");
+      const pendingVerify = delegates.filter(d => String(d["Payment Verified"]).trim() !== "Verified");
+
+      // Group totals
+      let totalGroupDelegates = 0;
+      let delegationRevenue = 0;
+      delegations.forEach(g => {
+        totalGroupDelegates += parseInt(g["Number of Delegates"], 10) || 0;
+        // Strip non-numbers from total price
+        const price = parseFloat(String(g["Total Amount"] || "0").replace(/[^0-9.]/g, '')) || 0;
+        if (g["Status"] === "Approved" || g["Status"] === "Verified") {
+          delegationRevenue += price;
+        }
+      });
+
+      // Individual Delegate Revenue
+      let individualRevenue = 0;
+      verifiedDelegates.forEach(d => {
+        const amt = parseFloat(String(d["Payment Amount"] || "2999").replace(/[^0-9.]/g, '')) || 2999;
+        individualRevenue += amt;
+      });
+
+      const totalApplications = delegates.length + delegations.length + oc.length + eb.length;
+      statTotal.innerText = totalApplications;
+      statVerified.innerText = verifiedDelegates.length + totalGroupDelegates;
+      statPending.innerText = pendingVerify.length + delegations.filter(g => g["Status"] !== "Approved").length;
+      statRevenue.innerText = `₹${(individualRevenue + delegationRevenue).toLocaleString()}`;
+
+      // Render tab tables
+      renderDelegatesTable(delegates);
+      renderDelegationsTable(delegations);
+      renderOCTable(oc);
+      renderEBTable(eb);
+      renderWaitlistTable(waitlist);
+    }
+
+    // RENDER: INDIVIDUAL DELEGATES
     function renderDelegatesTable(list) {
       delegatesTableBody.innerHTML = "";
-      
-      // Dynamic header key mapping resolution from row data
-      if (list && list.length > 0) {
-        const sampleRow = list[0];
-        // Inspect row keys to map config
-        Object.keys(sampleRow).forEach(k => {
-          const lk = k.toLowerCase();
-          if (lk === 'full name' || lk === 'name') colMap.name = k;
-          else if (lk === 'email address' || lk === 'email' || lk === 'email id') colMap.email = k;
-          else if (lk === 'phone number' || lk === 'phone' || lk === 'contact') colMap.phone = k;
-          else if (lk === 'school' || lk === 'school / institution' || lk === 'institution' || lk === 'institute') colMap.institute = k;
-          else if (lk === 'payment verified' || lk === 'verified' || lk === 'payment status') colMap.isVerified = k;
-          else if (lk === 'delegate id' || lk === 'id') colMap.delegateId = k;
-          else if (lk === 'allocated committee' || lk === 'allocation committee' || lk === 'committee') colMap.comm = k;
-          else if (lk === 'allocated country' || lk === 'allocation country' || lk === 'country') colMap.country = k;
-          else if (lk === 'payment amount' || lk === 'amount') colMap.amount = k;
-          else if (lk === 'utr' || lk === 'utr number' || lk === 'transaction id') colMap.utr = k;
-          else if (lk === 'payment screenshot link' || lk === 'screenshot' || lk === 'payment screenshot') colMap.screenshot = k;
-          else if (lk === 'check-in day 1' || lk === 'day 1') colMap.day1 = k;
-          else if (lk === 'check-in day 2' || lk === 'day 2') colMap.day2 = k;
-          else if (lk === 'check-in day 3' || lk === 'day 3') colMap.day3 = k;
-          else if (lk === 'notes' || lk === 'secretariat notes') colMap.notes = k;
-        });
-      }
-
-      // Calculations
-      const totalCount = list.length;
-      const verifiedList = list.filter(d => {
-        const status = String(d[colMap.isVerified] || "").trim().toLowerCase();
-        return status === "verified" || status === "approved";
-      });
-      const pendingCount = totalCount - verifiedList.length;
-      
-      let revenue = 0;
-      verifiedList.forEach(d => {
-        const val = parseFloat(String(d[colMap.amount] || "2999").replace(/[^0-9.]/g, '')) || 2999;
-        revenue += val;
-      });
-
-      statTotal.innerText = totalCount;
-      statVerified.innerText = verifiedList.length;
-      statPending.innerText = pendingCount;
-      statRevenue.innerText = `₹${revenue.toLocaleString()}`;
-
-      if (totalCount === 0) {
-        delegatesTableBody.innerHTML = `<tr><td colspan="9" class="empty-state">No delegate records found.</td></tr>`;
+      if (list.length === 0) {
+        delegatesTableBody.innerHTML = `<tr><td colspan="9" class="empty-state">No individual delegates found.</td></tr>`;
         return;
       }
 
-      // Render Rows
       list.forEach(d => {
-        const name = d[colMap.name] || "";
-        const email = d[colMap.email] || "";
-        const phone = d[colMap.phone] || "";
-        const school = d[colMap.institute] || "";
+        const name = d["Full Name"] || "";
+        const email = d["Email Address"] || "";
+        const phone = d["Phone Number"] || "";
+        const school = d["School / Institution"] || "";
         const rowIdx = d.rowIndex;
-        const delId = d[colMap.delegateId] || "";
-        const comm = d[colMap.comm] || "";
-        const country = d[colMap.country] || "";
-        
-        const isVerifiedText = String(d[colMap.isVerified] || "").trim().toLowerCase();
-        const verified = isVerifiedText === "verified" || isVerifiedText === "approved";
-        const badgeClass = verified ? "badge-approved" : "badge-pending";
-        const badgeText = verified ? "Verified" : "Pending";
+        const status = d["Application Status"] || "Pending";
+        const delId = d["Delegate ID"] || "";
+        const comm = d["Allocation Committee"] || "";
+        const country = d["Allocation Country"] || "";
+        const isVerified = String(d["Payment Verified"]).trim() === "Verified";
+
+        const badgeClass = isVerified ? "badge-approved" : "badge-pending";
+        const badgeText = isVerified ? "Verified" : "Pending";
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1200,32 +1385,180 @@
             ${country ? `<div style="font-size:0.75rem; color:var(--muted);">${country}</div>` : (comm ? '' : '-')}
           </td>
           <td>
-            <div style="font-size:0.75rem;">Day 1: ${d[colMap.day1] || "Absent"}</div>
-            <div style="font-size:0.75rem;">Day 2: ${d[colMap.day2] || "Absent"}</div>
-            <div style="font-size:0.75rem;">Day 3: ${d[colMap.day3] || "Absent"}</div>
+            <div style="font-size:0.75rem;">Day 1: ${d["Check-in Day 1"] || "Absent"}</div>
+            <div style="font-size:0.75rem;">Day 2: ${d["Check-in Day 2"] || "Absent"}</div>
+            <div style="font-size:0.75rem;">Day 3: ${d["Check-in Day 3"] || "Absent"}</div>
           </td>
           <td>
-            <button class="action-btn" onclick="openApprovalModal(${rowIdx})">Verify / Allocate</button>
+            <button class="action-btn" onclick="openApprovalModal(${rowIdx})">Verify & Allocate</button>
           </td>
         `;
         delegatesTableBody.appendChild(tr);
       });
     }
 
-    // Modal populate
+    // RENDER: DELEGATIONS (GROUP)
+    function renderDelegationsTable(list) {
+      delegationsTableBody.innerHTML = "";
+      if (list.length === 0) {
+        delegationsTableBody.innerHTML = `<tr><td colspan="8" class="empty-state">No group delegations registered.</td></tr>`;
+        return;
+      }
+
+      list.forEach(g => {
+        const rowIdx = g.rowIndex;
+        const instName = g["Institution Name"] || "";
+        const advName = g["Faculty Adviser Name"] || "";
+        const advEmail = g["Adviser Email"] || "";
+        const advPhone = g["Adviser Phone"] || "";
+        const count = g["Number of Delegates"] || "0";
+        const utr = g["Transaction ID"] || "";
+        const status = g["Status"] || "Pending";
+
+        const badgeClass = status === "Approved" || status === "Verified" ? "badge-approved" : "badge-pending";
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${rowIdx}</td>
+          <td style="font-weight:600; color:var(--gold-light);">${instName}</td>
+          <td>${advName}</td>
+          <td>
+            <div style="font-size:0.85rem; color:var(--white);">${advEmail}</div>
+            <div style="font-size:0.75rem; color:var(--muted);">${advPhone}</div>
+          </td>
+          <td style="font-weight:700; text-align:center;">${count}</td>
+          <td style="font-family:monospace; font-size:0.8rem;">${utr}</td>
+          <td><span class="badge ${badgeClass}">${status}</span></td>
+          <td>
+            <button class="action-btn" onclick="openDelegationModal(${rowIdx})">View / Approve</button>
+          </td>
+        `;
+        delegationsTableBody.appendChild(tr);
+      });
+    }
+
+    // RENDER: OC APPLICATIONS
+    function renderOCTable(list) {
+      ocTableBody.innerHTML = "";
+      if (list.length === 0) {
+        ocTableBody.innerHTML = `<tr><td colspan="9" class="empty-state">No OC applications found.</td></tr>`;
+        return;
+      }
+
+      list.forEach(o => {
+        const rowIdx = o.rowIndex;
+        const name = o["Full Name"] || "";
+        const email = o["Email Address"] || "";
+        const phone = o["Phone Number"] || "";
+        const school = o["School / Institution"] || "";
+        const grade = o["Grade / Class"] || "";
+        const utr = o["Transaction ID"] || "";
+        const verified = o["Payment Verified"] || "Pending";
+        const munCount = o["Previous MUN Experience"] || "0";
+
+        const badgeClass = verified === "Verified" || verified === "Approved" ? "badge-approved" : "badge-pending";
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${rowIdx}</td>
+          <td style="font-weight:600;">${name}</td>
+          <td>
+            <div style="font-size:0.85rem; color:var(--white);">${email}</div>
+            <div style="font-size:0.75rem; color:var(--muted);">${phone}</div>
+          </td>
+          <td>${grade}</td>
+          <td>${school}</td>
+          <td style="text-align:center;">${munCount}</td>
+          <td style="font-family:monospace; font-size:0.8rem;">${utr}</td>
+          <td><span class="badge ${badgeClass}">${verified}</span></td>
+          <td>
+            <button class="action-btn view-btn" onclick="viewOCDetails(${rowIdx})">Details</button>
+          </td>
+        `;
+        ocTableBody.appendChild(tr);
+      });
+    }
+
+    // RENDER: EB APPLICATIONS
+    function renderEBTable(list) {
+      ebTableBody.innerHTML = "";
+      if (list.length === 0) {
+        ebTableBody.innerHTML = `<tr><td colspan="8" class="empty-state">No EB candidacy applications.</td></tr>`;
+        return;
+      }
+
+      list.forEach(e => {
+        const rowIdx = e.rowIndex;
+        const name = e["Full Name"] || "";
+        const email = e["Email Address"] || "";
+        const phone = e["Phone Number"] || "";
+        const school = e["Institution"] || "";
+        const pos = e["Position Applied For"] || "";
+        const comms = e["Preferred Committee"] || "";
+        const munCount = e["Total MUNs"] || "0";
+        const cv = e["Link to Portfolio"] || "";
+        const status = e["Application Status"] || "Pending Review";
+
+        const badgeClass = status === "Approved" || status === "Selected" ? "badge-approved" : "badge-pending";
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${rowIdx}</td>
+          <td style="font-weight:600;">${name}
+            <div style="font-size:0.72rem; color:var(--muted); font-weight:normal;">${email} | ${phone}</div>
+          </td>
+          <td>${school}</td>
+          <td style="font-weight:600; color:var(--gold-light);">${pos}</td>
+          <td>${comms}</td>
+          <td>${munCount} MUNs</td>
+          <td>
+            ${cv ? `<a href="${cv}" target="_blank" class="screenshot-link">Portfolio CV</a>` : 'No CV uploaded'}
+          </td>
+          <td><span class="badge ${badgeClass}">${status}</span></td>
+        `;
+        ebTableBody.appendChild(tr);
+      });
+    }
+
+    // RENDER: WAITLIST
+    function renderWaitlistTable(list) {
+      waitlistTableBody.innerHTML = "";
+      if (list.length === 0) {
+        waitlistTableBody.innerHTML = `<tr><td colspan="3" class="empty-state">Waitlist is currently empty.</td></tr>`;
+        return;
+      }
+
+      list.forEach(w => {
+        const rowIdx = w.rowIndex;
+        const email = w["Email Address"] || w["email"] || "";
+        const ts = w["Timestamp"] ? new Date(w["Timestamp"]).toLocaleString() : "-";
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${rowIdx}</td>
+          <td>${ts}</td>
+          <td style="font-weight:600;">${email}</td>
+        `;
+        waitlistTableBody.appendChild(tr);
+      });
+    }
+
+    // ==========================================
+    // DELEGATE APPROVAL MODAL CONTROLS
+    // ==========================================
     window.openApprovalModal = function(rowIndex) {
       const delegate = cachedData.delegates.find(d => d.rowIndex === rowIndex);
       if (!delegate) return;
 
       document.getElementById('mDelRowIndex').value = rowIndex;
-      document.getElementById('mDelName').innerText = delegate[colMap.name] || "";
-      document.getElementById('mDelEmail').innerText = delegate[colMap.email] || "";
-      document.getElementById('mDelPhone').innerText = delegate[colMap.phone] || "";
-      document.getElementById('mDelInst').innerText = delegate[colMap.institute] || "";
-      document.getElementById('mDelAmount').innerText = `₹${delegate[colMap.amount] || "2999"}`;
-      document.getElementById('mDelUtr').innerText = delegate[colMap.utr] || "N/A";
+      document.getElementById('mDelName').innerText = delegate["Full Name"] || "";
+      document.getElementById('mDelEmail').innerText = delegate["Email Address"] || "";
+      document.getElementById('mDelPhone').innerText = delegate["Phone Number"] || "";
+      document.getElementById('mDelInst').innerText = delegate["School / Institution"] || "";
+      document.getElementById('mDelAmount').innerText = `₹${delegate["Payment Amount"] || "2999"}`;
+      document.getElementById('mDelUtr').innerText = delegate["Transaction ID / UTR Number"] || delegate["Transaction ID"] || "N/A";
       
-      const ssLink = delegate[colMap.screenshot] || "";
+      const ssLink = delegate["Payment Screenshot Link"] || "";
       const receiptBtn = document.getElementById('mDelReceipt');
       if (ssLink && ssLink.startsWith('http')) {
         receiptBtn.href = ssLink;
@@ -1234,26 +1567,19 @@
         receiptBtn.style.display = 'none';
       }
 
-      document.getElementById('mDelPref1').innerText = `${delegate[colMap.pref1Comm] || "-"} : ${delegate[colMap.pref1Coun] || "-"}`;
-      document.getElementById('mDelPref2').innerText = `${delegate[colMap.pref2Comm] || "-"} : ${delegate[colMap.pref2Coun] || "-"}`;
-      document.getElementById('mDelPref3').innerText = `${delegate[colMap.pref3Comm] || "-"} : ${delegate[colMap.pref3Coun] || "-"}`;
+      document.getElementById('mDelPref1').innerText = `${delegate["Preference 1 Committee"] || "-"} : ${delegate["Preference 1 Country"] || "-"}`;
+      document.getElementById('mDelPref2').innerText = `${delegate["Preference 2 Committee"] || "-"} : ${delegate["Preference 2 Country"] || "-"}`;
+      document.getElementById('mDelPref3').innerText = `${delegate["Preference 3 Committee"] || "-"} : ${delegate["Preference 3 Country"] || "-"}`;
 
-      const allocatedCommVal = String(delegate[colMap.comm] || delegate[colMap.pref1Comm] || "").trim().toLowerCase();
-      const committeeSelect = document.getElementById('allocCommittee');
-      committeeSelect.value = ""; // default
-      for (let option of committeeSelect.options) {
-        if (option.value.toLowerCase() === allocatedCommVal || option.text.toLowerCase() === allocatedCommVal) {
-          committeeSelect.value = option.value;
-          break;
-        }
-      }
-      document.getElementById('allocCountry').value = delegate[colMap.country] || delegate[colMap.pref1Coun] || "";
-      document.getElementById('secNotes').value = delegate[colMap.notes] || "";
+      // Set allocated defaults to preference 1
+      document.getElementById('allocCommittee').value = delegate["Allocation Committee"] || delegate["Preference 1 Committee"] || "";
+      document.getElementById('allocCountry').value = delegate["Allocation Country"] || delegate["Preference 1 Country"] || "";
+      document.getElementById('secNotes').value = delegate["Secretariat Notes"] || "";
 
       openModal('delegateModal');
     }
 
-    // Save allocation updates
+    // Submit Approval Form
     document.getElementById('approvalForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -1261,7 +1587,6 @@
       const committee = document.getElementById('allocCommittee').value;
       const country = document.getElementById('allocCountry').value.trim();
       const notes = document.getElementById('secNotes').value.trim();
-      
       const submitBtn = document.getElementById('modalSubmitBtn');
       const spinner = document.getElementById('modalSpinner');
 
@@ -1282,25 +1607,196 @@
           })
         });
 
-        if (!response.ok) throw new Error("Approval update failed.");
+        if (!response.ok) throw new Error("Approval request failed.");
         const result = await response.json();
 
         if (result.status === 'success') {
-          showAlert('Delegate allocations updated and credentials emailed successfully!', 'success');
+          showAlert('Delegate approved successfully & credentials emailed!', 'success');
           closeModal('delegateModal');
+          
+          // Re-sync data to get fresh credentials columns
           syncData();
         } else {
-          showAlert(result.message || 'Error updating allocations.');
+          showAlert(result.message || 'Error approving delegate.');
         }
       } catch (err) {
-        showAlert(err.message || 'Error executing request.');
+        showAlert(err.message || 'Error processing approval.');
       } finally {
         submitBtn.disabled = false;
         spinner.style.display = 'none';
       }
     });
 
-    // Filtering Delegate list
+    // ==========================================
+    // DELEGATION APPROVAL MODAL CONTROLS
+    // ==========================================
+    window.openDelegationModal = function(rowIndex) {
+      const group = cachedData.delegations.find(g => g.rowIndex === rowIndex);
+      if (!group) return;
+
+      document.getElementById('mGroupRowIndex').value = rowIndex;
+      document.getElementById('mGroupName').innerText = group["Institution Name"] || "";
+      document.getElementById('mGroupAdviser').innerText = group["Faculty Adviser Name"] || "";
+      document.getElementById('mGroupContact').innerText = `${group["Adviser Email"] || ""} / ${group["Adviser Phone"] || ""}`;
+      
+      const count = parseInt(group["Number of Delegates"], 10) || 0;
+      document.getElementById('mGroupCount').innerText = count;
+      document.getElementById('mGroupUtr').innerText = group["Transaction ID"] || "N/A";
+      
+      const ssLink = group["Payment Screenshot Link"] || "";
+      const receiptBtn = document.getElementById('mGroupReceipt');
+      if (ssLink && ssLink.startsWith('http')) {
+        receiptBtn.href = ssLink;
+        receiptBtn.style.display = 'inline-block';
+      } else {
+        receiptBtn.style.display = 'none';
+      }
+
+      // Generate dynamic input list for allocating each delegate
+      const listContainer = document.getElementById('groupDelegatesAllocationList');
+      listContainer.innerHTML = "";
+
+      for (let i = 1; i <= count; i++) {
+        const colStart = 9 + (i - 1) * 5;
+        const name = group[`Delegate ${i} Name`] || "";
+        const email = group[`Delegate ${i} Email`] || "";
+        const prefComm = group[`Delegate ${i} Committee Pref`] || "";
+        const prefCoun = group[`Delegate ${i} Country/Role Pref`] || "";
+
+        if (!name) continue;
+
+        const delegateFieldset = document.createElement('div');
+        delegateFieldset.style.background = 'rgba(255,255,255,0.01)';
+        delegateFieldset.style.border = '1px solid rgba(255,255,255,0.05)';
+        delegateFieldset.style.borderRadius = '10px';
+        delegateFieldset.style.padding = '15px';
+        delegateFieldset.style.marginBottom = '15px';
+        
+        delegateFieldset.innerHTML = `
+          <div style="font-weight:600; font-size:0.85rem; color:var(--white); margin-bottom:10px;">
+            Delegate #${i}: ${name} <span style="font-weight:normal; font-size:0.75rem; color:var(--muted);">(${email})</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="font-size:0.65rem;">Committee Allocation</label>
+              <select name="g_comm_${i}" required>
+                <option value="DISEC" ${prefComm === 'DISEC' ? 'selected' : ''}>DISEC</option>
+                <option value="LOKSABHA" ${prefComm === 'LOKSABHA' ? 'selected' : ''}>Lok Sabha</option>
+                <option value="UNHRC" ${prefComm === 'UNHRC' ? 'selected' : ''}>UNHRC</option>
+                <option value="CCC" ${prefComm === 'CCC' ? 'selected' : ''}>CCC</option>
+                <option value="UNCSW" ${prefComm === 'UNCSW' ? 'selected' : ''}>UNCSW</option>
+                <option value="IP" ${prefComm === 'IP' ? 'selected' : ''}>IP</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="font-size:0.65rem;">Country Allocation</label>
+              <input type="text" name="g_coun_${i}" placeholder="e.g. USA" value="${prefCoun}" required>
+            </div>
+          </div>
+        `;
+        listContainer.appendChild(delegateFieldset);
+      }
+
+      openModal('delegationModal');
+    }
+
+    // Submit Group Approval Form
+    document.getElementById('groupApprovalForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const rowIndex = document.getElementById('mGroupRowIndex').value;
+      const groupCount = parseInt(document.getElementById('mGroupCount').innerText, 10) || 0;
+      const submitBtn = document.getElementById('groupModalSubmitBtn');
+      const spinner = document.getElementById('groupModalSpinner');
+
+      const allocations = [];
+      for (let i = 1; i <= groupCount; i++) {
+        const commSelect = document.querySelector(`[name="g_comm_${i}"]`);
+        const counInput = document.querySelector(`[name="g_coun_${i}"]`);
+        
+        if (commSelect && counInput) {
+          allocations.push({
+            delegateIndex: i,
+            committee: commSelect.value,
+            country: counInput.value.trim()
+          });
+        }
+      }
+
+      submitBtn.disabled = true;
+      spinner.style.display = 'inline-block';
+
+      try {
+        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'ADMIN_APPROVE_DELEGATION',
+            admin_key: ADMIN_KEY,
+            rowIndex: rowIndex,
+            allocations: allocations
+          })
+        });
+
+        if (!response.ok) throw new Error("Bulk approval request failed.");
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          showAlert(`Delegation approved! ${result.message}`, 'success');
+          closeModal('delegationModal');
+          syncData();
+        } else {
+          showAlert(result.message || 'Error approving delegation.');
+        }
+      } catch (err) {
+        showAlert(err.message || 'Error processing delegation approval.');
+      } finally {
+        submitBtn.disabled = false;
+        spinner.style.display = 'none';
+      }
+    });
+
+    // ==========================================
+    // DETAIL VIEW MODAL (OC / EB)
+    // ==========================================
+    window.viewOCDetails = function(rowIndex) {
+      const oc = cachedData.oc.find(o => o.rowIndex === rowIndex);
+      if (!oc) return;
+
+      document.getElementById('mGenTitle').innerText = "Organizing Committee Applicant Details";
+      
+      const body = document.getElementById('mGenBody');
+      body.innerHTML = `
+        <div class="info-row"><span class="label">Full Name</span><span class="val">${oc["Full Name"] || ""}</span></div>
+        <div class="info-row"><span class="label">Email</span><span class="val">${oc["Email Address"] || ""}</span></div>
+        <div class="info-row"><span class="label">Phone</span><span class="val">${oc["Phone Number"] || ""}</span></div>
+        <div class="info-row"><span class="label">Institution</span><span class="val">${oc["School / Institution"] || ""}</span></div>
+        <div class="info-row"><span class="label">Grade / DOB</span><span class="val">${oc["Grade / Class"] || ""} / ${oc["DOB"] || ""}</span></div>
+        <div class="info-row"><span class="label">Instagram ID</span><span class="val">${oc["Instagram ID"] || oc["instagram"] || "-"}</span></div>
+        
+        <h4 class="sub-table-title" style="margin-top:20px; margin-bottom:10px;">Candidacy Info</h4>
+        <div class="info-row"><span class="label">Total MUNs</span><span class="val">${oc["Previous MUN Experience"] || oc["munCount"] || "0"}</span></div>
+        <div style="margin-bottom:12px; font-size:0.88rem;">
+          <div class="label" style="margin-bottom:4px; color:var(--muted);">Why should they be selected?</div>
+          <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; font-weight:500; font-family:'Crimson Pro'; font-size:1rem; border:1px solid rgba(255,255,255,0.04);">${oc["Why OC?"] || oc["why"] || "N/A"}</div>
+        </div>
+        <div style="margin-bottom:12px; font-size:0.88rem;">
+          <div class="label" style="margin-bottom:4px; color:var(--muted);">Key Attributes</div>
+          <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; font-weight:500; font-family:'Crimson Pro'; font-size:1rem; border:1px solid rgba(255,255,255,0.04);">${oc["Attributes"] || "N/A"}</div>
+        </div>
+
+        <h4 class="sub-table-title" style="margin-top:20px; margin-bottom:10px;">Payment Details</h4>
+        <div class="info-row"><span class="label">Transaction ID</span><span class="val" style="font-family:monospace; color:var(--blue);">${oc["Transaction ID"] || "-"}</span></div>
+        <div class="info-row"><span class="label">Verified Status</span><span class="val">${oc["Payment Verified"] || "Pending"}</span></div>
+        ${oc["Payment Screenshot Link"] ? `<div class="info-row"><span class="label">Receipt Link</span><span class="val"><a href="${oc["Payment Screenshot Link"]}" target="_blank" class="screenshot-link">View Uploaded Image</a></span></div>` : ''}
+      `;
+
+      openModal('generalViewModal');
+    }
+
+    // ==========================================
+    // SEARCH & FILTERS
+    // ==========================================
     window.filterDelegates = function() {
       const query = document.getElementById('searchDelegates').value.trim().toLowerCase();
       const chips = document.querySelectorAll('.filter-chips .filter-chip');
@@ -1314,28 +1810,22 @@
 
       let list = cachedData.delegates || [];
 
-      // Chip
+      // Filter by chip status
       if (activeChipType === 'pending') {
-        list = list.filter(d => {
-          const v = String(d[colMap.isVerified] || "").trim().toLowerCase();
-          return v !== "verified" && v !== "approved";
-        });
+        list = list.filter(d => String(d["Payment Verified"]).trim() !== "Verified");
       } else if (activeChipType === 'verified') {
-        list = list.filter(d => {
-          const v = String(d[colMap.isVerified] || "").trim().toLowerCase();
-          return v === "verified" || v === "approved";
-        });
+        list = list.filter(d => String(d["Payment Verified"]).trim() === "Verified");
       }
 
-      // Query
+      // Filter by text search
       if (query) {
         list = list.filter(d => 
-          String(d[colMap.name] || "").toLowerCase().includes(query) ||
-          String(d[colMap.email] || "").toLowerCase().includes(query) ||
-          String(d[colMap.phone] || "").toLowerCase().includes(query) ||
-          String(d[colMap.institute] || "").toLowerCase().includes(query) ||
-          String(d[colMap.delegateId] || "").toLowerCase().includes(query) ||
-          String(d[colMap.utr] || "").toLowerCase().includes(query)
+          String(d["Full Name"] || "").toLowerCase().includes(query) ||
+          String(d["Email Address"] || "").toLowerCase().includes(query) ||
+          String(d["Phone Number"] || "").toLowerCase().includes(query) ||
+          String(d["School / Institution"] || "").toLowerCase().includes(query) ||
+          String(d["Delegate ID"] || "").toLowerCase().includes(query) ||
+          String(d["Transaction ID / UTR Number"] || "").toLowerCase().includes(query)
         );
       }
 
@@ -1349,8 +1839,50 @@
       filterDelegates();
     }
 
+    window.filterDelegations = function() {
+      const query = document.getElementById('searchDelegations').value.trim().toLowerCase();
+      let list = cachedData.delegations || [];
+
+      if (query) {
+        list = list.filter(g => 
+          String(g["Institution Name"] || "").toLowerCase().includes(query) ||
+          String(g["Faculty Adviser Name"] || "").toLowerCase().includes(query) ||
+          String(g["Adviser Email"] || "").toLowerCase().includes(query) ||
+          String(g["Transaction ID"] || "").toLowerCase().includes(query)
+        );
+      }
+      renderDelegationsTable(list);
+    }
+
+    window.filterOC = function() {
+      const query = document.getElementById('searchOC').value.trim().toLowerCase();
+      let list = cachedData.oc || [];
+      if (query) {
+        list = list.filter(o => 
+          String(o["Full Name"] || "").toLowerCase().includes(query) ||
+          String(o["Email Address"] || "").toLowerCase().includes(query) ||
+          String(o["School / Institution"] || "").toLowerCase().includes(query)
+        );
+      }
+      renderOCTable(list);
+    }
+
+    window.filterEB = function() {
+      const query = document.getElementById('searchEB').value.trim().toLowerCase();
+      let list = cachedData.eb || [];
+      if (query) {
+        list = list.filter(e => 
+          String(e["Full Name"] || "").toLowerCase().includes(query) ||
+          String(e["Institution"] || "").toLowerCase().includes(query) ||
+          String(e["Position Applied For"] || "").toLowerCase().includes(query) ||
+          String(e["Preferred Committee"] || "").toLowerCase().includes(query)
+        );
+      }
+      renderEBTable(list);
+    }
+
     // ==========================================
-    // ATTENDANCE LOGS CAMERA QR SCANNER
+    // QR SCANNERS ATTENDANCE LOGIC
     // ==========================================
     window.setScannerDay = function(day) {
       scannerActiveDay = day;
@@ -1366,6 +1898,7 @@
       selectedScannedDelegate = null;
       document.getElementById('scannedDelegateCard').style.display = 'none';
 
+      // Start HTML5 QR Scanner
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length > 0) {
           html5QrcodeScanner = new Html5Qrcode("qrScannerBox");
@@ -1397,31 +1930,39 @@
 
     function onQrCodeSuccess(decodedText, decodedResult) {
       const delegateId = decodedText.trim();
-      const delegate = cachedData.delegates.find(d => String(d[colMap.delegateId]).trim().toLowerCase() === delegateId.toLowerCase());
+      
+      // Look up delegate locally
+      const delegate = cachedData.delegates.find(d => String(d["Delegate ID"]).trim().toLowerCase() === delegateId.toLowerCase());
       
       if (delegate) {
         selectedScannedDelegate = delegate;
+        
+        // Play success tone
         playBeepTone();
+
+        // Update scanned delegate UI
         updateScannedCardDisplay(delegate);
       } else {
-        showAlert("Scanned code does not match any registered Delegate ID: " + delegateId);
+        showAlert("Scanned QR code does not match any registered Delegate ID: " + delegateId);
       }
     }
 
-    function onQrCodeError(err) {}
+    function onQrCodeError(errorMessage) {
+      // Quiet fail to avoid error spamming console
+    }
 
     function updateScannedCardDisplay(d) {
       const card = document.getElementById('scannedDelegateCard');
       card.style.display = 'block';
 
-      document.getElementById('scanName').innerText = d[colMap.name] || "";
-      document.getElementById('scanId').innerText = d[colMap.delegateId] || "";
-      document.getElementById('scanCommittee').innerText = d[colMap.comm] || "Not allocated";
-      document.getElementById('scanCountry').innerText = d[colMap.country] || "Not allocated";
+      document.getElementById('scanName').innerText = d["Full Name"] || "";
+      document.getElementById('scanId').innerText = d["Delegate ID"] || "";
+      document.getElementById('scanCommittee').innerText = d["Allocation Committee"] || "Not allocated";
+      document.getElementById('scanCountry').innerText = d["Allocation Country"] || "Not allocated";
       
-      const day1 = d[colMap.day1] || "Absent";
-      const day2 = d[colMap.day2] || "Absent";
-      const day3 = d[colMap.day3] || "Absent";
+      const day1 = d["Check-in Day 1"] || "Absent";
+      const day2 = d["Check-in Day 2"] || "Absent";
+      const day3 = d["Check-in Day 3"] || "Absent";
 
       document.getElementById('scanDay1').innerText = day1;
       document.getElementById('scanDay1').style.color = (day1 === 'Checked In' || day1 === 'Present') ? 'var(--green)' : 'var(--red)';
@@ -1432,7 +1973,8 @@
       document.getElementById('scanDay3').innerText = day3;
       document.getElementById('scanDay3').style.color = (day3 === 'Checked In' || day3 === 'Present') ? 'var(--green)' : 'var(--red)';
 
-      const currentDayStatus = d[colMap["day" + scannerActiveDay]] || "Absent";
+      // Check current day status to update action button label
+      const currentDayStatus = d[`Check-in Day ${scannerActiveDay}`] || "Absent";
       const confirmBtn = document.getElementById('confirmCheckinBtn');
       
       if (currentDayStatus === 'Checked In' || currentDayStatus === 'Present') {
@@ -1444,11 +1986,12 @@
       }
     }
 
+    // Toggle attendance on click
     window.markScannedDelegatePresent = async function() {
       if (!selectedScannedDelegate) return;
 
-      const delegateId = selectedScannedDelegate[colMap.delegateId];
-      const currentStatus = selectedScannedDelegate[colMap["day" + scannerActiveDay]] || "Absent";
+      const delegateId = selectedScannedDelegate["Delegate ID"];
+      const currentStatus = selectedScannedDelegate[`Check-in Day ${scannerActiveDay}`] || "Absent";
       const newStatus = (currentStatus === 'Checked In' || currentStatus === 'Present') ? 'Absent' : 'Checked In';
       
       const confirmBtn = document.getElementById('confirmCheckinBtn');
@@ -1474,11 +2017,12 @@
         if (result.status === 'success') {
           showAlert(`Day ${scannerActiveDay} check-in updated successfully!`, 'success');
           
-          selectedScannedDelegate[colMap["day" + scannerActiveDay]] = newStatus;
+          // Update local cache details
+          selectedScannedDelegate[`Check-in Day ${scannerActiveDay}`] = newStatus;
           updateScannedCardDisplay(selectedScannedDelegate);
           
-          // Re-sync and refresh UI lists
-          renderDelegatesTable(cachedData.delegates);
+          // Sync all table UI data
+          renderAllTables();
         } else {
           showAlert(result.message || 'Error updating attendance.');
         }
@@ -1489,6 +2033,7 @@
       }
     }
 
+    // Simple beep sound using AudioContext API (No audio file asset needed!)
     function playBeepTone() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1499,11 +2044,11 @@
         gainNode.connect(audioCtx.destination);
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch (A5)
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // volume
 
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.15);
+        oscillator.stop(audioCtx.currentTime + 0.15); // duration
       } catch(e) {}
     }
   </script>
