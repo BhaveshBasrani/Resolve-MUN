@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delegate Portal | Resolve MUN 2026</title>
+  <meta name="description" content="Access the official Resolve MUN 2026 Delegate Portal to view allocations, attendance, join the WhatsApp community, and retrieve your unique check-in QR code.">
+  <link rel="icon" type="image/webp" href="https://resolvemun.in/images/favicon.ico?v=3">
+  
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --black: #050507;
+      --deep: #070712;
+      --purple: #330e5c;
+      --magenta: #5d2db2;
+      --gold: #510e92;
+      --gold-light: #7c3aed;
+      --gold-shadow: rgba(124, 58, 237, 0.2);
+      --white: #f5f5f7;
+      --muted: #86868b;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(51, 14, 146, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.1) 0%, transparent 45%);
+    }
+
+    /* Header Nav */
+    header {
+      padding: 20px 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(15, 15, 20, 0.6);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--white);
+    }
+
+    .logo-img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+
+    .logo-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    .back-btn {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--muted);
+      border: 1px solid var(--card-border);
+      padding: 8px 18px;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+
+    .back-btn:hover {
+      color: var(--white);
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      position: relative;
+    }
+
+    /* Auth Card CSS */
+    .auth-container {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(15, 15, 20, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 45px;
+      backdrop-filter: blur(30px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+      text-align: center;
+      animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .auth-title {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff 30%, #a855f7 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .auth-subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 35px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      text-align: left;
+      margin-bottom: 22px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+
+    .form-group input {
+      width: 100%;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: var(--white);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--gold-light);
+      box-shadow: 0 0 12px var(--gold-shadow);
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: var(--white);
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.2);
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.35);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      background: rgba(255,255,255,0.1);
+      color: var(--muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Dashboard Layout */
+    .dashboard-container {
+      width: 100%;
+      max-width: 1000px;
+      display: none; /* Toggle via JS */
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 30px;
+      animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dashboard-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .glass-card {
+      background: rgba(15, 15, 20, 0.45);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 30px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    /* Profile Card Info */
+    .profile-card {
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 15px auto;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--white);
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+    }
+
+    .profile-name {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .profile-id {
+      color: var(--gold-light);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+    }
+
+    .profile-details-list {
+      text-align: left;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 20px;
+    }
+
+    .profile-detail-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+    }
+
+    .profile-detail-item .label {
+      color: var(--muted);
+    }
+
+    .profile-detail-item .value {
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      text-align: right;
+      max-width: 60%;
+      word-break: break-all;
+    }
+
+    /* QR Code Card */
+    .qr-card {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-container {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 16px;
+      display: inline-block;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transition: transform 0.3s;
+    }
+
+    .qr-container:hover {
+      transform: scale(1.03);
+    }
+
+    .qr-img {
+      width: 200px;
+      height: 200px;
+      display: block;
+    }
+
+    .qr-help-text {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Main Dashboard Cards */
+    .dashboard-main {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .card-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 18px;
+      background: var(--gold-light);
+      border-radius: 2px;
+    }
+
+    /* Allocations Display */
+    .alloc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 480px) {
+      .alloc-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .alloc-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: left;
+    }
+
+    .alloc-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
+    .alloc-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--white);
+      font-family: 'Crimson Pro', Georgia, serif;
+    }
+
+    /* Attendance Logs */
+    .attendance-tracker {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .attendance-day {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .attendance-day.present {
+      background: rgba(34, 197, 94, 0.05);
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .attendance-day.absent {
+      background: rgba(239, 68, 68, 0.05);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .day-num {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .day-status {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .day-status.present-text {
+      color: var(--green);
+    }
+
+    .day-status.absent-text {
+      color: var(--red);
+    }
+
+    /* WhatsApp Button Group */
+    .whatsapp-card {
+      background: linear-gradient(135deg, rgba(37, 211, 102, 0.08) 0%, rgba(5, 5, 7, 0.1) 100%);
+      border-color: rgba(37, 211, 102, 0.15);
+      text-align: center;
+    }
+
+    .whatsapp-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #25d366;
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+      box-shadow: 0 4px 15px rgba(37,211,102,0.3);
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+
+    .whatsapp-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(37,211,102,0.45);
+      background: #20ba5a;
+    }
+
+    /* Alert / Error Bar */
+    .alert-bar {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 1000;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    .alert-bar.active {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .alert-bar.success {
+      background: rgba(34, 197, 94, 0.9);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logout btn */
+    .logout-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .logout-btn:hover {
+      color: var(--white);
+      border-color: var(--red);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.05);
+      border-radius: 50%;
+      border-top: 3px solid var(--gold-light);
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    footer {
+      padding: 30px 40px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION HEADER -->
+  <header>
+    <a href="index.html" class="logo-container" id="logoLink">
+      <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN Logo" class="logo-img">
+      <span class="logo-text">RESOLVE MUN</span>
+    </a>
+    <div id="navActionContainer">
+      <a href="index.html" class="back-btn" id="homeBtn">Back to Home</a>
+    </div>
+  </header>
+
+  <!-- MAIN AREA -->
+  <main>
+    
+    <!-- LOGIN SCREEN -->
+    <section class="auth-container" id="loginSection">
+      <h1 class="auth-title">Delegate Login</h1>
+      <p class="auth-subtitle">Log in to view your registrations, portfolio allocations, and access your unique QR check-in pass.</p>
+      
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="loginEmail">Email Address or Delegate ID</label>
+          <input type="text" id="loginEmail" placeholder="Enter your email or RES-DEL-XXXX" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password" required>
+        </div>
+        <button type="submit" class="submit-btn" id="loginSubmitBtn">
+          Login <span id="loginSpinner" style="display: none;" class="spinner"></span>
+        </button>
+      </form>
+    </section>
+
+    <!-- DELEGATE DASHBOARD (HIDDEN ON START) -->
+    <section class="dashboard-container" id="dashboardSection">
+      
+      <!-- LEFT SIDEBAR -->
+      <div class="dashboard-sidebar">
+        
+        <!-- Welcome & Profile Card -->
+        <div class="glass-card profile-card">
+          <div class="profile-avatar" id="avatarText">D</div>
+          <h2 class="profile-name" id="delegateName">Delegate Name</h2>
+          <div class="profile-id" id="delegateIdText">RES-DEL-1001</div>
+          
+          <div class="profile-details-list">
+            <div class="profile-detail-item">
+              <span class="label">Email</span>
+              <span class="value" id="profileEmail">email@domain.com</span>
+            </div>
+            <div class="profile-detail-item">
+              <span class="label">Phone</span>
+              <span class="value" id="profilePhone">+91 98765 43210</span>
+            </div>
+            <div class="profile-detail-item">
+              <span class="label">Status</span>
+              <span class="value" style="color: var(--green);" id="profileStatus">Approved</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Code Ticket Card -->
+        <div class="glass-card qr-card">
+          <h3 class="card-title">Digital Entry Pass</h3>
+          <p class="qr-help-text" style="margin-bottom: 10px;">Please present this code at the registration desk for check-in on all days.</p>
+          
+          <div class="qr-container">
+            <img src="" alt="Delegate Unique QR Code" id="qrPassImg" class="qr-img">
+          </div>
+          
+          <p class="qr-help-text" id="qrHelpTextId">Valid for June 12th — 14th 2026</p>
+        </div>
+
+      </div>
+
+      <!-- RIGHT DASHBOARD COLUMN -->
+      <div class="dashboard-main">
+        
+        <!-- Allocations Box -->
+        <div class="glass-card">
+          <h3 class="card-title">Portfolio Allocation</h3>
+          <div class="alloc-grid">
+            <div class="alloc-item">
+              <div class="alloc-label">Allocated Committee</div>
+              <div class="alloc-value" id="allocatedCommittee">Committee Loading...</div>
+            </div>
+            <div class="alloc-item">
+              <div class="alloc-label">Allocated Country / Role</div>
+              <div class="alloc-value" id="allocatedCountry">Country Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Tracking -->
+        <div class="glass-card">
+          <h3 class="card-title">Conference Attendance</h3>
+          <p class="qr-help-text" style="margin-bottom: 20px; text-align: left;">Track your check-in records logged at the venue for the three days of the conference.</p>
+          
+          <div class="attendance-tracker">
+            <div class="attendance-day" id="day1Tracker">
+              <div class="day-num">Day 1</div>
+              <div class="day-status" id="day1Status">Absent</div>
+            </div>
+            <div class="attendance-day" id="day2Tracker">
+              <div class="day-num">Day 2</div>
+              <div class="day-status" id="day2Status">Absent</div>
+            </div>
+            <div class="attendance-day" id="day3Tracker">
+              <div class="day-num">Day 3</div>
+              <div class="day-status" id="day3Status">Absent</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Group Card -->
+        <div class="glass-card whatsapp-card">
+          <h3 class="card-title" style="justify-content: center;">Join WhatsApp Community</h3>
+          <p style="margin-bottom: 15px; font-size: 0.95rem; color: rgba(255,255,255,0.85);">Join the official WhatsApp group for real-time announcements, background updates, and networking with other delegates during the conference.</p>
+          <a href="https://chat.whatsapp.com/L3mFzvabjWYJ2wz29Y0M33" target="_blank" class="whatsapp-btn" id="waGroupBtn">
+            Join WhatsApp Group
+          </a>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- CUSTOM ALERT BAR -->
+  <div class="alert-bar" id="alertBar">
+    <span id="alertMessage">Error message here</span>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; 2026 Resolve MUN. All Rights Reserved. Built for Elite Diplomatic Discourse.</p>
+  </footer>
+
+  <script>
+    // Config: replace with actual sheet API URL when deployed
+    const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEatRgqvxNklyeP74lm67pkypoyDM2grzPSq8X2YBOpCfJ6maH1RZcGWAGmDNw6y-P/exec";
+
+    const loginSection = document.getElementById('loginSection');
+    const dashboardSection = document.getElementById('dashboardSection');
+    const loginForm = document.getElementById('loginForm');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const loginSpinner = document.getElementById('loginSpinner');
+    const navActionContainer = document.getElementById('navActionContainer');
+
+    const alertBar = document.getElementById('alertBar');
+    const alertMessage = document.getElementById('alertMessage');
+
+    // UI elements to update after login
+    const delegateName = document.getElementById('delegateName');
+    const delegateIdText = document.getElementById('delegateIdText');
+    const avatarText = document.getElementById('avatarText');
+    const profileEmail = document.getElementById('profileEmail');
+    const profilePhone = document.getElementById('profilePhone');
+    const allocatedCommittee = document.getElementById('allocatedCommittee');
+    const allocatedCountry = document.getElementById('allocatedCountry');
+    const qrPassImg = document.getElementById('qrPassImg');
+
+    const day1Tracker = document.getElementById('day1Tracker');
+    const day1Status = document.getElementById('day1Status');
+    const day2Tracker = document.getElementById('day2Tracker');
+    const day2Status = document.getElementById('day2Status');
+    const day3Tracker = document.getElementById('day3Tracker');
+    const day3Status = document.getElementById('day3Status');
+
+    // Show Custom Alert Dialog
+    function showAlert(message, type = 'error') {
+      alertMessage.innerText = message;
+      alertBar.className = 'alert-bar';
+      if (type === 'success') {
+        alertBar.classList.add('success');
+      }
+      alertBar.classList.add('active');
+      
+      setTimeout(() => {
+        alertBar.classList.remove('active');
+      }, 5000);
+    }
+
+    // Auto-login from localStorage if session exists
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedDelegate = localStorage.getItem('resolve_delegate_session');
+      if (savedDelegate) {
+        try {
+          const delegate = JSON.parse(savedDelegate);
+          showDashboard(delegate);
+        } catch (e) {
+          localStorage.removeItem('resolve_delegate_session');
+        }
+      }
+    });
+
+    // Handle Login Submit
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+
+      if (!email || !password) {
+        showAlert('Please fill in both email and password.');
+        return;
+      }
+
+      // Hardening submit state
+      loginSubmitBtn.disabled = true;
+      loginSpinner.style.display = 'inline-block';
+
+      try {
+        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'DELEGATE_LOGIN',
+            email: email,
+            password: password
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Connection error. Please try again later.');
+        }
+
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          // Save session
+          localStorage.setItem('resolve_delegate_session', JSON.stringify(result.delegate));
+          showAlert('Login successful!', 'success');
+          setTimeout(() => {
+            showDashboard(result.delegate);
+          }, 600);
+        } else {
+          showAlert(result.message || 'Invalid credentials.');
+        }
+      } catch (err) {
+        showAlert(err.message || 'Login failed. Please check your network connection.');
+      } finally {
+        loginSubmitBtn.disabled = false;
+        loginSpinner.style.display = 'none';
+      }
+    });
+
+    // Show Dashboard UI and Populate Data
+    function showDashboard(delegate) {
+      // Hide login, show dashboard
+      loginSection.style.display = 'none';
+      dashboardSection.style.display = 'grid';
+
+      // Update Nav Action to logout button
+      navActionContainer.innerHTML = '<button class="logout-btn" onclick="logoutDelegate()">Logout</button>';
+
+      // Populate text details
+      delegateName.innerText = delegate.name;
+      delegateIdText.innerText = delegate.delegateId;
+      avatarText.innerText = delegate.name ? delegate.name.charAt(0).toUpperCase() : 'D';
+      profileEmail.innerText = delegate.email;
+      profilePhone.innerText = delegate.phone;
+      allocatedCommittee.innerText = delegate.committee || "Not Yet Assigned";
+      allocatedCountry.innerText = delegate.country || "Not Yet Assigned";
+
+      // Set Attendance Statuses
+      updateAttendanceUI(day1Tracker, day1Status, delegate.checkinDay1);
+      updateAttendanceUI(day2Tracker, day2Status, delegate.checkinDay2);
+      updateAttendanceUI(day3Tracker, day3Status, delegate.checkinDay3);
+
+      // Generate QR Code using qrserver API
+      // Encode delegateId inside QR Code
+      const qrData = encodeURIComponent(delegate.delegateId);
+      qrPassImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrData}`;
+    }
+
+    // Update Attendance UI Day Styles
+    function updateAttendanceUI(cardEl, textEl, status) {
+      cardEl.className = 'attendance-day';
+      
+      const cleanStatus = status ? String(status).trim().toLowerCase() : '';
+      if (cleanStatus === 'checked in' || cleanStatus === 'present') {
+        cardEl.classList.add('present');
+        textEl.innerText = 'Checked In';
+        textEl.className = 'day-status present-text';
+      } else {
+        cardEl.classList.add('absent');
+        textEl.innerText = 'Absent';
+        textEl.className = 'day-status absent-text';
+      }
+    }
+
+    // Logout function
+    window.logoutDelegate = function() {
+      localStorage.removeItem('resolve_delegate_session');
+      
+      // Reset layout
+      loginForm.reset();
+      loginSection.style.display = 'block';
+      dashboardSection.style.display = 'none';
+      navActionContainer.innerHTML = '<a href="index.html" class="back-btn" id="homeBtn">Back to Home</a>';
+      showAlert('Logged out successfully.', 'success');
+    };
+  </script>
+</body>
+</html>
