@@ -1094,13 +1094,13 @@ function adminSendCredentials(ss, data) {
 
     const targetEmail = rowValues[4];
 
-    const delegateId = String(rowValues[22] || "").trim();
+    let delegateId = String(rowValues[22] || "").trim();
 
     const committee = String(rowValues[23] || "").trim();
 
     const country = String(rowValues[24] || "").trim();
 
-    const password = String(rowValues[31] || "").trim();
+    let password = String(rowValues[31] || "").trim();
 
 
 
@@ -1110,9 +1110,21 @@ function adminSendCredentials(ss, data) {
 
     }
 
-    if (!delegateId) {
 
-        throw new Error("Delegate ID not found. Verify payment first.");
+
+    if (!delegateId || delegateId === "") {
+
+        delegateId = generateDelegateId(sheet);
+
+        sheet.getRange(rowIndex, 23).setValue(delegateId);
+
+    }
+
+    if (!password || password === "") {
+
+        password = generatePassword();
+
+        sheet.getRange(rowIndex, 32).setValue(password);
 
     }
 
