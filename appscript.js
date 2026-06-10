@@ -656,6 +656,10 @@ function handleDashboardActions(ss, data) {
 
                 return adminAllocateDelegate(ss, data);
 
+            case "ADMIN_ALLOCATE_AND_SEND_CREDENTIALS":
+
+                return adminAllocateAndSendCredentials(ss, data);
+
             case "ADMIN_SEND_CREDENTIALS":
 
                 return adminSendCredentials(ss, data);
@@ -1063,6 +1067,110 @@ function adminAllocateDelegate(ss, data) {
         status: "success",
 
         message: "Portfolio allocated successfully."
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function adminAllocateAndSendCredentials(ss, data) {
+
+    const rowIndex = parseInt(data.rowIndex, 10);
+
+    const committee = String(data.allocationCommittee || "").trim();
+
+    const country = String(data.allocationCountry || "").trim();
+
+    const notes = String(data.notes || "").trim();
+
+
+
+    if (isNaN(rowIndex) || rowIndex <= 1) {
+
+        throw new Error("Invalid row index.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+
+
+    // Update allocation details
+
+    sheet.getRange(rowIndex, 24).setValue(committee); // Allocation Committee
+
+    sheet.getRange(rowIndex, 25).setValue(country);   // Allocation Country
+
+    sheet.getRange(rowIndex, 30).setValue(notes);     // Secretariat Notes
+
+
+
+    // Retrieve row details for credentials generation & email dispatch
+
+    const rowRange = sheet.getRange(rowIndex, 1, 1, 35);
+
+    const rowValues = rowRange.getValues()[0];
+
+
+
+    const recipientName = rowValues[1] || "Delegate";
+
+    const targetEmail = rowValues[4];
+
+    let delegateId = String(rowValues[22] || "").trim();
+
+    let password = String(rowValues[31] || "").trim();
+
+
+
+    if (!targetEmail) {
+
+        throw new Error("Delegate email not found.");
+
+    }
+
+
+
+    if (!delegateId || delegateId === "") {
+
+        delegateId = generateDelegateId(sheet);
+
+        sheet.getRange(rowIndex, 23).setValue(delegateId);
+
+    }
+
+
+
+    if (!password || password === "") {
+
+        password = generatePassword();
+
+        sheet.getRange(rowIndex, 32).setValue(password);
+
+    }
+
+
+
+    // Send credentials email with newly updated committee & country
+
+    sendCredentialsEmail(targetEmail, recipientName, delegateId, password, committee, country);
+
+
+
+    // Update Application Status to "Confirmed"
+
+    sheet.getRange(rowIndex, 22).setValue("Confirmed");
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Portfolio allocated and credentials email sent successfully."
 
     })).setMimeType(ContentService.MimeType.JSON);
 

@@ -408,10 +408,16 @@
             <label for="secNotes" class="block font-mono text-xs text-white/40 uppercase mb-2">Secretariat Notes (Internal)</label>
             <textarea id="secNotes" rows="2" placeholder="Any internal notes on this application..." class="w-full px-4 py-2.5 rounded glass-input text-sm"></textarea>
           </div>
-          <button type="submit" class="w-full py-3 rounded cyber-btn font-bold flex items-center justify-center gap-2" style="border-color: #22c55e; background: rgba(34, 197, 94, 0.1);" id="modalSubmitBtn">
-            SAVE ALLOCATION
-            <span id="modalSpinner" style="display: none;" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-          </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button type="button" onclick="submitAllocationForm(false)" class="w-full py-3 rounded cyber-btn font-bold flex items-center justify-center gap-2" style="border-color: #22c55e; background: rgba(34, 197, 94, 0.1); color: #4ade80;" id="modalSubmitBtn">
+              SAVE ALLOCATION
+              <span id="modalSpinner" style="display: none;" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            </button>
+            <button type="button" onclick="submitAllocationForm(true)" class="w-full py-3 rounded cyber-btn font-bold flex items-center justify-center gap-2" style="border-color: #8b5cf6; background: rgba(139, 92, 246, 0.1); color: #c084fc;" id="modalSubmitSendBtn">
+              SAVE & SEND PASS
+              <span id="modalSendSpinner" style="display: none;" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            </button>
+          </div>
         </form>
 
       </div>
@@ -863,52 +869,119 @@
     }
 
     // Submit Allocation Form
-    document.getElementById('approvalForm').addEventListener('submit', async (e) => {
+    document.getElementById('approvalForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      
+    });
+
+    window.submitAllocationForm = async function(andSendPass) {
+      if (!document.getElementById('approvalForm').reportValidity()) return;
+
       const rowIndex = document.getElementById('mDelRowIndex').value;
       const committee = document.getElementById('allocCommittee').value;
       const country = document.getElementById('allocCountry').value.trim();
       const notes = document.getElementById('secNotes').value.trim();
+      
       const submitBtn = document.getElementById('modalSubmitBtn');
+      const submitSendBtn = document.getElementById('modalSubmitSendBtn');
       const spinner = document.getElementById('modalSpinner');
+      const sendSpinner = document.getElementById('modalSendSpinner');
 
       submitBtn.disabled = true;
-      spinner.style.display = 'inline-block';
+      submitSendBtn.disabled = true;
+
+      if (andSendPass) {
+        sendSpinner.style.display = 'inline-block';
+      } else {
+        spinner.style.display = 'inline-block';
+      }
 
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_ALLOCATE_DELEGATE',
-            admin_key: ADMIN_KEY,
-            rowIndex: rowIndex,
-            allocationCommittee: committee,
-            allocationCountry: country,
-            notes: notes
-          })
-        });
-
-        if (!response.ok) throw new Error("Allocation request failed.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          showAlert('Delegate portfolio allocated successfully!', 'success');
-          closeModal('delegateModal');
-          
-          // Re-sync data to get fresh allocations
-          syncData();
-        } else {
-          showAlert(result.message || 'Error allocating portfolio.');
+        let result = null;
+        if (andSendPass) {
+          try {
+            const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: 'ADMIN_ALLOCATE_AND_SEND_CREDENTIALS',
+                admin_key: ADMIN_KEY,
+                rowIndex: rowIndex,
+                allocationCommittee: committee,
+                allocationCountry: country,
+                notes: notes
+              })
+            });
+            if (!response.ok) throw new Error("Request failed.");
+            const resData = await response.json();
+            
+            if (resData.status === 'error' && resData.message === 'Unauthorized access.') {
+              throw new Error(resData.message);
+            } else if (resData.status === 'error' && (resData.message.includes('Invalid action') || resData.message.includes('not found') || resData.message.includes('Unknown action'))) {
+              console.log("Combined action not supported on server, falling back to sequential allocation & credentials dispatch.");
+            } else if (resData.status === 'error') {
+              throw new Error(resData.message || "Failed to allocate.");
+            } else {
+              result = resData;
+            }
+          } catch (e) {
+            console.error("Combined action failed or unsupported, falling back to sequential requests.", e);
+            result = null;
+          }
         }
+
+        if (!result) {
+          const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'ADMIN_ALLOCATE_DELEGATE',
+              admin_key: ADMIN_KEY,
+              rowIndex: rowIndex,
+              allocationCommittee: committee,
+              allocationCountry: country,
+              notes: notes
+            })
+          });
+
+          if (!response.ok) throw new Error("Allocation request failed.");
+          const resData = await response.json();
+          if (resData.status !== 'success') {
+            throw new Error(resData.message || 'Error allocating portfolio.');
+          }
+          result = resData;
+
+          if (andSendPass) {
+            const sendResponse = await fetch(GOOGLE_APP_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: 'ADMIN_SEND_CREDENTIALS',
+                admin_key: ADMIN_KEY,
+                rowIndex: rowIndex
+              })
+            });
+
+            if (!sendResponse.ok) throw new Error("Allocation saved, but credentials email dispatch failed.");
+            const sendResult = await sendResponse.json();
+            if (sendResult.status !== 'success') {
+              throw new Error(sendResult.message || 'Allocation saved, but credentials email dispatch failed.');
+            }
+            result.message = "Portfolio allocated & credentials email sent successfully!";
+          }
+        }
+
+        showAlert(andSendPass ? 'Delegate portfolio allocated & passcode email sent successfully!' : 'Delegate portfolio allocated successfully!', 'success');
+        closeModal('delegateModal');
+        syncData();
       } catch (err) {
-        showAlert(err.message || 'Error processing allocation.');
+        showAlert(err.message || 'Error processing request.');
       } finally {
         submitBtn.disabled = false;
+        submitSendBtn.disabled = false;
         spinner.style.display = 'none';
+        sendSpinner.style.display = 'none';
       }
-    });
+    };
 
     window.verifyPayment = async function(btn, rowIndex) {
       if (!confirm("Are you sure you want to verify the payment for this delegate? This will approve their registration and generate their credentials.")) return;
