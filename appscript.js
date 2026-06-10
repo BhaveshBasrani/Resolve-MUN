@@ -648,6 +648,18 @@ function handleDashboardActions(ss, data) {
 
                 return adminApproveDelegate(ss, data);
 
+            case "ADMIN_VERIFY_PAYMENT":
+
+                return adminVerifyPayment(ss, data);
+
+            case "ADMIN_ALLOCATE_DELEGATE":
+
+                return adminAllocateDelegate(ss, data);
+
+            case "ADMIN_SEND_CREDENTIALS":
+
+                return adminSendCredentials(ss, data);
+
             case "ADMIN_CHECKIN_DELEGATE":
 
                 return adminCheckinDelegate(ss, data);
@@ -916,6 +928,88 @@ function adminApproveDelegate(ss, data) {
 
         delegateId: delegateId,
 
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function adminVerifyPayment(ss, data) {
+
+    const rowIndex = parseInt(data.rowIndex, 10);
+
+    if (isNaN(rowIndex) || rowIndex <= 1) {
+
+        throw new Error("Invalid row index.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    const currentMaxCols = sheet.getMaxColumns();
+
+    if (currentMaxCols < 35) {
+
+        sheet.insertColumnsAfter(currentMaxCols, 35 - currentMaxCols);
+
+    }
+
+
+
+    const rowRange = sheet.getRange(rowIndex, 1, 1, 35);
+
+    const rowValues = rowRange.getValues()[0];
+
+
+
+    let delegateId = String(rowValues[22] || "").trim();
+
+    let password = String(rowValues[31] || "").trim();
+
+
+
+    if (!delegateId || delegateId === "") {
+
+        delegateId = generateDelegateId(sheet);
+
+    }
+
+    if (!password || password === "") {
+
+        password = generatePassword();
+
+    }
+
+
+
+    sheet.getRange(rowIndex, 22).setValue("Verified"); // Application Status
+
+    sheet.getRange(rowIndex, 23).setValue(delegateId); // Delegate ID
+
+    sheet.getRange(rowIndex, 26).setValue("Verified"); // Payment Verified
+
+    sheet.getRange(rowIndex, 32).setValue(password);   // Password
+
+
+
+    if (!sheet.getRange(rowIndex, 33).getValue()) sheet.getRange(rowIndex, 33).setValue("Absent");
+
+    if (!sheet.getRange(rowIndex, 34).getValue()) sheet.getRange(rowIndex, 34).setValue("Absent");
+
+    if (!sheet.getRange(rowIndex, 35).getValue()) sheet.getRange(rowIndex, 35).setValue("Absent");
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Payment verified. Credentials generated.",
+
+        delegateId: delegateId,
+
         password: password
 
     })).setMimeType(ContentService.MimeType.JSON);
@@ -923,6 +1017,122 @@ function adminApproveDelegate(ss, data) {
 }
 
 
+
+function adminAllocateDelegate(ss, data) {
+
+    const rowIndex = parseInt(data.rowIndex, 10);
+
+    const committee = String(data.allocationCommittee || "").trim();
+
+    const country = String(data.allocationCountry || "").trim();
+
+    const notes = String(data.notes || "").trim();
+
+
+
+    if (isNaN(rowIndex) || rowIndex <= 1) {
+
+        throw new Error("Invalid row index.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    sheet.getRange(rowIndex, 24).setValue(committee); // Allocation Committee
+
+    sheet.getRange(rowIndex, 25).setValue(country);   // Allocation Country
+
+    sheet.getRange(rowIndex, 30).setValue(notes);     // Secretariat Notes
+
+    
+
+    // Update Application Status to "Allocated"
+
+    sheet.getRange(rowIndex, 22).setValue("Allocated");
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Portfolio allocated successfully."
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function adminSendCredentials(ss, data) {
+
+    const rowIndex = parseInt(data.rowIndex, 10);
+
+    if (isNaN(rowIndex) || rowIndex <= 1) {
+
+        throw new Error("Invalid row index.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    const rowRange = sheet.getRange(rowIndex, 1, 1, 35);
+
+    const rowValues = rowRange.getValues()[0];
+
+
+
+    const recipientName = rowValues[1] || "Delegate";
+
+    const targetEmail = rowValues[4];
+
+    const delegateId = String(rowValues[22] || "").trim();
+
+    const committee = String(rowValues[23] || "").trim();
+
+    const country = String(rowValues[24] || "").trim();
+
+    const password = String(rowValues[31] || "").trim();
+
+
+
+    if (!targetEmail) {
+
+        throw new Error("Delegate email not found.");
+
+    }
+
+    if (!delegateId) {
+
+        throw new Error("Delegate ID not found. Verify payment first.");
+
+    }
+
+
+
+    sendCredentialsEmail(targetEmail, recipientName, delegateId, password, committee, country);
+
+
+
+    // Update Application Status to "Confirmed"
+
+    sheet.getRange(rowIndex, 22).setValue("Confirmed");
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Credentials email sent successfully."
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
 
 
 

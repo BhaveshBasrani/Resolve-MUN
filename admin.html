@@ -360,7 +360,7 @@
   <div class="modal-overlay" id="delegateModal">
     <div class="modal-card bg-graphite-light border border-accent/30 rounded-lg">
       <div class="modal-header border-b border-white/10 pb-4 mb-4 flex justify-between items-center">
-        <h3 class="modal-title font-display text-2xl text-white">Verify & Allocate Delegate</h3>
+        <h3 class="modal-title font-display text-2xl text-white">Allocate Portfolio</h3>
         <button class="close-modal-btn text-white/50 hover:text-white text-2xl" onclick="closeModal('delegateModal')">&times;</button>
       </div>
       <div class="modal-body space-y-4">
@@ -409,7 +409,7 @@
             <textarea id="secNotes" rows="2" placeholder="Any internal notes on this application..." class="w-full px-4 py-2.5 rounded glass-input text-sm"></textarea>
           </div>
           <button type="submit" class="w-full py-3 rounded cyber-btn font-bold flex items-center justify-center gap-2" style="border-color: #22c55e; background: rgba(34, 197, 94, 0.1);" id="modalSubmitBtn">
-            APPROVE & SEND PASSCODE
+            SAVE ALLOCATION
             <span id="modalSpinner" style="display: none;" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
           </button>
         </form>
@@ -691,23 +691,67 @@
         const phone = d["Phone Number"] || "";
         const school = d["School / Institution"] || "";
         const rowIdx = d.rowIndex;
-        const status = d["Application Status"] || "Pending";
         const delId = d["Delegate ID"] || "";
         const comm = d["Allocation Committee"] || "";
         const country = d["Allocation Country"] || "";
-        const isVerified = String(d["Payment Verified"]).trim() === "Verified";
+        
+        const payStatus = String(d["Payment Verified"] || "").trim();
+        const appStatus = String(d["Application Status"] || "").trim();
+        const isVerified = (payStatus === "Verified");
+        const isApprovedOrConfirmed = (appStatus === "Approved" || appStatus === "Confirmed");
+        const isAllocated = (appStatus === "Allocated");
 
-        const badgeClass = isVerified ? "bg-green-500/10 border border-green-500/20 text-green-500" : "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500";
-        const badgeText = isVerified ? "Verified" : "Pending";
+        let badgeClass = "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500";
+        let badgeText = "Pending";
+
+        if (isVerified) {
+          if (isApprovedOrConfirmed) {
+            badgeClass = "bg-green-500/10 border border-green-500/20 text-green-500";
+            badgeText = "Confirmed";
+          } else if (isAllocated) {
+            badgeClass = "bg-blue-500/10 border border-blue-500/20 text-blue-500";
+            badgeText = "Allocated";
+          } else {
+            badgeClass = "bg-cyan-500/10 border border-cyan-500/20 text-cyan-500";
+            badgeText = "Verified";
+          }
+        }
 
         let actionBtnHtml = '';
-        if (isVerified) {
-          actionBtnHtml = `<span class="inline-block px-3 py-1 font-mono text-[10px] bg-green-500/10 text-green-500 border border-green-500/20 rounded uppercase font-bold tracking-wider">VERIFIED</span>`;
-        } else {
+        if (!isVerified) {
           actionBtnHtml = `
-            <button onclick="openApprovalModal(${rowIdx})" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase">
-              Verify & Pass
+            <button onclick="verifyPayment(this, ${rowIdx})" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase">
+              Verify Payment
             </button>
+          `;
+        } else if (!isAllocated && !isApprovedOrConfirmed) {
+          actionBtnHtml = `
+            <button onclick="openAllocationModal(${rowIdx})" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase" style="border-color: #06b6d4; background: rgba(6, 182, 212, 0.1); color: #06b6d4;">
+              Allocate
+            </button>
+          `;
+        } else if (isAllocated) {
+          actionBtnHtml = `
+            <div class="flex gap-2 justify-center items-center">
+              <button onclick="sendCredentialsMail(this, ${rowIdx})" class="cyber-btn px-3 py-1.5 rounded text-xs font-semibold uppercase">
+                Send Pass
+              </button>
+              <button onclick="openAllocationModal(${rowIdx})" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
+                Edit
+              </button>
+            </div>
+          `;
+        } else {
+          // Confirmed / Approved
+          actionBtnHtml = `
+            <div class="flex gap-2 justify-center items-center">
+              <button onclick="openAllocationModal(${rowIdx})" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
+                Reallocate
+              </button>
+              <button onclick="sendCredentialsMail(this, ${rowIdx})" class="border border-accent/20 hover:bg-accent/10 px-2 py-1.5 rounded text-xs font-semibold text-accent-light transition-colors" title="Resend Credentials Pass">
+                Resend
+              </button>
+            </div>
           `;
         }
 
@@ -767,9 +811,9 @@
     }
 
     // ==========================================
-    // DELEGATE APPROVAL MODAL CONTROLS
+    // DELEGATE ALLOCATION MODAL CONTROLS
     // ==========================================
-    window.openApprovalModal = function(rowIndex) {
+    window.openAllocationModal = function(rowIndex) {
       const delegate = cachedData.delegates.find(d => d.rowIndex === rowIndex);
       if (!delegate) return;
 
@@ -802,7 +846,7 @@
       openModal('delegateModal');
     }
 
-    // Submit Approval Form
+    // Submit Allocation Form
     document.getElementById('approvalForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -821,7 +865,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
-            action: 'ADMIN_APPROVE_DELEGATE',
+            action: 'ADMIN_ALLOCATE_DELEGATE',
             admin_key: ADMIN_KEY,
             rowIndex: rowIndex,
             allocationCommittee: committee,
@@ -830,25 +874,95 @@
           })
         });
 
-        if (!response.ok) throw new Error("Approval request failed.");
+        if (!response.ok) throw new Error("Allocation request failed.");
         const result = await response.json();
 
         if (result.status === 'success') {
-          showAlert('Delegate approved successfully & credentials emailed!', 'success');
+          showAlert('Delegate portfolio allocated successfully!', 'success');
           closeModal('delegateModal');
           
-          // Re-sync data to get fresh credentials columns
+          // Re-sync data to get fresh allocations
           syncData();
         } else {
-          showAlert(result.message || 'Error approving delegate.');
+          showAlert(result.message || 'Error allocating portfolio.');
         }
       } catch (err) {
-        showAlert(err.message || 'Error processing approval.');
+        showAlert(err.message || 'Error processing allocation.');
       } finally {
         submitBtn.disabled = false;
         spinner.style.display = 'none';
       }
     });
+
+    window.verifyPayment = async function(btn, rowIndex) {
+      if (!confirm("Are you sure you want to verify the payment for this delegate? This will approve their registration and generate their credentials.")) return;
+      const origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = 'VERIFYING...';
+      
+      try {
+        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'ADMIN_VERIFY_PAYMENT',
+            admin_key: ADMIN_KEY,
+            rowIndex: rowIndex
+          })
+        });
+
+        if (!response.ok) throw new Error("Verification failed.");
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          showAlert('Payment verified & credentials generated successfully!', 'success');
+          syncData();
+        } else {
+          showAlert(result.message || 'Error verifying payment.');
+          btn.disabled = false;
+          btn.innerHTML = origText;
+        }
+      } catch (err) {
+        showAlert(err.message || 'Error processing verification.');
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
+    };
+
+    window.sendCredentialsMail = async function(btn, rowIndex) {
+      if (!confirm("Are you sure you want to dispatch the passcode credentials email to this delegate?")) return;
+      const origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = 'SENDING...';
+      
+      try {
+        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'ADMIN_SEND_CREDENTIALS',
+            admin_key: ADMIN_KEY,
+            rowIndex: rowIndex
+          })
+        });
+
+        if (!response.ok) throw new Error("Email dispatch failed.");
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          showAlert('Credentials passcode email dispatched successfully!', 'success');
+          syncData();
+        } else {
+          showAlert(result.message || 'Error sending email.');
+          btn.disabled = false;
+          btn.innerHTML = origText;
+        }
+      } catch (err) {
+        showAlert(err.message || 'Error processing email dispatch.');
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
+    };
 
     // ==========================================
     // SEARCH & FILTERS
