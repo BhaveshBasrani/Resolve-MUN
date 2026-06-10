@@ -1128,207 +1128,169 @@ function sendCredentialsEmail(email, name, delegateId, password, committee, coun
 
 
     const html = `
-
     <!DOCTYPE html>
-
-    <html>
-
+    <html lang="en">
     <head>
-
       <meta charset="utf-8">
-
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
       <title>${subject}</title>
-
+      <style>
+        @media only screen and (max-width: 600px) {
+          .container { width: 100% !important; border-radius: 12px !important; }
+          .inner-padding { padding: 35px 20px !important; }
+          .logo { width: 140px !important; }
+          .headline { font-size: 22px !important; }
+          .cta-btn { width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
+          .grid-cell { display: block !important; width: 100% !important; margin-bottom: 15px !important; padding-right: 0 !important; padding-left: 0 !important; }
+        }
+      </style>
     </head>
-
-    <body style="background-color:#050507; margin:0; padding:40px 0; font-family:'Inter', Arial, sans-serif; color:#f5f5f7;">
-
-      <table width="100%" border="0" cellpadding="0" cellspacing="0">
-
+    <body style="background-color: #060409; margin: 0; padding: 40px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+      <!-- Hidden Preheader -->
+      <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all;">
+        Resolve MUN 2026: Your credentials and committee allocation are ready. Access the portal now.
+      </div>
+      
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #060409;">
         <tr>
-
           <td align="center">
-
-            <table width="100%" style="max-width:600px; background-color:#070712; border: 1px solid #330e5c; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(51, 14, 146, 0.25);">
-
+            
+            <table class="container" width="100%" style="max-width: 600px; background-color: #0c0817; border: 1px solid #23163c; border-left: 4px solid #7c3aed; border-collapse: separate; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px rgba(124, 58, 237, 0.15);">
               
-
-              <!-- Header Logo -->
-
+              <!-- HEADER BRANDING -->
               <tr>
-
-                <td align="center" style="padding:40px 20px; background: linear-gradient(180deg, #1f083d 0%, #070712 100%);">
-
-                  <img src="${logoUrl}" width="160" alt="Resolve MUN Logo" style="display:block;">
-
-                  <p style="color:#7c3aed; font-size:12px; text-transform:uppercase; letter-spacing:2px; margin-top:15px; font-weight:600; margin-bottom:0;">Elite Diplomatic Discourse</p>
-
+                <td align="center" style="padding: 45px 40px 35px 40px; background: linear-gradient(180deg, #1b0e32 0%, #0c0817 100%); border-bottom: 1px solid rgba(124, 58, 237, 0.15);">
+                  <img src="${logoUrl}" width="160" alt="Resolve MUN Logo" style="display: block; border: 0;">
+                  <div style="color: #a78bfa; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 4px; margin-top: 15px;">Elite Diplomatic Discourse</div>
                 </td>
-
               </tr>
-
               
-
-              <!-- Main Content -->
-
+              <!-- MAIN BODY -->
               <tr>
-
-                <td style="padding:40px; background-color:#070712;">
-
-                  <h2 style="color:#ffffff; font-size:24px; font-weight:700; text-align:center; margin-top:0; margin-bottom:10px; font-family:'Crimson Pro', Georgia, serif;">Welcome to the Arena of Diplomacy</h2>
-
-                  <p style="color:rgba(255,255,255,0.7); font-size:15px; line-height:1.6; text-align:center; margin-bottom:30px;">Dear ${name}, your registration has been successfully verified! Below are your official delegate credentials and portfolio allocations.</p>
-
+                <td class="inner-padding" style="padding: 45px 45px 40px 45px; background-color: #0c0817;">
                   
-
-                  <!-- Allocations Box -->
-
-                  <table width="100%" style="background-color:rgba(255,255,255,0.03); border: 1px solid rgba(124,58,237,0.2); border-radius: 12px; margin-bottom:25px; padding:20px;">
-
-                    <tr>
-
-                      <td style="color:#7c3aed; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding-bottom:5px;">Allocated Committee</td>
-
-                    </tr>
-
-                    <tr>
-
-                      <td style="color:#ffffff; font-size:18px; font-weight:600; padding-bottom:15px;">${committee || "To Be Allocated"}</td>
-
-                    </tr>
-
-                    <tr>
-
-                      <td style="color:#7c3aed; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding-bottom:5px;">Allocated Country / Role</td>
-
-                    </tr>
-
-                    <tr>
-
-                      <td style="color:#ffffff; font-size:18px; font-weight:600;">${country || "To Be Allocated"}</td>
-
-                    </tr>
-
-                  </table>
-
-
-
-                  <!-- Login Credentials Box -->
-
-                  <table width="100%" style="background: linear-gradient(135deg, rgba(51, 14, 92, 0.3) 0%, rgba(124, 58, 237, 0.1) 100%); border: 1px solid rgba(124,58,237,0.3); border-radius: 12px; margin-bottom:30px; padding:20px;">
-
-                    <tr>
-
-                      <td colspan="2" style="color:#ffffff; font-size:16px; font-weight:700; padding-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.1);">Your Login Credentials</td>
-
-                    </tr>
-
-                    <tr>
-
-                      <td style="color:rgba(255,255,255,0.6); font-size:13px; padding-top:15px; padding-bottom:5px; width:40%;">Delegate ID / Email</td>
-
-                      <td style="color:#ffffff; font-size:14px; font-weight:600; padding-top:15px; padding-bottom:5px; text-align:right;">${delegateId} <span style="color:rgba(255,255,255,0.4); font-size:12px;">(or ${email})</span></td>
-
-                    </tr>
-
-                    <tr>
-
-                      <td style="color:rgba(255,255,255,0.6); font-size:13px; padding-bottom:5px;">Password</td>
-
-                      <td style="color:#7c3aed; font-size:16px; font-weight:700; padding-bottom:5px; text-align:right; letter-spacing:1px;">${password}</td>
-
-                    </tr>
-
-                  </table>
-
-
-
-                  <!-- CTA Buttons -->
-
-                  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:20px; margin-bottom:20px;">
-
-                    <tr>
-
-                      <td align="center" style="padding-bottom:15px;">
-
-                        <a href="${loginUrl}" style="display:inline-block; background: linear-gradient(90deg, #510e92 0%, #7c3aed 100%); color:#ffffff; padding:14px 30px; font-size:14px; font-weight:700; text-decoration:none; border-radius:8px; text-transform:uppercase; letter-spacing:1px; box-shadow: 0 4px 15px rgba(124,58,237,0.4);">Access Delegate Portal</a>
-
-                      </td>
-
-                    </tr>
-
-                    <tr>
-
-                      <td align="center">
-
-                        <a href="${whatsappUrl}" style="display:inline-block; background-color:#25d366; color:#ffffff; padding:10px 24px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">💬 Join Official WhatsApp Group</a>
-
-                      </td>
-
-                    </tr>
-
-                  </table>
-
-
-
-                  <p style="color:rgba(255,255,255,0.5); font-size:13px; line-height:1.5; text-align:center; margin-top:30px;">
-
-                    Once logged in to the portal, you will be able to retrieve your unique QR check-in code, view your agenda, and track your attendance for the three days of the conference.
-
+                  <h1 class="headline" style="color: #ffffff; font-size: 24px; font-weight: 700; text-align: center; margin-top: 0; margin-bottom: 12px; font-family: 'Georgia', serif; line-height: 1.3;">Welcome to the Arena of Diplomacy</h1>
+                  
+                  <p style="color: #cfcdd5; font-size: 15px; line-height: 1.6; text-align: center; margin-top: 0; margin-bottom: 35px;">
+                    Dear <strong>${name}</strong>, your individual delegate registration has been verified. Below is your official delegate passcode and portfolio allocation details.
                   </p>
-
+                  
+                  <!-- PORTFOLIO ALLOCATION PANEL -->
+                  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+                    <tr>
+                      <td class="grid-cell" width="50%" valign="top" style="padding-right: 8px;">
+                        <table width="100%" border="0" cellpadding="15" cellspacing="0" style="background-color: rgba(255, 255, 255, 0.02); border: 1px solid rgba(124, 58, 237, 0.15); border-left: 3px solid #7c3aed; border-radius: 12px;">
+                          <tr>
+                            <td>
+                              <div style="color: #a78bfa; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Allocated Committee</div>
+                              <div style="color: #ffffff; font-size: 16px; font-weight: 600;">${committee || "To Be Allocated"}</div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td class="grid-cell" width="50%" valign="top" style="padding-left: 8px;">
+                        <table width="100%" border="0" cellpadding="15" cellspacing="0" style="background-color: rgba(255, 255, 255, 0.02); border: 1px solid rgba(124, 58, 237, 0.15); border-left: 3px solid #7c3aed; border-radius: 12px;">
+                          <tr>
+                            <td>
+                              <div style="color: #a78bfa; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Country / Role</div>
+                              <div style="color: #ffffff; font-size: 16px; font-weight: 600;">${country || "To Be Allocated"}</div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- SECURE CREDENTIALS PANEL -->
+                  <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background: linear-gradient(135deg, rgba(81, 14, 146, 0.2) 0%, rgba(124, 58, 237, 0.04) 100%); border: 1px solid rgba(124, 58, 237, 0.25); border-left: 4px solid #c084fc; border-radius: 16px; margin-bottom: 35px;">
+                    <tr>
+                      <td>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td colspan="2" style="color: #ffffff; font-size: 14px; font-weight: 700; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-transform: uppercase; letter-spacing: 1px;">Your Access Credentials</td>
+                          </tr>
+                          <tr>
+                            <td style="color: rgba(255, 255, 255, 0.55); font-size: 13px; padding-top: 15px; padding-bottom: 8px;">Login ID (or Email)</td>
+                            <td align="right" style="color: #ffffff; font-size: 14px; font-weight: 600; padding-top: 15px; padding-bottom: 8px; font-family: monospace;">${delegateId}</td>
+                          </tr>
+                          <tr>
+                            <td style="color: rgba(255, 255, 255, 0.55); font-size: 13px; padding-bottom: 4px;">Portal Passcode</td>
+                            <td align="right" style="color: #c084fc; font-size: 18px; font-weight: 800; padding-bottom: 4px; font-family: monospace; letter-spacing: 1.5px;">${password}</td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- CALL TO ACTION CTAS -->
+                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" style="padding-bottom: 16px;">
+                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate;">
+                          <tr>
+                            <td align="center" valign="middle" style="background-color: #7c3aed; border-radius: 10px; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);">
+                              <a href="${loginUrl}" target="_blank" class="cta-btn" style="display: inline-block; padding: 14px 35px; font-size: 13px; font-weight: 700; color: #ffffff; text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 10px; border: 1px solid #8b5cf6;">Access Delegate Portal</a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center">
+                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate;">
+                          <tr>
+                            <td align="center" valign="middle" style="background-color: #25d366; border-radius: 10px; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
+                              <a href="${whatsappUrl}" target="_blank" class="cta-btn" style="display: inline-block; padding: 11px 26px; font-size: 12px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 10px;">💬 Join Official WhatsApp Group</a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- TERMS & CONDITIONS PANEL -->
+                  <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.05); border-left: 3px solid #f59e0b; border-radius: 12px; margin-top: 30px; margin-bottom: 10px;">
+                    <tr>
+                      <td>
+                        <div style="color: #f59e0b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">Important Terms & Conference Rules</div>
+                        <ul style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                          <li style="margin-bottom: 6px;"><strong style="color: #ffffff;">Attendance Policy:</strong> 100% attendance is mandatory across all 3 days to be eligible for certificates of participation and awards.</li>
+                          <li style="margin-bottom: 6px;"><strong style="color: #ffffff;">Code of Conduct:</strong> Delegates must maintain formal attire and strict diplomatic decorum. Any behavior violating code will result in immediate disqualification.</li>
+                          <li style="margin-bottom: 6px;"><strong style="color: #ffffff;">Digital QR Entry Pass:</strong> Your QR check-in code is secure, unique, and non-transferable. It must be scanned at the venue check-in desks daily.</li>
+                          <li style="margin-bottom: 0;"><strong style="color: #ffffff;">Allocation & Refunds:</strong> All portfolio allocations decided by the Secretariat are final. Registration fees are strictly non-refundable.</li>
+                        </ul>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <p style="color: rgba(255, 255, 255, 0.4); font-size: 12.5px; line-height: 1.6; text-align: center; margin-top: 35px; margin-bottom: 0; padding: 0 10px;">
+                    Please log in to the portal to claim your unique conference QR pass. Present this QR pass at the check-in counters upon arrival on all 3 days.
+                  </p>
                 </td>
-
               </tr>
-
               
-
-              <!-- Footer Graphic -->
-
+              <!-- GRAPHIC BANNER -->
               <tr>
-
-                <td align="center" style="padding:0 30px 30px 30px;">
-
-                  <img src="${heroUrl}" width="100%" style="border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
-
+                <td align="center" style="padding: 0 45px 40px 45px; background-color: #0c0817;">
+                  <img src="${heroUrl}" width="100%" style="border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.05); display: block;" alt="Resolve MUN Hero Banner">
                 </td>
-
               </tr>
-
               
-
-              <!-- Footer Details -->
-
+              <!-- FOOTER DETAILS -->
               <tr>
-
-                <td align="center" style="padding:30px; background-color:#050507; border-top:1px solid rgba(255,255,255,0.05);">
-
-                  <h4 style="margin:0 0 5px 0; font-size:14px; color:#ffffff; font-family:'Oswald', sans-serif; letter-spacing:1px;">RESOLVE MUN 2026</h4>
-
-                  <p style="color:#8e8e93; font-size:11px; margin:0;">Laurus The Universal School, Bowrampet, Hyderabad.</p>
-
-                  <p style="color:rgba(124,58,237,0.6); font-size:11px; margin-top:5px; margin-bottom:0;">Please do not reply directly to this email.</p>
-
+                <td align="center" style="padding: 35px; background-color: #080510; border-top: 1px solid rgba(124, 58, 237, 0.15);">
+                  <h4 style="margin: 0 0 6px 0; font-size: 14px; color: #ffffff; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">RESOLVE MUN 2026</h4>
+                  <p style="color: #8e8e93; font-size: 11px; margin: 0 0 4px 0;">Laurus The Universal School, Bowrampet, Hyderabad.</p>
+                  <p style="color: rgba(124, 58, 237, 0.55); font-size: 10px; margin: 0;">For issues, contact support. Do not reply directly to this mail.</p>
                 </td>
-
               </tr>
-
               
-
             </table>
-
           </td>
-
         </tr>
-
       </table>
-
     </body>
-
     </html>
-
     `;
 
 
