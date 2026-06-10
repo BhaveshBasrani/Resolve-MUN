@@ -660,6 +660,10 @@ function handleDashboardActions(ss, data) {
 
                 return adminSendCredentials(ss, data);
 
+            case "ADMIN_DELETE_DELEGATE":
+
+                return adminDeleteDelegate(ss, data);
+
             case "ADMIN_CHECKIN_DELEGATE":
 
                 return adminCheckinDelegate(ss, data);
@@ -1129,6 +1133,36 @@ function adminSendCredentials(ss, data) {
         status: "success",
 
         message: "Credentials email sent successfully."
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function adminDeleteDelegate(ss, data) {
+
+    const rowIndex = parseInt(data.rowIndex, 10);
+
+    if (isNaN(rowIndex) || rowIndex <= 1) {
+
+        throw new Error("Invalid row index.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    sheet.deleteRow(rowIndex);
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Delegate registration deleted successfully."
 
     })).setMimeType(ContentService.MimeType.JSON);
 
