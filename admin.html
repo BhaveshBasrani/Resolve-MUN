@@ -218,9 +218,10 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="font-mono text-xs text-white/40 uppercase mr-2">Filter Status:</span>
-            <button onclick="filterDelStatus('all')" id="chipDelAll" class="px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white">ALL</button>
+            <button onclick="filterDelStatus('all')" id="chipDelAll" class="px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active">ALL</button>
             <button onclick="filterDelStatus('pending')" id="chipDelPending" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-yellow-500 text-yellow-500/60 hover:text-yellow-500">PENDING</button>
             <button onclick="filterDelStatus('verified')" id="chipDelVerified" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-green-500 text-green-500/60 hover:text-green-500">VERIFIED</button>
+            <button onclick="filterDelStatus('unallocated')" id="chipDelUnallocated" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-cyan-500 text-cyan-500/60 hover:text-cyan-500">UNALLOCATED</button>
           </div>
         </div>
         
@@ -1093,7 +1094,7 @@
     // ==========================================
     window.filterDelegates = function() {
       const query = document.getElementById('searchDelegates').value.trim().toLowerCase();
-      const chips = ['All', 'Pending', 'Verified'];
+      const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
       let activeChipType = 'all';
       
       chips.forEach(c => {
@@ -1110,6 +1111,8 @@
         list = list.filter(d => String(d["Payment Verified"]).trim() !== "Verified");
       } else if (activeChipType === 'verified') {
         list = list.filter(d => String(d["Payment Verified"]).trim() === "Verified");
+      } else if (activeChipType === 'unallocated') {
+        list = list.filter(d => !String(d["Allocation Committee"] || "").trim() || !String(d["Allocation Country"] || "").trim());
       }
 
       // Filter by text search
@@ -1128,7 +1131,7 @@
     }
 
     window.filterDelStatus = function(type) {
-      const chips = ['All', 'Pending', 'Verified'];
+      const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
       chips.forEach(c => {
         const btn = document.getElementById('chipDel' + c);
         if (btn) {
@@ -1146,6 +1149,8 @@
           activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-semibold active";
         } else if (type === 'verified') {
           activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-green-500/30 bg-green-500/10 text-green-500 font-semibold active";
+        } else if (type === 'unallocated') {
+          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-500 font-semibold active";
         }
       }
       
