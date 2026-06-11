@@ -393,7 +393,7 @@
             <select id="allocCommittee" required class="w-full px-4 py-2.5 rounded glass-input text-sm">
               <option value="" disabled selected>Select Committee</option>
               <option value="DISEC">DISEC</option>
-              <option value="LOKSABHA">Lok Sabha</option>
+              <option value="LOK SABHA">Lok Sabha</option>
               <option value="UNHRC">UNHRC</option>
               <option value="CCC">CCC (Crisis Committee)</option>
               <option value="UNCSW">UNCSW</option>
@@ -864,7 +864,11 @@
       document.getElementById('mDelPref3').innerText = `${delegate["Preference 3 Committee"] || "-"} : ${delegate["Preference 3 Country"] || "-"}`;
 
       // Set allocated defaults to preference 1
-      document.getElementById('allocCommittee').value = delegate["Allocation Committee"] || delegate["Preference 1 Committee"] || "";
+      let preselectedCommittee = delegate["Allocation Committee"] || delegate["Preference 1 Committee"] || "";
+      if (preselectedCommittee === "LOKSABHA") {
+        preselectedCommittee = "LOK SABHA";
+      }
+      document.getElementById('allocCommittee').value = preselectedCommittee;
       document.getElementById('allocCountry').value = delegate["Allocation Country"] || delegate["Preference 1 Country"] || "";
       document.getElementById('secNotes').value = delegate["Secretariat Notes"] || "";
 

@@ -4621,7 +4621,7 @@
           <select id="pref1_committee" required onchange="updatePortfolioOptions(1)">
             <option value="" disabled selected>Select Committee Preference 1</option>
             <option value="DISEC">DISEC</option>
-            <option value="LOKSABHA">Lok Sabha</option>
+            <option value="LOK SABHA">Lok Sabha</option>
             <option value="UNHRC">UNHRC</option>
             <option value="CCC">CCC</option>
             <option value="UNCSW">UNCSW</option>
@@ -4646,7 +4646,7 @@
           <select id="pref2_committee" required onchange="updatePortfolioOptions(2)">
             <option value="" disabled selected>Select Committee Preference 2</option>
             <option value="DISEC">DISEC</option>
-            <option value="LOKSABHA">Lok Sabha</option>
+            <option value="LOK SABHA">Lok Sabha</option>
             <option value="UNHRC">UNHRC</option>
             <option value="CCC">CCC</option>
             <option value="UNCSW">UNCSW</option>
@@ -4671,7 +4671,7 @@
           <select id="pref3_committee" required onchange="updatePortfolioOptions(3)">
             <option value="" disabled selected>Select Committee Preference 3</option>
             <option value="DISEC">DISEC</option>
-            <option value="LOKSABHA">Lok Sabha</option>
+            <option value="LOK SABHA">Lok Sabha</option>
             <option value="UNHRC">UNHRC</option>
             <option value="CCC">CCC</option>
             <option value="UNCSW">UNCSW</option>
@@ -5662,11 +5662,11 @@
             <select id="ebPref1" required>
               <option value="" disabled selected>Select Committee</option>
               <option value="DISEC">DISEC</option>
-              <option value="LOKSABHA">Lok Sabha</option>
+              <option value="LOK SABHA">Lok Sabha</option>
               <option value="UNHRC">UNHRC</option>
               <option value="CCC">CCC</option>
               <option value="UNCSW">UNCSW</option>
-              <option value="IP">IP (International Press)</option>
+              <option value="IP (International Press)">IP (International Press)</option>
             </select>
           </div>
 
@@ -5675,7 +5675,7 @@
             <select id="ebPref2" required>
               <option value="" disabled selected>Select Committee</option>
               <option value="DISEC">DISEC</option>
-              <option value="LOKSABHA">Lok Sabha</option>
+              <option value="LOK SABHA">Lok Sabha</option>
               <option value="UNHRC">UNHRC</option>
               <option value="CCC">CCC</option>
               <option value="UNCSW">UNCSW</option>
@@ -6691,7 +6691,11 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
       formFieldIds.forEach(id => {
         const el = document.getElementById(id);
         if (el && saved[id]) {
-          el.value = saved[id];
+          let val = saved[id];
+          if ((id.endsWith('_committee') || id.startsWith('ebPref')) && val === 'LOKSABHA') {
+            val = 'LOK SABHA';
+          }
+          el.value = val;
         }
       });
       // Re-trigger committee UI updates so containers/roles show correctly
@@ -7277,7 +7281,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
             <select name="del_pref_${i}" required onchange="updateDelPortfolioOptions(${i})">
               <option value="" disabled ${!savedValues[`del_pref_${i}`] ? 'selected' : ''}>Select Committee</option>
               <option value="DISEC" ${savedValues[`del_pref_${i}`] === 'DISEC' ? 'selected' : ''}>DISEC</option>
-              <option value="LOKSABHA" ${savedValues[`del_pref_${i}`] === 'LOKSABHA' ? 'selected' : ''}>Lok Sabha</option>
+              <option value="LOK SABHA" ${(savedValues[`del_pref_${i}`] === 'LOK SABHA' || savedValues[`del_pref_${i}`] === 'LOKSABHA') ? 'selected' : ''}>Lok Sabha</option>
               <option value="UNHRC" ${savedValues[`del_pref_${i}`] === 'UNHRC' ? 'selected' : ''}>UNHRC</option>
               <option value="CCC" ${savedValues[`del_pref_${i}`] === 'CCC' ? 'selected' : ''}>CCC</option>
               <option value="UNCSW" ${savedValues[`del_pref_${i}`] === 'UNCSW' ? 'selected' : ''}>UNCSW</option>
