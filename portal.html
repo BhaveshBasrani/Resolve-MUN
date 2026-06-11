@@ -789,6 +789,118 @@
       position: relative;
       z-index: 2;
     }
+
+    /* Responsive Adjustments for Mobile Viewports */
+    @media (max-width: 768px) {
+      main {
+        padding: 40px 16px;
+      }
+      .glass-card {
+        padding: 24px;
+        border-radius: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header {
+        padding: 12px 16px;
+      }
+      .logo-img {
+        width: 36px;
+        height: 36px;
+      }
+      .logo-text {
+        font-size: 1.3rem;
+        letter-spacing: 0.08em;
+      }
+      .back-btn, .logout-btn {
+        padding: 8px 14px;
+        font-size: 0.75rem;
+      }
+      main {
+        padding: 24px 12px;
+      }
+      .glass-card {
+        padding: 20px 16px;
+        border-radius: 16px;
+      }
+      .auth-container {
+        padding: 30px 20px;
+        border-radius: 20px;
+      }
+      .auth-title {
+        font-size: 1.8rem;
+      }
+      .auth-subtitle {
+        margin-bottom: 24px;
+        font-size: 0.85rem;
+      }
+      .profile-avatar {
+        width: 75px;
+        height: 75px;
+        font-size: 1.8rem;
+      }
+      .profile-name {
+        font-size: 1.5rem;
+      }
+      .profile-id {
+        font-size: 0.85rem;
+        margin-bottom: 18px;
+      }
+      .profile-details-list {
+        padding-top: 18px;
+      }
+      .profile-detail-item {
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+      }
+      .card-title {
+        font-size: 1.1rem;
+        margin-bottom: 18px;
+      }
+      .qr-container {
+        padding: 12px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+      }
+      .qr-img {
+        width: 170px;
+        height: 170px;
+      }
+      .alloc-value {
+        font-size: 1.2rem;
+      }
+      .alloc-item {
+        padding: 16px;
+      }
+      .attendance-tracker {
+        gap: 8px;
+      }
+      .attendance-day {
+        padding: 15px 6px;
+        border-radius: 12px;
+      }
+      .day-num {
+        font-size: 0.72rem;
+        margin-bottom: 4px;
+      }
+      .day-status {
+        font-size: 0.82rem;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .day-status.present-text .status-dot {
+        margin-bottom: 2px;
+      }
+      .whatsapp-btn {
+        padding: 12px 24px;
+        font-size: 0.85rem;
+      }
+      footer {
+        padding: 20px;
+        font-size: 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
