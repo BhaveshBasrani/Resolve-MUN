@@ -30,7 +30,9 @@ const SHEET_NAMES = {
 
     DELEGATION: "Sheet3",            // Tab for Group Delegations
 
-    EB: "Sheet4"                     // Tab for EB Applications
+    EB: "Sheet4",                    // Tab for EB Applications
+
+    SOLARIS: "Sheet5"                // Tab for Solaris Delegates (Vanga Verse)
 
 };
 
@@ -704,15 +706,45 @@ function delegateLogin(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    // Search Delegate Sheet (Sheet1) first
+
+    const delegateSheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+    let result = findDelegateInSheet(delegateSheet, email, password);
+
+    if (result) return result;
+
+
+
+    // Search Solaris Sheet (Sheet5) second
+
+    const solarisSheet = ss.getSheetByName(SHEET_NAMES.SOLARIS);
+
+    result = findDelegateInSheet(solarisSheet, email, password);
+
+    if (result) return result;
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "error",
+
+        message: "Invalid email/ID or password."
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function findDelegateInSheet(sheet, email, password) {
+
+    if (!sheet) return null;
 
     const lastRow = sheet.getLastRow();
 
-    if (lastRow <= 1) {
-
-        throw new Error("No delegates registered yet.");
-
-    }
+    if (lastRow <= 1) return null;
 
 
 
@@ -762,9 +794,9 @@ function delegateLogin(ss, data) {
 
                 delegateId: row[22],
 
-                committee: row[23],
+                committee: row[23] || "Vanga Verse", // Default to Vanga Verse if blank
 
-                country: row[24],
+                country: row[24] || "To Be Allocated",
 
                 checkinDay1: row[32] || "Absent",
 
@@ -788,15 +820,75 @@ function delegateLogin(ss, data) {
 
     }
 
+    return null;
+
+}
 
 
-    return ContentService.createTextOutput(JSON.stringify({
 
-        status: "error",
+function getTargetSheetName(data) {
 
-        message: "Invalid email/ID or password."
+    if (data && data.targetSheet === "SOLARIS") {
 
-    })).setMimeType(ContentService.MimeType.JSON);
+        return SHEET_NAMES.SOLARIS;
+
+    }
+
+    return SHEET_NAMES.DELEGATE;
+
+}
+
+
+
+function initializeSolarisSheet(ss) {
+
+    let sheet = ss.getSheetByName(SHEET_NAMES.SOLARIS);
+
+    if (!sheet) {
+
+        sheet = ss.insertSheet(SHEET_NAMES.SOLARIS);
+
+        const delegateSheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+
+        if (delegateSheet) {
+
+            const lastCol = delegateSheet.getLastColumn();
+
+            if (lastCol > 0) {
+
+                const headers = delegateSheet.getRange(1, 1, 1, lastCol).getValues();
+
+                sheet.getRange(1, 1, 1, lastCol).setValues(headers);
+
+            }
+
+        } else {
+
+            const defaultHeaders = [
+
+                "Timestamp", "Full Name", "Grade / Class", "Phone Number", "Email Address", "DOB",
+
+                "School / Institution", "Residential Address", "Transport Requirement", "Previous MUN Experience",
+
+                "Preference 1 Committee", "Preference 1 Country", "Preference 2 Committee", "Preference 2 Country",
+
+                "Preference 3 Committee", "Preference 3 Country", "Payment Method", "Payment Amount",
+
+                "Transaction ID / UTR Number", "Payment Screenshot Link", "Payment Date", "Application Status",
+
+                "Delegate ID", "Allocation Committee", "Allocation Country", "Payment Verified", "Check-in Status",
+
+                "Emergency Contact Name", "Emergency Contact Phone", "Secretariat Notes", "Referral Source",
+
+                "Password", "Day 1 Check-in", "Day 2 Check-in", "Day 3 Check-in"
+
+            ];
+
+            sheet.getRange(1, 1, 1, defaultHeaders.length).setValues([defaultHeaders]);
+
+        }
+
+    }
 
 }
 
@@ -804,11 +896,17 @@ function delegateLogin(ss, data) {
 
 function adminGetData(ss) {
 
+    initializeSolarisSheet(ss);
+
+
+
     const data = {
 
         waitlist: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.WAITLIST)),
 
-        delegates: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.DELEGATE))
+        delegates: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.DELEGATE)),
+
+        solaris: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.SOLARIS))
 
     };
 
@@ -846,7 +944,9 @@ function adminApproveDelegate(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    const sheetName = getTargetSheetName(data);
+
+    const sheet = ss.getSheetByName(sheetName);
 
     const currentMaxCols = sheet.getMaxColumns();
 
@@ -886,9 +986,15 @@ function adminApproveDelegate(ss, data) {
 
 
 
+    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
+
+    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+
+
+
     if (!delegateId || delegateId === "") {
 
-        delegateId = generateDelegateId(sheet);
+        delegateId = generateDelegateId(sheet, idPrefix);
 
     }
 
@@ -954,7 +1060,9 @@ function adminVerifyPayment(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    const sheetName = getTargetSheetName(data);
+
+    const sheet = ss.getSheetByName(sheetName);
 
     const currentMaxCols = sheet.getMaxColumns();
 
@@ -978,9 +1086,15 @@ function adminVerifyPayment(ss, data) {
 
 
 
+    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
+
+    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+
+
+
     if (!delegateId || delegateId === "") {
 
-        delegateId = generateDelegateId(sheet);
+        delegateId = generateDelegateId(sheet, idPrefix);
 
     }
 
@@ -1046,7 +1160,9 @@ function adminAllocateDelegate(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    const sheetName = getTargetSheetName(data);
+
+    const sheet = ss.getSheetByName(sheetName);
 
     sheet.getRange(rowIndex, 24).setValue(committee); // Allocation Committee
 
@@ -1094,7 +1210,9 @@ function adminAllocateAndSendCredentials(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    const sheetName = getTargetSheetName(data);
+
+    const sheet = ss.getSheetByName(sheetName);
 
 
 
@@ -1134,9 +1252,15 @@ function adminAllocateAndSendCredentials(ss, data) {
 
 
 
+    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
+
+    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+
+
+
     if (!delegateId || delegateId === "") {
 
-        delegateId = generateDelegateId(sheet);
+        delegateId = generateDelegateId(sheet, idPrefix);
 
         sheet.getRange(rowIndex, 23).setValue(delegateId);
 
@@ -1190,7 +1314,9 @@ function adminSendCredentials(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    const sheetName = getTargetSheetName(data);
+
+    const sheet = ss.getSheetByName(sheetName);
 
     const rowRange = sheet.getRange(rowIndex, 1, 1, 35);
 
@@ -1220,9 +1346,15 @@ function adminSendCredentials(ss, data) {
 
 
 
+    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
+
+    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+
+
+
     if (!delegateId || delegateId === "") {
 
-        delegateId = generateDelegateId(sheet);
+        delegateId = generateDelegateId(sheet, idPrefix);
 
         sheet.getRange(rowIndex, 23).setValue(delegateId);
 
@@ -1272,7 +1404,9 @@ function adminDeleteDelegate(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    const sheetName = getTargetSheetName(data);
+
+    const sheet = ss.getSheetByName(sheetName);
 
     sheet.deleteRow(rowIndex);
 
@@ -1316,7 +1450,11 @@ function adminCheckinDelegate(ss, data) {
 
 
 
-    const sheet = ss.getSheetByName(SHEET_NAMES.DELEGATE);
+    const isSolaris = delegateId.toUpperCase().startsWith("SOL-DEL-");
+
+    const sheetName = isSolaris ? SHEET_NAMES.SOLARIS : SHEET_NAMES.DELEGATE;
+
+    const sheet = ss.getSheetByName(sheetName);
 
     const lastRow = sheet.getLastRow();
 
@@ -1373,15 +1511,16 @@ function adminCheckinDelegate(ss, data) {
         checkinStatus: checkinStatus
 
     })).setMimeType(ContentService.MimeType.JSON);
+
 }
 
 
 
-function generateDelegateId(sheet) {
+function generateDelegateId(sheet, prefix = "RES-DEL-") {
 
     const lastRow = sheet.getLastRow();
 
-    if (lastRow <= 1) return "RES-DEL-1001";
+    if (lastRow <= 1) return prefix + "1001";
 
     const ids = sheet.getRange(2, 23, lastRow - 1, 1).getValues().flat();
 
@@ -1391,9 +1530,9 @@ function generateDelegateId(sheet) {
 
         const id = String(ids[i]);
 
-        if (id.startsWith("RES-DEL-")) {
+        if (id.startsWith(prefix)) {
 
-            const num = parseInt(id.replace("RES-DEL-", ""), 10);
+            const num = parseInt(id.replace(prefix, ""), 10);
 
             if (!isNaN(num) && num > maxNum) {
 
@@ -1405,7 +1544,7 @@ function generateDelegateId(sheet) {
 
     }
 
-    return "RES-DEL-" + (maxNum + 1);
+    return prefix + (maxNum + 1);
 
 }
 

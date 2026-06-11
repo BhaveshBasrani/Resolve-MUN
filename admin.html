@@ -193,6 +193,7 @@
     <div class="flex border-b border-white/10 mb-6 font-mono text-sm tracking-wider overflow-x-auto whitespace-nowrap">
       <button id="btnTabDelegates" onclick="switchTab('delegatesTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors tab-active">DELEGATES & VERIFICATION</button>
       <button id="btnTabWaitlist" onclick="switchTab('waitlistTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">WAITLIST</button>
+      <button id="btnTabSolaris" onclick="switchTab('solarisTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">SOLARIS DELEGATES</button>
       <button id="btnTabScanner" onclick="switchTab('scannerTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">QR GATE SCANNER</button>
     </div>
 
@@ -268,6 +269,50 @@
                 <!-- Dynamically populated -->
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SOLARIS DELEGATES (VANGA VERSE) -->
+      <section id="solarisTab" class="space-y-6" style="display: none;">
+        <!-- Filters and Search -->
+        <div class="glass p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="w-full md:w-1/3">
+            <input type="text" id="searchSolaris" oninput="filterSolaris()" placeholder="Search Name, Email, ID, School..." class="w-full px-4 py-2 rounded glass-input text-sm">
+          </div>
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <span class="font-mono text-xs text-white/40 uppercase mr-2">Filter Status:</span>
+            <button onclick="filterSolStatus('all')" id="chipSolAll" class="px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active">ALL</button>
+            <button onclick="filterSolStatus('pending')" id="chipSolPending" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-yellow-500 text-yellow-500/60 hover:text-yellow-500">PENDING</button>
+            <button onclick="filterSolStatus('verified')" id="chipSolVerified" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-green-500 text-green-500/60 hover:text-green-500">VERIFIED</button>
+            <button onclick="filterSolStatus('unallocated')" id="chipSolUnallocated" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-cyan-500 text-cyan-500/60 hover:text-cyan-500">UNALLOCATED</button>
+          </div>
+        </div>
+        
+        <!-- Registrations Data Table -->
+        <div class="glass rounded-lg overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+              <thead class="bg-black/40 font-mono text-[11px] tracking-wider uppercase text-accent border-b border-accent/20">
+                <tr>
+                  <th class="p-4">Row</th>
+                  <th class="p-4">Delegate Details</th>
+                  <th class="p-4">Institution</th>
+                  <th class="p-4">Contact</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4">Delegate ID</th>
+                  <th class="p-4">Allocation</th>
+                  <th class="p-4">Attendance Pass</th>
+                  <th class="p-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="solarisTableBody" class="divide-y divide-white/5 font-sans">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+          <div id="noSolarisMsg" class="py-12 text-center font-mono text-xs text-white/30" style="display: none;">
+            NO SOLARIS DELEGATES FOUND MATCHING THE FILTERS.
           </div>
         </div>
       </section>
@@ -398,6 +443,7 @@
               <option value="CCC">CCC (Crisis Committee)</option>
               <option value="UNCSW">UNCSW</option>
               <option value="IP">IP (International Press)</option>
+              <option value="VANGA VERSE">Vanga Verse</option>
             </select>
           </div>
           <div class="form-group">
@@ -634,10 +680,12 @@
     window.switchTab = function(tabId) {
       document.getElementById('btnTabDelegates').classList.toggle('tab-active', tabId === 'delegatesTab');
       document.getElementById('btnTabWaitlist').classList.toggle('tab-active', tabId === 'waitlistTab');
+      document.getElementById('btnTabSolaris').classList.toggle('tab-active', tabId === 'solarisTab');
       document.getElementById('btnTabScanner').classList.toggle('tab-active', tabId === 'scannerTab');
 
       document.getElementById('delegatesTab').style.display = tabId === 'delegatesTab' ? 'block' : 'none';
       document.getElementById('waitlistTab').style.display = tabId === 'waitlistTab' ? 'block' : 'none';
+      document.getElementById('solarisTab').style.display = tabId === 'solarisTab' ? 'block' : 'none';
       document.getElementById('scannerTab').style.display = tabId === 'scannerTab' ? 'block' : 'none';
 
       if (tabId === 'scannerTab') {
@@ -669,20 +717,25 @@
 
       const delegates = cachedData.delegates || [];
       const waitlist = cachedData.waitlist || [];
+      const solaris = cachedData.solaris || [];
 
       // Stat Calculations
-      const verifiedDelegates = delegates.filter(d => String(d["Payment Verified"]).trim() === "Verified");
-      const pendingVerify = delegates.filter(d => String(d["Payment Verified"]).trim() !== "Verified");
-      const day1CheckedIn = delegates.filter(d => String(d["Check-in Day 1"]).trim().toLowerCase() === "checked in").length;
+      const verifiedDelegates = delegates.filter(d => String(d["Payment Verified"]).trim() === "Verified").length + 
+                                solaris.filter(s => String(s["Payment Verified"]).trim() === "Verified").length;
+      const pendingVerify = delegates.filter(d => String(d["Payment Verified"]).trim() !== "Verified").length + 
+                            solaris.filter(s => String(s["Payment Verified"]).trim() !== "Verified").length;
+      const day1CheckedIn = delegates.filter(d => String(d["Check-in Day 1"]).trim().toLowerCase() === "checked in").length +
+                            solaris.filter(s => String(s["Check-in Day 1"]).trim().toLowerCase() === "checked in").length;
 
-      statTotal.innerText = delegates.length;
-      statVerified.innerText = verifiedDelegates.length;
-      statPending.innerText = pendingVerify.length;
+      statTotal.innerText = delegates.length + solaris.length;
+      statVerified.innerText = verifiedDelegates;
+      statPending.innerText = pendingVerify;
       statAttendance.innerText = day1CheckedIn;
 
       // Render tab tables
       renderDelegatesTable(delegates);
       renderWaitlistTable(waitlist);
+      renderSolarisTable(solaris);
     }
 
     // RENDER: INDIVIDUAL DELEGATES
@@ -835,11 +888,142 @@
       });
     }
 
+    // RENDER: SOLARIS DELEGATES
+    function renderSolarisTable(list) {
+      const solarisTableBody = document.getElementById('solarisTableBody');
+      solarisTableBody.innerHTML = "";
+      if (list.length === 0) {
+        document.getElementById('noSolarisMsg').style.display = 'block';
+        return;
+      }
+      document.getElementById('noSolarisMsg').style.display = 'none';
+
+      list.forEach(d => {
+        const name = d["Full Name"] || "";
+        const email = d["Email Address"] || "";
+        const phone = d["Phone Number"] || "";
+        const school = d["School / Institution"] || "";
+        const rowIdx = d.rowIndex;
+        const delId = d["Delegate ID"] || "";
+        const comm = d["Allocation Committee"] || "Vanga Verse";
+        const country = d["Allocation Country"] || "";
+        
+        const payStatus = String(d["Payment Verified"] || "").trim();
+        const appStatus = String(d["Application Status"] || "").trim();
+        const isVerified = (payStatus === "Verified");
+        const isApprovedOrConfirmed = (appStatus === "Approved" || appStatus === "Confirmed");
+        const isAllocated = (appStatus === "Allocated");
+
+        let badgeClass = "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500";
+        let badgeText = "Pending";
+
+        if (isVerified) {
+          if (isApprovedOrConfirmed) {
+            badgeClass = "bg-green-500/10 border border-green-500/20 text-green-500";
+            badgeText = "Confirmed";
+          } else if (isAllocated) {
+            badgeClass = "bg-blue-500/10 border border-blue-500/20 text-blue-500";
+            badgeText = "Allocated";
+          } else {
+            badgeClass = "bg-cyan-500/10 border border-cyan-500/20 text-cyan-500";
+            badgeText = "Verified";
+          }
+        }
+
+        let actionBtnHtml = '';
+        if (!isVerified) {
+          actionBtnHtml = `
+            <div class="flex gap-2 justify-center items-center">
+              <button onclick="verifyPayment(this, ${rowIdx}, 'SOLARIS')" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase">
+                Verify Payment
+              </button>
+              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
+                Delete
+              </button>
+            </div>
+          `;
+        } else if (!isAllocated && !isApprovedOrConfirmed) {
+          actionBtnHtml = `
+            <div class="flex gap-2 justify-center items-center">
+              <button onclick="openAllocationModal(${rowIdx}, 'SOLARIS')" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase" style="border-color: #06b6d4; background: rgba(6, 182, 212, 0.1); color: #06b6d4;">
+                Allocate
+              </button>
+              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
+                Delete
+              </button>
+            </div>
+          `;
+        } else if (isAllocated) {
+          actionBtnHtml = `
+            <div class="flex gap-2 justify-center items-center">
+              <button onclick="sendCredentialsMail(this, ${rowIdx}, 'SOLARIS')" class="cyber-btn px-3 py-1.5 rounded text-xs font-semibold uppercase">
+                Send Pass
+              </button>
+              <button onclick="openAllocationModal(${rowIdx}, 'SOLARIS')" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
+                Edit
+              </button>
+              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
+                ✕
+              </button>
+            </div>
+          `;
+        } else {
+          // Confirmed / Approved
+          actionBtnHtml = `
+            <div class="flex gap-2 justify-center items-center">
+              <button onclick="openAllocationModal(${rowIdx}, 'SOLARIS')" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
+                Reallocate
+              </button>
+              <button onclick="sendCredentialsMail(this, ${rowIdx}, 'SOLARIS')" class="border border-accent/20 hover:bg-accent/10 px-2 py-1.5 rounded text-xs font-semibold text-accent-light transition-colors" title="Resend Credentials Pass">
+                Resend
+              </button>
+              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
+                ✕
+              </button>
+            </div>
+          `;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-white/[0.02] border-b border-white/5 transition-colors";
+        tr.innerHTML = `
+          <td class="p-4 font-mono text-xs text-white/40">${rowIdx}</td>
+          <td class="p-4 font-bold text-sm text-white">${name}</td>
+          <td class="p-4 text-xs text-white/60">${school}</td>
+          <td class="p-4">
+            <div class="text-xs text-white">${email}</div>
+            <div class="text-[10px] text-white/40 mt-0.5">${phone}</div>
+          </td>
+          <td class="p-4">
+            <span class="inline-block px-2 py-0.5 font-mono text-[9px] ${badgeClass} rounded tracking-wider uppercase font-bold">${badgeText}</span>
+          </td>
+          <td class="p-4 font-mono text-xs text-accent-light font-bold">${delId || '-'}</td>
+          <td class="p-4 text-xs">
+            ${comm ? `<div class="font-bold text-white">${comm}</div>` : ''}
+            ${country ? `<div class="text-[10px] text-white/50 mt-0.5 font-mono uppercase">${country}</div>` : (comm ? '' : '—')}
+          </td>
+          <td class="p-4 font-mono text-[10px] space-y-0.5">
+            <div>D1: <span class="${(d["Check-in Day 1"] === 'Checked In' || d["Check-in Day 1"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 1"] || "Absent"}</span></div>
+            <div>D2: <span class="${(d["Check-in Day 2"] === 'Checked In' || d["Check-in Day 2"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 2"] || "Absent"}</span></div>
+            <div>D3: <span class="${(d["Check-in Day 3"] === 'Checked In' || d["Check-in Day 3"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 3"] || "Absent"}</span></div>
+          </td>
+          <td class="p-4 text-center">
+            ${actionBtnHtml}
+          </td>
+        `;
+        solarisTableBody.appendChild(tr);
+      });
+    }
+
     // ==========================================
     // DELEGATE ALLOCATION MODAL CONTROLS
     // ==========================================
-    window.openAllocationModal = function(rowIndex) {
-      const delegate = cachedData.delegates.find(d => d.rowIndex === rowIndex);
+    let currentModalTargetSheet = "DELEGATE";
+
+    window.openAllocationModal = function(rowIndex, targetSheet = "DELEGATE") {
+      currentModalTargetSheet = targetSheet;
+      const list = targetSheet === "SOLARIS" ? cachedData.solaris : cachedData.delegates;
+      const delegate = list.find(d => d.rowIndex === rowIndex);
       if (!delegate) return;
 
       document.getElementById('mDelRowIndex').value = rowIndex;
@@ -865,6 +1049,9 @@
 
       // Set allocated defaults to preference 1
       let preselectedCommittee = delegate["Allocation Committee"] || delegate["Preference 1 Committee"] || "";
+      if (targetSheet === "SOLARIS" && !preselectedCommittee) {
+        preselectedCommittee = "VANGA VERSE";
+      }
       if (preselectedCommittee === "LOKSABHA") {
         preselectedCommittee = "LOK SABHA";
       }
@@ -915,7 +1102,8 @@
                 rowIndex: rowIndex,
                 allocationCommittee: committee,
                 allocationCountry: country,
-                notes: notes
+                notes: notes,
+                targetSheet: currentModalTargetSheet
               })
             });
             if (!response.ok) throw new Error("Request failed.");
@@ -946,7 +1134,8 @@
               rowIndex: rowIndex,
               allocationCommittee: committee,
               allocationCountry: country,
-              notes: notes
+              notes: notes,
+              targetSheet: currentModalTargetSheet
             })
           });
 
@@ -964,7 +1153,8 @@
               body: JSON.stringify({
                 action: 'ADMIN_SEND_CREDENTIALS',
                 admin_key: ADMIN_KEY,
-                rowIndex: rowIndex
+                rowIndex: rowIndex,
+                targetSheet: currentModalTargetSheet
               })
             });
 
@@ -990,7 +1180,7 @@
       }
     };
 
-    window.verifyPayment = async function(btn, rowIndex) {
+    window.verifyPayment = async function(btn, rowIndex, targetSheet = "DELEGATE") {
       if (!confirm("Are you sure you want to verify the payment for this delegate? This will approve their registration and generate their credentials.")) return;
       const origText = btn.innerHTML;
       btn.disabled = true;
@@ -1003,7 +1193,8 @@
           body: JSON.stringify({
             action: 'ADMIN_VERIFY_PAYMENT',
             admin_key: ADMIN_KEY,
-            rowIndex: rowIndex
+            rowIndex: rowIndex,
+            targetSheet: targetSheet
           })
         });
 
@@ -1025,7 +1216,7 @@
       }
     };
 
-    window.sendCredentialsMail = async function(btn, rowIndex) {
+    window.sendCredentialsMail = async function(btn, rowIndex, targetSheet = "DELEGATE") {
       if (!confirm("Are you sure you want to dispatch the passcode credentials email to this delegate?")) return;
       const origText = btn.innerHTML;
       btn.disabled = true;
@@ -1038,7 +1229,8 @@
           body: JSON.stringify({
             action: 'ADMIN_SEND_CREDENTIALS',
             admin_key: ADMIN_KEY,
-            rowIndex: rowIndex
+            rowIndex: rowIndex,
+            targetSheet: targetSheet
           })
         });
 
@@ -1060,7 +1252,7 @@
       }
     };
 
-    window.deleteRegistration = async function(btn, rowIndex) {
+    window.deleteRegistration = async function(btn, rowIndex, targetSheet = "DELEGATE") {
       if (!confirm("WARNING: Are you sure you want to permanently delete this registration? This will remove the row from Google Sheets and cannot be undone.")) return;
       const origText = btn.innerHTML;
       btn.disabled = true;
@@ -1073,7 +1265,8 @@
           body: JSON.stringify({
             action: 'ADMIN_DELETE_DELEGATE',
             admin_key: ADMIN_KEY,
-            rowIndex: rowIndex
+            rowIndex: rowIndex,
+            targetSheet: targetSheet
           })
         });
 
@@ -1161,6 +1354,71 @@
       }
       
       filterDelegates();
+    }
+
+    window.filterSolaris = function() {
+      const query = document.getElementById('searchSolaris').value.trim().toLowerCase();
+      const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
+      let activeChipType = 'all';
+      
+      chips.forEach(c => {
+        const chipEl = document.getElementById('chipSol' + c);
+        if (chipEl && chipEl.classList.contains('active')) {
+          activeChipType = c.toLowerCase();
+        }
+      });
+
+      let list = cachedData.solaris || [];
+
+      // Filter by chip status
+      if (activeChipType === 'pending') {
+        list = list.filter(d => String(d["Payment Verified"]).trim() !== "Verified");
+      } else if (activeChipType === 'verified') {
+        list = list.filter(d => String(d["Payment Verified"]).trim() === "Verified");
+      } else if (activeChipType === 'unallocated') {
+        list = list.filter(d => !String(d["Allocation Committee"] || "").trim() || !String(d["Allocation Country"] || "").trim());
+      }
+
+      // Filter by text search
+      if (query) {
+        list = list.filter(d => 
+          String(d["Full Name"] || "").toLowerCase().includes(query) ||
+          String(d["Email Address"] || "").toLowerCase().includes(query) ||
+          String(d["Phone Number"] || "").toLowerCase().includes(query) ||
+          String(d["School / Institution"] || "").toLowerCase().includes(query) ||
+          String(d["Delegate ID"] || "").toLowerCase().includes(query) ||
+          String(d["Transaction ID / UTR Number"] || "").toLowerCase().includes(query)
+        );
+      }
+
+      renderSolarisTable(list);
+    }
+
+    window.filterSolStatus = function(type) {
+      const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
+      chips.forEach(c => {
+        const btn = document.getElementById('chipSol' + c);
+        if (btn) {
+          btn.classList.remove('active');
+          btn.className = "px-3 py-1 font-mono text-xs rounded border border-white/10 text-white/60 hover:text-white";
+        }
+      });
+
+      const activeBtn = document.getElementById('chipSol' + type.charAt(0).toUpperCase() + type.slice(1));
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+        if (type === 'all') {
+          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active";
+        } else if (type === 'pending') {
+          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-semibold active";
+        } else if (type === 'verified') {
+          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-green-500/30 bg-green-500/10 text-green-500 font-semibold active";
+        } else if (type === 'unallocated') {
+          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-500 font-semibold active";
+        }
+      }
+      
+      filterSolaris();
     }
 
     // ==========================================
@@ -1312,7 +1570,10 @@
       lastScanTime = now;
       
       // Look up delegate locally
-      const delegate = cachedData.delegates.find(d => String(d["Delegate ID"]).trim().toLowerCase() === delegateId.toLowerCase());
+      let delegate = cachedData.delegates.find(d => String(d["Delegate ID"]).trim().toLowerCase() === delegateId.toLowerCase());
+      if (!delegate && cachedData.solaris) {
+        delegate = cachedData.solaris.find(d => String(d["Delegate ID"]).trim().toLowerCase() === delegateId.toLowerCase());
+      }
       
       if (delegate) {
         selectedScannedDelegate = delegate;
