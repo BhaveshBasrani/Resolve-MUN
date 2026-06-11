@@ -674,6 +674,10 @@ function handleDashboardActions(ss, data) {
 
                 return adminCheckinDelegate(ss, data);
 
+            case "ADMIN_BULK_ADD_SOLARIS":
+
+                return adminBulkAddSolaris(ss, data);
+
             default:
 
                 return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Invalid action." })).setMimeType(ContentService.MimeType.JSON);
@@ -1509,6 +1513,140 @@ function adminCheckinDelegate(ss, data) {
         day: day,
 
         checkinStatus: checkinStatus
+
+    })).setMimeType(ContentService.MimeType.JSON);
+
+}
+
+
+
+function adminBulkAddSolaris(ss, data) {
+
+    const list = data.delegates;
+
+    if (!Array.isArray(list) || list.length === 0) {
+
+        throw new Error("No delegates to import.");
+
+    }
+
+
+
+    const sheet = ss.getSheetByName(SHEET_NAMES.SOLARIS);
+
+    const currentMaxCols = sheet.getMaxColumns();
+
+    if (currentMaxCols < 35) {
+
+        sheet.insertColumnsAfter(currentMaxCols, 35 - currentMaxCols);
+
+    }
+
+
+
+    let addedCount = 0;
+
+
+
+    for (let i = 0; i < list.length; i++) {
+
+        const d = list[i];
+
+        
+
+        let delegateId = generateDelegateId(sheet, "SOL-DEL-");
+
+        let password = generatePassword();
+
+
+
+        sheet.appendRow([
+
+            new Date(),                 // 1. Timestamp
+
+            d.name || "",               // 2. Full Name
+
+            d.grade || "",              // 3. Grade / Class
+
+            d.phone || "",              // 4. Phone Number
+
+            d.email || "",              // 5. Email Address
+
+            d.dob || "",                // 6. DOB
+
+            d.institute || "",          // 7. School / Institution
+
+            "",                         // 8. Residential Address
+
+            "",                         // 9. Transport Requirement
+
+            d.experience || "",         // 10. Previous MUN Experience
+
+            "",                         // 11. Preference 1 Committee
+
+            "",                         // 12. Preference 1 Country
+
+            "",                         // 13. Preference 2 Committee
+
+            "",                         // 14. Preference 2 Country
+
+            "",                         // 15. Preference 3 Committee
+
+            "",                         // 16. Preference 3 Country
+
+            "UPI",                      // 17. Payment Method
+
+            "",                         // 18. Payment Amount
+
+            d.txn_id || "",             // 19. Transaction ID / UTR Number
+
+            "",                         // 20. Payment Screenshot Link
+
+            new Date().toLocaleDateString(), // 21. Payment Date
+
+            "Confirmed",                // 22. Application Status
+
+            delegateId,                 // 23. Delegate ID
+
+            "Vanga Verse",              // 24. Allocation Committee
+
+            "To Be Allocated",          // 25. Allocation Country
+
+            "Verified",                 // 26. Payment Verified
+
+            "Not Checked",              // 27. Check-in Status
+
+            d.emergency_name || "",     // 28. Emergency Contact Name
+
+            d.emergency_phone || "",    // 29. Emergency Contact Phone
+
+            "",                         // 30. Secretariat Notes
+
+            "Solaris Bulk Import",      // 31. Referral Source
+
+            password,                   // 32. Password
+
+            "Absent",                   // 33. Day 1 Check-in
+
+            "Absent",                   // 34. Day 2 Check-in
+
+            "Absent"                    // 35. Day 3 Check-in
+
+        ]);
+
+        
+
+        addedCount++;
+
+    }
+
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+
+        status: "success",
+
+        message: "Successfully imported " + addedCount + " Solaris delegates."
 
     })).setMimeType(ContentService.MimeType.JSON);
 
