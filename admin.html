@@ -275,22 +275,7 @@
 
       <!-- TAB 4: SOLARIS DELEGATES (VANGA VERSE) -->
       <section id="solarisTab" class="space-y-6" style="display: none;">
-        <!-- Bulk Import Card -->
-        <div class="glass p-6 rounded-lg">
-          <h2 class="font-display text-xl text-accent-light tracking-widest uppercase mb-3">// BULK IMPORT SOLARIS DELEGATES</h2>
-          <p class="text-xs text-white/50 mb-4">Paste raw delegate text list below. You can paste multiple delegates sequentially. Formats with Name:, Email:, Phone Number:, DOB:, Emergency Contact Name:, MUN Experience:, and Transaction ID: are automatically parsed.</p>
-          <div class="space-y-4">
-            <textarea id="bulkImportText" rows="6" placeholder="Name: Mallidi Lakshmi sravani&#10;Grade/Class: 11&#10;Phone Number: 8309752739&#10;Email: lakshmisravani071@gmail.com&#10;..." class="w-full px-4 py-3 rounded glass-input text-xs font-mono"></textarea>
-            <div class="flex gap-3">
-              <button onclick="parseAndPreviewBulk()" class="cyber-btn px-6 py-2 rounded text-xs font-bold">Preview Parse</button>
-              <button id="btnConfirmImport" onclick="confirmBulkImport()" class="cyber-btn px-6 py-2 rounded text-xs font-bold" style="border-color: #22c55e; background: rgba(34, 197, 94, 0.1); color: #4ade80; display: none;">Confirm Import (<span id="importCount">0</span>)</button>
-              <button onclick="clearBulkImport()" class="px-4 py-2 border border-white/10 text-white/70 hover:text-white rounded text-xs font-bold bg-white/5">Clear</button>
-            </div>
-            <div id="bulkPreviewArea" class="hidden bg-black/40 border border-white/5 p-4 rounded text-xs space-y-2 max-h-48 overflow-y-auto font-mono">
-              <!-- Preview content will be injected here -->
-            </div>
-          </div>
-        </div>
+
 
         <!-- Filters and Search -->
         <div class="glass p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -731,6 +716,26 @@
     // Stats calculations and table rendering
     function renderAllTables() {
       if (!cachedData) return;
+
+      // Normalize Solaris data to match standard delegate keys
+      if (cachedData.solaris) {
+        cachedData.solaris = cachedData.solaris.map(s => {
+          return {
+            ...s,
+            "Full Name": s["Name"] || "",
+            "Email Address": s["Email"] || "",
+            "Phone Number": s["Phone Number"] || "",
+            "School / Institution": s["Institute Name"] || "",
+            "Payment Verified": (String(s["Application Status"] || "").trim() !== "Pending" ? "Verified" : "Pending"),
+            "Allocation Committee": s["Committee"] || "",
+            "Allocation Country": s["Allocation"] || "",
+            "Transaction ID / UTR Number": s["Transaction ID"] || "",
+            "Day 1 Check-in": s["Check-in Day 1"] || "Absent",
+            "Day 2 Check-in": s["Check-in Day 2"] || "Absent",
+            "Day 3 Check-in": s["Check-in Day 3"] || "Absent"
+          };
+        });
+      }
 
       const delegates = cachedData.delegates || [];
       const waitlist = cachedData.waitlist || [];
@@ -1438,164 +1443,7 @@
       filterSolaris();
     }
 
-    // ==========================================
-    // SOLARIS BULK IMPORT LOGIC
-    // ==========================================
-    let parsedDelegatesList = [];
 
-    window.parseBulkText = function(text) {
-      const lines = text.split('\n');
-      const delegates = [];
-      let current = null;
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        if (line.match(/^Name\s*:/i)) {
-          if (current) {
-            delegates.push(current);
-          }
-          current = {
-            name: line.substring(line.indexOf(':') + 1).trim(),
-            grade: '',
-            phone: '',
-            email: '',
-            institute: '',
-            dob: '',
-            emergency_name: '',
-            emergency_phone: '',
-            experience: '',
-            txn_id: ''
-          };
-          continue;
-        }
-
-        if (!current) continue;
-
-        const colonIdx = line.indexOf(':');
-        if (line.match(/^Grade\/Class\s*:/i) || line.match(/^Grade\s*:/i)) {
-          current.grade = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^Phone Number\s*:/i) || line.match(/^Phone\s*:/i)) {
-          current.phone = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^Email\s*:/i)) {
-          current.email = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^Institute Name\s*:/i) || line.match(/^Institute\s*:/i)) {
-          current.institute = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^DOB\s*:/i)) {
-          current.dob = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^Emergency Contact Name\s*:/i) || line.match(/^Emergency Name\s*:/i)) {
-          current.emergency_name = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^Emergency Contact Phone Number\s*:/i) || line.match(/^Emergency Contact Phone\s*:/i) || line.match(/^Emergency Phone\s*:/i)) {
-          current.emergency_phone = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^MUN Experience/i)) {
-          current.experience = line.substring(colonIdx + 1).trim();
-        } else if (line.match(/^Transaction ID\s*:/i)) {
-          current.txn_id = line.substring(colonIdx + 1).trim();
-        } else {
-          // If we are currently parsing experience, append any other non-field lines to it
-          if (current.experience && colonIdx === -1) {
-            current.experience += " " + line;
-          }
-        }
-      }
-
-      if (current) {
-        delegates.push(current);
-      }
-
-      return delegates;
-    };
-
-    window.parseAndPreviewBulk = function() {
-      const text = document.getElementById('bulkImportText').value.trim();
-      if (!text) {
-        showAlert('Please paste some text first.');
-        return;
-      }
-
-      parsedDelegatesList = parseBulkText(text);
-
-      const previewArea = document.getElementById('bulkPreviewArea');
-      const confirmBtn = document.getElementById('btnConfirmImport');
-      const importCount = document.getElementById('importCount');
-
-      if (parsedDelegatesList.length === 0) {
-        previewArea.innerHTML = `<div class="text-red-500 font-bold">No delegates detected! Make sure you start with "Name: [Delegate Name]" for each entry.</div>`;
-        previewArea.classList.remove('hidden');
-        confirmBtn.style.display = 'none';
-        return;
-      }
-
-      let html = `<div class="text-green-500 font-bold mb-2">Detected ${parsedDelegatesList.length} delegates:</div>`;
-      parsedDelegatesList.forEach((d, idx) => {
-        html += `
-          <div class="border-b border-white/5 pb-2 mb-2">
-            <strong>#${idx + 1}: ${d.name || "(No Name)"}</strong><br>
-            <span class="text-white/40">Email:</span> ${d.email || "-"}<br>
-            <span class="text-white/40">Phone:</span> ${d.phone || "-"}<br>
-            <span class="text-white/40">Grade:</span> ${d.grade || "-"}<br>
-            <span class="text-white/40">Inst:</span> ${d.institute || "-"}<br>
-            <span class="text-white/40">DOB:</span> ${d.dob || "-"}<br>
-            <span class="text-white/40">Emergency Phone:</span> ${d.emergency_phone || "-"}<br>
-            <span class="text-white/40">Experience:</span> ${d.experience || "-"}<br>
-            <span class="text-white/40">Txn ID:</span> ${d.txn_id || "-"}
-          </div>
-        `;
-      });
-
-      previewArea.innerHTML = html;
-      previewArea.classList.remove('hidden');
-      
-      importCount.innerText = parsedDelegatesList.length;
-      confirmBtn.style.display = 'inline-block';
-    };
-
-    window.confirmBulkImport = async function() {
-      if (parsedDelegatesList.length === 0) return;
-      
-      const confirmBtn = document.getElementById('btnConfirmImport');
-      const origText = confirmBtn.innerHTML;
-      confirmBtn.disabled = true;
-      confirmBtn.innerHTML = 'IMPORTING...';
-
-      try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_BULK_ADD_SOLARIS',
-            admin_key: ADMIN_KEY,
-            delegates: parsedDelegatesList
-          })
-        });
-
-        if (!response.ok) throw new Error("Bulk import request failed.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          showAlert(result.message || `Successfully imported ${parsedDelegatesList.length} delegates!`, 'success');
-          clearBulkImport();
-          syncData();
-        } else {
-          showAlert(result.message || 'Error executing bulk import.');
-          confirmBtn.disabled = false;
-          confirmBtn.innerHTML = origText;
-        }
-      } catch (err) {
-        showAlert(err.message || 'Error processing bulk import.');
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = origText;
-      }
-    };
-
-    window.clearBulkImport = function() {
-      document.getElementById('bulkImportText').value = '';
-      document.getElementById('bulkPreviewArea').innerHTML = '';
-      document.getElementById('bulkPreviewArea').classList.add('hidden');
-      document.getElementById('btnConfirmImport').style.display = 'none';
-      parsedDelegatesList = [];
-    };
 
     // ==========================================
     // QR SCANNERS ATTENDANCE LOGIC
