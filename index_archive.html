@@ -1,712 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resolve MUN 2026 | Completed</title>
-  <meta name="description" content="Thank you for attending Resolve MUN 2026. Stay tuned for 2.0!">
-  <link rel="icon" type="image/webp" href="images/favicon.ico">
-  
-  <!-- Typography from Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-
-  <style>
-    /* Styling tokens */
-    :root {
-      --black: #050507;
-      --deep: #070712;
-      --purple: #330e5c;
-      --magenta: #5d2db2;
-      --gold: #510e92;
-      --gold-light: #7c3aed;
-      --white: #f5f5f7;
-      --muted: #86868b;
-      --glow-color: rgba(124, 58, 237, 0.45);
-      --gold-glow: rgba(81, 14, 146, 0.6);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      background: var(--black);
-      color: var(--white);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      overflow: hidden;
-      width: 100%;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      perspective: 1000px;
-    }
-
-    /* Custom Cursor styles - hidden by default, shown only on desktop */
-    .cursor-dot, .cursor-reticle {
-      display: none;
-    }
-
-    @media (pointer: fine) {
-      .cursor-dot {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 8px;
-        height: 8px;
-        background: var(--white);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 9999;
-        transform: translate(-50%, -50%);
-        will-change: transform;
-        mix-blend-mode: difference;
-        transition: width 0.2s, height 0.2s, background-color 0.2s;
-        display: block;
-      }
-
-      .cursor-reticle {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 40px;
-        height: 40px;
-        border: 1px solid var(--gold-light);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 9998;
-        transform: translate(-50%, -50%);
-        will-change: transform;
-        transition: width 0.3s cubic-bezier(0.19, 1, 0.22, 1), height 0.3s cubic-bezier(0.19, 1, 0.22, 1), border-color 0.3s;
-        display: block;
-      }
-
-      body, a, button {
-        cursor: none !important;
-      }
-    }
-
-    /* Holographic rotating circles inside reticle */
-    .cursor-reticle::before, .cursor-reticle::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      border-radius: 50%;
-      border: 1px dashed var(--gold-light);
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-
-    .cursor-reticle::before {
-      width: 120%;
-      height: 120%;
-      border-top-color: transparent;
-      border-bottom-color: transparent;
-      animation: rotateRing 4s linear infinite;
-    }
-
-    .cursor-reticle::after {
-      width: 80%;
-      height: 80%;
-      border-left-color: transparent;
-      border-right-color: transparent;
-      animation: rotateRing 2s linear infinite reverse;
-      opacity: 0.5;
-    }
-
-    @keyframes rotateRing {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-
-    /* Background Canvas */
-    #canvas-particles {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    /* Ambient animated background orbs */
-    .bg-orbs {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(140px);
-      opacity: 0.15;
-      will-change: transform;
-    }
-
-    .orb-1 {
-      top: -10%;
-      left: -10%;
-      width: 60vw;
-      height: 60vw;
-      background: var(--gold-light);
-      animation: floatOrb 20s infinite alternate ease-in-out;
-    }
-
-    .orb-2 {
-      bottom: -15%;
-      right: -10%;
-      width: 70vw;
-      height: 70vw;
-      background: var(--magenta);
-      animation: floatOrb 25s infinite alternate-reverse ease-in-out;
-    }
-
-    .orb-3 {
-      top: 35%;
-      left: 30%;
-      width: 45vw;
-      height: 45vw;
-      background: var(--purple);
-      animation: floatOrb 18s infinite alternate ease-in-out;
-      opacity: 0.1;
-    }
-
-    @keyframes floatOrb {
-      0% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(6vw, 8vh) scale(1.1); }
-      100% { transform: translate(-5vw, -6vh) scale(0.9); }
-    }
-
-    /* Holographic concentric rings in background */
-    .hologram-radar {
-      position: absolute;
-      z-index: 2;
-      width: min(700px, 90vw);
-      height: min(700px, 90vw);
-      pointer-events: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      opacity: 0.2;
-    }
-
-    .radar-ring {
-      position: absolute;
-      border: 1px solid rgba(124, 58, 237, 0.25);
-      border-radius: 50%;
-      box-shadow: 0 0 20px rgba(124, 58, 237, 0.05);
-    }
-
-    .ring-1 {
-      width: 100%;
-      height: 100%;
-      border-style: dashed;
-      animation: rotateRadar 60s linear infinite;
-    }
-
-    .ring-2 {
-      width: 75%;
-      height: 75%;
-      border-top-color: var(--gold-light);
-      animation: rotateRadar 40s linear infinite reverse;
-    }
-
-    .ring-3 {
-      width: 50%;
-      height: 50%;
-      border-style: dotted;
-      animation: rotateRadar 20s linear infinite;
-    }
-
-    @keyframes rotateRadar {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    /* Centered Glassmorphism Container */
-    .main-container {
-      position: relative;
-      z-index: 10;
-      width: 90%;
-      max-width: 680px;
-      transform-style: preserve-3d;
-      will-change: transform;
-    }
-
-    .glass-card {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.005) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 28px;
-      padding: 60px 45px;
-      backdrop-filter: blur(35px) saturate(180%);
-      -webkit-backdrop-filter: blur(35px) saturate(180%);
-      box-shadow: 
-        0 40px 100px rgba(0, 0, 0, 0.7),
-        0 0 60px rgba(124, 58, 237, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      transition: border-color 0.4s, box-shadow 0.4s;
-      transform: translateZ(30px);
-    }
-
-    .glass-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 28px;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent 40%, transparent 60%, rgba(124, 58, 237, 0.2));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-
-    .glass-card:hover {
-      border-color: rgba(124, 58, 237, 0.25);
-      box-shadow: 
-        0 50px 120px rgba(0, 0, 0, 0.8),
-        0 0 80px rgba(124, 58, 237, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    }
-
-    /* Logo Styling */
-    .logo-container {
-      margin-bottom: 35px;
-      transform: translateZ(50px);
-      animation: floatLogo 6s ease-in-out infinite;
-    }
-
-    .logo-img {
-      width: 140px;
-      height: 140px;
-      object-fit: contain;
-      filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.4));
-    }
-
-    @keyframes floatLogo {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-8px) rotate(2deg); }
-    }
-
-    /* Core Heading - Shutter Text Reveal */
-    .heading-wrapper {
-      overflow: hidden;
-      margin-bottom: 25px;
-      transform: translateZ(40px);
-    }
-
-    .heading-text {
-      font-family: 'Crimson Pro', Georgia, serif;
-      font-size: clamp(2.2rem, 4vw, 3.4rem);
-      font-weight: 700;
-      line-height: 1.15;
-      background: linear-gradient(135deg, #ffffff 20%, #e0c8ff 70%, #7c3aed 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      opacity: 0;
-      transform: translateY(100%);
-      animation: revealText 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-    }
-
-    @keyframes revealText {
-      0% { opacity: 0; transform: translateY(100%); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Staggered Subheading Text */
-    .subheading-wrapper {
-      overflow: hidden;
-      margin-bottom: 35px;
-      transform: translateZ(30px);
-    }
-
-    .subheading-text {
-      font-family: 'Oswald', sans-serif;
-      font-size: clamp(1rem, 2.5vw, 1.4rem);
-      font-weight: 400;
-      letter-spacing: 0.35em;
-      text-transform: uppercase;
-      color: rgba(245, 245, 247, 0.75);
-      text-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
-      opacity: 0;
-      transform: translateY(100%);
-      animation: revealText 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
-    }
-
-    /* Custom Pulsing Holographic Ring / Emblem */
-    .pulsar-wrapper {
-      position: relative;
-      width: 48px;
-      height: 48px;
-      margin-bottom: 10px;
-      transform: translateZ(20px);
-    }
-
-    .pulsar-core {
-      position: absolute;
-      inset: 12px;
-      background: var(--gold-light);
-      border-radius: 50%;
-      box-shadow: 0 0 15px var(--gold-light);
-    }
-
-    .pulsar-ring {
-      position: absolute;
-      inset: 0;
-      border: 1px solid var(--gold-light);
-      border-radius: 50%;
-      animation: pulsarWave 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-      opacity: 0;
-    }
-
-    .pulsar-ring:nth-child(2) {
-      animation-delay: 1s;
-    }
-
-    .pulsar-ring:nth-child(3) {
-      animation-delay: 2s;
-    }
-
-    @keyframes pulsarWave {
-      0% { transform: scale(0.5); opacity: 0; }
-      20% { opacity: 0.8; }
-      100% { transform: scale(2.2); opacity: 0; }
-    }
-
-    /* Social/Instagram Links to keep user connected */
-    .social-btn-container {
-      margin-top: 15px;
-      transform: translateZ(40px);
-      opacity: 0;
-      animation: fadeIn 1.5s ease-out 1.2s forwards;
-    }
-
-    .social-btn {
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.78rem;
-      font-weight: 500;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      text-decoration: none;
-      color: var(--muted);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 12px 28px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.01);
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .social-btn:hover {
-      color: var(--white);
-      background: rgba(124, 58, 237, 0.1);
-      border-color: var(--gold-light);
-      box-shadow: 0 5px 25px rgba(124, 58, 237, 0.3);
-      transform: translateY(-2px);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateZ(40px) translateY(10px); }
-      to { opacity: 1; transform: translateZ(40px) translateY(0); }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Dynamic particles canvas -->
-  <canvas id="canvas-particles"></canvas>
-
-  <!-- Ambient blur background -->
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-
-  <!-- Holographic radar background decoration -->
-  <div class="hologram-radar">
-    <div class="radar-ring ring-1"></div>
-    <div class="radar-ring ring-2"></div>
-    <div class="radar-ring ring-3"></div>
-  </div>
-
-  <!-- Main Card Container -->
-  <div class="main-container" id="tilt-container">
-    <div class="glass-card">
-      
-      <!-- Pulsing emblem -->
-      <div class="pulsar-wrapper">
-        <div class="pulsar-ring"></div>
-        <div class="pulsar-ring"></div>
-        <div class="pulsar-ring"></div>
-        <div class="pulsar-core"></div>
-      </div>
-
-      <!-- Floating Logo -->
-      <div class="logo-container">
-        <!-- Reusing preloaded local logo paths -->
-        <img src="images/Logo.png" alt="Resolve MUN Logo" class="logo-img" onerror="this.src='images/Logo.svg'">
-      </div>
-
-      <!-- Shutter reveal heading -->
-      <div class="heading-wrapper">
-        <h1 class="heading-text">Thanks for Attending Resolve MUN 2026</h1>
-      </div>
-
-      <!-- Staggered subheading -->
-      <div class="subheading-wrapper">
-        <p class="subheading-text">Stay Tuned for 2.0</p>
-      </div>
-
-      <!-- Connect button -->
-      <div class="social-btn-container">
-        <a href="https://www.instagram.com/mun.resolve/" target="_blank" class="social-btn" id="ig-link">
-          <span>Follow Us on Instagram</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-          </svg>
-        </a>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Custom HUD elements -->
-  <div class="cursor-dot" id="dot"></div>
-  <div class="cursor-reticle" id="reticle"></div>
-
-  <script>
-    // Custom Cursor tracking
-    const dot = document.getElementById('dot');
-    const reticle = document.getElementById('reticle');
-    const interactiveElements = document.querySelectorAll('a, button, #tilt-container');
-
-    // Initialize mouse coordinate far off-screen so particles don't repel from center on load
-    let mouseX = -1000;
-    let mouseY = -1000;
-    let dotX = window.innerWidth / 2;
-    let dotY = window.innerHeight / 2;
-    let reticleX = window.innerWidth / 2;
-    let reticleY = window.innerHeight / 2;
-
-    window.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
-
-    // Smooth cursor interpolation (only active when pointer is fine)
-    function animateCursor() {
-      // Dot is snappy
-      dotX += (mouseX - dotX) * 0.25;
-      dotY += (mouseY - dotY) * 0.25;
-      dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) translate(-50%, -50%)`;
-
-      // Reticle has lag/elastic feel
-      reticleX += (mouseX - reticleX) * 0.12;
-      reticleY += (mouseY - reticleY) * 0.12;
-      reticle.style.transform = `translate3d(${reticleX}px, ${reticleY}px, 0) translate(-50%, -50%)`;
-
-      requestAnimationFrame(animateCursor);
-    }
-    animateCursor();
-
-    // Hover locking states
-    interactiveElements.forEach(el => {
-      el.addEventListener('mouseenter', () => {
-        reticle.style.width = '65px';
-        reticle.style.height = '65px';
-        reticle.style.borderColor = '#ffffff';
-        dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) translate(-50%, -50%) scale(1.6)`;
-        dot.style.backgroundColor = '#7c3aed';
-      });
-
-      el.addEventListener('mouseleave', () => {
-        reticle.style.width = '40px';
-        reticle.style.height = '40px';
-        reticle.style.borderColor = 'rgba(124, 58, 237, 0.8)';
-        dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) translate(-50%, -50%) scale(1)`;
-        dot.style.backgroundColor = '#ffffff';
-      });
-    });
-
-    // 3D Tilt Effect - Caching bounds to prevent layout thrashing
-    const card = document.getElementById('tilt-container');
-    let bounds;
-    function updateBounds() {
-      if (card) {
-        bounds = card.getBoundingClientRect();
-      }
-    }
-    updateBounds();
-    window.addEventListener('resize', updateBounds);
-    window.addEventListener('scroll', updateBounds);
-
-    window.addEventListener('mousemove', (e) => {
-      if (!bounds) return;
-      const mouseXRaw = e.clientX;
-      const mouseYRaw = e.clientY;
-      const cardX = bounds.left + bounds.width / 2;
-      const cardY = bounds.top + bounds.height / 2;
-
-      // Calculate angles relative to center of the card
-      const deltaX = mouseXRaw - cardX;
-      const deltaY = mouseYRaw - cardY;
-
-      // Restrict tilt angle max to 10 deg
-      const rotateX = -(deltaY / (window.innerHeight / 2)) * 12;
-      const rotateY = (deltaX / (window.innerWidth / 2)) * 12;
-
-      card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    });
-
-    // Reset tilt on mouseleave
-    document.body.addEventListener('mouseleave', () => {
-      if (card) {
-        card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-      }
-    });
-
-    // HTML5 Canvas Fluid Particles with High-DPI support
-    const canvas = document.getElementById('canvas-particles');
-    const ctx = canvas.getContext('2d');
-
-    let particles = [];
-    const maxParticles = 90;
-
-    function resizeCanvas() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.scale(dpr, dpr);
-      updateBounds(); // Recalculate card bounds on resize
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    class Particle {
-      constructor() {
-        this.reset();
-      }
-
-      reset() {
-        this.x = Math.random() * window.innerWidth;
-        this.y = Math.random() * window.innerHeight;
-        this.size = Math.random() * 2.5 + 0.5;
-        this.speedX = Math.random() * 0.4 - 0.2;
-        this.speedY = Math.random() * 0.4 - 0.2;
-        this.alpha = Math.random() * 0.5 + 0.1;
-        this.color = Math.random() > 0.5 ? '#7c3aed' : '#510e92';
-        this.originalAlpha = this.alpha;
-      }
-
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-
-        // Wrap around boundaries (logical bounds)
-        if (this.x < 0 || this.x > window.innerWidth) this.speedX *= -1;
-        if (this.y < 0 || this.y > window.innerHeight) this.speedY *= -1;
-
-        // Interaction with cursor position (only if mouse is on-screen)
-        if (mouseX > -500) {
-          const dx = mouseX - this.x;
-          const dy = mouseY - this.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // Push particles away if cursor is close
-          const repulseRadius = 130;
-          if (distance < repulseRadius) {
-            const force = (repulseRadius - distance) / repulseRadius;
-            this.x -= (dx / distance) * force * 1.5;
-            this.y -= (dy / distance) * force * 1.5;
-            this.alpha = Math.min(0.9, this.alpha + 0.05);
-          } else {
-            if (this.alpha > this.originalAlpha) {
-              this.alpha -= 0.01;
-            }
-          }
-        }
-      }
-
-      draw() {
-        ctx.save();
-        ctx.globalAlpha = this.alpha;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    // Initialize particles
-    for (let i = 0; i < maxParticles; i++) {
-      particles.push(new Particle());
-    }
-
-    // Canvas animation loop
-    function animateParticles() {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      
-      particles.forEach(p => {
-        p.update();
-        p.draw();
-      });
-
-      requestAnimationFrame(animateParticles);
-    }
-    animateParticles();
-
-    // Mouse click explosion effect
-    window.addEventListener('click', (e) => {
-      for (let i = 0; i < 8; i++) {
-        const p = new Particle();
-        p.x = e.clientX;
-        p.y = e.clientY;
-        p.speedX = Math.random() * 4 - 2;
-        p.speedY = Math.random() * 4 - 2;
-        p.size = Math.random() * 3 + 1;
-        p.color = '#ffffff';
-        p.alpha = 1.0;
-        p.originalAlpha = 0.1;
-        particles.push(p);
-        
-        if (particles.length > maxParticles + 30) {
-          particles.shift();
-        }
-      }
-    });
-
-  </script>
-</body>
-</html>
-
-
-<!-- ORIGINAL_CODE_START
-<!DOCTYPE html>
-<html lang="en">
-<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title> Resolve MUN 2026 | Hyderabad's Premier Model United Nations | Top MUN in India </title>
@@ -727,19 +21,19 @@
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="Resolve MUN">
 
-<!--* Twitter --*>
+<!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://resolvemun.in/">
 <meta property="twitter:title" content="Resolve MUN 2026 | Hyderabad's Grandest Model United Nations">
 <meta property="twitter:description" content="Experience elite diplomacy at the biggest MUN in Hyderabad 2026! Join Resolve MUN for high-impact debate and networking this May.">
 <meta property="twitter:image" content="https://resolvemun.in/images/OG.jpg">
 
-<!--* Additional Meta for Flawless Sharing --*>
+<!-- Additional Meta for Flawless Sharing -->
 <meta name="apple-mobile-web-app-title" content="Resolve MUN">
 <meta name="application-name" content="Resolve MUN">
 <meta name="msapplication-TileColor" content="#330e5c">
 
-<!--* Local Business & Event SEO (Schema.org) --*>
+<!-- Local Business & Event SEO (Schema.org) -->
 <script type="application/ld+json">
 [
   {
@@ -809,12 +103,12 @@
   }
 ]
 </script>
-<!--* 
+<!-- 
   SETTINGS & TOGGLES
   Change 'isLive' to:
   true  - Reveal everything
   false - Hide applications, blur Illuminati/Secretariat/Cash Prize
---*>
+-->
 <script>
   window.isLive = false;
   window.RECAPTCHA_SITE_KEY = "6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH";
@@ -5150,7 +4444,7 @@
 </head>
 <body data-cursor="none">
 
-<!--* SUBMIT SPINNER (hidden by default) --*>
+<!-- SUBMIT SPINNER (hidden by default) -->
 <div id="submitSpinner" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;">
   <div style="text-align:center;color:#fff;">
     <div style="width:72px;height:72px;border-radius:50%;border:6px solid rgba(255,255,255,0.12);border-top-color:#7c3aed;animation:spin 1s linear infinite;margin:0 auto 12px;"></div>
@@ -5159,7 +4453,7 @@
 </div>
 
 
-<!--* CUSTOM ALERT CONTAINER --*>
+<!-- CUSTOM ALERT CONTAINER -->
 <div id="custom-alert-container"></div>
 <div id="loading-screen">
   <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2026 - Official Logo" class="loader-logo">
@@ -5169,8 +4463,8 @@
   <span class="loader-text">Initializing Diplomacy</span>
 </div>
 
-<!--* REGISTRATION MODAL --*>
-  <!--* SELECTION MODAL --*>
+<!-- REGISTRATION MODAL -->
+  <!-- SELECTION MODAL -->
   <div class="modal-overlay" id="selectionModal">
     <canvas class="modal-particles" id="selectionParticles"></canvas>
     <div class="modal-content">
@@ -5238,7 +4532,7 @@
     </div>
     
     <form id="regForm" novalidate>
-      <!--* STEP 1: PERSONAL DETAILS --*>
+      <!-- STEP 1: PERSONAL DETAILS -->
       <div class="form-step active" id="step1">
         <div class="form-group">
           <label for="regName">Full Name</label>
@@ -5314,14 +4608,14 @@
         </button>
       </div>
 
-      <!--* STEP 2: COMMITTEE PREFERENCE --*>
+      <!-- STEP 2: COMMITTEE PREFERENCE -->
       <div class="form-step" id="step2">
         <a href="javascript:void(0)" onclick="showCustomAlert('Country Matrix Coming Soon!', 'default')" class="btn-matrix">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           Country Matrices
         </a>
 
-        <!--* Preference 1 --*>
+        <!-- Preference 1 -->
         <div class="form-group">
           <label>Preference 1</label>
           <select id="pref1_committee" required onchange="updatePortfolioOptions(1)">
@@ -5346,7 +4640,7 @@
           </div>
         </div>
 
-        <!--* Preference 2 --*>
+        <!-- Preference 2 -->
         <div class="form-group">
           <label>Preference 2</label>
           <select id="pref2_committee" required onchange="updatePortfolioOptions(2)">
@@ -5371,7 +4665,7 @@
           </div>
         </div>
 
-        <!--* Preference 3 --*>
+        <!-- Preference 3 -->
         <div class="form-group">
           <label>Preference 3</label>
           <select id="pref3_committee" required onchange="updatePortfolioOptions(3)">
@@ -5402,7 +4696,7 @@
         </div>
       </div>
 
-      <!--* STEP 3: PAYMENT & SUBMISSION --*>
+      <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner">
           <h3 id="regFeeDisplay">Registration Fee: ₹2699</h3>
@@ -5467,7 +4761,7 @@
   </div>
 </div>
 
-<!--* COMMING SOON MODAL --*>
+<!-- COMMING SOON MODAL -->
 <div class="modal-overlay" id="commModal">
   <div class="modal-content comm-modal-content">
     <button class="modal-close" onclick="closeCommModal()">
@@ -5503,7 +4797,7 @@
   </div>
 </div>
 
-<!--* TERMS & CONDITIONS MODAL --*>
+<!-- TERMS & CONDITIONS MODAL -->
 <div class="modal-overlay" id="termsModal">
   <div class="modal-content terms-modal-content">
     <button class="modal-close" onclick="closeTermsModal()">
@@ -5611,7 +4905,7 @@
   <div class="cursor-dot" id="cursorDot"></div>
   <div class="cursor-reticle" id="cursorReticle"></div>
 
-<!--* NAV --*>
+<!-- NAV -->
 <nav id="navbar">
   <a href="#hero" class="nav-logo">
     <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2026 Logo - Hyderabad's Premier Model United Nations Conference" class="nav-logo-mark">
@@ -5643,7 +4937,7 @@
   </div>
 </div>
 
-<!--* HERO --*>
+<!-- HERO -->
 <section id="hero">
   <div class="hero-bg"></div>
   <div class="hero-grid"></div>
@@ -5684,7 +4978,7 @@
   </div>
 </section>
 
-<!--* COUNTDOWN --*>
+<!-- COUNTDOWN -->
 <div id="countdown">
   <span class="countdown-label">Conference Opens In</span>
   <div class="countdown-units-wrapper">
@@ -5710,7 +5004,7 @@
   </div>
 </div>
 
-<!--* ABOUT --*>
+<!-- ABOUT -->
 <section id="about">
 <div class="about-inner">
   <div class="about-visual reveal">
@@ -5762,7 +5056,7 @@
 </section>
 
 <div class="glow-line"></div>
-<!--* SECRETARY GENERAL'S LETTER --*>
+<!-- SECRETARY GENERAL'S LETTER -->
 <section id="letter" class="reveal">
   <div class="letter-bg-glow"></div>
   <div class="letter-inner">
@@ -5793,7 +5087,7 @@
 
 <div class="glow-line"></div>
 
-<!--* COMMITTEES --*>
+<!-- COMMITTEES -->
 <section id="committees" class="reveal" style="background: linear-gradient(0deg, rgba(7,6,22,0.6), rgba(7,6,22,0.2)), url('images/committees-bg.svg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
   <div class="section-label reveal">Committees</div>
   <h2 class="section-title reveal">THE ARENA OF<br>HIGH-LEVEL DEBATE</h2>
@@ -5847,7 +5141,7 @@
 
 <div class="glow-line"></div>
 
-<!--* VENUE --*>
+<!-- VENUE -->
 <section id="venue" class="reveal">
   <div class="section-label reveal">Venue</div>
   <h2 class="section-title reveal">A STAGE WORTHY<br>OF THE DEBATE</h2>
@@ -5874,7 +5168,7 @@
 
 <div class="glow-line"></div>
 
-<!--* SECRETARIAT --*>
+<!-- SECRETARIAT -->
 <section id="secretariat" class="reveal">
   <div class="sec-header reveal">
     <div class="section-label">Secretariat</div>
@@ -5884,7 +5178,7 @@
   
   <div class="sec-carousel-container">
     <div class="sec-track" id="secTrack">
-      <!--* Core Sec --*>
+      <!-- Core Sec -->
       <div class="sec-card sec-card--sg">
         <div class="sec-avatar">SK</div>
         <div class="sec-name">Siddhi Kothari</div>
@@ -5910,7 +5204,7 @@
         <div class="sec-name">Jayakrishna</div>
         <div class="sec-role">OC Head</div>
       </div>
-      <!--* Sec --*>
+      <!-- Sec -->
       <div class="sec-card">
         <div class="sec-avatar">MH</div>
         <div class="sec-name">Mahathi</div>
@@ -6017,7 +5311,7 @@
 
 <div class="glow-line"></div>
 
-<!--* SPONSORS --*>
+<!-- SPONSORS -->
 <section id="sponsors">
   <div class="sponsors-inner reveal" style="text-align: center;">
     <div class="section-label" style="justify-content: center; margin-bottom: 24px;">
@@ -6041,11 +5335,11 @@
 
 <div class="glow-line"></div>
 
-<!--* OC APPLICATIONS (CLOSED) --*>
+<!-- OC APPLICATIONS (CLOSED) -->
 <section id="oc-applications">
   <div class="oc-inner">
     <div class="oc-layout">
-      <!--* Left: Narrative --*>
+      <!-- Left: Narrative -->
       <div class="oc-text-content reveal">
         <div class="section-label">Organizing Committee</div>
         <h2 class="section-title">JOIN THE<br>ARCHITECTS</h2>
@@ -6059,7 +5353,7 @@
         </div>
       </div>
 
-      <!--* Right: Action Card --*>
+      <!-- Right: Action Card -->
       <div class="oc-card reveal reveal-delay-2">
         <div class="oc-card-glow"></div>
         <div class="oc-icon">
@@ -6078,11 +5372,11 @@
 
 <div class="glow-line glow-line--blue" style="margin: 80px 0;"></div>
 
-<!--* EB APPLICATIONS --*>
+<!-- EB APPLICATIONS -->
 <section id="eb-applications">
   <div class="eb-inner">
     <div class="eb-layout">
-      <!--* Left: Narrative --*>
+      <!-- Left: Narrative -->
       <div class="eb-text-content reveal">
         <div class="section-label">Executive Board</div>
         <h2 class="section-title">LEAD THE<br>DIALOGUE</h2>
@@ -6096,7 +5390,7 @@
         </div>
       </div>
 
-      <!--* Right: Action Card --*>
+      <!-- Right: Action Card -->
       <div class="eb-card reveal reveal-delay-2">
         <div class="eb-card-glow"></div>
         <div class="eb-icon">
@@ -6113,7 +5407,7 @@
 </section>
 
 
-  <!--* OC APPLICATION MODAL --*>
+  <!-- OC APPLICATION MODAL -->
   <div class="modal-overlay" id="ocModal">
     <canvas class="modal-particles" id="ocModalParticles"></canvas>
     <div class="modal-content">
@@ -6130,7 +5424,7 @@
       </div>
       
       <form id="ocRegForm">
-        <!--* STEP 1: PERSONAL & CORE DETAILS --*>
+        <!-- STEP 1: PERSONAL & CORE DETAILS -->
         <div class="form-step active" id="ocStep1">
           <div class="form-group">
             <label for="ocName">Full Name</label>
@@ -6186,7 +5480,7 @@
           </button>
         </div>
 
-        <!--* STEP 2: MOTIVATION & ATTRIBUTES --*>
+        <!-- STEP 2: MOTIVATION & ATTRIBUTES -->
         <div class="form-step" id="ocStep2">
           <div class="form-group">
             <label>Why do you want to be part of the Organizing Committee for Resolve MUN?</label>
@@ -6204,7 +5498,7 @@
           </div>
         </div>
 
-        <!--* STEP 3: PAYMENT --*>
+        <!-- STEP 3: PAYMENT -->
         <div class="form-step" id="ocStep3">
           <div class="payment-banner">
             <h3>Registration Fee: ₹1699</h3>
@@ -6263,7 +5557,7 @@
     </div>
   </div>
 
-  <!--* EB APPLICATION MODAL --*>
+  <!-- EB APPLICATION MODAL -->
   <div class="modal-overlay" id="ebModal">
     <canvas class="modal-particles" id="ebModalParticles"></canvas>
     <div class="modal-content">
@@ -6280,7 +5574,7 @@
       </div>
       
       <form id="ebRegForm">
-        <!--* STEP 1: PERSONAL DETAILS --*>
+        <!-- STEP 1: PERSONAL DETAILS -->
         <div class="form-step active" id="ebStep1">
           <div class="form-group">
             <label for="ebName">Full Name</label>
@@ -6320,7 +5614,7 @@
           </button>
         </div>
 
-        <!--* STEP 2: EXPERIENCE --*>
+        <!-- STEP 2: EXPERIENCE -->
         <div class="form-step" id="ebStep2">
           <div class="form-group">
             <label for="ebRole">Preferred Role</label>
@@ -6359,7 +5653,7 @@
           </div>
         </div>
 
-        <!--* STEP 3: PREFERENCES --*>
+        <!-- STEP 3: PREFERENCES -->
         <div class="form-step" id="ebStep3">
           <p style="font-size: 0.8rem; color: var(--gold); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Committee Preferences</p>
           
@@ -6407,7 +5701,7 @@
     </div>
   </div>
 
-  <!--* DELEGATION REGISTRATION MODAL --*>
+  <!-- DELEGATION REGISTRATION MODAL -->
   <div class="modal-overlay" id="delModal">
     <canvas class="modal-particles" id="delModalParticles"></canvas>
     <div class="modal-content" style="max-height: 90vh;">
@@ -6424,7 +5718,7 @@
       </div>
       
       <form id="delRegForm" novalidate>
-        <!--* STEP 1: INSTITUTION DETAILS --*>
+        <!-- STEP 1: INSTITUTION DETAILS -->
         <div class="form-step active" id="delStep1">
           <div class="form-group">
             <label for="delInstName">Name of Institution</label>
@@ -6458,14 +5752,14 @@
           </button>
         </div>
 
-        <!--* STEP 2: DELEGATE DETAILS --*>
+        <!-- STEP 2: DELEGATE DETAILS -->
         <div class="form-step" id="delStep2">
           <a href="javascript:void(0)" onclick="showCustomAlert('Country Matrix Coming Soon!', 'default')" class="btn-matrix" style="margin-bottom: 20px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             Country Matrices
           </a>
           <div id="delegateInputsContainer" style="max-height: 350px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px;">
-            <!--* Dynamic delegate fields will be injected here --*>
+            <!-- Dynamic delegate fields will be injected here -->
           </div>
 
           <div class="form-actions">
@@ -6474,7 +5768,7 @@
           </div>
         </div>
 
-        <!--* STEP 3: PAYMENT & CONFIRMATION --*>
+        <!-- STEP 3: PAYMENT & CONFIRMATION -->
         <div class="form-step" id="delStep3">
           <div class="payment-banner">
             <h3 id="delTotalPriceDisplay">Total Amount: ₹17,592</h3>
@@ -6539,7 +5833,7 @@
 
 <div class="glow-line"></div>
 
-<!--* CTA --*>
+<!-- CTA -->
 <section id="register">
   <div class="cta-inner">
     <p class="cta-eyebrow reveal visible">Limited Spots Available</p>
@@ -6554,7 +5848,7 @@
   </div>
 </section>
 
-<!--* FOOTER --*>
+<!-- FOOTER -->
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
@@ -6593,7 +5887,7 @@
       </ul>
     </div>
   </div>
-  <!--* SEO Hidden Geographic Signals --*>
+  <!-- SEO Hidden Geographic Signals -->
   <div style="display:none;">
     <p>Upcoming Model United Nations (MUN) in Hyderabad June 2026. Top MUN conferences in Telangana including Resolve MUN at Laurus The Universal School.</p>
     <p>Best school and college MUN in Hyderabad. International relations and diplomacy events in Hyderabad.</p>
@@ -6610,10 +5904,10 @@
   </div>
 </footer>
 
-<!--* RECAPTCHA CONFIGURATION
+<!-- RECAPTCHA CONFIGURATION
      Site Key:   YOUR_RECAPTCHA_SITE_KEY
      Secret Key: YOUR_RECAPTCHA_SECRET_KEY
---*>
+-->
 
   <script>
   // ==========================================
@@ -9402,5 +8696,3 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
 
 </body>
 </html>
-
-ORIGINAL_CODE_END -->

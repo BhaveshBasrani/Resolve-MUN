@@ -56,7 +56,20 @@ function doPost(e) {
 
         const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-
+        // BLOCK ALL REGISTRATION REQUESTS (Event Completed)
+        const blockTypes = [
+            "WAITLIST_ENTRY",
+            "DELEGATE_REGISTRATION",
+            "OC_APPLICATION",
+            "DELEGATION_APPLICATION",
+            "EB_APPLICATION"
+        ];
+        if (data.type && blockTypes.includes(data.type)) {
+            return ContentService.createTextOutput(JSON.stringify({
+                status: "error",
+                message: "Registrations for Resolve MUN 2026 are now closed. Thanks for attending! Stay tuned for 2.0."
+            })).setMimeType(ContentService.MimeType.JSON);
+        }
 
         // ROUTE DASHBOARD ACTIONS FIRST (bypass normal registration recaptcha)
 
