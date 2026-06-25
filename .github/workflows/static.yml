@@ -33,11 +33,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Build static site
+        run: |
+          mkdir -p _site/images _site/documents
+          cp index.html portal.html admin.html robots.txt sitemap.xml _site/
+          cp images/Logo.png images/Logo.svg images/favicon.ico _site/images/
+          cp documents/CCC-BG.pdf documents/DISEC-BG.pdf "documents/Lok Sabha.pdf" documents/Resolve_IP.pdf documents/UNCSW-BG.pdf documents/UNHRC-BG.pdf _site/documents/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          # Upload only the build directory
+          path: './_site'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
