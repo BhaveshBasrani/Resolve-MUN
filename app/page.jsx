@@ -115,6 +115,15 @@ export default function Home() {
 
     if (typeof window !== "undefined") {
       window.submitDelegateToFirebase = async (formData) => {
+        const isVerified = Boolean(
+          auth.currentUser &&
+          (auth.currentUser.emailVerified || localStorage.getItem("resolve_user_verified") === "true")
+        );
+        if (!isVerified) {
+          setAuthInitialMode("code");
+          setAuthOpen(true);
+          throw new Error("Email verification required. Please verify your email before submitting your application.");
+        }
         return await submitDelegateApplication(formData, currentUserRef.current);
       };
       window.submitDelegateToSupabase = window.submitDelegateToFirebase;
@@ -126,7 +135,16 @@ export default function Home() {
 
   const handleOpenSelection = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setAuthInitialMode("pathway");
+    const isVerified = Boolean(
+      auth.currentUser &&
+      (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
+    );
+
+    if (isVerified) {
+      setAuthInitialMode("pathway");
+    } else {
+      setAuthInitialMode("signup");
+    }
     setAuthOpen(true);
   };
 
@@ -199,7 +217,15 @@ export default function Home() {
 
       window.openSelectionModal = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        setAuthInitialMode("pathway");
+        const isVerified = Boolean(
+          auth.currentUser &&
+          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
+        );
+        if (isVerified) {
+          setAuthInitialMode("pathway");
+        } else {
+          setAuthInitialMode("signup");
+        }
         setAuthOpen(true);
       };
 
@@ -406,9 +432,15 @@ export default function Home() {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
         closeModalById("selectionModal");
 
-        // Auth Gate: Only logged in users can register
-        if (!auth.currentUser) {
+        // Auth & Verification Gate: Only verified users can proceed to forms
+        const isVerified = Boolean(
+          auth.currentUser &&
+          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
+        );
+
+        if (!isVerified) {
           window.pendingPathway = type;
+          setAuthInitialMode(auth.currentUser ? "code" : "signup");
           setAuthOpen(true);
           return;
         }
@@ -441,9 +473,14 @@ export default function Home() {
 
       window.openRegistration = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        // Auth Gate
-        if (!auth.currentUser) {
+        // Auth & Verification Gate
+        const isVerified = Boolean(
+          auth.currentUser &&
+          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
+        );
+        if (!isVerified) {
           window.pendingPathway = "delegate";
+          setAuthInitialMode(auth.currentUser ? "code" : "signup");
           setAuthOpen(true);
           return;
         }
@@ -482,9 +519,14 @@ export default function Home() {
 
       window.openDelRegistration = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        // Auth Gate
-        if (!auth.currentUser) {
+        // Auth & Verification Gate
+        const isVerified = Boolean(
+          auth.currentUser &&
+          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
+        );
+        if (!isVerified) {
           window.pendingPathway = "delegation";
+          setAuthInitialMode(auth.currentUser ? "code" : "signup");
           setAuthOpen(true);
           return;
         }
@@ -606,6 +648,63 @@ export default function Home() {
           window.showCustomAlert("UPI ID copied: " + upi, "success");
       };
 
+      window.generateDynamicQR = function (amountStr, imgElementId, upiTextElementId) {
+        let cleanAmount = "2199";
+        if (amountStr) {
+          cleanAmount = String(amountStr).replace(/[^0-9.]/g, "") || "2199";
+        }
+        const currentPayee = {
+          pa: "bhoomianilbasrani@okhdfcbank",
+          pn: "Bhoomi Basrani",
+        };
+        const upiText = document.getElementById(upiTextElementId);
+        if (upiText) upiText.innerText = currentPayee.pa;
+
+        const qrImage = document.getElementById(imgElementId);
+        if (!qrImage) return;
+
+        const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
+        qrImage.src = `https://quickchart.io/qr?size=320&text=${encodeURIComponent(upiString)}`;
+      };
+
+      // Live Screenshot preview handler
+      const attachFilePreview = (inputId, nameSpanId, previewId) => {
+        const input = document.getElementById(inputId);
+        const nameSpan = document.getElementById(nameSpanId);
+        const preview = document.getElementById(previewId);
+        if (!input || input.__previewAttached) return;
+        input.__previewAttached = true;
+        input.addEventListener("change", function () {
+          if (this.files && this.files[0]) {
+            const file = this.files[0];
+            if (nameSpan) {
+              nameSpan.textContent = file.name;
+              nameSpan.style.color = "#22c55e";
+            }
+            if (preview && file.type.startsWith("image/")) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const sizeKb = (file.size / 1024).toFixed(1);
+                preview.innerHTML = `
+                  <img src="${e.target.result}" alt="Proof" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
+                  <div style="flex: 1; min-width: 0;">
+                    <p style="margin: 0; font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #22c55e; font-weight: 600;">Payment Screenshot Attached (${sizeKb} KB) ✓</p>
+                  </div>
+                `;
+                preview.style.display = "flex";
+              };
+              reader.readAsDataURL(file);
+            }
+          }
+        });
+      };
+      setTimeout(() => {
+        attachFilePreview("regDriveLink", "regDriveFileName", "regScreenshotPreview");
+        attachFilePreview("delDriveLink", "delDriveFileName", "delScreenshotPreview");
+        attachFilePreview("ocDriveLink", "ocDriveFileName", "ocScreenshotPreview");
+      }, 500);
+
       window.closeSecModal = function () {
         closeModalById("secModal");
       };
@@ -650,6 +749,21 @@ export default function Home() {
 
       window.submitSecForm = async function (e) {
         if (e && e.preventDefault) e.preventDefault();
+        const isVerified = Boolean(
+          auth.currentUser &&
+          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
+        );
+        if (!isVerified) {
+          setAuthInitialMode(auth.currentUser ? "code" : "signup");
+          setAuthOpen(true);
+          if (window.showCustomAlert) {
+            window.showCustomAlert("Email verification required before applying for Secretariat.", "warning");
+          } else {
+            alert("Email verification required before applying for Secretariat.");
+          }
+          return;
+        }
+
         const btn = document.getElementById("secSubmitBtn");
         if (btn) {
           btn.disabled = true;

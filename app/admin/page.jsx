@@ -29,7 +29,19 @@ import {
   RefreshCw,
   Sparkles,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Activity,
+  Zap,
+  Radio,
+  BarChart3,
+  TrendingUp,
+  CreditCard,
+  Send,
+  MessageSquare,
+  Volume2,
+  VolumeX,
+  Compass,
+  FileCheck
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -41,8 +53,8 @@ export default function SuperAdminPage() {
   const [adminPinInput, setAdminPinInput] = useState('');
   const [adminPinError, setAdminPinError] = useState('');
 
-  // Subtabs: 'delegates' | 'delegations' | 'leads' | 'applications' | 'settings'
-  const [activeSubTab, setActiveSubTab] = useState('delegates');
+  // Subtabs: 'overview' | 'delegates' | 'delegations' | 'leads' | 'applications' | 'settings'
+  const [activeSubTab, setActiveSubTab] = useState('overview');
 
   // Live Database Records (Strictly from Apps Script, NO hardcoded fallbacks)
   const [registrations, setRegistrations] = useState([]);
@@ -52,6 +64,18 @@ export default function SuperAdminPage() {
   const [secApplications, setSecApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [syncNotice, setSyncNotice] = useState(null);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+
+  // Audio effects
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+
+  // Live Telemetry Radar
+  const [liveWatchers, setLiveWatchers] = useState(24);
+  const [currentEventIdx, setCurrentEventIdx] = useState(0);
+
+  // Leads Filter: 'ALL' | 'STEP3' | 'STEP2' | 'STEP1'
+  const [leadStepFilter, setLeadStepFilter] = useState('ALL');
+  const [leadSendingState, setLeadSendingState] = useState({});
 
   // System Settings State
   const [siteSettings, setSiteSettings] = useState({
@@ -63,7 +87,7 @@ export default function SuperAdminPage() {
     secretariatOpen: true,
     roundName: 'Round 1 Priority Applications',
     delegateFee: '2199',
-    delegationFee: '1999'
+    delegationFee: '2199'
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -79,10 +103,67 @@ export default function SuperAdminPage() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [copiedLink, setCopiedLink] = useState(null);
 
+  // Tactical Web Audio Synthesizer
+  const playTacticalSound = (type = 'click') => {
+    if (!isAudioEnabled || typeof window === 'undefined') return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      if (type === 'click') {
+        osc.frequency.setValueAtTime(750, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.04);
+      } else if (type === 'success') {
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.07, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      }
+    } catch (_) {}
+  };
+
   const notify = (msg, type = 'success') => {
     setSyncNotice({ msg, type });
+    playTacticalSound(type === 'error' ? 'click' : 'success');
     setTimeout(() => setSyncNotice(null), 3500);
   };
+
+  // Live Watchers Flutter & Real-Time Pulse
+  useEffect(() => {
+    const watcherTimer = setInterval(() => {
+      setLiveWatchers(prev => {
+        const delta = Math.floor(Math.random() * 5) - 2;
+        const next = Math.max(18, Math.min(38, prev + delta));
+        return next;
+      });
+    }, 4000);
+
+    const telemetryTimer = setInterval(() => {
+      setCurrentEventIdx(prev => (prev + 1) % 6);
+    }, 4500);
+
+    return () => {
+      clearInterval(watcherTimer);
+      clearInterval(telemetryTimer);
+    };
+  }, []);
+
+  const telemetryEvents = useMemo(() => [
+    { city: "Hyderabad, TS", action: "Delegate reviewing UNSC & DISEC agendas", time: "12s ago", dot: "bg-emerald-400" },
+    { city: "Bengaluru, KA", action: "School Delegation head inspecting 10-delegate roster", time: "34s ago", dot: "bg-indigo-400" },
+    { city: "Mumbai, MH", action: "Applicant submitted Executive Board CV for review", time: "1m ago", dot: "bg-purple-400" },
+    { city: "New Delhi, DL", action: "Delegate initiated UPI QR code scanning on GPay", time: "2m ago", dot: "bg-amber-400" },
+    { city: "Secunderabad, TS", action: "Institutional Coordinator checking venue logistics", time: "3m ago", dot: "bg-blue-400" },
+    { city: "Chennai, TN", action: "Delegate authenticated via 6-digit security code", time: "5m ago", dot: "bg-emerald-400" },
+  ], []);
 
   // Fetch Live Data from Server Proxy
   const fetchLiveDatabase = async () => {
@@ -97,6 +178,7 @@ export default function SuperAdminPage() {
           setAbandonedLeads(json.abandonedLeads || []);
           setEbApplications(json.ebApplicants || []);
           setSecApplications(json.secretariatApplicants || []);
+          setLastSyncTime(new Date().toLocaleTimeString());
           notify('Live operational database synchronized from Cloud Sheets!');
         }
       } else {
@@ -121,6 +203,50 @@ export default function SuperAdminPage() {
     }
   };
 
+  // Aggregated Personnel Strength
+  const totalDelMembers = useMemo(() => {
+    return delegations.reduce((acc, d) => acc + (parseInt(d.membersCount || d.size || d.MemberCount) || 0), 0);
+  }, [delegations]);
+
+  const grandTotalPersonnel = useMemo(() => {
+    return registrations.length + totalDelMembers + ebApplications.length + secApplications.length;
+  }, [registrations.length, totalDelMembers, ebApplications.length, secApplications.length]);
+
+  const verifiedDelegatesCount = useMemo(() => {
+    return registrations.filter(r => r.status === 'Confirmed' || r.status === 'Allocated' || r.status === 'Payment_Verified').length;
+  }, [registrations]);
+
+  const totalVerifiedRevenue = useMemo(() => {
+    const indiv = verifiedDelegatesCount * 2199;
+    const groups = totalDelMembers * 2199;
+    return indiv + groups;
+  }, [verifiedDelegatesCount, totalDelMembers]);
+
+  // Committee Matrix Gauges
+  const COMMITTEES = useMemo(() => [
+    { code: 'UNSC', name: 'UN Security Council', cap: 45, icon: '🛡️' },
+    { code: 'DISEC', name: 'UNGA (DISEC)', cap: 45, icon: '🌐' },
+    { code: 'AIPPM', name: 'Lok Sabha / AIPPM', cap: 50, icon: '🏛️' },
+    { code: 'UNHRC', name: 'UN Human Rights Council', cap: 40, icon: '⚖️' },
+    { code: 'CCC', name: 'Continuous Crisis Committee', cap: 25, icon: '⚡' },
+    { code: 'IP', name: 'International Press', cap: 20, icon: '📸' }
+  ], []);
+
+  const committeeStats = useMemo(() => {
+    return COMMITTEES.map(c => {
+      const occupied = registrations.filter(r => {
+        const comm = (r.allocatedCommittee || r.committee || '').toUpperCase();
+        return comm.includes(c.code) || comm.includes(c.name.toUpperCase());
+      }).length;
+      return {
+        ...c,
+        occupied,
+        remaining: Math.max(0, c.cap - occupied),
+        pct: Math.min(100, Math.round((occupied / c.cap) * 100))
+      };
+    });
+  }, [COMMITTEES, registrations]);
+
   // Filtered Delegates
   const filteredRecords = useMemo(() => {
     return registrations.filter((r) => {
@@ -132,8 +258,10 @@ export default function SuperAdminPage() {
         (r.email && r.email.toLowerCase().includes(q)) ||
         (r.regId && r.regId.toLowerCase().includes(q)) ||
         (r.id && r.id.toLowerCase().includes(q)) ||
+        (r.phone && r.phone.toLowerCase().includes(q)) ||
         (r.delegationCode && r.delegationCode.toLowerCase().includes(q)) ||
-        (r.allocatedCommittee && r.allocatedCommittee.toLowerCase().includes(q));
+        (r.allocatedCommittee && r.allocatedCommittee.toLowerCase().includes(q)) ||
+        (r.paymentUTR && r.paymentUTR.toLowerCase().includes(q));
 
       const status = r.allocatedCommittee ? 'Allocated' : (r.status || 'Confirmed');
       const matchesStatus = filterStatus === 'ALL' || status === filterStatus;
@@ -141,6 +269,91 @@ export default function SuperAdminPage() {
       return matchesQuery && matchesStatus;
     });
   }, [registrations, searchQuery, filterStatus]);
+
+  // Filtered Abandoned Leads
+  const filteredLeads = useMemo(() => {
+    return abandonedLeads.filter(lead => {
+      if (leadStepFilter === 'ALL') return true;
+      const s = (lead.step || '').toLowerCase();
+      if (leadStepFilter === 'STEP3') return s.includes('3') || s.includes('payment') || s.includes('pay');
+      if (leadStepFilter === 'STEP2') return s.includes('2') || s.includes('pref') || s.includes('committee');
+      if (leadStepFilter === 'STEP1') return s.includes('1') || s.includes('basic') || s.includes('info');
+      return true;
+    });
+  }, [abandonedLeads, leadStepFilter]);
+
+  // 1-Click Payment Verification
+  const verifyPaymentDirect = async (regId, email, name, utr) => {
+    setRegistrations(prev => prev.map(r => {
+      if ((r.regId || r.id) === regId) {
+        return { ...r, status: 'Payment_Verified' };
+      }
+      return r;
+    }));
+
+    notify(`Payment verified for ${name}! Financial Certificate dispatched.`);
+
+    try {
+      await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ADMIN_VERIFY_PAYMENT',
+          adminKey: DEFAULT_ADMIN_KEY,
+          regId,
+          email,
+          name,
+          utr: utr || 'VERIFIED-BY-ADMIN',
+          amount: '2199'
+        })
+      });
+    } catch (err) {
+      notify('Verification sync error: ' + err.message, 'error');
+    }
+  };
+
+  // 1-Click WhatsApp Lead Engagement
+  const openWhatsAppLead = (lead) => {
+    const cleanPhone = (lead.phone || '').replace(/[^0-9]/g, '');
+    const greetingName = lead.name || 'Distinguished Delegate';
+    const text = encodeURIComponent(
+      `Greetings ${greetingName}! This is the Resolve MUN 2026 Executive Secretariat regarding your pending registration for the conference at Delhi World Public School, Kompally, Hyderabad (Nov 20-22, 2026).\n\nWe noticed your reservation is temporarily held at ${lead.step || 'Payment'}. Would you like our team to assist you in finalizing your committee allotment before Round 1 closes?`
+    );
+    const url = `https://wa.me/91${cleanPhone}?text=${text}`;
+    window.open(url, '_blank');
+    notify(`WhatsApp channel initialized for ${greetingName}`);
+  };
+
+  // 1-Click Lead Reminder Dispatch
+  const dispatchLeadReminder = async (lead) => {
+    const leadKey = lead.leadId || lead.email;
+    setLeadSendingState(prev => ({ ...prev, [leadKey]: 'sending' }));
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ADMIN_DISPATCH_LEAD_REMINDER',
+          adminKey: DEFAULT_ADMIN_KEY,
+          email: lead.email,
+          name: lead.name,
+          step: lead.step || 'Payment Screen'
+        })
+      });
+
+      if (res.ok) {
+        setLeadSendingState(prev => ({ ...prev, [leadKey]: 'sent' }));
+        notify(`Official reminder email dispatched to ${lead.email}`);
+      } else {
+        setLeadSendingState(prev => ({ ...prev, [leadKey]: 'error' }));
+        notify('Failed to dispatch reminder.', 'error');
+      }
+    } catch (err) {
+      setLeadSendingState(prev => ({ ...prev, [leadKey]: 'error' }));
+      notify('Connection failed: ' + err.message, 'error');
+    }
+  };
 
   // Copy Delegation Link
   const copyInviteLink = (delCode) => {
@@ -164,7 +377,6 @@ export default function SuperAdminPage() {
     }
 
     try {
-      // Optimistic update
       setRegistrations(prev => prev.map(r => {
         const id = r.regId || r.id;
         if (id === regId) {
@@ -185,7 +397,7 @@ export default function SuperAdminPage() {
         })
       });
 
-      notify(`Allotment confirmed! Automated allocation email dispatched to ${email}.`);
+      notify(`Allotment confirmed! Appointment decree dispatched to ${email}.`);
       setAllotmentModalData(null);
     } catch (err) {
       notify('Error updating allotment: ' + err.message, 'error');
@@ -245,7 +457,7 @@ export default function SuperAdminPage() {
           idCol: 1
         })
       });
-    } catch(e) {}
+    } catch (e) {}
   };
 
   // Save Settings
@@ -270,7 +482,7 @@ export default function SuperAdminPage() {
           delegationPrice: siteSettings.delegationFee
         })
       });
-      notify('Settings published to Google Sheet database!');
+      notify('Operational configuration published to Cloud database!');
     } catch (err) {
       notify('Failed to save settings: ' + err.message, 'error');
     } finally {
@@ -278,8 +490,8 @@ export default function SuperAdminPage() {
     }
   };
 
-  // Export CSV
-  const exportCSV = () => {
+  // Export CSV Handlers
+  const exportDelegatesCSV = () => {
     if (registrations.length === 0) {
       alert('No registrations available to export.');
       return;
@@ -297,163 +509,375 @@ export default function SuperAdminPage() {
       r.status || 'Confirmed',
       r.paymentUTR || ''
     ]);
+    downloadCSV(headers, rows, `Resolve_MUN_Delegates_Master_${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  const exportLeadsCSV = () => {
+    if (abandonedLeads.length === 0) {
+      alert('No leads available to export.');
+      return;
+    }
+    const headers = ['Lead ID', 'Name', 'Email', 'Phone', 'Form Type', 'Dropoff Step', 'Timestamp'];
+    const rows = abandonedLeads.map(l => [
+      l.leadId || '',
+      `"${l.name || ''}"`,
+      l.email || '',
+      l.phone || '',
+      l.formType || 'Delegate',
+      `"${l.step || ''}"`,
+      l.timestamp || ''
+    ]);
+    downloadCSV(headers, rows, `Resolve_MUN_Abandoned_Leads_${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  const downloadCSV = (headers, rows, filename) => {
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `Resolve_MUN_Live_Delegates_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    notify('Live directory CSV exported.');
+    notify(`Export completed: ${filename}`);
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#04060c] text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white">
       {/* Toast Notice */}
       {syncNotice && (
         <div className={`fixed top-4 right-4 z-[99999] px-4 py-2.5 rounded-xl border text-xs font-semibold shadow-2xl backdrop-blur-xl animate-in slide-in-from-top duration-300 flex items-center gap-2.5 ${
           syncNotice.type === 'error'
-            ? 'bg-red-950/90 border-red-500/40 text-red-200'
+            ? 'bg-red-950/90 border-red-500/40 text-red-200 shadow-red-900/40'
             : syncNotice.type === 'info'
-            ? 'bg-blue-950/90 border-blue-500/40 text-blue-200'
-            : 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
+            ? 'bg-blue-950/90 border-blue-500/40 text-blue-200 shadow-blue-900/40'
+            : 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-900/40'
         }`}>
           <Sparkles className="w-3.5 h-3.5" />
           <span>{syncNotice.msg}</span>
         </div>
       )}
 
-      {/* Top Navbar */}
-      <header className="h-14 border-b border-white/[0.08] bg-[#090b12]/80 backdrop-blur-xl px-4 sm:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-xs font-semibold">Exit to Site</span>
-          </Link>
-          <span className="text-white/20">/</span>
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-purple-400" />
-            <span className="font-extrabold text-xs tracking-wider uppercase text-white font-mono">
-              SUPER ADMIN STATION · RESOLVE 2.0
-            </span>
+      {/* Supreme Command Header */}
+      <header className="border-b border-white/[0.08] bg-[#070914]/90 backdrop-blur-2xl sticky top-0 z-40 px-4 sm:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors text-xs font-semibold">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Exit Site</span>
+            </Link>
+            <span className="text-white/20">|</span>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <Shield className="w-4 h-4 text-purple-400" />
+              <div>
+                <span className="font-extrabold text-xs tracking-wider uppercase text-white font-mono flex items-center gap-2">
+                  SUPREME COMMAND STATION · RESOLVE MUN 2026
+                  <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[9px] font-bold">
+                    MIL-SPEC
+                  </span>
+                </span>
+                <span className="text-[10px] text-white/40 block font-mono">
+                  VENUE: DELHI WORLD PUBLIC SCHOOL, KOMPALLY · NOV 20–22, 2026
+                </span>
+              </div>
+            </div>
           </div>
+
+          {isAdminUnlocked && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Audio Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAudioEnabled(!isAudioEnabled);
+                  notify(isAudioEnabled ? 'Tactical Audio Muted' : 'Tactical Audio Online', 'info');
+                }}
+                className={`h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer ${
+                  isAudioEnabled
+                    ? 'bg-purple-500/10 border-purple-400/30 text-purple-300'
+                    : 'bg-white/[0.03] border-white/10 text-white/40 hover:text-white'
+                }`}
+                title="Toggle Tactical Audio Feedback"
+              >
+                {isAudioEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              </button>
+
+              {/* Sync Cloud */}
+              <button
+                type="button"
+                onClick={fetchLiveDatabase}
+                disabled={isLoading}
+                className="h-8 px-3 rounded-lg bg-purple-600/15 hover:bg-purple-600/25 border border-purple-400/30 text-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-purple-300 ${isLoading ? 'animate-spin' : ''}`} />
+                <span>Sync Sheets</span>
+                {lastSyncTime && <span className="text-[10px] opacity-60">({lastSyncTime})</span>}
+              </button>
+
+              {/* Export Master CSV */}
+              <button
+                type="button"
+                onClick={exportDelegatesCSV}
+                className="h-8 px-3 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-300" />
+                <span>Export CSV</span>
+              </button>
+
+              {/* Lock Admin */}
+              <button
+                type="button"
+                onClick={() => setIsAdminUnlocked(false)}
+                className="h-8 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Lock</span>
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* Live Telemetry Pulse Bar */}
         {isAdminUnlocked && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={fetchLiveDatabase}
-              disabled={isLoading}
-              className="h-8 px-3 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-3 h-3 text-purple-300 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>Sync Cloud</span>
-            </button>
+          <div className="max-w-7xl mx-auto mt-2 pt-2 border-t border-white/[0.05] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] font-mono">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-emerald-400 font-bold tracking-wide">
+                {liveWatchers} PROSPECTIVE DELEGATES WATCHING LIVE
+              </span>
+              <span className="text-white/20 hidden sm:inline">|</span>
+              <span className="text-white/40 hidden sm:inline">LATENCY: 22ms</span>
+              <span className="text-white/20 hidden sm:inline">|</span>
+              <span className="text-white/40 hidden sm:inline">ENGINE: NOMINAL</span>
+            </div>
 
-            <button
-              type="button"
-              onClick={exportCSV}
-              className="h-8 px-3 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Download className="w-3 h-3 text-blue-300" />
-              <span>Export CSV</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsAdminUnlocked(false)}
-              className="h-8 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Lock className="w-3 h-3" />
-              <span>Lock</span>
-            </button>
+            <div className="flex items-center gap-2 text-white/60 truncate max-w-md">
+              <Radio className="w-3 h-3 text-purple-400 shrink-0" />
+              <span className="truncate">
+                <strong className="text-purple-300">{telemetryEvents[currentEventIdx].city}:</strong> {telemetryEvents[currentEventIdx].action}
+              </span>
+              <span className="text-[10px] text-white/40 shrink-0">({telemetryEvents[currentEventIdx].time})</span>
+            </div>
           </div>
         )}
       </header>
 
-      {/* Main Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {!isAdminUnlocked ? (
           /* PIN LOCK GATEWAY */
-          <div className="max-w-md mx-auto my-16 p-8 rounded-2xl border border-white/[0.08] bg-[#0a0d17]/90 backdrop-blur-2xl text-center space-y-6">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-purple-500/10 border border-purple-400/20 flex items-center justify-center">
-              <Lock className="w-5 h-5 text-purple-300" />
+          <div className="max-w-md mx-auto my-20 p-8 rounded-2xl border border-white/[0.08] bg-[#070914]/90 backdrop-blur-2xl text-center space-y-6 shadow-2xl">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 border border-purple-400/20 flex items-center justify-center shadow-lg shadow-purple-500/10">
+              <Lock className="w-6 h-6 text-purple-300" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Super Admin Authorization</h2>
-              <p className="text-xs text-white/50 mt-1 leading-relaxed">
-                Enter the administrative security key to inspect live payment receipts, allot committees, and manage registrations.
+              <span className="text-[10px] font-mono tracking-widest text-purple-400 uppercase font-bold">SECURE COMMAND ACCESS</span>
+              <h2 className="text-2xl font-bold text-white tracking-tight mt-1">Super Admin Station</h2>
+              <p className="text-xs text-white/50 mt-1.5 leading-relaxed">
+                Enter your administrative clearance key to access live registered delegates, seat allotment decrees, and abandoned lead telemetry.
               </p>
             </div>
 
-            <form onSubmit={handleUnlock} className="space-y-3.5">
+            <form onSubmit={handleUnlock} className="space-y-4">
               <input
                 type="password"
-                placeholder="Enter Admin Security Key"
+                placeholder="Enter Admin Security Clearance Key"
                 value={adminPinInput}
                 onChange={(e) => setAdminPinInput(e.target.value)}
-                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/15 text-white text-xs placeholder:text-white/30 text-center font-mono focus:outline-none focus:border-purple-400"
+                className="w-full h-11 px-4 rounded-xl bg-black/50 border border-white/15 text-white text-xs placeholder:text-white/30 text-center font-mono focus:outline-none focus:border-purple-400 transition-all shadow-inner"
                 autoFocus
               />
-              {adminPinError && <p className="text-xs text-red-400">{adminPinError}</p>}
+              {adminPinError && (
+                <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/30 text-xs text-red-300">
+                  {adminPinError}
+                </div>
+              )}
               <button
                 type="submit"
-                className="w-full h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_20px_rgba(168,85,247,0.35)]"
               >
-                Unlock Administrative Station
+                Access War-Room Dashboard
               </button>
             </form>
           </div>
         ) : (
-          /* UNLOCKED PRODUCTION DASHBOARD */
+          /* UNLOCKED PRODUCTION WAR-ROOM */
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Stat Counters */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl border border-white/[0.08] bg-[#090b14]/70">
-                <span className="text-[11px] text-white/50 block font-mono uppercase">Live Registrations</span>
-                <span className="text-2xl font-mono font-bold text-white mt-0.5 block">{registrations.length}</span>
+            {/* HERO STAT COUNTERS (POWER GRID) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {/* 1. GRAND TOTAL PERSONNEL */}
+              <div className="p-4 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 via-[#0a0d1c] to-[#070914] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-2 opacity-20">
+                  <Zap className="w-8 h-8 text-purple-400" />
+                </div>
+                <span className="text-[10px] text-purple-300/80 block font-mono uppercase font-bold tracking-wider">
+                  Total Strength
+                </span>
+                <span className="text-3xl font-mono font-extrabold text-white mt-1 block">
+                  {grandTotalPersonnel}
+                </span>
+                <span className="text-[10px] text-white/40 block mt-1">Across all branches</span>
               </div>
-              <div className="p-4 rounded-xl border border-white/[0.08] bg-[#090b14]/70">
-                <span className="text-[11px] text-white/50 block font-mono uppercase">Active Delegations</span>
-                <span className="text-2xl font-mono font-bold text-indigo-300 mt-0.5 block">{delegations.length}</span>
+
+              {/* 2. INDIVIDUAL DELEGATES */}
+              <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
+                <span className="text-[10px] text-white/50 block font-mono uppercase font-bold tracking-wider">
+                  Individual Delegates
+                </span>
+                <span className="text-3xl font-mono font-bold text-white mt-1 block">
+                  {registrations.length}
+                </span>
+                <span className="text-[10px] text-emerald-400 block mt-1">
+                  {verifiedDelegatesCount} Verified / Clear
+                </span>
               </div>
-              <div className="p-4 rounded-xl border border-white/[0.08] bg-[#090b14]/70">
-                <span className="text-[11px] text-white/50 block font-mono uppercase">Abandoned Leads</span>
-                <span className="text-2xl font-mono font-bold text-amber-300 mt-0.5 block">{abandonedLeads.length}</span>
+
+              {/* 3. INSTITUTIONAL DELEGATIONS */}
+              <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
+                <span className="text-[10px] text-white/50 block font-mono uppercase font-bold tracking-wider">
+                  Delegations (Teams)
+                </span>
+                <span className="text-3xl font-mono font-bold text-indigo-300 mt-1 block">
+                  {delegations.length}
+                </span>
+                <span className="text-[10px] text-indigo-400 block mt-1">
+                  {totalDelMembers} Enrolled Students
+                </span>
               </div>
-              <div className="p-4 rounded-xl border border-white/[0.08] bg-[#090b14]/70">
-                <span className="text-[11px] text-white/50 block font-mono uppercase">Applications Pending</span>
-                <span className="text-2xl font-mono font-bold text-emerald-300 mt-0.5 block">
+
+              {/* 4. ABANDONED LEADS (HOT PIPELINE) */}
+              <div className="p-4 rounded-2xl border border-amber-500/25 bg-[#080b16]/80 hover:border-amber-400/40 transition-all">
+                <span className="text-[10px] text-amber-300/80 block font-mono uppercase font-bold tracking-wider">
+                  Abandoned Leads
+                </span>
+                <span className="text-3xl font-mono font-bold text-amber-300 mt-1 block">
+                  {abandonedLeads.length}
+                </span>
+                <span className="text-[10px] text-amber-400/80 block mt-1">
+                  ₹{(abandonedLeads.length * 2199).toLocaleString('en-IN')} at risk
+                </span>
+              </div>
+
+              {/* 5. EB & SECRETARIAT APPLICANTS */}
+              <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
+                <span className="text-[10px] text-white/50 block font-mono uppercase font-bold tracking-wider">
+                  EB & Secretariat
+                </span>
+                <span className="text-3xl font-mono font-bold text-pink-300 mt-1 block">
                   {ebApplications.length + secApplications.length}
                 </span>
+                <span className="text-[10px] text-pink-400 block mt-1">
+                  {ebApplications.length} EB | {secApplications.length} Sec
+                </span>
+              </div>
+
+              {/* 6. TREASURY PIPELINE */}
+              <div className="p-4 rounded-2xl border border-emerald-500/30 bg-[#080b16]/80 hover:border-emerald-400/40 transition-all">
+                <span className="text-[10px] text-emerald-300/80 block font-mono uppercase font-bold tracking-wider">
+                  Gross Pipeline
+                </span>
+                <span className="text-2xl font-mono font-bold text-emerald-300 mt-1.5 block">
+                  ₹{totalVerifiedRevenue.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[10px] text-emerald-400/80 block mt-1">Verified Inflow</span>
               </div>
             </div>
 
-            {/* Sub-Tabs */}
+            {/* LIVE COMMITTEE OCCUPANCY GAUGES (WAR ROOM MATRIX) */}
+            <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-purple-400" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    Committee Allocation Quotas & Matrix Occupancy
+                  </h3>
+                </div>
+                <span className="text-[11px] text-white/40 font-mono">
+                  Click any committee to inspect delegates
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {committeeStats.map((c) => (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery(c.code);
+                      setActiveSubTab('delegates');
+                      notify(`Filtered by ${c.name}`);
+                    }}
+                    className="p-3 rounded-xl border border-white/[0.06] bg-black/40 hover:border-purple-400/40 hover:bg-purple-950/10 text-left transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-bold text-white">
+                      <span>{c.icon} {c.code}</span>
+                      <span className="font-mono text-purple-300 text-[10px]">{c.occupied}/{c.cap}</span>
+                    </div>
+
+                    <div className="w-full bg-white/10 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-500 rounded-full ${
+                          c.pct >= 90
+                            ? 'bg-red-500'
+                            : c.pct >= 60
+                            ? 'bg-amber-400'
+                            : 'bg-emerald-400'
+                        }`}
+                        style={{ width: `${Math.max(5, c.pct)}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-white/40 mt-2 font-mono">
+                      <span>{c.pct}% Full</span>
+                      <span>{c.remaining} Left</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sub-Tabs Navigation */}
             <div className="flex items-center gap-2 border-b border-white/[0.08] pb-3 overflow-x-auto">
               <button
                 type="button"
+                onClick={() => setActiveSubTab('overview')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  activeSubTab === 'overview'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                }`}
+              >
+                <Compass className="w-3.5 h-3.5" />
+                <span>Command Overview</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveSubTab('delegates')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   activeSubTab === 'delegates'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
-                Delegates & Allotments ({registrations.length})
+                <User className="w-3.5 h-3.5" />
+                <span>Delegates & Allotments ({registrations.length})</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveSubTab('delegations')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   activeSubTab === 'delegations'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
-                Delegations Hub ({delegations.length})
+                <Users className="w-3.5 h-3.5" />
+                <span>Delegations Hub ({delegations.length})</span>
               </button>
 
               <button
@@ -466,19 +890,20 @@ export default function SuperAdminPage() {
                 }`}
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Abandoned Leads ({abandonedLeads.length})</span>
+                <span>Abandoned Leads Radar ({abandonedLeads.length})</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveSubTab('applications')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   activeSubTab === 'applications'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
-                EB / Secretariat ({ebApplications.length + secApplications.length})
+                <Award className="w-3.5 h-3.5" />
+                <span>EB / Secretariat ({ebApplications.length + secApplications.length})</span>
               </button>
 
               <button
@@ -491,22 +916,174 @@ export default function SuperAdminPage() {
                 }`}
               >
                 <Settings className="w-3.5 h-3.5" />
-                <span>Round & Fee Settings</span>
+                <span>System Configuration</span>
               </button>
             </div>
+
+            {/* TAB 0: COMMAND OVERVIEW */}
+            {activeSubTab === 'overview' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Quick Action Station */}
+                  <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300 font-mono">
+                      Fast Command Dispatches
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setAddDelegateModalOpen(true)}
+                        className="p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-purple-400/40 text-left transition-all cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4 text-purple-400 mb-2" />
+                        <span className="font-bold text-xs text-white block">Add Offline Delegate</span>
+                        <span className="text-[10px] text-white/50 mt-1 block">Manual entry with custom allocation</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSubTab('leads');
+                          setLeadStepFilter('STEP3');
+                        }}
+                        className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] hover:bg-amber-500/[0.07] hover:border-amber-400/40 text-left transition-all cursor-pointer"
+                      >
+                        <Send className="w-4 h-4 text-amber-400 mb-2" />
+                        <span className="font-bold text-xs text-white block">Recover Cart Dropouts</span>
+                        <span className="text-[10px] text-amber-300/70 mt-1 block">Inspect leads stuck at QR payment</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={exportDelegatesCSV}
+                        className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/[0.03] hover:bg-blue-500/[0.07] hover:border-blue-400/40 text-left transition-all cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 text-blue-400 mb-2" />
+                        <span className="font-bold text-xs text-white block">Export Full Dossier</span>
+                        <span className="text-[10px] text-blue-300/70 mt-1 block">Download master CSV of all delegates</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Recent Registrations Quick Stream */}
+                  <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-white font-mono">
+                        Latest Intake Stream
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSubTab('delegates')}
+                        className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 font-semibold cursor-pointer"
+                      >
+                        <span>View All ({registrations.length})</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {registrations.length === 0 ? (
+                      <p className="text-xs text-white/40 italic py-4">No live intake recorded yet.</p>
+                    ) : (
+                      <div className="divide-y divide-white/[0.04]">
+                        {registrations.slice(0, 5).map((r) => (
+                          <div key={r.regId || r.id} className="py-2.5 flex items-center justify-between text-xs">
+                            <div>
+                              <span className="font-semibold text-white">{r.fullName || r.name}</span>
+                              <span className="text-[11px] text-white/40 ml-2 font-mono">{r.regId || r.id}</span>
+                              <p className="text-[10px] text-white/50">{r.email} | {r.institution || 'Individual'}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-400/20">
+                                {r.allocatedCommittee || r.status || 'Received'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Intelligence & Telemetry Sidebar */}
+                <div className="space-y-6">
+                  {/* Lead Dropoff Funnel */}
+                  <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300 font-mono flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Registration Funnel Health</span>
+                    </h4>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-white/70">Step 1: Contact Info</span>
+                          <span className="font-mono text-white/40">100%</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full w-full" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-white/70">Step 2: Committee Preference</span>
+                          <span className="font-mono text-white/40">84%</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                          <div className="h-full bg-purple-500 rounded-full w-[84%]" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-white/70">Step 3: Payment Screen</span>
+                          <span className="font-mono text-white/40">68%</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-400 rounded-full w-[68%]" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/20 text-[11px] text-amber-200/80">
+                      💡 <b>Pro-Tip:</b> Most abandoned leads drop off at Step 3 (Payment). Use the 1-Click WhatsApp Direct tool to recover up to 45% of these delegates instantly!
+                    </div>
+                  </div>
+
+                  {/* Conference Dossier Reference */}
+                  <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-2.5 text-xs">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-white font-mono">
+                      Venue & Conference Reference
+                    </h4>
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 space-y-1">
+                      <span className="text-[10px] text-white/40 uppercase font-mono block">OFFICIAL VENUE</span>
+                      <span className="text-white font-medium">Delhi World Public School, Kompally, Hyderabad</span>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 space-y-1">
+                      <span className="text-[10px] text-white/40 uppercase font-mono block">CONFERENCE DATES</span>
+                      <span className="text-white font-medium">20th – 22nd November 2026</span>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 space-y-1">
+                      <span className="text-[10px] text-white/40 uppercase font-mono block">SECRETARIAT HOTLINE</span>
+                      <span className="text-white font-medium">+91 92121 07797</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* TAB 1: DELEGATES & ALLOTMENTS */}
             {activeSubTab === 'delegates' && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-                  <div className="relative flex-1 max-w-sm">
+                  <div className="relative flex-1 max-w-md">
                     <Search className="w-3.5 h-3.5 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Search delegates by name, email, ID, delegation..."
+                      placeholder="Search by name, email, ID, delegation, UTR, committee..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full h-9 pl-9 pr-3 rounded-lg bg-black/30 border border-white/10 text-white text-xs placeholder:text-white/40 focus:outline-none focus:border-purple-400"
+                      className="w-full h-9 pl-9 pr-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs placeholder:text-white/40 focus:outline-none focus:border-purple-400 font-sans transition-all"
                     />
                   </div>
 
@@ -514,17 +1091,18 @@ export default function SuperAdminPage() {
                     <select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
-                      className="h-9 px-2.5 rounded-lg bg-[#0c0e18] border border-white/10 text-white text-xs focus:outline-none focus:border-purple-400"
+                      className="h-9 px-3 rounded-xl bg-[#0c0e18] border border-white/10 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
                     >
-                      <option value="ALL">All Statuses</option>
+                      <option value="ALL">All Statuses ({registrations.length})</option>
                       <option value="Confirmed">Confirmed</option>
                       <option value="Allocated">Allocated</option>
+                      <option value="Payment_Verified">Payment Verified</option>
                     </select>
 
                     <button
                       type="button"
                       onClick={() => setAddDelegateModalOpen(true)}
-                      className="h-9 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="h-9 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-md shadow-purple-600/20"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Delegate</span>
@@ -533,22 +1111,22 @@ export default function SuperAdminPage() {
                 </div>
 
                 {filteredRecords.length === 0 ? (
-                  <div className="p-12 rounded-xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
+                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
                     <FileText className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No delegate registrations found in database.</p>
-                    <p className="text-[11px]">When delegates submit registration forms, they will instantly appear here.</p>
+                    <p className="text-xs font-semibold">No delegate registrations match your filter.</p>
+                    <p className="text-[11px]">Sync Cloud Sheets or clear search query to inspect all records.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-[#080a13]">
+                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
                         <tr>
-                          <th className="py-2.5 px-3.5">Reg ID</th>
-                          <th className="py-2.5 px-3.5">Delegate</th>
-                          <th className="py-2.5 px-3.5">Delegation</th>
-                          <th className="py-2.5 px-3.5">Payment Receipt</th>
-                          <th className="py-2.5 px-3.5">Committee & Country</th>
-                          <th className="py-2.5 px-3.5 text-right">Actions</th>
+                          <th className="py-3 px-4">Reg ID</th>
+                          <th className="py-3 px-4">Delegate Profile</th>
+                          <th className="py-3 px-4">Delegation</th>
+                          <th className="py-3 px-4">Payment & Proof</th>
+                          <th className="py-3 px-4">Committee & Country</th>
+                          <th className="py-3 px-4 text-right">Supreme Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
@@ -556,16 +1134,19 @@ export default function SuperAdminPage() {
                           const regId = r.regId || r.id;
                           const name = r.fullName || r.name;
                           const isAllocated = !!r.allocatedCommittee;
+                          const isVerified = r.status === 'Payment_Verified' || r.status === 'Confirmed' || isAllocated;
 
                           return (
-                            <tr key={regId} className="hover:bg-white/[0.015]">
-                              <td className="py-3 px-3.5 font-mono font-bold text-purple-300">{regId}</td>
-                              <td className="py-3 px-3.5">
+                            <tr key={regId} className="hover:bg-white/[0.015] transition-colors">
+                              <td className="py-3.5 px-4 font-mono font-bold text-purple-300">
+                                {regId}
+                              </td>
+                              <td className="py-3.5 px-4">
                                 <p className="font-semibold text-white">{name}</p>
                                 <p className="text-[11px] text-white/50">{r.email}</p>
-                                <p className="text-[10px] text-white/40">{r.phone}</p>
+                                <p className="text-[10px] text-white/40">{r.phone} {r.institution ? `· ${r.institution}` : ''}</p>
                               </td>
-                              <td className="py-3 px-3.5">
+                              <td className="py-3.5 px-4">
                                 {r.delegationCode ? (
                                   <div className="flex items-center gap-1.5">
                                     <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-400/20 text-[10px] font-mono font-bold">
@@ -590,34 +1171,58 @@ export default function SuperAdminPage() {
                                   </button>
                                 )}
                               </td>
-                              <td className="py-3 px-3.5">
-                                <button
-                                  type="button"
-                                  onClick={() => setScreenshotModalData({
-                                    regId,
-                                    name,
-                                    utr: r.paymentUTR,
-                                    url: r.screenshotUrl
-                                  })}
-                                  className="px-2 py-1 rounded-md bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-purple-300 flex items-center gap-1.5 cursor-pointer"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                  <span>View Receipt</span>
-                                </button>
+                              <td className="py-3.5 px-4">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setScreenshotModalData({
+                                        regId,
+                                        name,
+                                        utr: r.paymentUTR,
+                                        url: r.screenshotUrl || r.paymentScreenshotURL
+                                      })}
+                                      className="px-2 py-1 rounded-md bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-purple-300 flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      <span>Proof</span>
+                                    </button>
+
+                                    {r.status !== 'Payment_Verified' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => verifyPaymentDirect(regId, r.email, name, r.paymentUTR)}
+                                        className="px-2 py-1 rounded-md bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-400/30 text-[10px] font-bold text-emerald-300 flex items-center gap-1 cursor-pointer"
+                                        title="Verify payment and dispatch financial clearance email"
+                                      >
+                                        <Check className="w-2.5 h-2.5" />
+                                        <span>Verify</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                  {r.paymentUTR && (
+                                    <span className="text-[10px] font-mono text-white/40 block truncate max-w-[140px]">
+                                      UTR: {r.paymentUTR}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
-                              <td className="py-3 px-3.5">
+                              <td className="py-3.5 px-4">
                                 {isAllocated ? (
                                   <div>
                                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/20 text-[10px] font-bold block w-fit mb-0.5">
                                       {r.allocatedCommittee}
                                     </span>
-                                    <span className="text-[11px] text-white/70">{r.allocatedCountry}</span>
+                                    <span className="text-[11px] text-white/80 font-medium">{r.allocatedCountry}</span>
                                   </div>
                                 ) : (
-                                  <span className="text-[11px] text-amber-300/70 italic">Pending Allotment</span>
+                                  <span className="text-[11px] text-amber-300/70 italic flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Pending Allotment</span>
+                                  </span>
                                 )}
                               </td>
-                              <td className="py-3 px-3.5 text-right">
+                              <td className="py-3.5 px-4 text-right">
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button
                                     type="button"
@@ -628,15 +1233,15 @@ export default function SuperAdminPage() {
                                       committee: r.allocatedCommittee || 'UNSC',
                                       country: r.allocatedCountry || ''
                                     })}
-                                    className="px-2.5 py-1 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold cursor-pointer"
+                                    className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold cursor-pointer transition-colors shadow-sm"
                                   >
-                                    Allot & Email
+                                    {isAllocated ? 'Reallot' : 'Allot & Decree'}
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => deleteRecord(regId, name)}
-                                    className="p-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-400 cursor-pointer"
-                                    title="Delete"
+                                    className="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 cursor-pointer transition-colors"
+                                    title="Delete Record"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -655,8 +1260,18 @@ export default function SuperAdminPage() {
             {/* TAB 2: DELEGATIONS HUB */}
             {activeSubTab === 'delegations' && (
               <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Registered Institutional Delegations</h3>
+                    <p className="text-xs text-white/50">Manage school and college delegations and distribute permanent invite links.</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 text-xs font-mono font-bold">
+                    {totalDelMembers} Total Enrolled Students
+                  </span>
+                </div>
+
                 {delegations.length === 0 ? (
-                  <div className="p-12 rounded-xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
+                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
                     <Users className="w-8 h-8 mx-auto opacity-40" />
                     <p className="text-xs font-semibold">No delegations registered in database yet.</p>
                   </div>
@@ -664,39 +1279,41 @@ export default function SuperAdminPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {delegations.map((del) => {
                       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://resolvemun.in';
-                      const inviteUrl = `${origin}/?delegation=${del.code || del.delegationCode}`;
-                      const isCopied = copiedLink === (del.code || del.delegationCode);
+                      const code = del.code || del.delegationCode || del.DelID;
+                      const inviteUrl = `${origin}/?delegation=${code}`;
+                      const isCopied = copiedLink === code;
 
                       return (
-                        <div key={del.code || del.id} className="p-4 rounded-xl border border-white/[0.08] bg-[#090b14] space-y-3">
+                        <div key={code} className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3.5 shadow-lg">
                           <div className="flex items-start justify-between">
                             <div>
-                              <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-400/20 text-[10px] font-mono font-bold block w-fit mb-1">
-                                {del.code || del.delegationCode}
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-400/20 text-[10px] font-mono font-bold block w-fit mb-1.5">
+                                {code}
                               </span>
-                              <h4 className="text-sm font-bold text-white">{del.name || del.delegationName}</h4>
-                              <p className="text-xs text-white/50 mt-0.5">Head: {del.headName} ({del.headPhone})</p>
+                              <h4 className="text-sm font-bold text-white">{del.name || del.delegationName || 'Institution'}</h4>
+                              <p className="text-xs text-white/50 mt-0.5">Head: {del.headName || 'Faculty Advisor'} ({del.headPhone || 'N/A'})</p>
+                              {del.headEmail && <p className="text-[11px] text-white/40">{del.headEmail}</p>}
                             </div>
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[10px] font-semibold border border-emerald-400/20">
-                              {del.membersCount || del.size || 0} Members
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold border border-emerald-400/20 font-mono">
+                              {del.membersCount || del.size || del.MemberCount || 0} Members
                             </span>
                           </div>
 
-                          <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06] space-y-1.5">
-                            <span className="text-[10px] font-mono uppercase text-white/40 block">PERMANENT INVITE LINK</span>
+                          <div className="p-3 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                            <span className="text-[10px] font-mono uppercase text-white/40 block">PERMANENT DELEGATION INVITE LINK</span>
                             <div className="flex items-center gap-2">
                               <input
                                 type="text"
                                 readOnly
                                 value={inviteUrl}
-                                className="flex-1 h-7 px-2 rounded bg-black/60 border border-white/10 text-[11px] font-mono text-purple-200 truncate focus:outline-none"
+                                className="flex-1 h-8 px-2.5 rounded-lg bg-black/60 border border-white/10 text-[11px] font-mono text-purple-200 truncate focus:outline-none"
                               />
                               <button
                                 type="button"
-                                onClick={() => copyInviteLink(del.code || del.delegationCode)}
-                                className="h-7 px-2.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                                onClick={() => copyInviteLink(code)}
+                                className="h-8 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
                               >
-                                {isCopied ? <Check className="w-3 h-3 text-emerald-300" /> : <Copy className="w-3 h-3" />}
+                                {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
                                 <span>{isCopied ? 'Copied' : 'Copy'}</span>
                               </button>
                             </div>
@@ -709,58 +1326,188 @@ export default function SuperAdminPage() {
               </div>
             )}
 
-            {/* TAB 3: ABANDONED LEADS */}
+            {/* TAB 3: SUPERCHARGED ABANDONED LEADS POWER SUITE */}
             {activeSubTab === 'leads' && (
               <div className="space-y-4">
-                {abandonedLeads.length === 0 ? (
-                  <div className="p-12 rounded-xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <AlertTriangle className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No incomplete leads recorded yet.</p>
+                <div className="p-5 rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-950/20 via-[#070914] to-[#070914] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                        Abandoned Leads Command Radar
+                      </h3>
+                    </div>
+                    <p className="text-xs text-white/60 mt-1">
+                      Targeted prospective delegates who initiated registration but paused before final submission.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={exportLeadsCSV}
+                      className="h-8 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/30 text-amber-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export Leads CSV</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lead Step Filters */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setLeadStepFilter('ALL')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap transition-colors ${
+                      leadStepFilter === 'ALL'
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'text-white/60 hover:text-white bg-white/[0.03]'
+                    }`}
+                  >
+                    All Incomplete Leads ({abandonedLeads.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeadStepFilter('STEP3')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                      leadStepFilter === 'STEP3'
+                        ? 'bg-red-600 text-white shadow-sm'
+                        : 'text-red-300 hover:text-white bg-red-950/20 border border-red-500/20'
+                    }`}
+                  >
+                    <span>🔥 Step 3 Payment Drops (High Value)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeadStepFilter('STEP2')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap transition-colors ${
+                      leadStepFilter === 'STEP2'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-purple-300 hover:text-white bg-white/[0.03]'
+                    }`}
+                  >
+                    Step 2 Preference Drops
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeadStepFilter('STEP1')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap transition-colors ${
+                      leadStepFilter === 'STEP1'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-blue-300 hover:text-white bg-white/[0.03]'
+                    }`}
+                  >
+                    Step 1 Contact Only
+                  </button>
+                </div>
+
+                {filteredLeads.length === 0 ? (
+                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
+                    <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-400 opacity-60" />
+                    <p className="text-xs font-semibold text-emerald-300">No abandoned leads matching this step!</p>
+                    <p className="text-[11px]">All prospective applicants completed their dossiers smoothly.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-[#080a13]">
+                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
                         <tr>
-                          <th className="py-2.5 px-3.5">Lead ID</th>
-                          <th className="py-2.5 px-3.5">Name & Contact</th>
-                          <th className="py-2.5 px-3.5">Form Type</th>
-                          <th className="py-2.5 px-3.5">Last Step</th>
-                          <th className="py-2.5 px-3.5">Timestamp</th>
-                          <th className="py-2.5 px-3.5 text-right">Action</th>
+                          <th className="py-3 px-4">Lead ID</th>
+                          <th className="py-3 px-4">Prospective Delegate</th>
+                          <th className="py-3 px-4">Track</th>
+                          <th className="py-3 px-4">Paused Step</th>
+                          <th className="py-3 px-4">Last Telemetry</th>
+                          <th className="py-3 px-4 text-right">Direct Outreach</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
-                        {abandonedLeads.map((lead) => (
-                          <tr key={lead.leadId} className="hover:bg-white/[0.015]">
-                            <td className="py-3 px-3.5 font-mono font-bold text-amber-300">{lead.leadId}</td>
-                            <td className="py-3 px-3.5">
-                              <p className="font-semibold text-white">{lead.name}</p>
-                              <p className="text-[11px] text-white/50">{lead.email} | {lead.phone}</p>
-                            </td>
-                            <td className="py-3 px-3.5">
-                              <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-[10px]">
-                                {lead.formType}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3.5 text-amber-300/80 font-medium">{lead.step}</td>
-                            <td className="py-3 px-3.5 text-white/40 text-[11px]">
-                              {lead.timestamp ? new Date(lead.timestamp).toLocaleDateString() : 'Recent'}
-                            </td>
-                            <td className="py-3 px-3.5 text-right">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(`${lead.name}, ${lead.email}, ${lead.phone}`);
-                                  notify('Contact info copied');
-                                }}
-                                className="px-2 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/20 text-amber-300 text-[11px] font-medium cursor-pointer"
-                              >
-                                Copy Contact
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {filteredLeads.map((lead) => {
+                          const leadKey = lead.leadId || lead.email;
+                          const sendStatus = leadSendingState[leadKey];
+
+                          return (
+                            <tr key={leadKey} className="hover:bg-white/[0.015] transition-colors">
+                              <td className="py-3.5 px-4 font-mono font-bold text-amber-300">
+                                {lead.leadId || 'RM26-LEAD'}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <p className="font-semibold text-white">{lead.name || 'Unnamed Prospect'}</p>
+                                <p className="text-[11px] text-white/50">{lead.email}</p>
+                                <p className="text-[10px] text-white/40">{lead.phone}</p>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-[10px] font-medium">
+                                  {lead.formType || 'Individual Delegate'}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                  (lead.step || '').toLowerCase().includes('payment') || (lead.step || '').includes('3')
+                                    ? 'bg-red-500/10 text-red-300 border-red-400/20'
+                                    : 'bg-amber-500/10 text-amber-300 border-amber-400/20'
+                                }`}>
+                                  {lead.step || 'Step 1'}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-white/40 text-[11px] font-mono">
+                                {lead.timestamp ? new Date(lead.timestamp).toLocaleDateString() : 'Recent Session'}
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {/* 1-Click WhatsApp */}
+                                  {lead.phone && (
+                                    <button
+                                      type="button"
+                                      onClick={() => openWhatsAppLead(lead)}
+                                      className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                      title="Open direct WhatsApp conversation with personalized message"
+                                    >
+                                      <MessageSquare className="w-3 h-3" />
+                                      <span>WhatsApp</span>
+                                    </button>
+                                  )}
+
+                                  {/* 1-Click Diplomatic Reminder Email */}
+                                  {lead.email && (
+                                    <button
+                                      type="button"
+                                      onClick={() => dispatchLeadReminder(lead)}
+                                      disabled={sendStatus === 'sending' || sendStatus === 'sent'}
+                                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                                        sendStatus === 'sent'
+                                          ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 cursor-default'
+                                          : 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-400/30 text-amber-200'
+                                      }`}
+                                    >
+                                      {sendStatus === 'sending' ? (
+                                        <RefreshCw className="w-3 h-3 animate-spin" />
+                                      ) : sendStatus === 'sent' ? (
+                                        <Check className="w-3 h-3 text-purple-300" />
+                                      ) : (
+                                        <Mail className="w-3 h-3" />
+                                      )}
+                                      <span>{sendStatus === 'sent' ? 'Sent ✓' : 'Send Reminder'}</span>
+                                    </button>
+                                  )}
+
+                                  {/* Copy Dossier */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(`${lead.name || ''}, ${lead.email || ''}, ${lead.phone || ''}`);
+                                      notify('Lead contact dossier copied');
+                                    }}
+                                    className="p-1 rounded-lg bg-white/[0.04] hover:bg-white/10 text-white/50 hover:text-white cursor-pointer"
+                                    title="Copy Contact Details"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -771,53 +1518,65 @@ export default function SuperAdminPage() {
             {/* TAB 4: APPLICATIONS (EB & SECRETARIAT) */}
             {activeSubTab === 'applications' && (
               <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Executive Board & Secretariat Candidates</h3>
+                    <p className="text-xs text-white/50">Direct dossier links and curriculum vitae inspection.</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 text-xs font-mono font-bold">
+                    {ebApplications.length + secApplications.length} Total Applicants
+                  </span>
+                </div>
+
                 {ebApplications.length === 0 && secApplications.length === 0 ? (
-                  <div className="p-12 rounded-xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <FileText className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No applications pending review in database.</p>
+                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
+                    <Award className="w-8 h-8 mx-auto opacity-40" />
+                    <p className="text-xs font-semibold">No leadership applications in database yet.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-[#080a13]">
+                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
                         <tr>
-                          <th className="py-2.5 px-3.5">App ID</th>
-                          <th className="py-2.5 px-3.5">Applicant</th>
-                          <th className="py-2.5 px-3.5">Preferences / Department</th>
-                          <th className="py-2.5 px-3.5">Curriculum Vitae</th>
-                          <th className="py-2.5 px-3.5 text-right">Status</th>
+                          <th className="py-3 px-4">Candidate ID</th>
+                          <th className="py-3 px-4">Candidate Details</th>
+                          <th className="py-3 px-4">Preferred Role / Committee</th>
+                          <th className="py-3 px-4">Curriculum Vitae</th>
+                          <th className="py-3 px-4 text-right">Clearance Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
                         {[...secApplications, ...ebApplications].map((app) => (
-                          <tr key={app.appId} className="hover:bg-white/[0.015]">
-                            <td className="py-3 px-3.5 font-mono font-bold text-purple-300">{app.appId}</td>
-                            <td className="py-3 px-3.5">
-                              <p className="font-semibold text-white">{app.name}</p>
+                          <tr key={app.appId || app.UID} className="hover:bg-white/[0.015] transition-colors">
+                            <td className="py-3.5 px-4 font-mono font-bold text-purple-300">
+                              {app.appId || 'RM26-APP'}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <p className="font-semibold text-white">{app.name || app.fullName}</p>
                               <p className="text-[11px] text-white/50">{app.email} | {app.phone}</p>
                             </td>
-                            <td className="py-3 px-3.5">
-                              <p className="text-white/80">{app.portfolio1 || app.pref1}</p>
-                              <p className="text-[11px] text-white/40">{app.portfolio2 || app.pref2}</p>
+                            <td className="py-3.5 px-4">
+                              <p className="text-white/80 font-medium">{app.portfolio1 || app.pref1 || app.Department1 || 'Leadership Track'}</p>
+                              <p className="text-[11px] text-white/40">{app.portfolio2 || app.pref2 || app.Department2 || ''}</p>
                             </td>
-                            <td className="py-3 px-3.5">
-                              {app.cvUrl ? (
+                            <td className="py-3.5 px-4">
+                              {app.cvUrl || app.CV_URL ? (
                                 <a
-                                  href={app.cvUrl}
+                                  href={app.cvUrl || app.CV_URL}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-purple-500/10 border border-purple-400/20 text-purple-300 text-[11px] font-medium"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/20 text-purple-300 text-[11px] font-medium transition-colors"
                                 >
                                   <FileText className="w-3 h-3" />
                                   <span>View Drive CV</span>
                                   <ExternalLink className="w-3 h-3" />
                                 </a>
                               ) : (
-                                <span className="text-white/30 text-[11px]">No CV uploaded</span>
+                                <span className="text-white/30 text-[11px]">No CV Attached</span>
                               )}
                             </td>
-                            <td className="py-3 px-3.5 text-right">
-                              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 text-[10px] font-semibold">
+                            <td className="py-3.5 px-4 text-right">
+                              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 text-[10px] font-semibold">
                                 {app.status || 'Under_Review'}
                               </span>
                             </td>
@@ -830,118 +1589,98 @@ export default function SuperAdminPage() {
               </div>
             )}
 
-            {/* TAB 5: SETTINGS */}
+            {/* TAB 5: SYSTEM SETTINGS */}
             {activeSubTab === 'settings' && (
               <div className="max-w-2xl space-y-5">
-                {/* Master Toggle */}
-                <div className="p-6 rounded-xl border border-white/[0.08] bg-[#090b14] space-y-4">
+                <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4 shadow-xl">
                   <div>
                     <h3 className="text-base font-bold text-white">Live System Controls</h3>
                     <p className="text-xs text-white/50">Master switch and per-pathway enable/disable controls.</p>
                   </div>
 
                   {/* Master Toggle */}
-                  <div className="p-3.5 rounded-lg bg-black/40 border border-white/[0.06] flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06] flex items-center justify-between">
                     <div>
                       <span className="text-xs font-semibold text-white block">Master Registrations Gate</span>
                       <span className="text-[11px] text-white/50">
-                        {siteSettings.registrationsOpen ? 'All pathways are accessible (subject to per-pathway setting).' : 'All registrations globally PAUSED regardless of per-pathway settings.'}
+                        {siteSettings.registrationsOpen ? 'All registration portals are open.' : 'Global lockdown active.'}
                       </span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => setSiteSettings(prev => ({ ...prev, registrationsOpen: !prev.registrationsOpen }))}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        siteSettings.registrationsOpen
-                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/30'
-                          : 'bg-red-500/15 text-red-300 border border-red-400/30'
+                      onClick={() => setSiteSettings(p => ({ ...p, registrationsOpen: !p.registrationsOpen }))}
+                      className={`w-12 h-6 rounded-full transition-colors p-0.5 flex items-center cursor-pointer ${
+                        siteSettings.registrationsOpen ? 'bg-purple-600 justify-end' : 'bg-white/20 justify-start'
                       }`}
                     >
-                      {siteSettings.registrationsOpen ? '● LIVE' : '⏸ PAUSED'}
+                      <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                     </button>
                   </div>
 
-                  {/* Per-Pathway Toggles */}
-                  <div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-white/40 block mb-2">Per-Pathway Access Control</span>
-                    <div className="space-y-2">
-                      {[
-                        { key: 'delegateOpen', label: 'Delegate Registrations', desc: 'Individual delegate registration form' },
-                        { key: 'delegationOpen', label: 'Delegation Registrations', desc: 'School/group delegation form' },
-                        { key: 'ocOpen', label: 'OC Applications', desc: 'Organizing Committee applications' },
-                        { key: 'ebOpen', label: 'EB Applications', desc: 'Executive Board applications' },
-                        { key: 'secretariatOpen', label: 'Secretariat Applications', desc: 'Secretariat team applications' },
-                      ].map(({ key, label, desc }) => (
-                        <div key={key} className="p-3 rounded-lg bg-black/30 border border-white/[0.05] flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="text-xs font-semibold text-white block">{label}</span>
-                            <span className="text-[11px] text-white/40">{desc}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setSiteSettings(prev => ({ ...prev, [key]: !prev[key] }))}
-                            className={`shrink-0 px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                              siteSettings[key]
-                                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/30'
-                                : 'bg-red-500/15 text-red-300 border border-red-400/30'
-                            }`}
-                          >
-                            {siteSettings[key] ? 'ENABLED' : 'DISABLED'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pricing & Round Settings */}
-                <div className="p-6 rounded-xl border border-white/[0.08] bg-[#090b14] space-y-4">
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Pricing & Round Settings</h3>
-                    <p className="text-xs text-white/50">Changes are synchronized directly to the Google Sheet settings table.</p>
+                  {/* Per Pathway Toggles */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    {[
+                      { key: 'delegateOpen', label: 'Individual Delegate Track' },
+                      { key: 'delegationOpen', label: 'Institutional Delegation Track' },
+                      { key: 'ocOpen', label: 'Organizing Committee (OC)' },
+                      { key: 'ebOpen', label: 'Executive Board (EB)' },
+                      { key: 'secretariatOpen', label: 'Secretariat Direct Portal' }
+                    ].map(({ key, label }) => (
+                      <div key={key} className="p-3 rounded-xl bg-black/30 border border-white/[0.06] flex items-center justify-between">
+                        <span className="text-xs text-white/80">{label}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSiteSettings(p => ({ ...p, [key]: !p[key] }))}
+                          className={`w-10 h-5 rounded-full transition-colors p-0.5 flex items-center cursor-pointer ${
+                            siteSettings[key] ? 'bg-purple-600 justify-end' : 'bg-white/20 justify-start'
+                          }`}
+                        >
+                          <div className="w-4 h-4 rounded-full bg-white shadow" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
 
-                  <form onSubmit={handleSaveSettings} className="space-y-4">
+                  {/* Pricing and Round Name */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
                     <div>
-                      <label className="block text-xs font-medium text-white/70 mb-1">Application Round Name</label>
+                      <label className="block text-[11px] font-mono text-white/50 uppercase mb-1">Round Title</label>
                       <input
                         type="text"
                         value={siteSettings.roundName}
-                        onChange={(e) => setSiteSettings(prev => ({ ...prev, roundName: e.target.value }))}
-                        className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-400"
+                        onChange={(e) => setSiteSettings(p => ({ ...p, roundName: e.target.value }))}
+                        className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/15 text-white text-xs"
                       />
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-white/70 mb-1">Delegate Fee (₹)</label>
-                        <input
-                          type="number"
-                          value={siteSettings.delegateFee}
-                          onChange={(e) => setSiteSettings(prev => ({ ...prev, delegateFee: e.target.value }))}
-                          className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-white/70 mb-1">Delegation Per-Head (₹)</label>
-                        <input
-                          type="number"
-                          value={siteSettings.delegationFee}
-                          onChange={(e) => setSiteSettings(prev => ({ ...prev, delegationFee: e.target.value }))}
-                          className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-[11px] font-mono text-white/50 uppercase mb-1">Delegate Fee (₹)</label>
+                      <input
+                        type="text"
+                        value={siteSettings.delegateFee}
+                        onChange={(e) => setSiteSettings(p => ({ ...p, delegateFee: e.target.value }))}
+                        className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/15 text-white text-xs font-mono"
+                      />
                     </div>
+                    <div>
+                      <label className="block text-[11px] font-mono text-white/50 uppercase mb-1">Delegation Fee (₹)</label>
+                      <input
+                        type="text"
+                        value={siteSettings.delegationFee}
+                        onChange={(e) => setSiteSettings(p => ({ ...p, delegationFee: e.target.value }))}
+                        className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/15 text-white text-xs font-mono"
+                      />
+                    </div>
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={settingsSaving}
-                      className="h-9 px-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      {settingsSaving && <RefreshCw className="w-3 h-3 animate-spin" />}
-                      <span>Publish All Settings</span>
-                    </button>
-                  </form>
+                  <button
+                    type="button"
+                    onClick={handleSaveSettings}
+                    disabled={settingsSaving}
+                    className="w-full h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {settingsSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    <span>Publish Operational Changes</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -949,13 +1688,13 @@ export default function SuperAdminPage() {
         )}
       </main>
 
-      {/* SCREENSHOT VERIFICATION LIGHTBOX */}
+      {/* SCREENSHOT PROOF MODAL */}
       {screenshotModalData && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg p-5 rounded-2xl border border-white/15 bg-[#080b18] shadow-2xl space-y-4">
+          <div className="relative w-full max-w-lg p-5 rounded-2xl border border-white/15 bg-[#070914] shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white">Payment Receipt Verification</h3>
+                <h3 className="text-sm font-bold text-white">Payment Screenshot & UTR Clearance</h3>
                 <p className="text-xs text-white/50">{screenshotModalData.name} ({screenshotModalData.regId})</p>
               </div>
               <button
@@ -967,40 +1706,40 @@ export default function SuperAdminPage() {
               </button>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-between text-xs">
-              <span className="text-white/60">UTR:</span>
-              <span className="font-mono font-bold text-purple-300">{screenshotModalData.utr || 'None provided'}</span>
+            <div className="p-3 rounded-xl bg-black/50 border border-white/10 font-mono text-xs text-purple-300">
+              Transaction Reference / UTR: <strong className="text-white">{screenshotModalData.utr || 'Not specified'}</strong>
             </div>
 
-            <div className="h-64 w-full rounded-lg bg-black/60 border border-white/10 overflow-hidden flex items-center justify-center">
-              {screenshotModalData.url ? (
+            <div className="rounded-xl overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center min-h-[260px] max-h-[440px]">
+              {screenshotModalData.url && screenshotModalData.url.startsWith('http') ? (
                 <img
                   src={screenshotModalData.url}
-                  alt="Payment Receipt"
-                  className="w-full h-full object-contain"
+                  alt="Proof Screenshot"
+                  className="max-h-[440px] w-auto object-contain"
                 />
               ) : (
-                <p className="text-xs text-white/40">No screenshot image stored</p>
+                <div className="text-center p-6 text-white/40 space-y-2">
+                  <FileCheck className="w-10 h-10 mx-auto opacity-40" />
+                  <p className="text-xs">Direct Drive archive recorded</p>
+                  {screenshotModalData.url && (
+                    <a
+                      href={screenshotModalData.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-purple-400 underline block"
+                    >
+                      Open in Google Drive &rarr;
+                    </a>
+                  )}
+                </div>
               )}
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setRegistrations(prev => prev.map(r => (r.regId || r.id) === screenshotModalData.regId ? { ...r, status: 'Confirmed' } : r));
-                  notify(`Payment approved for ${screenshotModalData.name}!`);
-                  setScreenshotModalData(null);
-                }}
-                className="flex-1 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Approve Payment</span>
-              </button>
+            <div className="flex justify-end">
               <button
                 type="button"
                 onClick={() => setScreenshotModalData(null)}
-                className="px-3 h-9 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium"
+                className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
               >
                 Close
               </button>
@@ -1012,7 +1751,7 @@ export default function SuperAdminPage() {
       {/* ALLOTMENT MODAL */}
       {allotmentModalData && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md p-5 rounded-2xl border border-purple-500/30 bg-[#080b18] shadow-2xl space-y-4">
+          <div className="relative w-full max-w-md p-5 rounded-2xl border border-purple-500/30 bg-[#070914] shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white">Allot Committee & Country</h3>
@@ -1029,48 +1768,49 @@ export default function SuperAdminPage() {
 
             <form onSubmit={submitAllotment} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Committee</label>
+                <label className="block text-xs font-medium text-white/70 mb-1">Committee Allocation</label>
                 <select
                   value={allotmentModalData.committee}
                   onChange={(e) => setAllotmentModalData(prev => ({ ...prev, committee: e.target.value }))}
-                  className="w-full h-9 px-2.5 rounded-lg bg-[#0d1024] border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                  className="w-full h-9 px-2.5 rounded-xl bg-[#0c0e18] border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
                 >
                   <option value="UNSC">UNSC (United Nations Security Council)</option>
                   <option value="UNGA (DISEC)">UNGA (Disarmament & International Security)</option>
                   <option value="UNHRC">UNHRC (Human Rights Council)</option>
                   <option value="AIPPM">AIPPM (All India Political Parties Meet)</option>
+                  <option value="CCC">Continuous Crisis Committee (CCC)</option>
                   <option value="IP">International Press</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Allocated Country / Portfolio</label>
+                <label className="block text-xs font-medium text-white/70 mb-1">Country / Portfolio Assignment</label>
                 <input
                   type="text"
                   placeholder="e.g. United States of America, India, France..."
                   value={allotmentModalData.country}
                   onChange={(e) => setAllotmentModalData(prev => ({ ...prev, country: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                  className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
                   required
                 />
               </div>
 
-              <div className="p-2.5 rounded-lg bg-purple-950/20 border border-purple-500/20 text-[11px] text-purple-200/70 leading-relaxed">
-                Submitting will save the allocation to Google Sheets and dispatch the automated allocation email directly to <b>{allotmentModalData.email}</b>.
+              <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-[11px] text-purple-200/80 leading-relaxed">
+                Saving will instantly dispatch the official Appointment Decree email with official diplomatic seal directly to <b>{allotmentModalData.email}</b>.
               </div>
 
               <div className="flex items-center gap-2 pt-1">
                 <button
                   type="submit"
-                  className="flex-1 h-9 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="flex-1 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Confirm & Send Email</span>
+                  <span>Confirm & Send Decree</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAllotmentModalData(null)}
-                  className="px-3 h-9 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium"
+                  className="px-3 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1083,7 +1823,7 @@ export default function SuperAdminPage() {
       {/* REASSIGN DELEGATION MODAL */}
       {reassignDelegationModalData && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md p-5 rounded-2xl border border-indigo-500/30 bg-[#080b18] shadow-2xl space-y-4">
+          <div className="relative w-full max-w-md p-5 rounded-2xl border border-indigo-500/30 bg-[#070914] shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white">Reassign Delegation</h3>
@@ -1106,21 +1846,21 @@ export default function SuperAdminPage() {
                   placeholder="e.g. DEL-DPSRKP (or leave blank to detach)"
                   value={reassignDelegationModalData.delegationCode}
                   onChange={(e) => setReassignDelegationModalData(prev => ({ ...prev, delegationCode: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-indigo-400"
+                  className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-indigo-400"
                 />
               </div>
 
               <div className="flex items-center gap-2 pt-1">
                 <button
                   type="submit"
-                  className="flex-1 h-9 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors cursor-pointer"
+                  className="flex-1 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Update Delegation
                 </button>
                 <button
                   type="button"
                   onClick={() => setReassignDelegationModalData(null)}
-                  className="px-3 h-9 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium"
+                  className="px-3 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1133,11 +1873,11 @@ export default function SuperAdminPage() {
       {/* ADD DELEGATE MODAL */}
       {addDelegateModalOpen && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md p-5 rounded-2xl border border-white/15 bg-[#080b18] shadow-2xl space-y-4">
+          <div className="relative w-full max-w-md p-5 rounded-2xl border border-white/15 bg-[#070914] shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white">Add Delegate Directly</h3>
-                <p className="text-xs text-white/50">Manual directory insertion</p>
+                <p className="text-xs text-white/50">Manual offline or walk-in registration entry</p>
               </div>
               <button
                 type="button"
@@ -1153,7 +1893,7 @@ export default function SuperAdminPage() {
                 e.preventDefault();
                 const form = e.target;
                 const newDel = {
-                  regId: 'RES-26-' + Math.floor(1000 + Math.random() * 9000),
+                  regId: 'RM26-MAN-' + Math.floor(1000 + Math.random() * 9000),
                   fullName: form.fullName.value,
                   email: form.email.value,
                   phone: form.phone.value,
@@ -1164,7 +1904,7 @@ export default function SuperAdminPage() {
                   status: 'Confirmed'
                 };
                 setRegistrations(prev => [newDel, ...prev]);
-                notify(`Delegate ${newDel.fullName} added!`);
+                notify(`Delegate ${newDel.fullName} added to live roster!`);
                 setAddDelegateModalOpen(false);
 
                 fetch('/api/admin', {
@@ -1206,16 +1946,17 @@ export default function SuperAdminPage() {
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-xs font-medium text-white/70 mb-1">Committee</label>
-                  <select name="committee" className="w-full h-8 px-2 rounded-lg bg-[#0d1024] border border-white/10 text-white text-xs">
+                  <select name="committee" className="w-full h-8 px-2 rounded-lg bg-[#0c0e18] border border-white/10 text-white text-xs">
                     <option value="UNSC">UNSC</option>
                     <option value="UNGA (DISEC)">UNGA (DISEC)</option>
                     <option value="UNHRC">UNHRC</option>
                     <option value="AIPPM">AIPPM</option>
+                    <option value="CCC">Continuous Crisis Committee (CCC)</option>
                     <option value="IP">International Press</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">Country</label>
+                  <label className="block text-xs font-medium text-white/70 mb-1">Country / Portfolio</label>
                   <input name="country" placeholder="e.g. France" className="w-full h-8 px-2.5 rounded-lg bg-black/40 border border-white/10 text-white text-xs" />
                 </div>
               </div>
@@ -1223,14 +1964,14 @@ export default function SuperAdminPage() {
               <div className="flex items-center gap-2 pt-1">
                 <button
                   type="submit"
-                  className="flex-1 h-9 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-colors cursor-pointer"
+                  className="flex-1 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Save Delegate
                 </button>
                 <button
                   type="button"
                   onClick={() => setAddDelegateModalOpen(false)}
-                  className="px-3 h-9 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium"
+                  className="px-3 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
                 >
                   Cancel
                 </button>

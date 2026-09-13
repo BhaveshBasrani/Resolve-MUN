@@ -293,53 +293,70 @@ export const homeHtml = `
 
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
-        <div class="payment-banner">
-          <h3 id="regFeeDisplay">Registration Fee: ₹2699</h3>
+        <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
+          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Priority Pass Allocation</span>
+          <h3 id="regFeeDisplay" style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Registration Fee: ₹2199</h3>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
         <div class="payment-card">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 12px; font-size: 0.62rem; letter-spacing: 0.15em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
+            <label style="text-align: center; margin-bottom: 10px; font-size: 0.65rem; letter-spacing: 0.16em; opacity: 0.7; font-weight: 700;">1. SCAN QR CODE VIA ANY UPI APP</label>
             <div style="text-align: center;">
               <div class="qr-container">
-                <img id="paymentQRImage" src="/images/QR_Delegate_2599.svg" alt="Payment QR Code">
+                <img id="paymentQRImage" src="https://quickchart.io/qr?size=320&text=upi%3A%2F%2Fpay%3Fpa%3Dbhoomianilbasrani%40okhdfcbank%26pn%3DBhoomi%2520Basrani%26am%3D2199%26cu%3DINR" alt="Payment QR Code">
               </div>
+
+              <div class="upi-supported-apps">
+                <span class="upi-app-pill">GPay</span>
+                <span class="upi-app-pill">PhonePe</span>
+                <span class="upi-app-pill">Paytm</span>
+                <span class="upi-app-pill">CRED</span>
+                <span class="upi-app-pill">BHIM</span>
+                <span class="upi-app-pill">Any UPI</span>
+              </div>
+
               <div class="upi-box">
                 <span id="upiID">bhoomianilbasrani@okhdfcbank</span>
                 <button type="button" class="refresh-qr-btn" onclick="refreshDelegatePaymentQR()" title="Regenerate QR">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 </button>
-                <button type="button" class="copy-btn" onclick="copyUPI()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <button type="button" class="copy-btn" onclick="copyUPI()" title="Copy UPI ID">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
               </div>
+              <span style="display: block; font-size: 0.68rem; color: #a1a1aa; margin-top: 2px;">Verified Payee: <strong style="color: #fff;">Bhoomi Basrani</strong></span>
             </div>
-            <p class="payment-note" style="text-align: center; margin-bottom: 18px; font-style: normal; opacity: 0.5; font-size: 0.72rem;">Scan or use the UPI ID</p>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
+            <label>2. TRANSACTION / REFERENCE ID*</label>
+            <input type="text" id="regTxnID" placeholder="Enter Transaction / Reference ID" required>
           </div>
 
           <div class="form-group">
-            <label>2. TRANSACTION ID</label>
-            <input type="text" id="regTxnID" placeholder="Enter Transaction ID" required>
-          </div>
-
-          <div class="form-group">
-            <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+            <label>3. UPLOAD PAYMENT SCREENSHOT*</label>
             <label class="file-upload-wrapper" for="regDriveLink">
               <span class="file-upload-btn">Choose File</span>
-              <span class="file-name">No file chosen</span>
+              <span class="file-name" id="regDriveFileName">No file chosen</span>
               <input type="file" id="regDriveLink" class="file-upload-input" accept="image/*" required>
             </label>
+            <div id="regScreenshotPreview" style="display: none;" class="payment-screenshot-preview"></div>
           </div>
 
           <div class="form-group">
-            <label>4. UTR NUMBER (OPTIONAL)</label>
-            <input type="text" id="regUTR" placeholder="Enter 12-digit UTR">
+            <label>4. 12-DIGIT UTR NUMBER (OPTIONAL)</label>
+            <input type="text" id="regUTR" placeholder="Enter 12-digit UTR from banking app">
+          </div>
+
+          <div style="margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+            <p style="font-size: 0.66rem; color: #94a3b8; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">🏛️ Delhi World Public School, Kompally, Hyderabad</p>
+            <p style="font-size: 0.62rem; color: #64748b; margin: 3px 0 0 0;">Conference Dates: 20th – 22nd November 2026</p>
           </div>
         </div>
 
         <div class="payment-footer">
-          <p class="payment-contact">For Any Queries, contact: <span>+91 92121 07797</span></p>
+          <p class="payment-contact">For Any Assistance, Secretariat Hotline: <span>+91 92121 07797</span></p>
         </div>
 
         <div class="form-actions">
@@ -901,52 +918,66 @@ export const homeHtml = `
 
       <!-- STEP 3: PAYMENT -->
       <div class="form-step" id="ocStep3">
-        <div class="payment-banner">
-          <h3>Registration Fee: ₹1699</h3>
+        <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
+          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Organizing Committee Induction</span>
+          <h3 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Registration Fee: ₹1699</h3>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
         <div class="payment-card">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 12px; font-size: 0.62rem; letter-spacing: 0.15em; opacity: 0.6;">1. SCAN TO PAY</label>
+            <label style="text-align: center; margin-bottom: 10px; font-size: 0.65rem; letter-spacing: 0.16em; opacity: 0.7; font-weight: 700;">1. SCAN QR CODE VIA ANY UPI APP</label>
             <div style="text-align: center;">
               <div class="qr-container">
-                <img id="ocPaymentQRImage" src="/images/QR_Delegate_2599.svg" alt="OC Payment QR Code">
+                <img id="ocPaymentQRImage" src="https://quickchart.io/qr?size=320&text=upi%3A%2F%2Fpay%3Fpa%3Dbhoomianilbasrani%40okhdfcbank%26pn%3DBhoomi%2520Basrani%26am%3D1699%26cu%3DINR" alt="OC Payment QR Code">
               </div>
+
+              <div class="upi-supported-apps">
+                <span class="upi-app-pill">GPay</span>
+                <span class="upi-app-pill">PhonePe</span>
+                <span class="upi-app-pill">Paytm</span>
+                <span class="upi-app-pill">CRED</span>
+                <span class="upi-app-pill">BHIM</span>
+                <span class="upi-app-pill">Any UPI</span>
+              </div>
+
               <div class="upi-box">
                 <span id="ocUpiID">bhoomianilbasrani@okhdfcbank</span>
                 <button type="button" class="refresh-qr-btn" onclick="generateDynamicQR('1699', 'ocPaymentQRImage', 'ocUpiID')" title="Regenerate QR">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 </button>
-                <button type="button" class="copy-btn" onclick="copyOcUPI()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <button type="button" class="copy-btn" onclick="copyOcUPI()" title="Copy UPI ID">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
               </div>
+              <span style="display: block; font-size: 0.68rem; color: #a1a1aa; margin-top: 2px;">Verified Payee: <strong style="color: #fff;">Bhoomi Basrani</strong></span>
             </div>
           </div>
 
-          <div class="form-group">
-            <label>2. TRANSACTION ID</label>
-            <input type="text" id="ocTxnID" name="txnID" placeholder="Enter Transaction ID" required>
+          <div class="form-group" style="margin-top: 16px;">
+            <label>2. TRANSACTION / REFERENCE ID*</label>
+            <input type="text" id="ocTxnID" name="txnID" placeholder="Enter Transaction / Reference ID" required>
           </div>
 
           <div class="form-group">
-            <label>3. UTR ID (Optional)</label>
-            <input type="text" id="ocUTR" name="utr" placeholder="Enter 12-digit UTR ID">
+            <label>3. 12-DIGIT UTR ID (OPTIONAL)</label>
+            <input type="text" id="ocUTR" name="utr" placeholder="Enter 12-digit UTR ID from banking app">
           </div>
 
           <div class="form-group">
             <label>4. UPLOAD PAYMENT SCREENSHOT*</label>
             <label class="file-upload-wrapper" for="ocDriveLink">
               <span class="file-upload-btn">Choose File</span>
-              <span class="file-name">No file chosen</span>
+              <span class="file-name" id="ocDriveFileName">No file chosen</span>
               <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*" required>
             </label>
+            <div id="ocScreenshotPreview" style="display: none;" class="payment-screenshot-preview"></div>
           </div>
           
-          <p style="text-align: center; font-size: 0.72rem; color: #f87171; opacity: 0.85; margin-bottom: 16px;">
-            * Applications without a payment screenshot will not be processed.
-          </p>
+          <div style="margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+            <p style="font-size: 0.66rem; color: #94a3b8; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">🏛️ Delhi World Public School, Kompally, Hyderabad</p>
+            <p style="font-size: 0.62rem; color: #64748b; margin: 3px 0 0 0;">Conference Dates: 20th – 22nd November 2026</p>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -1289,49 +1320,66 @@ export const homeHtml = `
 
       <!-- STEP 3: PAYMENT & CONFIRMATION -->
       <div class="form-step" id="delStep3">
-        <div class="payment-banner">
-          <h3 id="delTotalPriceDisplay">Total Amount: ₹17,592</h3>
-          <p style="font-size: 0.68rem; opacity: 0.7; margin-top: 4px;">(₹2199 per delegate)</p>
+        <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
+          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Institutional Delegation Roster</span>
+          <h3 id="delTotalPriceDisplay" style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Total Amount: ₹17,592</h3>
+          <p style="font-size: 0.68rem; opacity: 0.7; margin-top: 4px;">(₹2199 per enrolled delegate)</p>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; opacity: 0.9; margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
         <div class="payment-card">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 12px; font-size: 0.62rem; letter-spacing: 0.15em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
+            <label style="text-align: center; margin-bottom: 10px; font-size: 0.65rem; letter-spacing: 0.16em; opacity: 0.7; font-weight: 700;">1. SCAN QR CODE VIA ANY UPI APP</label>
             <div style="text-align: center;">
               <div class="qr-container">
-                <img id="delPaymentQRImage" src="/images/QR_Delegate_2599.svg" alt="Delegation Payment QR Code">
+                <img id="delPaymentQRImage" src="https://quickchart.io/qr?size=320&text=upi%3A%2F%2Fpay%3Fpa%3Dbhoomianilbasrani%40okhdfcbank%26pn%3DBhoomi%2520Basrani%26am%3D17592%26cu%3DINR" alt="Delegation Payment QR Code">
               </div>
+
+              <div class="upi-supported-apps">
+                <span class="upi-app-pill">GPay</span>
+                <span class="upi-app-pill">PhonePe</span>
+                <span class="upi-app-pill">Paytm</span>
+                <span class="upi-app-pill">CRED</span>
+                <span class="upi-app-pill">BHIM</span>
+                <span class="upi-app-pill">Any UPI</span>
+              </div>
+
               <div class="upi-box">
                 <span id="delUpiID">bhoomianilbasrani@okhdfcbank</span>
                 <button type="button" class="refresh-qr-btn" onclick="const size = parseInt(document.getElementById('delSize').value) || 8; generateDynamicQR((size * 2199).toString(), 'delPaymentQRImage', 'delUpiID')" title="Regenerate QR">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 </button>
-                <button type="button" class="copy-btn" onclick="copyDelUPI()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <button type="button" class="copy-btn" onclick="copyDelUPI()" title="Copy UPI ID">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
               </div>
+              <span style="display: block; font-size: 0.68rem; color: #a1a1aa; margin-top: 2px;">Verified Payee: <strong style="color: #fff;">Bhoomi Basrani</strong></span>
             </div>
-            <p class="payment-note" style="text-align: center; margin-bottom: 18px; font-style: normal; opacity: 0.5; font-size: 0.72rem;">Scan or use the UPI ID</p>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
+            <label>2. TRANSACTION / REFERENCE ID*</label>
+            <input type="text" id="delTxnID" placeholder="Enter Transaction / Reference ID" required>
           </div>
 
           <div class="form-group">
-            <label>2. TRANSACTION ID</label>
-            <input type="text" id="delTxnID" placeholder="Enter Transaction ID" required>
-          </div>
-
-          <div class="form-group">
-            <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+            <label>3. UPLOAD PAYMENT SCREENSHOT*</label>
             <label class="file-upload-wrapper" for="delDriveLink">
               <span class="file-upload-btn">Choose File</span>
-              <span class="file-name">No file chosen</span>
+              <span class="file-name" id="delDriveFileName">No file chosen</span>
               <input type="file" id="delDriveLink" class="file-upload-input" accept="image/*" required>
             </label>
+            <div id="delScreenshotPreview" style="display: none;" class="payment-screenshot-preview"></div>
           </div>
 
           <div class="form-group">
-            <label>4. UTR NUMBER (OPTIONAL)</label>
-            <input type="text" id="delUTR" placeholder="Enter 12-digit UTR">
+            <label>4. 12-DIGIT UTR NUMBER (OPTIONAL)</label>
+            <input type="text" id="delUTR" placeholder="Enter 12-digit UTR from banking app">
+          </div>
+
+          <div style="margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+            <p style="font-size: 0.66rem; color: #94a3b8; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">🏛️ Delhi World Public School, Kompally, Hyderabad</p>
+            <p style="font-size: 0.62rem; color: #64748b; margin: 3px 0 0 0;">Conference Dates: 20th – 22nd November 2026</p>
           </div>
         </div>
 

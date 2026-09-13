@@ -23,6 +23,7 @@ import {
   AlertCircle,
   ArrowLeft,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -30,8 +31,101 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+// Ultra-premium, lightweight Dot Matrix Canvas (60fps, zero-dependency)
+function CanvasDotMatrix({
+  dotSize = 1.8,
+  spacing = 22,
+  speed = 0.0012,
+  className = "",
+  reverse = false,
+}) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId;
+    let width = 0;
+    let height = 0;
+
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      width = parent.clientWidth;
+      height = parent.clientHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    const start = performance.now();
+
+    const render = (now) => {
+      const elapsed = (now - start) * speed;
+      ctx.clearRect(0, 0, width, height);
+
+      const cols = Math.ceil(width / spacing) + 1;
+      const rows = Math.ceil(height / spacing) + 1;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const maxDist = Math.hypot(centerX, centerY) || 1;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = c * spacing;
+          const y = r * spacing;
+
+          const dist = Math.hypot(x - centerX, y - centerY);
+          const normDist = dist / maxDist;
+
+          // Wave pulse effect
+          const wave = reverse
+            ? Math.sin(normDist * 7 + elapsed * 3.5)
+            : Math.sin(normDist * 7 - elapsed * 3.5);
+
+          // Organic shimmer
+          const seed = Math.sin(c * 12.9898 + r * 78.233) * 43758.5453;
+          const twinkle = (Math.sin(elapsed * 2.5 + seed) + 1) * 0.5;
+
+          const baseAlpha = 0.04 + Math.max(0, wave * 0.38) * (twinkle * 0.5 + 0.5);
+          const alpha = Math.max(0.02, Math.min(0.65, baseAlpha));
+
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    animId = requestAnimationFrame(render);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, [dotSize, spacing, speed, reverse]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={cn("absolute inset-0 pointer-events-none w-full h-full", className)}
+      style={{ width: "100%", height: "100%" }}
+    />
+  );
+}
+
 export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
-  const [mode, setMode] = useState(initialMode); // "signup" | "signin" | "forgot" | "profile" | "pathway" | "code"
+  const [mode, setMode] = useState(initialMode); // "signup" | "signin" | "forgot" | "profile" | "pathway" | "code" | "success"
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -98,8 +192,37 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
   };
 
   const handleKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !code[index] && index > 0) {
+    if (e.key === "Backspace") {
+      if (!code[index] && index > 0) {
+        codeInputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      e.preventDefault();
       codeInputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      e.preventDefault();
+      codeInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const raw = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+    const clean = raw.replace(/[^0-9]/g, "").slice(0, 6);
+    if (!clean) return;
+    const newCode = [...code];
+    for (let i = 0; i < 6; i++) {
+      newCode[i] = clean[i] || "";
+    }
+    setCode(newCode);
+    if (clean.length === 6) {
+      codeInputRefs.current[5]?.focus();
+      setTimeout(() => {
+        handleVerifyCode(clean);
+      }, 150);
+    } else {
+      const nextIdx = Math.min(clean.length, 5);
+      codeInputRefs.current[nextIdx]?.focus();
     }
   };
 
@@ -153,15 +276,23 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
       }
 
       setSuccess("Email verified successfully! Welcome to Resolve MUN 2.0.");
-      setTimeout(() => {
-        setMode("pathway");
-      }, 600);
+      setMode("success");
     } catch (err) {
       setError(err.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  // Auto-transition to pathway selection from celebration screen
+  useEffect(() => {
+    if (mode === "success") {
+      const t = setTimeout(() => {
+        setMode("pathway");
+      }, 2200);
+      return () => clearTimeout(t);
+    }
+  }, [mode]);
 
   // Firebase auth state subscription
   useEffect(() => {
@@ -367,23 +498,33 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       {/* Main Two-Column Container */}
-      <div className="relative z-10 w-full max-w-[1040px] h-auto max-h-[90vh] rounded-2xl border-2 border-white/25 bg-[#07080e] shadow-[0_20px_58px_rgba(0,0,0,0.80),0_0_28px_rgba(99,102,241,0.10)] overflow-hidden grid md:grid-cols-[1.26fr_0.74fr]">
+      <div className="relative z-10 w-full max-w-[780px] h-auto max-h-[92vh] rounded-2xl border border-white/20 bg-[#07080e] shadow-[0_25px_65px_rgba(0,0,0,0.85),0_0_35px_rgba(99,102,241,0.12)] overflow-hidden grid md:grid-cols-[1.14fr_0.86fr]">
         
         {/* Rounded-Edge Square High-Visibility Close Button */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3.5 right-3.5 z-40 w-10 h-10 rounded-xl bg-black/75 hover:bg-black border-2 border-white/35 hover:border-white/70 text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.6)] active:scale-95 group"
+          className="absolute top-3 right-3 z-40 w-9 h-9 rounded-xl bg-black/80 hover:bg-black border border-white/30 hover:border-white/60 text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.6)] active:scale-95 group"
         >
-          <X className="w-5 h-5 text-white/90 group-hover:text-white transition-colors" strokeWidth={2.2} />
+          <X className="w-4 h-4 text-white/90 group-hover:text-white transition-colors" strokeWidth={2.2} />
         </button>
 
         {/* ── LEFT COLUMN ── */}
-        <div className="flex flex-col justify-between overflow-y-auto px-5 py-6 sm:px-7 sm:py-7 border-b md:border-b-0 md:border-r border-white/10 max-h-[90vh] scrollbar-none">
-          <div key={mode} className="auth-phase w-full max-w-[490px] mx-auto my-auto">
+        <div className="relative flex flex-col justify-center overflow-hidden px-5 py-4 sm:px-6 sm:py-5 border-b md:border-b-0 md:border-r border-white/10 max-h-[92vh]">
+          {/* Ambient Dot Matrix Canvas during Code & Success modes */}
+          {(mode === "code" || mode === "success") && (
+            <CanvasDotMatrix
+              dotSize={1.8}
+              spacing={22}
+              reverse={mode === "success"}
+              className="opacity-20"
+            />
+          )}
+
+          <div key={mode} className="relative z-10 auth-phase w-full max-w-[360px] mx-auto my-auto py-1">
             
-            {/* 1. CODE VERIFICATION VIEW */}
+            {/* 1. CODE VERIFICATION VIEW (Ultra-Premium Sculpted Tiles & Thin Borders) */}
             {mode === "code" && (
               <section className="space-y-4 text-center" aria-labelledby="code-title">
                 {/* Top Nav Back Link */}
@@ -396,90 +537,92 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                       setError("");
                       setSuccess("");
                     }}
-                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/45 hover:text-white transition-colors cursor-pointer"
+                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/50 hover:text-white transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-white/40 group-hover:text-white" />
                     <span>Back to sign up</span>
                   </button>
-                  <span className="text-[10px] font-mono tracking-[0.2em] text-amber-400 uppercase font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                  <span className="text-[10px] font-mono tracking-[0.2em] text-amber-400 uppercase font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
                     UNVERIFIED
                   </span>
                 </div>
 
-                <div className="space-y-1.5 pt-1">
-                  <span className="block text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">
-                    Security Verification
-                  </span>
-                  <h1 id="code-title" className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-white uppercase">
+                {/* Header */}
+                <div className="space-y-1.5 pt-1 text-center">
+                  <h1 id="code-title" className="font-sans text-2xl sm:text-[28px] font-bold tracking-tight text-white leading-tight">
                     We sent you a code
                   </h1>
-                  <p className="text-xs sm:text-[13px] text-white/50 font-normal leading-relaxed max-w-[40ch] mx-auto font-sans">
-                    Please enter the 6-digit activation code sent to{" "}
+                  <p className="text-xs sm:text-[13px] text-white/55 font-normal leading-relaxed max-w-[32ch] mx-auto font-sans">
+                    Please enter the 6-digit code sent to{" "}
                     <strong className="text-white font-medium">{pendingSignup?.email || email}</strong>
                   </p>
                 </div>
 
                 {/* Feedback Alerts */}
                 {error && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs text-left animate-in fade-in duration-150">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs flex items-start gap-2 text-left animate-in fade-in duration-150">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
                     <span className="leading-snug">{error}</span>
                   </div>
                 )}
                 {success && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs text-left animate-in fade-in duration-150">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs flex items-start gap-2 text-left animate-in fade-in duration-150">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
                     <span className="leading-snug">{success}</span>
                   </div>
                 )}
 
-                {/* 6-Digit Capsule Container */}
+                {/* 6 Individual Sculpted Digit Tiles with Thin Borders */}
                 <div className="w-full py-2">
-                  <div className="relative rounded-full py-3.5 px-4 sm:px-6 border border-white/15 bg-white/[0.03] shadow-inner max-w-sm mx-auto">
-                    <div className="flex items-center justify-center">
-                      {code.map((digit, i) => (
-                        <div key={i} className="flex items-center">
-                          <div className="relative w-8 sm:w-9 h-9 flex items-center justify-center">
-                            <input
-                              ref={(el) => {
-                                codeInputRefs.current[i] = el;
-                              }}
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              maxLength={1}
-                              value={digit}
-                              onChange={(e) => handleCodeChange(i, e.target.value)}
-                              onKeyDown={(e) => handleKeyDown(i, e)}
-                              className="w-8 sm:w-9 text-center text-xl sm:text-2xl bg-transparent text-white border-none focus:outline-none focus:ring-0 appearance-none font-mono font-bold"
-                              style={{ caretColor: "transparent" }}
-                              aria-label={`Verification digit ${i + 1}`}
-                            />
-                            {!digit && (
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <span className="text-xl sm:text-2xl text-white/20 font-mono font-light">0</span>
-                              </div>
-                            )}
+                  <div className="flex items-center justify-center gap-2 sm:gap-2.5 max-w-[320px] mx-auto">
+                    {code.map((digit, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "relative w-10 sm:w-11 h-12 sm:h-13 rounded-xl border transition-all duration-200 flex items-center justify-center bg-[#090b14] shadow-[0_2px_8px_rgba(0,0,0,0.5)]",
+                          digit
+                            ? "border-white/50 bg-white/[0.06] shadow-[0_0_15px_rgba(255,255,255,0.15)]"
+                            : "border-white/15 hover:border-white/30 focus-within:border-white/60 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_20px_rgba(99,102,241,0.25)]"
+                        )}
+                      >
+                        <input
+                          ref={(el) => {
+                            codeInputRefs.current[i] = el;
+                          }}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => handleCodeChange(i, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(i, e)}
+                          onPaste={handlePaste}
+                          className="w-full h-full text-center text-xl sm:text-2xl bg-transparent text-white border-none focus:outline-none focus:ring-0 appearance-none font-mono font-bold"
+                          style={{ caretColor: "transparent" }}
+                          aria-label={`Verification digit ${i + 1}`}
+                        />
+                        {!digit && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="text-xl sm:text-2xl text-white/20 font-mono font-light">
+                              •
+                            </span>
                           </div>
-                          {i < 5 && (
-                            <span className="text-white/15 text-lg sm:text-xl px-1 sm:px-1.5 select-none font-light">|</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Resend Code Link */}
-                <div>
+                <div className="pt-0.5">
                   <button
                     type="button"
                     onClick={handleResendCode}
                     disabled={resendCooldown > 0 || loading}
-                    className={`text-xs font-mono transition-colors ${
+                    className={`text-xs sm:text-[13px] transition-all font-sans font-medium ${
                       resendCooldown > 0
-                        ? "text-white/30 cursor-not-allowed"
-                        : "text-white/50 hover:text-white cursor-pointer underline underline-offset-4"
+                        ? "text-white/35 cursor-not-allowed"
+                        : "text-white/55 hover:text-white cursor-pointer underline underline-offset-4 hover:scale-[1.02] active:scale-[0.98]"
                     }`}
                   >
                     {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
@@ -496,7 +639,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                       setError("");
                       setSuccess("");
                     }}
-                    className="rounded-full bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-3 transition-colors text-xs uppercase tracking-wider cursor-pointer active:scale-95"
+                    className="w-[32%] rounded-full bg-white text-black font-bold px-4 py-3 text-xs sm:text-sm uppercase tracking-wider hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer shadow-[0_2px_12px_rgba(255,255,255,0.2)]"
                   >
                     Back
                   </button>
@@ -504,32 +647,66 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     type="button"
                     onClick={() => handleVerifyCode()}
                     disabled={!code.every((d) => d !== "") || loading}
-                    className={`flex-1 rounded-full font-bold py-3 text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
+                    className={`flex-1 rounded-full font-bold py-3 text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
                       code.every((d) => d !== "") && !loading
-                        ? "bg-white text-black border-transparent hover:bg-white/90 cursor-pointer active:scale-95 shadow-lg"
+                        ? "bg-white text-black border-transparent hover:bg-white/90 cursor-pointer active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.4)]"
                         : "bg-white/5 text-white/35 border border-white/10 cursor-not-allowed"
                     }`}
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
                         <span>Verifying...</span>
                       </>
                     ) : (
-                      <span>Verify &amp; Activate</span>
+                      <span>Continue</span>
                     )}
                   </button>
                 </div>
 
-                <p className="text-[11px] text-white/35 pt-2 leading-relaxed">
-                  Keep this window open. Entering the code will authenticate and activate your delegate profile.
+                <p className="text-[11px] text-white/40 pt-2 leading-relaxed max-w-[34ch] mx-auto font-sans">
+                  Entering the code will authenticate and activate your delegate profile.
                 </p>
               </section>
             )}
 
-            {/* 2. PATHWAY VIEW */}
+            {/* 1B. CELEBRATION SUCCESS VIEW ("You're in!") */}
+            {mode === "success" && (
+              <section className="space-y-6 text-center py-4 animate-in fade-in zoom-in-95 duration-400" aria-labelledby="success-title">
+                <div className="space-y-1.5">
+                  <h1 id="success-title" className="text-3xl sm:text-[36px] font-bold leading-[1.1] tracking-tight text-white font-sans">
+                    You&apos;re in!
+                  </h1>
+                  <p className="text-sm sm:text-base text-white/60 font-light">
+                    Welcome to Resolve MUN 2026
+                  </p>
+                </div>
+
+                <div className="py-6 flex items-center justify-center">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full bg-white/20 blur-xl animate-pulse" />
+                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-white via-white/95 to-white/80 flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.45)]">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-black" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMode("pathway")}
+                  className="w-full rounded-full bg-white text-black font-bold py-3.5 hover:bg-white/90 active:scale-[0.98] transition-all shadow-[0_0_35px_rgba(255,255,255,0.35)] cursor-pointer text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+                >
+                  <span>Select Registration Pathway</span>
+                  <ChevronRight className="w-4 h-4 text-black" />
+                </button>
+              </section>
+            )}
+
+            {/* 2. PATHWAY VIEW (Compact, Non-Scrollable & Thin Borders) */}
             {mode === "pathway" && (
-              <section className="space-y-4" aria-labelledby="pathway-title">
+              <section className="space-y-3" aria-labelledby="pathway-title">
                 {/* Top Nav Back Link */}
                 <div className="flex items-center justify-between">
                   <button
@@ -547,38 +724,38 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
 
                 {/* Header */}
                 <div>
-                  <span className="block mb-2 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">Select your role</span>
-                  <h1 id="pathway-title" className="font-sans !text-[28px] sm:!text-[31px] font-semibold tracking-[-0.045em] leading-none text-white">
+                  <span className="block mb-1 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">Select your role</span>
+                  <h1 id="pathway-title" className="font-sans text-2xl sm:text-[26px] font-bold tracking-tight text-white leading-tight">
                     Choose Pathway
                   </h1>
-                  <p className="mt-2 text-[13px] text-white/50 leading-relaxed font-sans max-w-[42ch]">
+                  <p className="mt-1 text-xs text-white/50 leading-relaxed font-sans max-w-[40ch]">
                     Select your participation track for Resolve MUN 2.0.
                   </p>
                 </div>
 
-                <div className="space-y-2" aria-label="Participation pathways">
+                <div className="space-y-2 pt-0.5" aria-label="Participation pathways">
                   {/* Delegate */}
                   <div
                     role="button"
                     tabIndex={0}
                     onClick={() => handlePathwaySelect("delegate")}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("delegate"); } }}
-                    className="group relative flex w-full items-center justify-between gap-5 rounded-2xl border-2 border-white/[0.24] bg-[#0b0c14] px-5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/[0.50] hover:bg-[#10111b] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 active:translate-y-0 active:scale-[0.99] cursor-pointer"
+                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
                   >
-                    <span className="space-y-1 text-left min-w-0 flex-1">
+                    <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-semibold text-sm text-white tracking-tight">
                           Delegate
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-400/20 text-violet-200/90 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-400/20 text-violet-300 font-medium">
                           Individual
                         </span>
                       </div>
-                      <span className="block text-xs text-white/50 leading-5 group-hover:text-white/70 transition-colors">
-                        Single delegate representation in one specialized diplomatic committee.
+                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+                        Single delegate representation in one specialized committee.
                       </span>
-                    </span>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white/[0.22] bg-white/[0.025] text-white/45 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-white/[0.52] group-hover:bg-white/[0.10] group-hover:text-white" aria-hidden="true">
+                    </div>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -589,22 +766,22 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     tabIndex={0}
                     onClick={() => handlePathwaySelect("delegation")}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("delegation"); } }}
-                    className="group relative flex w-full items-center justify-between gap-5 rounded-2xl border-2 border-white/[0.24] bg-[#0b0c14] px-5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/[0.50] hover:bg-[#10111b] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 active:translate-y-0 active:scale-[0.99] cursor-pointer"
+                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
                   >
-                    <span className="space-y-1 text-left min-w-0 flex-1">
+                    <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-semibold text-sm text-white tracking-tight">
                           Delegation
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-200/90 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-300 font-medium">
                           Institution
                         </span>
                       </div>
-                      <span className="block text-xs text-white/50 leading-5 group-hover:text-white/70 transition-colors">
-                        School or university delegations with 8+ student representatives.
+                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+                        School or university delegations with 8+ student delegates.
                       </span>
-                    </span>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white/[0.22] bg-white/[0.025] text-white/45 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-white/[0.52] group-hover:bg-white/[0.10] group-hover:text-white" aria-hidden="true">
+                    </div>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -615,22 +792,22 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     tabIndex={0}
                     onClick={() => handlePathwaySelect("secretariat")}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("secretariat"); } }}
-                    className="group relative flex w-full items-center justify-between gap-5 rounded-2xl border-2 border-white/[0.24] bg-[#0b0c14] px-5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/[0.50] hover:bg-[#10111b] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 active:translate-y-0 active:scale-[0.99] cursor-pointer"
+                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
                   >
-                    <span className="space-y-1 text-left min-w-0 flex-1">
+                    <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-semibold text-sm text-white tracking-tight">
                           Secretariat
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-200/90 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 font-medium">
                           Executive
                         </span>
                       </div>
-                      <span className="block text-xs text-white/50 leading-5 group-hover:text-white/70 transition-colors">
+                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
                         High-command leadership, USG positions, and directors.
                       </span>
-                    </span>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white/[0.22] bg-white/[0.025] text-white/45 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-white/[0.52] group-hover:bg-white/[0.10] group-hover:text-white" aria-hidden="true">
+                    </div>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -743,10 +920,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     type="button"
                     onClick={handleSocialAuth}
                     disabled={socialLoading || loading}
-                    className={cn(
-                      "w-full h-10 flex items-center justify-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.05] hover:bg-white/[0.1] active:scale-[0.99] text-xs font-semibold text-white transition-all cursor-pointer shadow-sm disabled:opacity-60",
-                      isSignupLocked && "opacity-70 hover:border-white/25"
-                    )}
+                    className="w-full h-11 flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-[#0d0f1a] hover:bg-[#131626] hover:border-white/35 active:scale-[0.99] text-xs sm:text-sm font-semibold text-white transition-all cursor-pointer shadow-sm disabled:opacity-60"
                   >
                     <GoogleIcon />
                     <span>{socialLoading ? "Connecting to Google..." : "Continue with Google"}</span>
@@ -898,10 +1072,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   <button
                     type="submit"
                     disabled={loading || socialLoading}
-                    className={cn(
-                      "mt-2 flex h-10 w-full items-center justify-center rounded-xl bg-white text-xs sm:text-sm font-semibold text-black transition-all hover:bg-white/90 active:scale-[0.99] cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)] disabled:opacity-60",
-                      isSignupLocked && "opacity-70 hover:opacity-90"
-                    )}
+                    className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-white text-xs sm:text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.99] cursor-pointer shadow-[0_0_24px_rgba(255,255,255,0.22)] disabled:opacity-60"
                   >
                     {loading ? (
                       <Loader2 className="w-4 h-4 animate-spin text-black" />
@@ -920,7 +1091,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         </div>
 
         {/* ── RIGHT COLUMN: SHADER & BRAND VISUAL ── */}
-        <div className="relative hidden md:flex min-h-[480px] overflow-hidden rounded-xl bg-black p-6 xl:p-8 text-white flex-col justify-between m-2 border border-white/10 select-none">
+        <div className="relative hidden md:flex min-h-[450px] overflow-hidden rounded-xl bg-black p-6 xl:p-7 text-white flex-col justify-between m-2 border border-white/10 select-none">
           {/* GrainGradient Background */}
           {shaderMounted ? (
             <GrainGradient
@@ -944,14 +1115,14 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
 
           {/* Top Info */}
           <div className="relative z-10 flex items-center justify-start">
-            <span className="text-[11px] font-mono tracking-[0.25em] text-white/60 font-semibold uppercase">
+            <span className="text-[10px] sm:text-[11px] font-mono tracking-[0.22em] text-white/60 font-semibold uppercase">
               EDITION 2026
             </span>
           </div>
 
           {/* Headline & Copy */}
-          <div className="relative z-10 py-6 my-auto">
-            <h2 className="max-w-[360px] text-3xl sm:text-4xl font-medium tracking-[-0.04em] text-white leading-[1.02] font-sans">
+          <div className="relative z-10 py-5 my-auto">
+            <h2 className="max-w-[300px] text-2xl sm:text-[30px] font-bold tracking-[-0.04em] text-white leading-[1.05] font-sans">
               Resolve.
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-200 via-indigo-200 to-blue-200">
@@ -960,13 +1131,13 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
               <br />
               Reconcile.
             </h2>
-            <p className="mt-3.5 max-w-[300px] text-xs sm:text-sm text-white/65 leading-relaxed font-sans">
+            <p className="mt-3 max-w-[270px] text-xs text-white/65 leading-relaxed font-sans">
               Hyderabad's premier conference. Multilateral debate, crisis diplomacy, and strategic consensus across 6 dynamic committees.
             </p>
           </div>
 
           {/* Bottom Accent Line */}
-          <div className="relative z-10 h-0.5 w-10 bg-gradient-to-r from-violet-400 to-blue-400 rounded-full opacity-60" />
+          <div className="relative z-10 h-0.5 w-8 bg-gradient-to-r from-violet-400 to-blue-400 rounded-full opacity-60" />
         </div>
       </div>
     </div>
@@ -987,8 +1158,8 @@ function FieldBox({
   const effectiveType = isPassword && showPassword ? "text" : type;
 
   return (
-    <div className={cn("flex flex-col gap-1 text-left", className)}>
-      <label className="text-[11px] font-medium text-white/70 font-sans tracking-wide">
+    <div className={cn("flex flex-col gap-1.5 text-left", className)}>
+      <label className="text-[11px] sm:text-xs font-medium text-white/75 font-sans tracking-wide">
         {label}
         {required && <span className="text-violet-400 ml-0.5">*</span>}
       </label>
@@ -999,13 +1170,13 @@ function FieldBox({
           onChange={onChange}
           required={required}
           placeholder={placeholder}
-          className="h-9.5 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder-white/25 transition-all focus:border-white/40 focus:bg-white/[0.07] focus:outline-none font-sans"
+          className="h-10.5 sm:h-11 w-full rounded-xl border border-white/20 bg-[#0d0f1a] px-3.5 text-xs sm:text-sm text-white placeholder-white/30 transition-all hover:border-white/35 focus:border-indigo-400 focus:bg-[#121526] focus:outline-none focus:ring-1 focus:ring-indigo-500/30 font-sans shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]"
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
             tabIndex={-1}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >

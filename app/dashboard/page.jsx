@@ -14,130 +14,211 @@ import Footer from "@/components/Footer";
 import {
   CheckCircle2, Clock, QrCode, Lock, ArrowRight,
   RefreshCw, User, Users, ShieldCheck, FileCheck, ChevronRight, X,
-  Sparkles, Globe, Award, Star, Briefcase, Zap, ExternalLink
+  Sparkles, Globe, Award, Star, Briefcase, Zap, ExternalLink, ArrowLeft
 } from "lucide-react";
 
 function FloatingOrbs() {
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40 dark:opacity-70" aria-hidden="true">
-      <div className="absolute top-[-15%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-indigo-600/10 blur-[120px] animate-pulse" style={{ animationDuration: "9s" }} />
-      <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] max-w-[500px] max-h-[500px] rounded-full bg-purple-600/10 blur-[100px] animate-pulse" style={{ animationDuration: "12s", animationDelay: "3s" }} />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40 select-none" aria-hidden="true">
+      <div className="absolute top-[-15%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-indigo-600/15 blur-[130px] animate-pulse" style={{ animationDuration: "9s" }} />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] max-w-[500px] max-h-[500px] rounded-full bg-purple-600/15 blur-[120px] animate-pulse" style={{ animationDuration: "12s", animationDelay: "3s" }} />
     </div>
   );
 }
 
 function StatusPill({ ok, okLabel, pendingLabel, lockedLabel, locked }) {
   if (locked) return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-neutral-500/10 text-neutral-400 border border-neutral-500/20">
-      <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 inline-block" />{lockedLabel}
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-white/[0.04] text-white/40 border border-white/10">
+      <span className="w-1.5 h-1.5 rounded-full bg-white/40 inline-block" />{lockedLabel}
     </span>
   );
   if (ok) return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-emerald-500/15 text-emerald-500 dark:text-emerald-300 border border-emerald-500/25">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />{okLabel}
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />{okLabel}
     </span>
   );
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/25">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse" />{pendingLabel}
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-amber-500/15 text-amber-300 border border-amber-500/25">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse" />{pendingLabel}
     </span>
-  );
-}
-
-function PathwayCard({ icon: Icon, title, desc, href, color }) {
-  const iconCls = {
-    blue: "bg-blue-500/10 border-blue-400/25 text-blue-500 dark:text-blue-400",
-    purple: "bg-purple-500/10 border-purple-400/25 text-purple-500 dark:text-purple-400",
-    violet: "bg-indigo-500/10 border-indigo-400/25 text-indigo-500 dark:text-indigo-400",
-    amber: "bg-amber-500/10 border-amber-400/25 text-amber-500 dark:text-amber-400",
-  };
-  return (
-    <a
-      href={href}
-      className="group flex items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border border-black/10 dark:border-white/[0.08] bg-white/70 dark:bg-white/[0.025] hover:border-indigo-500/40 hover:bg-indigo-500/[0.04] transition-all duration-200 cursor-pointer shadow-sm"
-    >
-      <div className="flex items-center gap-3.5 sm:gap-4">
-        <div className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 transition-all ${iconCls[color]}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div>
-          <h4 className="text-xs sm:text-sm font-bold tracking-wide uppercase text-neutral-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
-            {title}
-          </h4>
-          <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-white/50 mt-0.5 leading-snug">
-            {desc}
-          </p>
-        </div>
-      </div>
-      <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-white/30 group-hover:text-indigo-500 dark:group-hover:text-white/70 group-hover:translate-x-1 transition-all shrink-0" />
-    </a>
   );
 }
 
 function DataTile({ label, value, accent, sub }) {
   return (
-    <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-black/30 border border-black/[0.08] dark:border-white/[0.08] space-y-1 hover:border-indigo-500/30 transition-colors">
-      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-400 dark:text-white/35 block font-semibold">{label}</span>
-      <span className={`text-xs sm:text-sm font-bold block leading-tight truncate ${accent ? "text-indigo-600 dark:text-indigo-300" : "text-neutral-900 dark:text-white"}`}>
+    <div className="p-3.5 rounded-xl bg-[#090b14] border border-white/10 space-y-1 hover:border-white/25 transition-all">
+      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-white/40 block font-semibold">{label}</span>
+      <span className={`text-xs sm:text-sm font-bold block leading-tight truncate ${accent ? "text-indigo-300" : "text-white"}`}>
         {value || "—"}
       </span>
-      {sub && <span className="text-[10px] text-neutral-500 dark:text-white/40 block">{sub}</span>}
+      {sub && <span className="text-[10px] text-white/40 block">{sub}</span>}
     </div>
   );
 }
 
+/**
+ * EXACT CHOOSE PATHWAY COMPONENT MATCHING THE AUTH MODAL
+ */
+function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
+  const handleSelect = (pathway) => {
+    if (onSelect) {
+      onSelect(pathway);
+    } else {
+      window.location.href = `/?open=${pathway}`;
+    }
+  };
+
+  return (
+    <section className="space-y-3.5 text-left font-sans" aria-labelledby="dashboard-pathway-title">
+      {/* Top Nav Eyebrow */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-mono tracking-[0.2em] text-indigo-400/90 uppercase font-semibold">
+          HYDERABAD 2026
+        </span>
+        <span className="text-[10px] font-mono tracking-[0.15em] text-white/40 uppercase font-semibold truncate max-w-[240px]">
+          DWPS KOMPALLY
+        </span>
+      </div>
+
+      {/* Header */}
+      <div>
+        <span className="block mb-1 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">
+          Select your role
+        </span>
+        <h2 id="dashboard-pathway-title" className="font-sans text-2xl sm:text-[26px] font-bold tracking-tight text-white leading-tight">
+          Choose Pathway
+        </h2>
+        <p className="mt-1 text-xs text-white/50 leading-relaxed font-sans max-w-[42ch]">
+          Select your participation track for Resolve MUN 2.0.
+        </p>
+      </div>
+
+      {/* 3 Pathway Cards with Thin Borders */}
+      <div className="space-y-2.5 pt-1" aria-label="Participation pathways">
+        
+        {/* 1. Delegate */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSelect("delegate")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegate"); } }}
+          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+        >
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                Delegate
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-400/20 text-violet-300 font-medium">
+                Individual
+              </span>
+            </div>
+            <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+              Single delegate representation in one specialized committee.
+            </span>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+
+        {/* 2. Delegation */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSelect("delegation")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegation"); } }}
+          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+        >
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                Delegation
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-300 font-medium">
+                Institution
+              </span>
+            </div>
+            <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+              School or university delegations with 8+ student delegates.
+            </span>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+
+        {/* 3. Secretariat */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSelect("secretariat")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("secretariat"); } }}
+          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+        >
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                Secretariat
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 font-medium">
+                Executive
+              </span>
+            </div>
+            <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+              High-command leadership, USG positions, and directors.
+            </span>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+
+      </div>
+
+      {/* Subdued Footer for Closed Tracks */}
+      <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-sans">
+        <span>Looking for OC or EB?</span>
+        <span className="font-mono uppercase tracking-wider text-[10px] text-white/30">
+          Round 1 Closed
+        </span>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * EXACT CHOOSE PATHWAY MODAL (Matching Auth Modal Chassis)
+ */
 function ChoiceModal({ user, onClose }) {
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  const pathways = [
-    { href: "/?open=delegate", icon: User, title: "Register as Delegate", desc: "Individual representative in committee simulations. Country allocation included.", color: "blue" },
-    { href: "/?open=delegation", icon: Users, title: "Register a Delegation", desc: "Group registration for schools or universities with faculty coordinator.", color: "purple" },
-    { href: "/?open=oc", icon: Briefcase, title: "Apply for OC", desc: "Join the Organizing Committee team for summit logistics, marketing & operations.", color: "amber" },
-    { href: "/?open=secretariat", icon: Star, title: "Secretariat Application", desc: "Executive Directorate application for conference policy, leadership & management.", color: "violet" },
-  ];
-
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-xl animate-in fade-in duration-200"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#070919] rounded-t-3xl sm:rounded-3xl border border-black/10 dark:border-white/[0.12] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
-        <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-        <div className="flex justify-center pt-2.5 pb-0 sm:hidden">
-          <div className="w-10 h-1 rounded-full bg-neutral-300 dark:bg-white/20" />
-        </div>
+      <div className="relative z-10 w-full max-w-[480px] rounded-2xl border border-white/20 bg-[#07080e] shadow-[0_25px_65px_rgba(0,0,0,0.85),0_0_35px_rgba(99,102,241,0.15)] overflow-hidden p-6 sm:p-7 animate-in zoom-in-95 duration-200">
         
-        <div className="px-6 pt-5 pb-3 flex items-start justify-between">
-          <div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400 mb-1 font-bold">
-              Resolve MUN 2.0 · INTAKE
-            </p>
-            <h2 className="text-lg sm:text-xl font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
-              CHOOSE YOUR PATHWAY
-            </h2>
-            <p className="text-xs text-neutral-500 dark:text-white/50 mt-0.5">
-              Select your participation track to proceed with registration.
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.16] flex items-center justify-center text-neutral-500 dark:text-white/60 hover:text-neutral-900 dark:hover:text-white transition-all cursor-pointer shrink-0"
-            aria-label="Close modal"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        {/* High-Visibility Rounded Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close modal"
+          className="absolute top-4 right-4 z-40 w-9 h-9 rounded-xl bg-black/80 hover:bg-black border border-white/30 hover:border-white/60 text-white flex items-center justify-center transition-all cursor-pointer shadow-lg active:scale-95"
+        >
+          <X className="w-4 h-4 text-white/90" strokeWidth={2.2} />
+        </button>
 
-        <div className="px-6 pb-6 space-y-2.5">
-          {pathways.map((p) => <PathwayCard key={p.href} {...p} />)}
-          <div className="pt-2 text-center">
-            <span className="text-[10px] font-mono text-neutral-400 dark:text-white/35">
-              Signed in as <strong className="text-neutral-700 dark:text-white/70">{user?.email}</strong>
-            </span>
-          </div>
+        <ChoosePathwayBlock onClose={onClose} isModal={true} />
+
+        <div className="pt-4 text-center">
+          <span className="text-[10px] font-mono text-white/35">
+            Signed in as <strong className="text-white/70">{user?.email}</strong>
+          </span>
         </div>
       </div>
     </div>
@@ -149,7 +230,7 @@ export default function DelegateDashboard() {
   const [authLoading, setAuthLoading] = useState(true);
   const [delegateRecord, setDelegateRecord] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
-  const [systemSettings, setSystemSettings] = useState({ registrationsOpen: true, roundName: "Round 1 Priority Applications" });
+  const [systemSettings, setSystemSettings] = useState({ registrationsOpen: true, roundName: "Round 2 Applications" });
   const [choiceModalOpen, setChoiceModalOpen] = useState(false);
   const [synced, setSynced] = useState(false);
 
@@ -186,7 +267,7 @@ export default function DelegateDashboard() {
       if (record) {
         setDelegateRecord({
           ...record,
-          delegateId: record.id ? `DEL-${record.id.slice(0, 6).toUpperCase()}` : null,
+          delegateId: record.id ? `RM26-DEL-${record.id.slice(0, 4).toUpperCase()}` : null,
           fullName: record.name,
           paymentUTR: record.payment_utr,
           paymentStatus: record.payment_status,
@@ -204,7 +285,7 @@ export default function DelegateDashboard() {
       if (settings) {
         setSystemSettings({
           registrationsOpen: settings.registrations_open !== false,
-          roundName: settings.round_name || "Round 1 Priority Applications",
+          roundName: settings.round_name || "Round 2 Applications",
         });
       }
       setSynced(true);
@@ -212,6 +293,15 @@ export default function DelegateDashboard() {
       console.error("[Dashboard] Error fetching profile:", e);
     } finally {
       setDataLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Sign out error:", err);
     }
   };
 
@@ -229,18 +319,18 @@ export default function DelegateDashboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[var(--theme-bg-base)] flex flex-col items-center justify-center gap-5 transition-colors duration-300">
+      <div className="min-h-screen bg-[#05060c] text-white flex flex-col items-center justify-center gap-5">
         <FloatingOrbs />
         <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center shadow-lg">
-            <span className="font-extrabold text-indigo-500 dark:text-indigo-300 font-mono text-lg">R</span>
+          <div className="w-12 h-12 rounded-2xl border border-white/20 bg-[#090b14] flex items-center justify-center shadow-[0_0_25px_rgba(99,102,241,0.25)]">
+            <span className="font-extrabold text-white font-mono text-lg">R</span>
           </div>
           <div className="flex gap-1.5">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
             ))}
           </div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-neutral-400 dark:text-white/40">Securing Session</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">Securing Session</p>
         </div>
       </div>
     );
@@ -248,30 +338,30 @@ export default function DelegateDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[var(--theme-bg-base)] flex flex-col justify-between transition-colors duration-300">
+      <div className="min-h-screen bg-[#05060c] text-white flex flex-col justify-between selection:bg-indigo-500/30">
         <Navbar />
         <div className="flex-1 flex items-center justify-center p-4 pt-28">
           <FloatingOrbs />
-          <div className="relative z-10 w-full max-w-md p-8 rounded-3xl border border-black/10 dark:border-white/[0.1] bg-white/80 dark:bg-white/[0.03] backdrop-blur-2xl text-center space-y-6 shadow-xl">
-            <div className="w-14 h-14 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center mx-auto text-indigo-500 dark:text-indigo-400 shadow-inner">
-              <Lock className="w-7 h-7" />
+          <div className="relative z-10 w-full max-w-md p-8 rounded-2xl border border-white/15 bg-[#07080e] backdrop-blur-2xl text-center space-y-6 shadow-[0_25px_65px_rgba(0,0,0,0.85)]">
+            <div className="w-14 h-14 rounded-2xl border border-white/20 bg-white/[0.04] flex items-center justify-center mx-auto text-white shadow-inner">
+              <Lock className="w-6 h-6 text-white/80" />
             </div>
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400 mb-1.5 font-bold">
+              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-indigo-400 mb-1.5 font-bold">
                 DELEGATE PORTAL · RESTRICTED
               </p>
-              <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>
+              <h1 className="text-2xl font-extrabold text-white tracking-tight font-sans">
                 Authentication Required
               </h1>
-              <p className="text-xs text-neutral-500 dark:text-white/60 mt-2.5 leading-relaxed">
-                Sign in with your verified credentials to access committee allocations, conference schedule, and official digital pass.
+              <p className="text-xs text-white/60 mt-2.5 leading-relaxed font-sans">
+                Sign in with your verified credentials to access committee allocations, conference schedule, and your official digital pass.
               </p>
             </div>
             <Link
-              href="/"
-              className="cta-btn-hero-match w-full"
+              href="/?open=auth"
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-white/90 active:scale-[0.99] shadow-[0_0_24px_rgba(255,255,255,0.22)]"
             >
-              Return &amp; Sign In <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              Sign In to Portal <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
             </Link>
           </div>
         </div>
@@ -281,15 +371,15 @@ export default function DelegateDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg-base)] text-neutral-900 dark:text-white font-sans transition-colors duration-300 selection:bg-indigo-500/30 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#05060c] text-white font-sans selection:bg-indigo-500/30 flex flex-col justify-between">
       <Navbar />
       <FloatingOrbs />
 
       <main className="relative z-10 max-w-4xl w-full mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-5 flex-1">
 
-        {/* HERO IDENTITY CARD (Minimal Boxy Soft Typeform-like) */}
-        <section className="relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/[0.1] bg-white/80 dark:bg-[#070919] backdrop-blur-2xl p-6 sm:p-8 shadow-sm">
-          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+        {/* HERO IDENTITY CARD (Obsidian Luxury Chassis Matching Auth Page) */}
+        <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] backdrop-blur-2xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-500" />
           
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-4 sm:gap-5">
@@ -298,41 +388,41 @@ export default function DelegateDashboard() {
                   <img
                     src={user.photoURL}
                     alt={displayName}
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-indigo-400/30 shadow-md"
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
                   />
                 ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-extrabold text-xl sm:text-2xl shadow-md border border-white/20">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#100726] via-[#090b1c] to-[#04050a] flex items-center justify-center text-white font-extrabold text-xl sm:text-2xl shadow-md border border-white/20">
                     {initials}
                   </div>
                 )}
                 {isReg && (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-white dark:border-[#070919] flex items-center justify-center text-white shadow-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#07080e] flex items-center justify-center text-black shadow-sm">
+                    <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={3} />
                   </div>
                 )}
               </div>
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[9px] font-mono uppercase tracking-[0.22em] text-indigo-600 dark:text-indigo-400 font-bold">
+                  <span className="text-[9px] font-mono uppercase tracking-[0.22em] text-indigo-400 font-bold">
                     {systemSettings.roundName}
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-white/20" />
-                  <span className="text-[10px] font-mono text-neutral-400 dark:text-white/40">
-                    EDITION 2.0
+                  <span className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className="text-[10px] font-mono text-white/40">
+                    EDITION 2026
                   </span>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-white tracking-tight uppercase" style={{ fontFamily: "'Inter', sans-serif" }}>
+                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight uppercase font-sans">
                   {displayName}
                 </h1>
-                <p className="text-xs font-mono text-neutral-500 dark:text-white/50 truncate mt-0.5">
+                <p className="text-xs font-mono text-white/50 truncate mt-0.5">
                   {user.email}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <StatusPill ok={isReg} okLabel="Registered" pendingLabel="Unregistered" />
-                  <StatusPill locked={!isReg} ok={isPaid} okLabel="Verified &amp; Paid" pendingLabel="Verification Pending" lockedLabel="Payment Pending" />
+                  <StatusPill locked={!isReg} ok={isPaid} okLabel="Verified &amp; Cleared" pendingLabel="Verification Pending" lockedLabel="Payment Pending" />
                   {isAllotted && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/25">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-blue-500/15 text-blue-300 border border-blue-500/25">
                       <Globe className="w-2.5 h-2.5" />Allotted
                     </span>
                   )}
@@ -341,82 +431,57 @@ export default function DelegateDashboard() {
             </div>
 
             {/* Quick Sync & Delegate ID */}
-            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-black/[0.06] dark:border-white/[0.08]">
+            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/10">
               {isReg && delegateRecord?.delegateId ? (
-                <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-black/40 border border-indigo-500/20 text-left sm:text-right">
-                  <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-400 dark:text-white/40 block">DELEGATE ID</span>
-                  <span className="text-base font-mono font-black text-indigo-600 dark:text-indigo-300 tracking-wider block mt-0.5">
+                <div className="p-3 rounded-xl bg-[#090b14] border border-white/15 text-left sm:text-right shadow-sm">
+                  <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-white/40 block">DELEGATE ID</span>
+                  <span className="text-base font-mono font-black text-indigo-300 tracking-wider block mt-0.5">
                     {delegateRecord.delegateId}
                   </span>
                 </div>
               ) : (
-                <span className="text-[11px] font-mono text-neutral-400 dark:text-white/40">
-                  STATUS: <strong className="text-amber-500">PENDING</strong>
+                <span className="text-[11px] font-mono text-white/40">
+                  STATUS: <strong className="text-amber-400">PENDING INTAKE</strong>
                 </span>
               )}
 
-              <button
-                type="button"
-                onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
-                disabled={dataLoading}
-                className="h-8 px-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] text-[11px] font-mono text-neutral-600 dark:text-white/70 hover:text-neutral-900 dark:hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <RefreshCw className={`w-3 h-3 ${dataLoading ? "animate-spin text-indigo-500" : ""}`} />
-                <span>{dataLoading ? "Syncing..." : "Sync Status"}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
+                  disabled={dataLoading}
+                  className="h-8 px-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-[11px] font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${dataLoading ? "animate-spin text-indigo-400" : ""}`} />
+                  <span>{dataLoading ? "Syncing..." : "Sync Status"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="h-8 px-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-red-500/20 hover:border-red-500/30 text-[11px] font-mono text-white/50 hover:text-red-300 transition-colors cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Venue & Dates Banner */}
+          <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-white/50 font-sans">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+              <span>Venue: <strong className="text-white/80">Delhi World Public School, Kompally</strong></span>
+            </div>
+            <div>
+              <span>Dates: <strong className="text-white/80">20th – 22nd November 2026</strong></span>
             </div>
           </div>
         </section>
 
-        {/* STATE A: UNREGISTERED STATE */}
+        {/* STATE A: UNREGISTERED STATE (Exact Choose Pathway Component Embedded) */}
         {!isReg && (
-          <section className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-amber-500/[0.03] dark:bg-[#120e09] p-6 sm:p-8 text-center space-y-5 shadow-sm">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-500">
-              <FileCheck className="w-7 h-7" />
-            </div>
-            <div>
-              <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-amber-600 dark:text-amber-400 font-bold mb-1">
-                ACTION REQUIRED · OFFICIAL INTAKE
-              </p>
-              <h2 className="text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
-                Secure Your Seat at the Summit
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-600 dark:text-white/60 leading-relaxed max-w-md mx-auto mt-2">
-                Your authenticated profile is active as <strong className="text-neutral-900 dark:text-white">{user.email}</strong>. Complete your registration to receive official committee allocations and your digital entrance QR dossier.
-              </p>
-            </div>
-
-            {systemSettings.registrationsOpen ? (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setChoiceModalOpen(true)}
-                  className="cta-btn-hero-match"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  <span>Choose Registration Track</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </button>
-              </div>
-            ) : (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-mono">
-                <span>Registrations paused by the Secretariat.</span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
-              {[
-                { icon: Globe, label: "Country Matrix", desc: "Flagship committee allotment" },
-                { icon: QrCode, label: "Encrypted Pass", desc: "Digital QR venue check-in" },
-                { icon: Award, label: "Official Certificate", desc: "Accreditation & recognition" },
-              ].map(({ icon: Icon, label, desc }) => (
-                <div key={label} className="p-4 rounded-2xl bg-black/[0.02] dark:bg-black/30 border border-black/[0.06] dark:border-white/[0.06] text-center">
-                  <Icon className="w-5 h-5 mx-auto mb-1.5 text-indigo-500 dark:text-indigo-400" />
-                  <p className="text-xs font-bold text-neutral-900 dark:text-white">{label}</p>
-                  <p className="text-[10px] text-neutral-500 dark:text-white/40 mt-0.5">{desc}</p>
-                </div>
-              ))}
-            </div>
+          <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+            <ChoosePathwayBlock onSelect={(track) => { window.location.href = `/?open=${track}`; }} />
           </section>
         )}
 
@@ -424,31 +489,31 @@ export default function DelegateDashboard() {
         {isReg && (
           <div className="space-y-5">
             {/* DOSSIER & ALLOTMENT */}
-            <section className="relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/[0.1] bg-white/80 dark:bg-[#070919] backdrop-blur-2xl p-6 sm:p-7 shadow-sm">
+            <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-7 shadow-sm">
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-400 dark:text-white/40 mb-0.5 font-bold">
+                  <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-white/40 mb-0.5 font-bold">
                     OFFICIAL DOSSIER
                   </p>
-                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-neutral-900 dark:text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-white font-sans">
                     Conference Registration Record
                   </h3>
                 </div>
-                <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg ${delegateRecord.delegationCode ? "text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/25" : "text-neutral-500 dark:text-white/40 bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]"}`}>
+                <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg ${delegateRecord.delegationCode ? "text-indigo-300 bg-indigo-500/10 border border-indigo-500/25" : "text-white/50 bg-white/[0.04] border border-white/10"}`}>
                   {delegateRecord.delegationCode ? `DELEGATION: ${delegateRecord.delegationCode}` : "INDEPENDENT DELEGATE"}
                 </span>
               </div>
 
               {/* Committee Preferences */}
               <div className="mb-4">
-                <p className="text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-400 dark:text-white/35 mb-2 font-bold">
+                <p className="text-[9px] font-mono uppercase tracking-[0.18em] text-white/35 mb-2 font-bold">
                   Committee Preferences Submitted
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {[1, 2, 3].map((n) => (
-                    <div key={n} className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-black/30 border border-black/[0.06] dark:border-white/[0.08] hover:border-indigo-500/30 transition-colors">
-                      <span className="text-[8px] font-mono uppercase tracking-[0.18em] text-neutral-400 dark:text-white/30 block font-bold">PREFERENCE {n}</span>
-                      <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white mt-1 block leading-snug truncate">
+                    <div key={n} className="p-3.5 rounded-xl bg-[#090b14] border border-white/10 hover:border-white/25 transition-colors">
+                      <span className="text-[8px] font-mono uppercase tracking-[0.18em] text-white/30 block font-bold">PREFERENCE {n}</span>
+                      <span className="text-xs sm:text-sm font-bold text-white mt-1 block leading-snug truncate">
                         {delegateRecord[`pref${n}`] || "—"}
                       </span>
                     </div>
@@ -465,65 +530,65 @@ export default function DelegateDashboard() {
               </div>
 
               {/* Payment Verification Status Box */}
-              <div className="mt-4 p-4 rounded-2xl bg-black/[0.02] dark:bg-black/30 border border-black/[0.06] dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="mt-4 p-4 rounded-xl bg-[#090b14] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-neutral-400 dark:text-white/35 mb-1 font-bold">
+                  <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/35 mb-1 font-bold">
                     Payment Verification Status
                   </p>
                   <div className="flex items-center gap-2">
                     {isPaid ? (
                       <>
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                        <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">VERIFIED &amp; CONFIRMED</span>
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs sm:text-sm font-bold text-emerald-300">VERIFIED &amp; CONFIRMED</span>
                       </>
                     ) : (
                       <>
-                        <Clock className="w-4 h-4 text-amber-500 animate-pulse" />
-                        <span className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400">UNDER SECRETARIAT REVIEW</span>
+                        <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                        <span className="text-xs sm:text-sm font-bold text-amber-300">UNDER SECRETARIAT REVIEW</span>
                       </>
                     )}
                   </div>
-                  <p className="text-[11px] font-mono text-neutral-500 dark:text-white/40 mt-0.5">
-                    UTR: <span className="font-semibold text-neutral-800 dark:text-white/70">{delegateRecord.paymentUTR || delegateRecord.txnId || "Awaiting submission"}</span>
+                  <p className="text-[11px] font-mono text-white/40 mt-0.5">
+                    UTR: <span className="font-semibold text-white/70">{delegateRecord.paymentUTR || delegateRecord.txnId || "Awaiting verification"}</span>
                   </p>
                 </div>
                 {isPaid && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-300 font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                    Confirmed Pass
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono uppercase tracking-widest text-emerald-300 font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                    Cleared Seat
                   </span>
                 )}
               </div>
             </section>
 
             {/* DIGITAL PASS WITH QR */}
-            <section className="relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/[0.1] bg-white/80 dark:bg-[#070919] backdrop-blur-2xl p-6 sm:p-7 shadow-sm">
+            <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-7 shadow-sm">
               <div className="mb-5">
-                <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-400 dark:text-white/40 mb-0.5 font-bold">
+                <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-white/40 mb-0.5 font-bold">
                   ACCREDITATION
                 </p>
-                <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-neutral-900 dark:text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
+                <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-white font-sans">
                   Official Digital Conference Pass
                 </h3>
-                <p className="text-xs text-neutral-500 dark:text-white/40 mt-0.5">
-                  Present this authenticated QR pass at the venue entrance checkpoint for seamless roll call and credential verification.
+                <p className="text-xs text-white/40 mt-0.5">
+                  Present this authenticated QR pass at the entrance checkpoint at Delhi World Public School, Kompally.
                 </p>
               </div>
 
               {isPaid ? (
                 <div className="flex flex-col items-center">
                   <div className="relative w-full max-w-xs mx-auto">
-                    <div className="relative rounded-3xl overflow-hidden border border-black/10 dark:border-white/15 bg-white dark:bg-[#050714] shadow-xl">
-                      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-3 flex items-center justify-between text-white">
+                    <div className="relative rounded-2xl overflow-hidden border border-white/20 bg-[#090b14] shadow-2xl">
+                      <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 px-5 py-3 flex items-center justify-between text-white">
                         <div>
-                          <p className="text-[8px] font-mono uppercase tracking-[0.25em] text-white/80 font-bold">Resolve MUN 2.0</p>
+                          <p className="text-[8px] font-mono uppercase tracking-[0.25em] text-white/80 font-bold">Resolve MUN 2026</p>
                           <p className="text-xs font-extrabold tracking-widest uppercase">Digital Pass</p>
                         </div>
                         <ShieldCheck className="w-5 h-5 text-white" />
                       </div>
 
                       <div className="p-5 flex flex-col items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-white border border-neutral-200 shadow-inner">
+                        <div className="p-3 rounded-xl bg-white border border-neutral-200 shadow-inner">
                           <img
                             src={`https://quickchart.io/qr?size=220&text=${encodeURIComponent("RESOLVE_PASS:" + delegateRecord.delegateId + ":" + delegateRecord.email)}`}
                             alt="QR Pass"
@@ -532,56 +597,56 @@ export default function DelegateDashboard() {
                         </div>
 
                         <div className="text-center space-y-1 w-full">
-                          <p className="text-sm font-extrabold uppercase text-neutral-900 dark:text-white">
+                          <p className="text-sm font-extrabold uppercase text-white">
                             {delegateRecord.fullName || user.displayName}
                           </p>
-                          <p className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 tracking-widest">
+                          <p className="text-[10px] font-mono font-bold text-indigo-300 tracking-widest">
                             {delegateRecord.delegateId}
                           </p>
                           {isAllotted && (
                             <div className="flex items-center justify-center gap-2 mt-1">
-                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-[10px] font-bold text-emerald-600 dark:text-emerald-300 font-mono">
+                              <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/25 text-[10px] font-bold text-emerald-300 font-mono">
                                 {delegateRecord.allocatedCommittee}
                               </span>
-                              <span className="text-[10px] text-neutral-500 dark:text-white/50 truncate max-w-[120px]">
+                              <span className="text-[10px] text-white/60 truncate max-w-[120px]">
                                 {delegateRecord.allocatedCountry}
                               </span>
                             </div>
                           )}
                         </div>
 
-                        <div className="w-full flex items-center justify-between pt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
-                          <span className="text-[9px] font-mono text-neutral-400 dark:text-white/35 uppercase tracking-widest">resolvemun.in</span>
-                          <span className="flex items-center gap-1 text-[9px] font-mono text-emerald-500 uppercase tracking-widest font-bold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />Verified
+                        <div className="w-full flex items-center justify-between pt-3 border-t border-white/10">
+                          <span className="text-[9px] font-mono text-white/35 uppercase tracking-widest">DWPS Kompally</span>
+                          <span className="flex items-center gap-1 text-[9px] font-mono text-emerald-400 uppercase tracking-widest font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />Verified
                           </span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-neutral-400 dark:text-white/30 mt-4 text-center max-w-xs leading-relaxed">
-                    Checkpoint scan via official Secretariat terminals.
+                  <p className="text-[10px] text-white/35 mt-4 text-center max-w-xs leading-relaxed">
+                    Checkpoint roll-call via official Secretariat terminal scanners.
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center py-8 text-center space-y-4">
                   <div className="relative">
-                    <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-white/[0.04] border border-black/10 dark:border-white/[0.08] flex items-center justify-center mx-auto text-neutral-400 dark:text-white/20">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto text-white/30">
                       <Lock className="w-8 h-8" />
                     </div>
-                    <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                    <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
                       <Clock className="w-3 h-3" />
                     </div>
                   </div>
                   <div className="space-y-1.5 max-w-sm">
-                    <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-                      Pass Awaiting Verification
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-white">
+                      Pass Awaiting Clearance
                     </h4>
-                    <p className="text-xs text-neutral-500 dark:text-white/50 leading-relaxed">
-                      Your payment (UTR: <span className="font-mono text-neutral-800 dark:text-white/80">{delegateRecord.paymentUTR || delegateRecord.txnId || "Submitted"}</span>) is currently being reconciled. Your QR access pass activates automatically upon Secretariat approval.
+                    <p className="text-xs text-white/50 leading-relaxed font-sans">
+                      Your payment (UTR: <span className="font-mono text-white/80">{delegateRecord.paymentUTR || delegateRecord.txnId || "Submitted"}</span>) is currently being verified. Your QR conference pass activates automatically upon Secretariat clearance.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-amber-600 dark:text-amber-400">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-amber-300">
                     <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
                     <span>Awaiting confirmation from Directorate</span>
                   </div>
@@ -592,44 +657,47 @@ export default function DelegateDashboard() {
         )}
 
         {/* QUICK ACTIONS CARD */}
-        <section className="p-5 sm:p-6 rounded-3xl border border-black/10 dark:border-white/[0.1] bg-white/80 dark:bg-[#070919] backdrop-blur-2xl space-y-3 shadow-sm">
-          <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-400 dark:text-white/35 font-bold">
+        <section className="p-5 sm:p-6 rounded-2xl border border-white/15 bg-[#07080e] space-y-3 shadow-sm">
+          <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-white/35 font-bold">
             PORTAL SHORTCUTS
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <Link
               href="/"
-              className="group flex items-center gap-3 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.025] hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.06] hover:border-indigo-500/30 transition-all"
+              className="group flex items-center gap-3 p-3.5 rounded-xl bg-[#090b14] hover:bg-[#0f111e] border border-white/10 hover:border-white/30 transition-all"
             >
-              <Globe className="w-4 h-4 text-neutral-400 dark:text-white/35 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors shrink-0" />
-              <span className="text-xs font-semibold text-neutral-700 dark:text-white/70 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+              <Globe className="w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors shrink-0" />
+              <span className="text-xs font-semibold text-white/70 group-hover:text-white transition-colors">
                 Return to Conference Home
               </span>
-              <ExternalLink className="w-3.5 h-3.5 text-neutral-300 dark:text-white/20 ml-auto group-hover:text-neutral-500 dark:group-hover:text-white/50 transition-colors" />
+              <ExternalLink className="w-3.5 h-3.5 text-white/20 ml-auto group-hover:text-white/60 transition-colors" />
             </Link>
 
             <button
               type="button"
               onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
-              className="group flex items-center gap-3 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.025] hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.06] hover:border-indigo-500/30 transition-all cursor-pointer w-full text-left"
+              className="group flex items-center gap-3 p-3.5 rounded-xl bg-[#090b14] hover:bg-[#0f111e] border border-white/10 hover:border-white/30 transition-all cursor-pointer w-full text-left"
             >
-              <RefreshCw className={`w-4 h-4 text-neutral-400 dark:text-white/35 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors shrink-0 ${dataLoading ? "animate-spin" : ""}`} />
-              <span className="text-xs font-semibold text-neutral-700 dark:text-white/70 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+              <RefreshCw className={`w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors shrink-0 ${dataLoading ? "animate-spin" : ""}`} />
+              <span className="text-xs font-semibold text-white/70 group-hover:text-white transition-colors">
                 Sync Registration Record
               </span>
-              {dataLoading && <span className="text-[10px] font-mono text-indigo-500 ml-auto">Syncing...</span>}
+              {dataLoading && <span className="text-[10px] font-mono text-indigo-400 ml-auto">Syncing...</span>}
             </button>
 
             {!isReg && systemSettings.registrationsOpen && (
               <button
                 type="button"
                 onClick={() => setChoiceModalOpen(true)}
-                className="group flex items-center gap-3 p-3.5 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/25 hover:border-indigo-500/40 transition-all cursor-pointer col-span-full"
+                className="group flex items-center justify-between p-3.5 rounded-xl bg-white text-black font-bold hover:bg-white/90 transition-all cursor-pointer col-span-full shadow-[0_0_20px_rgba(255,255,255,0.2)]"
               >
-                <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
-                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-300 uppercase tracking-wider">
-                  Open Application Matrix &rarr;
-                </span>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-black" />
+                  <span className="text-xs uppercase tracking-wider">
+                    Select Your Pathway Now
+                  </span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-black" />
               </button>
             )}
           </div>

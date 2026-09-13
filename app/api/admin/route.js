@@ -25,7 +25,25 @@ export async function GET(request) {
     }
 
     const data = await res.json();
-    return NextResponse.json(data);
+    const registrations = data.registrations || data.Registrations || [];
+    const delegations = data.delegations || data.Delegations || [];
+    const abandonedLeads = data.abandonedLeads || data.Abandoned_Leads || [];
+    const ebApplicants = data.ebApplicants || data.EB_Applications || [];
+    const ocApplicants = data.ocApplicants || data.OC_Applications || [];
+    const secretariatApplicants = data.secretariatApplicants || data.Secretariat_Applications || [];
+    const waitlist = data.waitlist || data.Waitlist || [];
+
+    return NextResponse.json({
+      status: 'success',
+      registrations,
+      delegations,
+      abandonedLeads,
+      ebApplicants,
+      ocApplicants,
+      secretariatApplicants,
+      waitlist,
+      raw: data
+    });
   } catch (err) {
     return NextResponse.json({ status: 'error', message: err.message }, { status: 500 });
   }

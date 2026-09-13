@@ -77,7 +77,6 @@
     }
     generateDynamicQR(String(fee), 'paymentQRImage', 'upiID');
 
-    // Update referral feedback message
     const referralVal = normalizeReferralCode(document.getElementById('regReferral')?.value || '');
     const feedbackEl = document.getElementById('referralFeedback');
     if (feedbackEl) {
@@ -100,37 +99,18 @@
     updateDelegatePaymentUI();
   }
 
-  // 1. Dynamic QR Generator
-  // 1. Dynamic QR Generator (RapidAPI)
-  // 1. Dynamic QR Generator (Ad-Blocker Safe & Bulletproof)
+  // 1. Dynamic QR Generator (Ad-Blocker Safe & QuickChart API)
   async function generateDynamicQR(amountStr, imgElementId, upiTextElementId) {
-    // 1. Clean the amount
-    let cleanAmount = "2699";
+    let cleanAmount = "2199";
     if (amountStr) {
-      cleanAmount = String(amountStr).replace(/[^0-9.]/g, '');
+      cleanAmount = String(amountStr).replace(/[^0-9.]/g, '') || "2199";
     }
 
-    // 2. Use Bhoomi's UPI ID for every payment QR.
     const currentPayee = {
       pa: "bhoomianilbasrani@okhdfcbank",
       pn: "Bhoomi Basrani"
     };
-    /*
-    // Old payee rotation disabled on purpose.
-    const PAYEES = [
-        { pa: "narenjmf@icici", pn: "ELAPANTI NARENDHAR RAJU" },
-        { pa: "bhoomianilbasrani@okhdfcbank", pn: "Bhoomi Basrani" },
-        { pa: "sujatha.g22@okhdfcbank", pn: "Sujatha Gubbala" }
-    ];
 
-    let count = parseInt(localStorage.getItem('resolve_pay_count') || '0');
-    count++;
-    localStorage.setItem('resolve_pay_count', count.toString());
-
-    let currentPayee = PAYEES[count % PAYEES.length];
-    */
-
-    // 3. Update UI Text
     const upiText = document.getElementById(upiTextElementId);
     if (upiText) {
       upiText.innerText = currentPayee.pa;
@@ -139,12 +119,10 @@
     const qrImage = document.getElementById(imgElementId);
     if (!qrImage) return;
 
-    // 4. Construct the UPI Link
     const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
     const safeEncodedData = encodeURIComponent(upiString);
 
-    // 5. Generate QR using QuickChart (Safe from Ad-Blockers)
-    qrImage.src = `https://quickchart.io/qr?size=250&text=${safeEncodedData}`;
+    qrImage.src = `https://quickchart.io/qr?size=320&text=${safeEncodedData}`;
   }
 
   // 2. Form Validation Error Handling
@@ -157,7 +135,6 @@
     if (!errorSpan || !errorSpan.classList.contains('error-message')) {
       errorSpan = document.createElement('span');
       errorSpan.className = 'error-message';
-      // Inline styles to guarantee it works without extra CSS
       errorSpan.style.color = '#ff3b30';
       errorSpan.style.fontSize = '12px';
       errorSpan.style.display = 'block';
@@ -176,6 +153,7 @@
       errorSpan.remove();
     }
   }
+
 
   /**
    * CUSTOM ALERT SYSTEM
