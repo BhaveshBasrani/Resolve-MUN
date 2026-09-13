@@ -32,6 +32,7 @@ export async function GET(request) {
     const ocApplicants = data.ocApplicants || data.OC_Applications || [];
     const secretariatApplicants = data.secretariatApplicants || data.Secretariat_Applications || [];
     const waitlist = data.waitlist || data.Waitlist || [];
+    const siteUsers = data.siteUsers || data.Users || [];
 
     return NextResponse.json({
       status: 'success',
@@ -42,6 +43,7 @@ export async function GET(request) {
       ocApplicants,
       secretariatApplicants,
       waitlist,
+      siteUsers,
       raw: data
     });
   } catch (err) {

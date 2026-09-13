@@ -111,6 +111,20 @@ export default function Home() {
 
     const unsubscribe = onAuthStateChanged(auth, (rawUser) => {
       syncUser(rawUser || null);
+      if (rawUser && rawUser.email) {
+        // Fast background check: If already registered, set local storage flag
+        fetch(`/api/delegate?email=${encodeURIComponent(rawUser.email)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.found) {
+              if (typeof window !== "undefined") {
+                localStorage.setItem("resolve_user_registered", "true");
+                if (data.regId) localStorage.setItem("resolve_delegate_id", data.regId);
+              }
+            }
+          })
+          .catch(() => {});
+      }
     });
 
     if (typeof window !== "undefined") {
@@ -135,6 +149,10 @@ export default function Home() {
 
   const handleOpenSelection = (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true") {
+      window.location.href = "/dashboard";
+      return;
+    }
     const isVerified = Boolean(
       auth.currentUser &&
       (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
@@ -429,6 +447,10 @@ export default function Home() {
 
 
       window.selectPathway = function (type) {
+        if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true" && (type === "delegate" || type === "delegation")) {
+          window.location.href = "/dashboard";
+          return;
+        }
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
         closeModalById("selectionModal");
 
@@ -472,6 +494,10 @@ export default function Home() {
       };
 
       window.openRegistration = function () {
+        if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true") {
+          window.location.href = "/dashboard";
+          return;
+        }
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
         // Auth & Verification Gate
         const isVerified = Boolean(
@@ -518,6 +544,10 @@ export default function Home() {
       };
 
       window.openDelRegistration = function () {
+        if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true") {
+          window.location.href = "/dashboard";
+          return;
+        }
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
         // Auth & Verification Gate
         const isVerified = Boolean(

@@ -62,16 +62,13 @@ export default function SuperAdminPage() {
   const [abandonedLeads, setAbandonedLeads] = useState([]);
   const [ebApplications, setEbApplications] = useState([]);
   const [secApplications, setSecApplications] = useState([]);
+  const [siteUsers, setSiteUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [syncNotice, setSyncNotice] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState(null);
 
   // Audio effects
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
-
-  // Live Telemetry Radar
-  const [liveWatchers, setLiveWatchers] = useState(24);
-  const [currentEventIdx, setCurrentEventIdx] = useState(0);
 
   // Leads Filter: 'ALL' | 'STEP3' | 'STEP2' | 'STEP1'
   const [leadStepFilter, setLeadStepFilter] = useState('ALL');
@@ -136,34 +133,7 @@ export default function SuperAdminPage() {
     setTimeout(() => setSyncNotice(null), 3500);
   };
 
-  // Live Watchers Flutter & Real-Time Pulse
-  useEffect(() => {
-    const watcherTimer = setInterval(() => {
-      setLiveWatchers(prev => {
-        const delta = Math.floor(Math.random() * 5) - 2;
-        const next = Math.max(18, Math.min(38, prev + delta));
-        return next;
-      });
-    }, 4000);
-
-    const telemetryTimer = setInterval(() => {
-      setCurrentEventIdx(prev => (prev + 1) % 6);
-    }, 4500);
-
-    return () => {
-      clearInterval(watcherTimer);
-      clearInterval(telemetryTimer);
-    };
-  }, []);
-
-  const telemetryEvents = useMemo(() => [
-    { city: "Hyderabad, TS", action: "Delegate reviewing UNSC & DISEC agendas", time: "12s ago", dot: "bg-emerald-400" },
-    { city: "Bengaluru, KA", action: "School Delegation head inspecting 10-delegate roster", time: "34s ago", dot: "bg-indigo-400" },
-    { city: "Mumbai, MH", action: "Applicant submitted Executive Board CV for review", time: "1m ago", dot: "bg-purple-400" },
-    { city: "New Delhi, DL", action: "Delegate initiated UPI QR code scanning on GPay", time: "2m ago", dot: "bg-amber-400" },
-    { city: "Secunderabad, TS", action: "Institutional Coordinator checking venue logistics", time: "3m ago", dot: "bg-blue-400" },
-    { city: "Chennai, TN", action: "Delegate authenticated via 6-digit security code", time: "5m ago", dot: "bg-emerald-400" },
-  ], []);
+  // -- all intervals removed (no fake telemetry) --
 
   // Fetch Live Data from Server Proxy
   const fetchLiveDatabase = async () => {
@@ -204,16 +174,36 @@ export default function SuperAdminPage() {
             allocatedCommittee: r.allocatedCommittee || r.AllocatedCommittee || '',
             allocatedCountry: r.allocatedCountry || r.AllocatedCountry || '',
             delegationCode: r.delegationCode || r.DelegationCode || '',
-            allotmentEmailSent: r.allotmentEmailSent || r.AllotmentEmailSent || false
+            allotmentEmailSent: r.allotmentEmailSent || r.AllotmentEmailSent || false,
+            submittedAt: r.Timestamp || r.timestamp || r.submittedAt || ''
           }));
+
+          // Deduplicate siteUsers by email, keep latest login
+          const rawUsers = json.siteUsers || [];
+          const usersByEmail = {};
+          rawUsers.forEach(u => {
+            const em = (u.Email || u.email || '').trim().toLowerCase();
+            if (!em) return;
+            const ts = u.LastLogin || u.Timestamp || u.timestamp || '';
+            if (!usersByEmail[em] || ts > (usersByEmail[em].lastSeen || '')) {
+              usersByEmail[em] = {
+                uid: u.UID || u.uid || '',
+                name: u.DisplayName || u.displayName || u.FullName || '',
+                email: em,
+                lastSeen: ts,
+                role: u.Role || u.role || 'User'
+              };
+            }
+          });
 
           setRegistrations(normalizedRegs);
           setDelegations(json.delegations || []);
           setAbandonedLeads(normalizedLeads);
           setEbApplications(json.ebApplicants || []);
           setSecApplications(json.secretariatApplicants || []);
+          setSiteUsers(Object.values(usersByEmail));
           setLastSyncTime(new Date().toLocaleTimeString());
-          notify('Live operational database synchronized from Cloud Sheets!');
+          notify('Database synced.');
         }
       } else {
         notify('Failed to load database. Check server connection.', 'error');
@@ -247,7 +237,14 @@ export default function SuperAdminPage() {
   }, [registrations.length, totalDelMembers, ebApplications.length, secApplications.length]);
 
   const verifiedDelegatesCount = useMemo(() => {
-    return registrations.filter(r => r.status === 'Confirmed' || r.status === 'Allocated' || r.status === 'Payment_Verified').length;
+    return registrations.filter(r => (
+      r.status === 'Confirmed' ||
+      r.status === 'Allocated' ||
+      r.status === 'Payment_Verified' ||
+      r.status === 'Manual_Approved' ||
+      r.status === 'APPROVED' ||
+      (r.paymentUTR && String(r.paymentUTR).trim().length > 3)
+    )).length;
   }, [registrations]);
 
   const totalVerifiedRevenue = useMemo(() => {
@@ -259,6 +256,20 @@ export default function SuperAdminPage() {
     }, 0);
     return indiv + del;
   }, [verifiedDelegatesCount, delegations]);
+
+  // Users who logged in but haven't started a registration or lead
+  const loggedInNotApplied = useMemo(() => {
+    const registeredEmails = new Set(
+      registrations.map(r => (r.email || '').trim().toLowerCase()).filter(Boolean)
+    );
+    const leadEmails = new Set(
+      abandonedLeads.map(l => (l.email || '').trim().toLowerCase()).filter(Boolean)
+    );
+    return siteUsers.filter(u => {
+      const em = (u.email || '').trim().toLowerCase();
+      return em && !registeredEmails.has(em) && !leadEmails.has(em);
+    });
+  }, [siteUsers, registrations, abandonedLeads]);
 
   // Committee Matrix Gauges
   const COMMITTEES = useMemo(() => [
@@ -310,9 +321,33 @@ export default function SuperAdminPage() {
     });
   }, [registrations, searchQuery, filterStatus]);
 
+  // Active Incomplete Leads (Excluding anyone who has already registered)
+  const activeAbandonedLeads = useMemo(() => {
+    const registeredEmails = new Set(
+      registrations
+        .map(r => (r.email || r.Email || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const seenEmails = new Set();
+    const deduplicated = [];
+
+    // Prioritize newest lead sessions
+    const reversed = [...abandonedLeads].reverse();
+    for (const lead of reversed) {
+      const email = (lead.email || lead.Email || '').trim().toLowerCase();
+      if (email && registeredEmails.has(email)) continue;
+      if ((lead.status || lead.Status) === 'Converted') continue;
+      if (email && seenEmails.has(email)) continue;
+      if (email) seenEmails.add(email);
+      deduplicated.push(lead);
+    }
+    return deduplicated;
+  }, [abandonedLeads, registrations]);
+
   // Filtered Abandoned Leads
   const filteredLeads = useMemo(() => {
-    return abandonedLeads.filter(lead => {
+    return activeAbandonedLeads.filter(lead => {
       if (leadStepFilter === 'ALL') return true;
       const s = (lead.step || lead.LastStep || lead.lastStep || '').toLowerCase();
       if (leadStepFilter === 'STEP3') return s.includes('3') || s.includes('payment') || s.includes('pay') || s.includes('qr');
@@ -320,7 +355,7 @@ export default function SuperAdminPage() {
       if (leadStepFilter === 'STEP1') return s.includes('1') || s.includes('basic') || s.includes('info') || s.includes('contact') || s.includes('detail');
       return true;
     });
-  }, [abandonedLeads, leadStepFilter]);
+  }, [activeAbandonedLeads, leadStepFilter]);
 
   // Dynamic & Mathematically Accurate Funnel Calculations
   const funnelStats = useMemo(() => {
@@ -734,30 +769,28 @@ export default function SuperAdminPage() {
           )}
         </div>
 
-        {/* Live Telemetry Pulse Bar */}
+        {/* Real Stats Bar */}
         {isAdminUnlocked && (
-          <div className="max-w-7xl mx-auto mt-2 pt-2 border-t border-white/[0.05] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] font-mono">
-            <div className="flex items-center gap-2">
+          <div className="max-w-7xl mx-auto mt-2 pt-2 border-t border-white/[0.05] flex flex-wrap items-center gap-4 text-[11px] font-mono">
+            <div className="flex items-center gap-1.5">
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-emerald-400 font-bold tracking-wide">
-                {liveWatchers} PROSPECTIVE DELEGATES WATCHING LIVE
-              </span>
-              <span className="text-white/20 hidden sm:inline">|</span>
-              <span className="text-white/40 hidden sm:inline">LATENCY: 22ms</span>
-              <span className="text-white/20 hidden sm:inline">|</span>
-              <span className="text-white/40 hidden sm:inline">ENGINE: NOMINAL</span>
+              <span className="text-emerald-400 font-bold">{registrations.length} REGISTERED</span>
             </div>
-
-            <div className="flex items-center gap-2 text-white/60 truncate max-w-md">
-              <Radio className="w-3 h-3 text-purple-400 shrink-0" />
-              <span className="truncate">
-                <strong className="text-purple-300">{telemetryEvents[currentEventIdx].city}:</strong> {telemetryEvents[currentEventIdx].action}
-              </span>
-              <span className="text-[10px] text-white/40 shrink-0">({telemetryEvents[currentEventIdx].time})</span>
-            </div>
+            <span className="text-white/20 hidden sm:inline">|</span>
+            <span className="text-amber-300/80">{activeAbandonedLeads.length} LEADS</span>
+            <span className="text-white/20 hidden sm:inline">|</span>
+            <span className="text-indigo-300/80">{siteUsers.length} UNIQUE LOGINS</span>
+            <span className="text-white/20 hidden sm:inline">|</span>
+            <span className="text-white/40">{loggedInNotApplied.length} LOGGED IN · NOT APPLIED</span>
+            {lastSyncTime && (
+              <>
+                <span className="text-white/20 hidden sm:inline">|</span>
+                <span className="text-white/30">SYNCED {lastSyncTime}</span>
+              </>
+            )}
           </div>
         )}
       </header>
@@ -851,10 +884,10 @@ export default function SuperAdminPage() {
                   Abandoned Leads
                 </span>
                 <span className="text-3xl font-mono font-bold text-amber-300 mt-1 block">
-                  {abandonedLeads.length}
+                  {activeAbandonedLeads.length}
                 </span>
                 <span className="text-[10px] text-amber-400/80 block mt-1">
-                  ₹{(abandonedLeads.length * 2199).toLocaleString('en-IN')} at risk
+                  ₹{(activeAbandonedLeads.length * 2199).toLocaleString('en-IN')} at risk
                 </span>
               </div>
 
@@ -987,7 +1020,7 @@ export default function SuperAdminPage() {
                 }`}
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Abandoned Leads Radar ({abandonedLeads.length})</span>
+                <span>Abandoned Leads Radar ({activeAbandonedLeads.length})</span>
               </button>
 
               <button
@@ -1001,6 +1034,19 @@ export default function SuperAdminPage() {
               >
                 <Award className="w-3.5 h-3.5" />
                 <span>EB / Secretariat ({ebApplications.length + secApplications.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('logins')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  activeSubTab === 'logins'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-300/80 hover:text-white hover:bg-blue-500/10'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Logged In · Not Applied ({loggedInNotApplied.length})</span>
               </button>
 
               <button
@@ -1235,6 +1281,7 @@ export default function SuperAdminPage() {
                         <tr>
                           <th className="py-3 px-4">Reg ID</th>
                           <th className="py-3 px-4">Delegate Profile</th>
+                          <th className="py-3 px-4">Submitted</th>
                           <th className="py-3 px-4">Delegation</th>
                           <th className="py-3 px-4">Payment & Proof</th>
                           <th className="py-3 px-4">Committee & Country</th>
@@ -1257,6 +1304,11 @@ export default function SuperAdminPage() {
                                 <p className="font-semibold text-white">{name}</p>
                                 <p className="text-[11px] text-white/50">{r.email}</p>
                                 <p className="text-[10px] text-white/40">{r.phone} {r.institution ? `· ${r.institution}` : ''}</p>
+                              </td>
+                              <td className="py-3.5 px-4 text-white/50 text-[11px] font-mono whitespace-nowrap">
+                                {r.submittedAt
+                                  ? new Date(r.submittedAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })
+                                  : <span className="text-white/25">—</span>}
                               </td>
                               <td className="py-3.5 px-4">
                                 {r.delegationCode ? (
@@ -1288,12 +1340,22 @@ export default function SuperAdminPage() {
                                   <div className="flex items-center gap-1.5">
                                     <button
                                       type="button"
-                                      onClick={() => setScreenshotModalData({
-                                        regId,
-                                        name,
-                                        utr: r.paymentUTR,
-                                        url: r.screenshotUrl || r.paymentScreenshotURL
-                                      })}
+                                      onClick={() => {
+                                        // Convert Drive share URL to thumbnail for inline display
+                                        const raw = r.screenshotUrl || r.paymentScreenshotURL || '';
+                                        let displayUrl = raw;
+                                        if (raw && raw.includes('drive.google.com')) {
+                                          const m = raw.match(/\/d\/([^/]+)/);
+                                          if (m) displayUrl = `https://drive.google.com/thumbnail?id=${m[1]}&sz=w800`;
+                                        }
+                                        setScreenshotModalData({
+                                          regId,
+                                          name,
+                                          utr: r.paymentUTR,
+                                          url: displayUrl,
+                                          rawUrl: raw
+                                        });
+                                      }}
                                       className="px-2 py-1 rounded-md bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-purple-300 flex items-center gap-1.5 cursor-pointer"
                                     >
                                       <Eye className="w-3 h-3" />
@@ -1305,7 +1367,7 @@ export default function SuperAdminPage() {
                                         type="button"
                                         onClick={() => verifyPaymentDirect(regId, r.email, name, r.paymentUTR)}
                                         className="px-2 py-1 rounded-md bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-400/30 text-[10px] font-bold text-emerald-300 flex items-center gap-1 cursor-pointer"
-                                        title="Verify payment and dispatch financial clearance email"
+                                        title="Verify payment and dispatch confirmation email"
                                       >
                                         <Check className="w-2.5 h-2.5" />
                                         <span>Verify</span>
@@ -1477,7 +1539,7 @@ export default function SuperAdminPage() {
                         : 'text-white/60 hover:text-white bg-white/[0.03]'
                     }`}
                   >
-                    All Incomplete Leads ({abandonedLeads.length})
+                    All Incomplete Leads ({activeAbandonedLeads.length})
                   </button>
                   <button
                     type="button"
@@ -1701,7 +1763,89 @@ export default function SuperAdminPage() {
               </div>
             )}
 
-            {/* TAB 5: SYSTEM SETTINGS */}
+            {/* TAB 5: LOGGED IN BUT NOT APPLIED */}
+            {activeSubTab === 'logins' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-950/20 via-[#070914] to-[#070914] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-blue-400" />
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                        Logged In — No Application Started
+                      </h3>
+                    </div>
+                    <p className="text-xs text-white/60 mt-1">
+                      These users signed in to the portal but haven't begun a registration or left any lead data.
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-xs font-mono font-bold">
+                    {loggedInNotApplied.length} users
+                  </span>
+                </div>
+
+                {loggedInNotApplied.length === 0 ? (
+                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
+                    <Activity className="w-8 h-8 mx-auto opacity-40" />
+                    <p className="text-xs font-semibold">
+                      {siteUsers.length === 0
+                        ? 'Sync from Sheets to load login data.'
+                        : 'Everyone who logged in has started or completed a registration.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
+                        <tr>
+                          <th className="py-3 px-4">Name</th>
+                          <th className="py-3 px-4">Email</th>
+                          <th className="py-3 px-4">Last Seen</th>
+                          <th className="py-3 px-4">Role</th>
+                          <th className="py-3 px-4 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.04]">
+                        {loggedInNotApplied.map((u, idx) => (
+                          <tr key={`login-${u.email}-${idx}`} className="hover:bg-white/[0.015] transition-colors">
+                            <td className="py-3.5 px-4">
+                              <p className="font-semibold text-white">{u.name || 'Anonymous'}</p>
+                            </td>
+                            <td className="py-3.5 px-4 text-white/60 text-[11px]">{u.email}</td>
+                            <td className="py-3.5 px-4 text-white/40 text-[11px] font-mono">
+                              {u.lastSeen
+                                ? new Date(u.lastSeen).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })
+                                : '—'}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-[10px] font-medium text-white/60">
+                                {u.role || 'User'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const text = encodeURIComponent(
+                                    `Hi! Resolve MUN 2026 registration is open. Join us at Delhi World Public School, Kompally from Nov 20–22. Register at https://resolvemun.in`
+                                  );
+                                  window.open(`mailto:${u.email}?subject=Resolve MUN 2026 – Registration Open&body=${text}`, '_blank');
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/30 text-blue-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors ml-auto"
+                              >
+                                <Mail className="w-3 h-3" />
+                                <span>Email</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 6: SYSTEM SETTINGS */}
             {activeSubTab === 'settings' && (
               <div className="max-w-2xl space-y-5">
                 <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4 shadow-xl">
@@ -1823,27 +1967,34 @@ export default function SuperAdminPage() {
             </div>
 
             <div className="rounded-xl overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center min-h-[260px] max-h-[440px]">
-              {screenshotModalData.url && screenshotModalData.url.startsWith('http') ? (
+              {screenshotModalData.url && (screenshotModalData.url.startsWith('http') || screenshotModalData.url.startsWith('https')) ? (
                 <img
                   src={screenshotModalData.url}
-                  alt="Proof Screenshot"
+                  alt="Payment Proof"
                   className="max-h-[440px] w-auto object-contain"
+                  onError={(e) => {
+                    // Fallback: hide img and show link
+                    e.target.style.display = 'none';
+                    e.target.nextSibling && (e.target.nextSibling.style.display = 'block');
+                  }}
                 />
-              ) : (
-                <div className="text-center p-6 text-white/40 space-y-2">
-                  <FileCheck className="w-10 h-10 mx-auto opacity-40" />
-                  <p className="text-xs">Direct Drive archive recorded</p>
-                  {screenshotModalData.url && (
-                    <a
-                      href={screenshotModalData.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-purple-400 underline block"
-                    >
-                      Open in Google Drive &rarr;
-                    </a>
-                  )}
-                </div>
+              ) : null}
+              <div className={`text-center p-6 text-white/40 space-y-2 ${
+                screenshotModalData.url ? 'hidden' : ''
+              }`}>
+                <FileCheck className="w-10 h-10 mx-auto opacity-40" />
+                <p className="text-xs">No screenshot on file</p>
+              </div>
+              {/* Always show Drive link if URL exists */}
+              {(screenshotModalData.rawUrl || screenshotModalData.url) && (
+                <a
+                  href={screenshotModalData.rawUrl || screenshotModalData.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="absolute bottom-3 right-3 text-[11px] text-purple-400 underline"
+                >
+                  Open in Drive ↗
+                </a>
               )}
             </div>
 
