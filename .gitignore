@@ -11,3 +11,11 @@ yarn-error.log*
 SS/
 index1.html
 _site/
+
+# AI & Agent Files (Not required for site production)
+.agents/
+AGENTS.md
+CLAUDE.md
+.claude/
+.gemini/
+.system_generated/

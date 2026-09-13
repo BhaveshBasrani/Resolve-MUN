@@ -590,15 +590,34 @@ export const homeHtml = `
 <div class="glow-line"></div>
 
 <!-- SECRETARIAT -->
-<section id="secretariat" class="reveal">
+<section id="secretariat" class="reveal" style="position: relative;">
   <div class="sec-header reveal">
     <div class="section-label">Secretariat</div>
     <h2 class="section-title">MEET THE TEAM</h2>
-    <p class="section-body" style="max-width: 600px;">The Secretariat of Resolve MUN comprises exceptional leaders dedicated to delivering a world-class conference experience.</p>
+    <p class="section-body" style="max-width: 600px;">The official Executive Secretariat of Resolve MUN 2.0 is currently being finalized. Full leadership roster releasing soon.</p>
   </div>
   
-  <div class="sec-carousel-container">
-    <div class="sec-track" id="secTrack">
+  <div class="sec-carousel-container" style="position: relative; overflow: hidden; min-height: 380px;">
+    <!-- RELEASING SOON FROSTED BLUE OVERLAY -->
+    <div class="secretariat-coming-soon coming-soon-overlay" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, rgba(14, 21, 56, 0.88) 0%, rgba(5, 7, 20, 0.96) 100%); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 100; padding: 24px; text-align: center; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 24px; box-shadow: inset 0 0 100px rgba(0,0,0,0.7);">
+      <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 18px; border-radius: 9999px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); margin-bottom: 16px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 10px #38bdf8;"></span>
+        <span style="font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: #7dd3fc; font-weight: 600;">Executive Roster</span>
+      </div>
+      <div style="font-family: 'Oswald', sans-serif; font-size: clamp(26px, 4vw, 42px); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #ffffff; margin-bottom: 12px; text-shadow: 0 4px 25px rgba(56, 189, 248, 0.4);">
+        RELEASING SOON
+      </div>
+      <p style="font-size: 14px; color: rgba(255, 255, 255, 0.72); max-width: 480px; line-height: 1.6; margin: 0 0 18px 0;">
+        The official appointments for the Resolve MUN 2.0 Secretariat will be revealed shortly. Stay tuned for the official release.
+      </p>
+      <div style="display: inline-flex; align-items: center; gap: 10px; font-size: 12px; font-family: monospace; color: rgba(255, 255, 255, 0.45); letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 14px; background: rgba(255, 255, 255, 0.04); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+        <span>✦ 25 Executive Appointments</span>
+        <span>•</span>
+        <span>Edition 2.0</span>
+      </div>
+    </div>
+
+    <div class="sec-track is-coming-soon" id="secTrack" style="filter: blur(28px) saturate(0.6) !important; opacity: 0.12 !important; pointer-events: none !important; user-select: none !important;">
       <div class="sec-card sec-card--sg">
         <div class="sec-avatar">SB</div>
         <div class="sec-name">Swayam Bakshi</div>

@@ -1661,10 +1661,9 @@
       // 3. The Secretariat is also blured and coming soon
       const secTrack = document.getElementById('secTrack');
       if (secTrack) {
-        // Blur the individual track or the whole section
         secTrack.classList.add('is-coming-soon');
         const container = document.querySelector('.sec-carousel-container');
-        if (container) {
+        if (container && !container.querySelector('.secretariat-coming-soon')) {
           const banner = document.createElement('div');
           banner.className = 'secretariat-coming-soon coming-soon-overlay';
           container.appendChild(banner);
