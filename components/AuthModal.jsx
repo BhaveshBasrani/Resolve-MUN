@@ -399,9 +399,18 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
           localStorage.setItem("resolve_user_name", name);
           localStorage.setItem("resolve_user_email", u.email || "");
           localStorage.setItem("resolve_user_photo", u.photoURL || "");
+          localStorage.setItem("resolve_user_verified", "true");
           if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
         }
         setSuccess("Signed in successfully!");
+        setTimeout(() => {
+          if (onClose) onClose();
+          if (typeof window !== "undefined" && window.pendingPathway) {
+            const pathway = window.pendingPathway;
+            window.pendingPathway = null;
+            if (window.selectPathway) window.selectPathway(pathway);
+          }
+        }, 500);
       }
     } catch (err) {
       let msg = err.message || "Authentication failed.";
@@ -440,6 +449,15 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         localStorage.setItem("resolve_user_verified", "true");
         if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
       }
+      setSuccess("Signed in with Google successfully!");
+      setTimeout(() => {
+        if (onClose) onClose();
+        if (typeof window !== "undefined" && window.pendingPathway) {
+          const pathway = window.pendingPathway;
+          window.pendingPathway = null;
+          if (window.selectPathway) window.selectPathway(pathway);
+        }
+      }, 500);
     } catch (err) {
       setError(err.message || "Google sign-in failed.");
     } finally {

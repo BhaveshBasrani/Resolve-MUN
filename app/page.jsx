@@ -278,13 +278,13 @@ export default function Home() {
         return d.length === 10 && /^[6-9]\d{9}$/.test(d);
       }
 
-      // Helper: Send abandoned draft lead on Step 1
-      function sendStep1DraftLead(type) {
+      // Helper: Send abandoned draft lead on Step transition
+      function sendStep1DraftLead(type, step) {
         try {
           const scriptUrl = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
-          const name = (document.getElementById("regName") || document.getElementById("delAdviserName"))?.value || "";
-          const email = (document.getElementById("regEmail") || document.getElementById("delAdviserEmail"))?.value || "";
-          const phone = (document.getElementById("regPhone") || document.getElementById("delAdviserPhone"))?.value || "";
+          const name = (document.getElementById("regName") || document.getElementById("delHeadName") || document.getElementById("delAdviserName"))?.value || "";
+          const email = (document.getElementById("regEmail") || document.getElementById("delHeadEmail") || document.getElementById("delAdviserEmail"))?.value || "";
+          const phone = (document.getElementById("regPhone") || document.getElementById("delHeadPhone") || document.getElementById("delAdviserPhone"))?.value || "";
           if (email && email.includes('@')) {
             fetch(scriptUrl, {
               method: 'POST',
@@ -295,7 +295,7 @@ export default function Home() {
                 email: email,
                 phone: phone,
                 formType: type === 'delegation' ? 'Delegation Registration' : 'Delegate Registration',
-                step: 'Step 1: Personal Details'
+                step: step || 'Step 1: Personal Details'
               })
             }).catch(() => {});
           }

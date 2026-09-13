@@ -6,10 +6,12 @@
     return d.length === 10 && /^[6-9]\d{9}$/.test(d);
   }
 
-  function sendAbandonedDraftLead(formType, name, email, phone) {
+  const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+
+  function sendAbandonedDraftLead(formType, name, email, phone, step) {
     if (!email || !email.includes('@')) return;
     try {
-      fetch(GOOGLE_APP_SCRIPT_URL, {
+      fetch(APPS_SCRIPT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
@@ -17,8 +19,8 @@
           fullName: name || 'Prospect',
           email: email,
           phone: phone || '',
-          formType: formType,
-          step: 'Step 1: Personal Details'
+          formType: formType || 'Individual Delegate',
+          step: step || 'Step 1: Personal Details'
         })
       }).catch(() => {});
     } catch(e) {}
@@ -1109,6 +1111,19 @@
     });
 
     saveFormData();
+
+    // Telemetry & Abandoned Lead Capture with accurate step
+    try {
+      const name = document.getElementById('regName')?.value || '';
+      const email = document.getElementById('regEmail')?.value || '';
+      const phone = document.getElementById('regPhone')?.value || '';
+      const stepMap = {
+        1: 'Step 1: Personal Details',
+        2: 'Step 2: Committee Preferences',
+        3: 'Step 3: Payment Screen'
+      };
+      sendAbandonedDraftLead('Individual Delegate', name, email, phone, stepMap[stepNum] || `Step ${stepNum}`);
+    } catch(e) {}
   }
 
   function updatePortfolioOptions(prefNum) {
@@ -1769,6 +1784,19 @@
       const delegationPrice = size * 2199;
       generateDynamicQR(delegationPrice.toString(), 'delPaymentQRImage', 'delUpiID');
     }
+
+    // Telemetry & Abandoned Lead Capture with accurate step
+    try {
+      const name = document.getElementById('delHeadName')?.value || document.getElementById('delAdviserName')?.value || '';
+      const email = document.getElementById('delHeadEmail')?.value || document.getElementById('delEmail')?.value || document.getElementById('delAdviserEmail')?.value || '';
+      const phone = document.getElementById('delHeadPhone')?.value || document.getElementById('delPhone')?.value || document.getElementById('delAdviserPhone')?.value || '';
+      const stepMap = {
+        1: 'Step 1: Institutional Details',
+        2: 'Step 2: Delegation Roster',
+        3: 'Step 3: Delegation Payment'
+      };
+      sendAbandonedDraftLead('Delegation Registration', name, email, phone, stepMap[stepNum] || `Step ${stepNum}`);
+    } catch(e) {}
   }
 
   if (delRegForm) delRegForm.addEventListener('submit', async function (e) {
@@ -1970,6 +1998,19 @@
     });
 
     saveOcFormData();
+
+    // Telemetry & Abandoned Lead Capture with accurate step
+    try {
+      const name = document.getElementById('ocName')?.value || '';
+      const email = document.getElementById('ocEmail')?.value || '';
+      const phone = document.getElementById('ocPhone')?.value || '';
+      const stepMap = {
+        1: 'Step 1: Applicant Profile',
+        2: 'Step 2: Department Selection',
+        3: 'Step 3: Statement & Payment'
+      };
+      sendAbandonedDraftLead('OC Application', name, email, phone, stepMap[stepNum] || `Step ${stepNum}`);
+    } catch(e) {}
   }
 
   function copyOcUPI() {

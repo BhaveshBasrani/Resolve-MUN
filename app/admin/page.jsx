@@ -173,9 +173,43 @@ export default function SuperAdminPage() {
       if (res.ok) {
         const json = await res.json();
         if (json.status === 'success') {
-          setRegistrations(json.registrations || []);
+          const rawLeads = json.abandonedLeads || [];
+          const normalizedLeads = rawLeads.map((l, idx) => ({
+            ...l,
+            leadId: l.leadId || l.LeadID || l.id || `RM26-LEAD-${idx + 1}`,
+            name: l.name || l.FullName || l.fullName || l.Name || 'Prospective Delegate',
+            email: l.email || l.Email || '',
+            phone: l.phone || l.Phone || '',
+            formType: l.formType || l.FormType || 'Individual Delegate',
+            step: l.step || l.LastStep || l.lastStep || l.Step || 'Step 1: Contact Info',
+            timestamp: l.timestamp || l.Timestamp || new Date().toISOString(),
+            status: l.status || l.Status || 'Pending'
+          }));
+
+          const rawRegs = json.registrations || [];
+          const normalizedRegs = rawRegs.map((r, idx) => ({
+            ...r,
+            regId: r.regId || r.RegID || r.id || `RM26-${1000 + idx}`,
+            name: r.name || r.FullName || r.fullName || 'Delegate',
+            email: r.email || r.Email || '',
+            phone: r.phone || r.Phone || '',
+            institution: r.institution || r.Institution || '',
+            committeePref1: r.committeePref1 || r.CommitteePref1 || '',
+            committeePref2: r.committeePref2 || r.CommitteePref2 || '',
+            committeePref3: r.committeePref3 || r.CommitteePref3 || '',
+            experience: r.experience || r.Experience || '',
+            paymentUTR: r.paymentUTR || r.PaymentUTR || '',
+            paymentScreenshotURL: r.paymentScreenshotURL || r.PaymentScreenshotURL || '',
+            status: r.status || r.Status || 'Confirmed',
+            allocatedCommittee: r.allocatedCommittee || r.AllocatedCommittee || '',
+            allocatedCountry: r.allocatedCountry || r.AllocatedCountry || '',
+            delegationCode: r.delegationCode || r.DelegationCode || '',
+            allotmentEmailSent: r.allotmentEmailSent || r.AllotmentEmailSent || false
+          }));
+
+          setRegistrations(normalizedRegs);
           setDelegations(json.delegations || []);
-          setAbandonedLeads(json.abandonedLeads || []);
+          setAbandonedLeads(normalizedLeads);
           setEbApplications(json.ebApplicants || []);
           setSecApplications(json.secretariatApplicants || []);
           setLastSyncTime(new Date().toLocaleTimeString());
@@ -218,9 +252,13 @@ export default function SuperAdminPage() {
 
   const totalVerifiedRevenue = useMemo(() => {
     const indiv = verifiedDelegatesCount * 2199;
-    const groups = totalDelMembers * 2199;
-    return indiv + groups;
-  }, [verifiedDelegatesCount, totalDelMembers]);
+    const del = delegations.reduce((acc, d) => {
+      const isPaid = (d.status || '').toLowerCase().includes('paid') || (d.paymentUTR && d.paymentUTR.length > 4);
+      const count = parseInt(d.membersCount || d.size || d.MemberCount) || 0;
+      return acc + (isPaid ? count * 1999 : 0);
+    }, 0);
+    return indiv + del;
+  }, [verifiedDelegatesCount, delegations]);
 
   // Committee Matrix Gauges
   const COMMITTEES = useMemo(() => [
@@ -232,11 +270,13 @@ export default function SuperAdminPage() {
     { code: 'IP', name: 'International Press', cap: 20, icon: '📸' }
   ], []);
 
+  // Committee breakdown statistics
   const committeeStats = useMemo(() => {
     return COMMITTEES.map(c => {
       const occupied = registrations.filter(r => {
-        const comm = (r.allocatedCommittee || r.committee || '').toUpperCase();
-        return comm.includes(c.code) || comm.includes(c.name.toUpperCase());
+        const alloc = (r.allocatedCommittee || '').toUpperCase();
+        const code = c.code.toUpperCase();
+        return alloc === code || (code === 'UNCSW' && alloc.includes('CSW')) || (code === 'UNHRC' && alloc.includes('HRC')) || (code === 'LOK SABHA' && (alloc.includes('LOK') || alloc.includes('SABHA')));
       }).length;
       return {
         ...c,
@@ -274,13 +314,70 @@ export default function SuperAdminPage() {
   const filteredLeads = useMemo(() => {
     return abandonedLeads.filter(lead => {
       if (leadStepFilter === 'ALL') return true;
-      const s = (lead.step || '').toLowerCase();
-      if (leadStepFilter === 'STEP3') return s.includes('3') || s.includes('payment') || s.includes('pay');
-      if (leadStepFilter === 'STEP2') return s.includes('2') || s.includes('pref') || s.includes('committee');
-      if (leadStepFilter === 'STEP1') return s.includes('1') || s.includes('basic') || s.includes('info');
+      const s = (lead.step || lead.LastStep || lead.lastStep || '').toLowerCase();
+      if (leadStepFilter === 'STEP3') return s.includes('3') || s.includes('payment') || s.includes('pay') || s.includes('qr');
+      if (leadStepFilter === 'STEP2') return s.includes('2') || s.includes('pref') || s.includes('committee') || s.includes('roster') || s.includes('role');
+      if (leadStepFilter === 'STEP1') return s.includes('1') || s.includes('basic') || s.includes('info') || s.includes('contact') || s.includes('detail');
       return true;
     });
   }, [abandonedLeads, leadStepFilter]);
+
+  // Dynamic & Mathematically Accurate Funnel Calculations
+  const funnelStats = useMemo(() => {
+    const totalCompleted = registrations.length;
+    let step1Drops = 0;
+    let step2Drops = 0;
+    let step3Drops = 0;
+
+    abandonedLeads.forEach(l => {
+      const stepStr = (l.step || l.LastStep || l.lastStep || '').toLowerCase();
+      if (stepStr.includes('3') || stepStr.includes('payment') || stepStr.includes('pay') || stepStr.includes('qr')) {
+        step3Drops++;
+      } else if (stepStr.includes('2') || stepStr.includes('committee') || stepStr.includes('pref') || stepStr.includes('alloc') || stepStr.includes('member') || stepStr.includes('role')) {
+        step2Drops++;
+      } else {
+        step1Drops++;
+      }
+    });
+
+    const totalSessions = totalCompleted + abandonedLeads.length;
+
+    if (totalSessions === 0) {
+      return {
+        totalSessions: 0,
+        step1Count: 0,
+        step1Pct: 100,
+        step2Count: 0,
+        step2Pct: 100,
+        step3Count: 0,
+        step3Pct: 100,
+        completedCount: 0,
+        conversionPct: 100,
+        step1Drops: 0,
+        step2Drops: 0,
+        step3Drops: 0
+      };
+    }
+
+    const step3Reached = totalCompleted + step3Drops;
+    const step2Reached = step3Reached + step2Drops;
+    const step1Reached = totalSessions;
+
+    return {
+      totalSessions,
+      step1Count: step1Reached,
+      step1Pct: 100,
+      step2Count: step2Reached,
+      step2Pct: Math.min(100, Math.max(0, Math.round((step2Reached / totalSessions) * 100))),
+      step3Count: step3Reached,
+      step3Pct: Math.min(100, Math.max(0, Math.round((step3Reached / totalSessions) * 100))),
+      completedCount: totalCompleted,
+      conversionPct: Math.min(100, Math.max(0, Math.round((totalCompleted / totalSessions) * 100))),
+      step1Drops,
+      step2Drops,
+      step3Drops
+    };
+  }, [registrations.length, abandonedLeads]);
 
   // 1-Click Payment Verification
   const verifyPaymentDirect = async (regId, email, name, utr) => {
@@ -801,9 +898,9 @@ export default function SuperAdminPage() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {committeeStats.map((c) => (
+                {committeeStats.map((c, idx) => (
                   <button
-                    key={c.code}
+                    key={`comm-${c.code || idx}`}
                     type="button"
                     onClick={() => {
                       setSearchQuery(c.code);
@@ -985,8 +1082,8 @@ export default function SuperAdminPage() {
                       <p className="text-xs text-white/40 italic py-4">No live intake recorded yet.</p>
                     ) : (
                       <div className="divide-y divide-white/[0.04]">
-                        {registrations.slice(0, 5).map((r) => (
-                          <div key={r.regId || r.id} className="py-2.5 flex items-center justify-between text-xs">
+                        {registrations.slice(0, 5).map((r, idx) => (
+                          <div key={`recent-reg-${r.regId || r.id || idx}`} className="py-2.5 flex items-center justify-between text-xs">
                             <div>
                               <span className="font-semibold text-white">{r.fullName || r.name}</span>
                               <span className="text-[11px] text-white/40 ml-2 font-mono">{r.regId || r.id}</span>
@@ -1008,45 +1105,60 @@ export default function SuperAdminPage() {
                 <div className="space-y-6">
                   {/* Lead Dropoff Funnel */}
                   <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300 font-mono flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>Registration Funnel Health</span>
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300 font-mono flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        <span>Registration Funnel Health</span>
+                      </h4>
+                      <span className="text-[10px] font-mono text-white/40">
+                        {funnelStats.totalSessions} Total Sessions
+                      </span>
+                    </div>
 
                     <div className="space-y-3">
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-white/70">Step 1: Contact Info</span>
-                          <span className="font-mono text-white/40">100%</span>
+                          <span className="text-white/70">Step 1: Contact & Personal Info</span>
+                          <span className="font-mono text-white/40">{funnelStats.step1Pct}% ({funnelStats.step1Count})</span>
                         </div>
                         <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full w-full" />
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${funnelStats.step1Pct}%` }} />
                         </div>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-white/70">Step 2: Committee Preference</span>
-                          <span className="font-mono text-white/40">84%</span>
+                          <span className="font-mono text-white/40">{funnelStats.step2Pct}% ({funnelStats.step2Count})</span>
                         </div>
                         <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                          <div className="h-full bg-purple-500 rounded-full w-[84%]" />
+                          <div className="h-full bg-purple-500 rounded-full transition-all duration-500" style={{ width: `${funnelStats.step2Pct}%` }} />
                         </div>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-white/70">Step 3: Payment Screen</span>
-                          <span className="font-mono text-white/40">68%</span>
+                          <span className="font-mono text-white/40">{funnelStats.step3Pct}% ({funnelStats.step3Count})</span>
                         </div>
                         <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-400 rounded-full w-[68%]" />
+                          <div className="h-full bg-amber-400 rounded-full transition-all duration-500" style={{ width: `${funnelStats.step3Pct}%` }} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-white/70">Completed & Verified Intake</span>
+                          <span className="font-mono text-emerald-400 font-bold">{funnelStats.conversionPct}% ({funnelStats.completedCount})</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${funnelStats.conversionPct}%` }} />
                         </div>
                       </div>
                     </div>
 
                     <div className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/20 text-[11px] text-amber-200/80">
-                      💡 <b>Pro-Tip:</b> Most abandoned leads drop off at Step 3 (Payment). Use the 1-Click WhatsApp Direct tool to recover up to 45% of these delegates instantly!
+                      💡 <b>Funnel Telemetry:</b> {funnelStats.step3Drops} lead{funnelStats.step3Drops === 1 ? '' : 's'} paused at Step 3 (Payment), and {funnelStats.step2Drops} at Step 2. Use 1-Click WhatsApp Direct to recover delegates with prefilled registration links!
                     </div>
                   </div>
 
@@ -1130,14 +1242,14 @@ export default function SuperAdminPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
-                        {filteredRecords.map((r) => {
-                          const regId = r.regId || r.id;
+                        {filteredRecords.map((r, idx) => {
+                          const regId = r.regId || r.id || `reg-${idx}`;
                           const name = r.fullName || r.name;
                           const isAllocated = !!r.allocatedCommittee;
                           const isVerified = r.status === 'Payment_Verified' || r.status === 'Confirmed' || isAllocated;
 
                           return (
-                            <tr key={regId} className="hover:bg-white/[0.015] transition-colors">
+                            <tr key={`reg-row-${regId}-${idx}`} className="hover:bg-white/[0.015] transition-colors">
                               <td className="py-3.5 px-4 font-mono font-bold text-purple-300">
                                 {regId}
                               </td>
@@ -1277,14 +1389,14 @@ export default function SuperAdminPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {delegations.map((del) => {
+                    {delegations.map((del, idx) => {
                       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://resolvemun.in';
-                      const code = del.code || del.delegationCode || del.DelID;
+                      const code = del.code || del.delegationCode || del.DelID || `del-${idx}`;
                       const inviteUrl = `${origin}/?delegation=${code}`;
                       const isCopied = copiedLink === code;
 
                       return (
-                        <div key={code} className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3.5 shadow-lg">
+                        <div key={`del-card-${code}-${idx}`} className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3.5 shadow-lg">
                           <div className="flex items-start justify-between">
                             <div>
                               <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-400/20 text-[10px] font-mono font-bold block w-fit mb-1.5">
@@ -1422,12 +1534,12 @@ export default function SuperAdminPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
-                        {filteredLeads.map((lead) => {
-                          const leadKey = lead.leadId || lead.email;
+                        {filteredLeads.map((lead, idx) => {
+                          const leadKey = lead.leadId || lead.id || lead.email || `lead-${idx}`;
                           const sendStatus = leadSendingState[leadKey];
 
                           return (
-                            <tr key={leadKey} className="hover:bg-white/[0.015] transition-colors">
+                            <tr key={`lead-row-${lead.leadId || 'lead'}-${lead.email || 'mail'}-${idx}`} className="hover:bg-white/[0.015] transition-colors">
                               <td className="py-3.5 px-4 font-mono font-bold text-amber-300">
                                 {lead.leadId || 'RM26-LEAD'}
                               </td>
@@ -1546,8 +1658,8 @@ export default function SuperAdminPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
-                        {[...secApplications, ...ebApplications].map((app) => (
-                          <tr key={app.appId || app.UID} className="hover:bg-white/[0.015] transition-colors">
+                        {[...secApplications, ...ebApplications].map((app, idx) => (
+                          <tr key={`app-row-${app.appId || app.UID || app.email || 'app'}-${idx}`} className="hover:bg-white/[0.015] transition-colors">
                             <td className="py-3.5 px-4 font-mono font-bold text-purple-300">
                               {app.appId || 'RM26-APP'}
                             </td>
@@ -1625,8 +1737,8 @@ export default function SuperAdminPage() {
                       { key: 'ocOpen', label: 'Organizing Committee (OC)' },
                       { key: 'ebOpen', label: 'Executive Board (EB)' },
                       { key: 'secretariatOpen', label: 'Secretariat Direct Portal' }
-                    ].map(({ key, label }) => (
-                      <div key={key} className="p-3 rounded-xl bg-black/30 border border-white/[0.06] flex items-center justify-between">
+                    ].map(({ key, label }, idx) => (
+                      <div key={`param-${key}-${idx}`} className="p-3 rounded-xl bg-black/30 border border-white/[0.06] flex items-center justify-between">
                         <span className="text-xs text-white/80">{label}</span>
                         <button
                           type="button"
