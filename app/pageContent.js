@@ -1,224 +1,1369 @@
-// Cleaned and optimized pageContent.js
-export const homeHtml = "\r\n<!-- SUBMIT SPINNER (hidden by default) -->\r\n<div id=\"submitSpinner\" style=\"display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;\">\r\n  <div style=\"text-align:center;color:#fff;\">\r\n    <div style=\"width:72px;height:72px;border-radius:50%;border:6px solid rgba(255,255,255,0.12);border-top-color:#7c3aed;animation:spin 1s linear infinite;margin:0 auto 12px;\"></div>\r\n    <div style=\"font-family: 'Oswald', sans-serif;letter-spacing:0.06em;font-weight:600;font-size:16px;\">Submitting...</div>\r\n  </div>\r\n</div>\r\n\r\n\r\n<!-- CUSTOM ALERT CONTAINER -->\r\n<div id=\"custom-alert-container\"></div>\r\n<div id=\"loading-screen\" style=\"display:none;\">\r\n  <img src=\"/images/Logo.svg\" alt=\"Resolve MUN 2026 - Official Logo\" class=\"loader-logo\">\r\n  <div class=\"loader-bar-container\">\r\n    <div class=\"loader-bar-fill\"></div>\r\n  </div>\r\n  <span class=\"loader-text\">Initializing Diplomacy</span>\r\n</div>\r\n\r\n<!-- REGISTRATION MODAL -->\r\n  <!-- SELECTION MODAL -->\r\n  <div class=\"modal-overlay\" id=\"selectionModal\">
-    <div class=\"modal-content selection-modal-content\">
-      <button class=\"modal-close\" id=\"closeSelectionModal\" aria-label=\"Close\">
-        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
-          <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>
-          <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>
-        </svg>
-      </button>
-      
-      <div class=\"modal-header text-center\">
-        <div class=\"modal-pretitle\">RESOLVE MUN 2.0 · INTAKE</div>
-        <h2 class=\"modal-title\">CHOOSE YOUR PATHWAY</h2>
-        <p class=\"modal-subtitle\">Select your participation track for Hyderabad 2026</p>
+// Cleaned, deduplicated, and optimized pageContent.js for Resolve MUN 2.0
+export const homeHtml = `
+<!-- SUBMIT SPINNER (hidden by default) -->
+<div id="submitSpinner" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="text-align:center;color:#fff;">
+    <div style="width:48px;height:48px;border-radius:50%;border:4px solid rgba(255,255,255,0.15);border-top-color:#818cf8;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+    <div style="font-family:'Oswald',sans-serif;letter-spacing:0.08em;font-weight:600;font-size:13px;text-transform:uppercase;">Submitting...</div>
+  </div>
+</div>
+
+<!-- CUSTOM ALERT CONTAINER -->
+<div id="custom-alert-container"></div>
+<div id="loading-screen">
+  <img src="/images/Logo.svg" alt="Resolve MUN 2026 - Official Logo" class="loader-logo">
+  <div class="loader-bar-container">
+    <div class="loader-bar-fill"></div>
+  </div>
+  <span class="loader-text">Initializing Diplomacy</span>
+</div>
+
+<!-- SELECTION MODAL -->
+<div class="modal-overlay" id="selectionModal">
+  <div class="modal-content selection-modal-content">
+    <button class="modal-close" id="closeSelectionModal" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header text-center">
+      <div class="modal-pretitle">RESOLVE MUN 2.0 · INTAKE</div>
+      <h2 class="modal-title">CHOOSE YOUR PATHWAY</h2>
+      <p class="modal-subtitle">Select your participation track for Hyderabad 2026</p>
+    </div>
+
+    <div class="selection-top-grid">
+      <!-- 1. Delegate -->
+      <div class="selection-card selection-card--delegate selection-card--featured" onclick="selectPathway('delegate')">
+        <div class="selection-card-header">
+          <span class="selection-badge selection-badge--primary">INDIVIDUAL</span>
+        </div>
+        <div class="selection-card-body">
+          <h3>DELEGATE</h3>
+          <p>Single delegate representation in one specialized diplomatic committee.</p>
+        </div>
+        <div class="selection-card-action">
+          <span class="selection-btn-primary">Apply Now &rarr;</span>
+        </div>
       </div>
 
-      <div class=\"selection-grid\">
-        <!-- 1. Delegate -->
-        <div class=\"selection-card selection-card--delegate\" onclick=\"selectPathway('delegate')\">
-          <div class=\"selection-card-header\">
-            <span class=\"selection-badge badge-blue\">INDIVIDUAL</span>
-            <span class=\"selection-arrow\">&rarr;</span>
-          </div>
-          <div class=\"selection-card-body\">
-            <h3>Delegate</h3>
-            <p>Individual representative in flagship committee simulations with personal country allotment.</p>
-          </div>
-          <div class=\"selection-card-action\">
-            <span class=\"selection-btn-ghost\">Register Now &rarr;</span>
-          </div>
+      <!-- 2. Delegation -->
+      <div class="selection-card selection-card--delegation selection-card--featured" onclick="selectPathway('delegation')">
+        <div class="selection-card-header">
+          <span class="selection-badge selection-badge--primary">INSTITUTION</span>
         </div>
-
-        <!-- 2. Delegation -->
-        <div class=\"selection-card selection-card--delegation\" onclick=\"selectPathway('delegation')\">
-          <div class=\"selection-card-header\">
-            <span class=\"selection-badge badge-purple\">INSTITUTION</span>
-            <span class=\"selection-arrow\">&rarr;</span>
-          </div>
-          <div class=\"selection-card-body\">
-            <h3>Delegation</h3>
-            <p>Institutional group registration for schools and universities with dedicated faculty advisor coordination.</p>
-          </div>
-          <div class=\"selection-card-action\">
-            <span class=\"selection-btn-ghost\">Register Group &rarr;</span>
-          </div>
+        <div class="selection-card-body">
+          <h3>DELEGATION</h3>
+          <p>School or university delegations with 8+ student representatives.</p>
         </div>
-
-        <!-- 3. OC -->
-        <div class=\"selection-card selection-card--oc\" onclick=\"selectPathway('oc')\">
-          <div class=\"selection-card-header\">
-            <span class=\"selection-badge badge-amber\">OPERATIONS</span>
-            <span class=\"selection-arrow\">&rarr;</span>
-          </div>
-          <div class=\"selection-card-body\">
-            <h3>Organizing Committee</h3>
-            <p>Join the backstage architects managing venue, delegate affairs, security, marketing, and media.</p>
-          </div>
-          <div class=\"selection-card-action\">
-            <span class=\"selection-btn-ghost\">Apply for OC &rarr;</span>
-          </div>
+        <div class="selection-card-action">
+          <span class="selection-btn-primary">Register Delegation &rarr;</span>
         </div>
+      </div>
+    </div>
 
-        <!-- 4. Secretariat -->
-        <div class=\"selection-card selection-card--sec\" onclick=\"selectPathway('secretariat')\">
-          <div class=\"selection-card-header\">
-            <span class=\"selection-badge badge-indigo\">LEADERSHIP</span>
-            <span class=\"selection-arrow\">&rarr;</span>
-          </div>
-          <div class=\"selection-card-body\">
-            <h3>Secretariat</h3>
-            <p>Executive board leadership roles guiding policy, outreach, finance, logistics, and summit direction.</p>
-          </div>
-          <div class=\"selection-card-action\">
-            <span class=\"selection-btn-ghost\">Apply for Secretariat &rarr;</span>
-          </div>
+    <div class="selection-bottom-grid">
+      <!-- 3. Secretariat -->
+      <div class="selection-card selection-card--sec" onclick="selectPathway('secretariat')">
+        <div class="selection-card-header">
+          <span class="selection-badge selection-badge--accent">EXECUTIVE</span>
         </div>
+        <div class="selection-card-body">
+          <h3>SECRETARIAT</h3>
+          <p>High-command leadership, USG positions, and directors.</p>
+        </div>
+        <div class="selection-card-action">
+          <span class="selection-btn-primary">Open Application &rarr;</span>
+        </div>
+      </div>
 
-        <!-- 5. EB (Closed) -->
-        <div class=\"selection-card selection-card--disabled\" onclick=\"window.showCustomAlert ? window.showCustomAlert('Round 1 Executive Board applications are closed. Follow @mun.resolve for future announcements.', 'info') : alert('Round 1 EB Applications are closed.')\">
-          <div class=\"selection-card-header\">
-            <span class=\"selection-badge badge-closed\">ROUND 1 CLOSED</span>
-            <span class=\"selection-arrow\">&times;</span>
-          </div>
-          <div class=\"selection-card-body\">
-            <h3>Executive Board</h3>
-            <p>Chair prestigious committees and evaluate high-level debate. Round 1 intake concluded.</p>
-          </div>
-          <div class=\"selection-card-action\">
-            <span class=\"selection-btn-ghost opacity-40\">Closed</span>
-          </div>
+      <!-- 4. OC -->
+      <div class="selection-card selection-card--oc selection-card--closed" onclick="window.showCustomAlert ? window.showCustomAlert('OC applications are closed.', 'info') : alert('OC Applications are closed.')">
+        <div class="selection-card-header">
+          <span class="selection-badge selection-badge--muted">LEADERSHIP</span>
+        </div>
+        <div class="selection-card-body">
+          <h3>ORGANIZING COMMITTEE</h3>
+          <p>Operations, crisis design, and logistics.</p>
+        </div>
+        <div class="selection-card-action">
+          <span class="selection-btn-ghost opacity-40">Closed</span>
+        </div>
+      </div>
+
+      <!-- 5. EB (Disabled) -->
+      <div class="selection-card selection-card--disabled selection-card--closed" onclick="window.showCustomAlert ? window.showCustomAlert('Round 1 Executive Board applications are closed. Follow @mun.resolve for future announcements.', 'info') : alert('Round 1 EB Applications are closed.')">
+        <div class="selection-card-header">
+          <span class="selection-badge selection-badge--muted">EXECUTIVE BOARD</span>
+        </div>
+        <div class="selection-card-body">
+          <h3>EXECUTIVE BOARD</h3>
+          <p>Chairs and committee moderation.</p>
+        </div>
+        <div class="selection-card-action">
+          <span class="selection-btn-ghost opacity-40">Closed</span>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-<div class=\"modal-overlay\" id=\"regModal\">\r\n  <canvas class=\"modal-particles\" id=\"modalParticles\"></canvas>\r\n  <div class=\"modal-content\">\r\n    <button class=\"modal-close\" id=\"closeModal\" aria-label=\"Close\">\r\n      <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n        <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>\r\n        <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>\r\n      </svg>\r\n    </button>\r\n    \r\n    <div class=\"modal-header\">\r\n      <h2 class=\"modal-title\">DELEGATE REGISTRATION</h2>\r\n      <span class=\"modal-subtitle\">Join Resolve MUN 2026</span>\r\n    </div>\r\n    \r\n    <form id=\"regForm\" novalidate>\r\n      <!-- STEP 1: PERSONAL DETAILS -->\r\n      <div class=\"form-step active\" id=\"step1\">\r\n        <div class=\"form-group\">\r\n          <label for=\"regName\">Full Name</label>\r\n          <input type=\"text\" id=\"regName\" name=\"name\" autocomplete=\"name\" placeholder=\"Enter your full name\" required>\r\n        </div>\r\n        \r\n        <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n          <div>\r\n            <label for=\"regGrade\">Grade / Class</label>\r\n            <input type=\"text\" id=\"regGrade\" name=\"grade\" autocomplete=\"off\" placeholder=\"e.g. 10th, 1st Year\" required>\r\n          </div>\r\n          <div>\r\n            <label for=\"regPhone\">Phone Number</label>\r\n            <input type=\"tel\" id=\"regPhone\" name=\"phone\" autocomplete=\"tel\" placeholder=\"10-digit number\" required pattern=\"[0-9]{10}\" minlength=\"10\" maxlength=\"10\" title=\"Please enter a valid 10-digit phone number\">\r\n          </div>\r\n        </div>\r\n        \r\n        <div class=\"form-group\">\r\n          <label for=\"regEmail\">Email Address</label>\r\n          <input type=\"email\" id=\"regEmail\" name=\"email\" autocomplete=\"email\" placeholder=\"yourname@example.com\" required pattern=\"[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}\">\r\n        </div>\r\n\r\n        <div class=\"form-group\">\r\n          <label for=\"regInstitute\">Institute name</label>\r\n          <input type=\"text\" id=\"regInstitute\" name=\"institute\" autocomplete=\"organization\" placeholder=\"School or University name\" required>\r\n        </div>\r\n\r\n        <div class=\"form-group\">\r\n          <label for=\"regAddress\">Full Residential Address</label>\r\n          <textarea id=\"regAddress\" name=\"address\" autocomplete=\"address-line1\" rows=\"2\" placeholder=\"Street, Area, City, Pincode\" required style=\"resize: vertical; min-height: 80px;\"></textarea>\r\n        </div>\r\n\r\n        <div class=\"form-group\">\r\n          <label>Do you require transportation?</label>\r\n          <select id=\"regTransport\" required>\r\n            <option value=\"\" disabled selected>Select an option</option>\r\n            <option value=\"yes\">Yes</option>\r\n            <option value=\"no\">No</option>\r\n          </select>\r\n        </div>\r\n\r\n          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n          <div>\r\n            <label for=\"regDob\">Date of Birth</label>\r\n            <input type=\"date\" id=\"regDob\" required autocomplete=\"bday\">\r\n          </div>\r\n          <div>\r\n            <label for=\"regReferral\">Referral Code (Optional)</label>\r\n            <input type=\"text\" id=\"regReferral\" placeholder=\"e.g. RES-123\" autocomplete=\"off\">\r\n            <div id=\"referralFeedback\" class=\"referral-feedback\" style=\"font-size:0.85rem; margin-top:6px; color:var(--muted);\"></div>\r\n          </div>\r\n        </div>\r\n\r\n        <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n          <div>\r\n            <label for=\"regEmergencyName\">Emergency Contact Name</label>\r\n            <input type=\"text\" id=\"regEmergencyName\" name=\"emergency-name\" autocomplete=\"name\" placeholder=\"Parent / Guardian name\" required>\r\n          </div>\r\n          <div>\r\n            <label for=\"regEmergencyPhone\">Emergency Contact Phone</label>\r\n            <input type=\"tel\" id=\"regEmergencyPhone\" name=\"emergency-phone\" autocomplete=\"tel\" placeholder=\"10-digit number\" required pattern=\"[0-9]{10}\" minlength=\"10\" maxlength=\"10\" title=\"Please enter a valid 10-digit phone number\">\r\n          </div>\r\n        </div>\r\n\r\n        <div class=\"form-group\">\r\n          <label>MUN Experience (Conference - Committee - Portfolio - Award/NA)</label>\r\n          <textarea id=\"regExp\" rows=\"4\" placeholder=\"List your experiences here...\" required style=\"resize: vertical; min-height: 100px;\"></textarea>\r\n        </div>\r\n\r\n        <button type=\"button\" class=\"btn-next btn-full-width\" onclick=\"nextStep(2)\">\r\n          Next Step\r\n          <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg>\r\n        </button>\r\n      </div>\r\n\r\n      <!-- STEP 2: COMMITTEE PREFERENCE -->\r\n      <div class=\"form-step\" id=\"step2\">\r\n        <a href=\"javascript:void(0)\" onclick=\"showCustomAlert('Country Matrix Coming Soon!', 'default')\" class=\"btn-matrix\">\r\n          <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/></svg>\r\n          Country Matrices\r\n        </a>\r\n\r\n        <!-- Preference 1 -->\r\n        <div class=\"form-group\">\r\n          <label>Preference 1</label>\r\n          <select id=\"pref1_committee\" required onchange=\"updatePortfolioOptions(1)\">\r\n            <option value=\"\" disabled selected>Select Committee Preference 1</option>\r\n            <option value=\"DISEC\">DISEC</option>\r\n            <option value=\"LOK SABHA\">Lok Sabha</option>\r\n            <option value=\"UNHRC\">UNHRC</option>\r\n            <option value=\"CCC\">CCC</option>\r\n            <option value=\"UNCSW\">UNCSW</option>\r\n            <option value=\"IP\">IP</option>\r\n          </select>\r\n          <div id=\"pref1_container\" style=\"display: none; margin-top: 12px;\">\r\n            <div id=\"pref1_portfolios\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 12px;\">\r\n              <input type=\"text\" id=\"pref1_port1\" placeholder=\"portfolio / country - 1\" required>\r\n              <input type=\"text\" id=\"pref1_port2\" placeholder=\"portfolio / country - 2\" required>\r\n            </div>\r\n            <select id=\"pref1_role\" style=\"display: none;\">\r\n              <option value=\"\" disabled selected>Select Role</option>\r\n              <option value=\"Reporter\">Reporter</option>\r\n              <option value=\"Photographer\">Photographer</option>\r\n            </select>\r\n          </div>\r\n        </div>\r\n\r\n        <!-- Preference 2 -->\r\n        <div class=\"form-group\">\r\n          <label>Preference 2</label>\r\n          <select id=\"pref2_committee\" required onchange=\"updatePortfolioOptions(2)\">\r\n            <option value=\"\" disabled selected>Select Committee Preference 2</option>\r\n            <option value=\"DISEC\">DISEC</option>\r\n            <option value=\"LOK SABHA\">Lok Sabha</option>\r\n            <option value=\"UNHRC\">UNHRC</option>\r\n            <option value=\"CCC\">CCC</option>\r\n            <option value=\"UNCSW\">UNCSW</option>\r\n            <option value=\"IP\">IP</option>\r\n          </select>\r\n          <div id=\"pref2_container\" style=\"display: none; margin-top: 12px;\">\r\n            <div id=\"pref2_portfolios\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 12px;\">\r\n              <input type=\"text\" id=\"pref2_port1\" placeholder=\"portfolio / country - 1\" required>\r\n              <input type=\"text\" id=\"pref2_port2\" placeholder=\"portfolio / country - 2\" required>\r\n            </div>\r\n            <select id=\"pref2_role\" style=\"display: none;\">\r\n              <option value=\"\" disabled selected>Select Role</option>\r\n              <option value=\"Reporter\">Reporter</option>\r\n              <option value=\"Photographer\">Photographer</option>\r\n            </select>\r\n          </div>\r\n        </div>\r\n\r\n        <!-- Preference 3 -->\r\n        <div class=\"form-group\">\r\n          <label>Preference 3</label>\r\n          <select id=\"pref3_committee\" required onchange=\"updatePortfolioOptions(3)\">\r\n            <option value=\"\" disabled selected>Select Committee Preference 3</option>\r\n            <option value=\"DISEC\">DISEC</option>\r\n            <option value=\"LOK SABHA\">Lok Sabha</option>\r\n            <option value=\"UNHRC\">UNHRC</option>\r\n            <option value=\"CCC\">CCC</option>\r\n            <option value=\"UNCSW\">UNCSW</option>\r\n            <option value=\"IP\">IP</option>\r\n          </select>\r\n          <div id=\"pref3_container\" style=\"display: none; margin-top: 12px;\">\r\n            <div id=\"pref3_portfolios\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 12px;\">\r\n              <input type=\"text\" id=\"pref3_port1\" placeholder=\"portfolio / country - 1\" required>\r\n              <input type=\"text\" id=\"pref3_port2\" placeholder=\"portfolio / country - 2\" required>\r\n            </div>\r\n            <select id=\"pref3_role\" style=\"display: none;\">\r\n              <option value=\"\" disabled selected>Select Role</option>\r\n              <option value=\"Reporter\">Reporter</option>\r\n              <option value=\"Photographer\">Photographer</option>\r\n            </select>\r\n          </div>\r\n        </div>\r\n\r\n        <div class=\"form-actions\">\r\n          <button type=\"button\" class=\"btn-back\" onclick=\"nextStep(1)\">Back</button>\r\n          <button type=\"button\" class=\"btn-next\" onclick=\"nextStep(3)\">Review & Pay</button>\r\n        </div>\r\n      </div>\r\n\r\n      <!-- STEP 3: PAYMENT & SUBMISSION -->\r\n      <div class=\"form-step\" id=\"step3\">\r\n        <div class=\"payment-banner\">\r\n          <h3 id=\"regFeeDisplay\">Registration Fee: ₹2699</h3>\r\n          <p class=\"non-refundable-notice\" style=\"font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;\">⚠️ Payment is non-refundable once submitted</p>\r\n        </div>\r\n\r\n        <div class=\"payment-card\">\r\n          <div class=\"form-group\" style=\"margin-bottom: 0;\">\r\n            <label style=\"text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;\">1. COMPLETE THE PAYMENT</label>\r\n            <div style=\"text-align: center;\">\r\n              <div class=\"qr-container\">\r\n                <img id=\"paymentQRImage\" src=\"/images/QR_Delegate_2599.svg\" alt=\"Payment QR Code\">\r\n              </div>\r\n              <div class=\"upi-box\">\r\n                <span id=\"upiID\">bhoomianilbasrani@okhdfcbank</span>\r\n                <button type=\"button\" class=\"refresh-qr-btn\" onclick=\"refreshDelegatePaymentQR()\" title=\"Regenerate QR\">\r\n                  <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"23 4 23 10 17 10\"></polyline><polyline points=\"1 20 1 14 7 14\"></polyline><path d=\"M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15\"></path></svg>\r\n                </button>\r\n                <button type=\"button\" class=\"copy-btn\" onclick=\"copyUPI()\">\r\n                  <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>\r\n                </button>\r\n              </div>\r\n            </div>\r\n            <p class=\"payment-note\" style=\"text-align: center; margin-bottom: 24px; font-style: normal; opacity: 0.5;\">Scan or use the UPI ID</p>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label>2. TRANSACTION ID</label>\r\n            <input type=\"text\" id=\"regTxnID\" placeholder=\"Enter Transaction ID\" required>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label>3. UPLOAD PAYMENT SCREENSHOT</label>\r\n            <label class=\"file-upload-wrapper\" for=\"regDriveLink\">\r\n              <span class=\"file-upload-btn\">Choose File</span>\r\n              <span class=\"file-name\">No file chosen</span>\r\n              <input type=\"file\" id=\"regDriveLink\" class=\"file-upload-input\" accept=\"image/*\" required>\r\n            </label>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label>4. UTR NUMBER (OPTIONAL)</label>\r\n            <input type=\"text\" id=\"regUTR\" placeholder=\"Enter 12-digit UTR\">\r\n          </div>\r\n        </div>\r\n\r\n        <div class=\"payment-footer\">\r\n          <p class=\"payment-contact\">For Any Queries, contact: <span>+91 92121 07797</span></p>\r\n        </div>\r\n\r\n        <div class=\"form-actions\">\r\n          <button type=\"button\" class=\"btn-back\" onclick=\"nextStep(2)\">Back</button>\r\n          <button type=\"submit\" class=\"btn-next\">Submit Registration</button>\r\n        </div>\r\n        <p class=\"terms-confirmation\">\r\n          By clicking Submit Registration, you agree to the\r\n          <a href=\"javascript:void(0)\" onclick=\"openTermsModal()\">Terms &amp; Conditions</a>\r\n          of Resolve MUN 2026 shown below.\r\n        </p>\r\n      </div>\r\n    </form>\r\n  </div>\r\n</div>\r\n\r\n<!-- COMMING SOON MODAL -->\r\n<div class=\"modal-overlay\" id=\"commModal\">\r\n  <div class=\"modal-content comm-modal-content\">\r\n    <button class=\"modal-close\" onclick=\"closeCommModal()\">\r\n      <svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n        <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>\r\n        <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>\r\n      </svg>\r\n    </button>\r\n    <div class=\"comm-modal-inner\">\r\n      <div class=\"comm-modal-icon\" id=\"commModalIcon\">ROUND ONE</div>\r\n      <h2 class=\"comm-modal-title\" id=\"commModalTitle\">RESOLVE 2026</h2>\r\n      <span class=\"comm-modal-agenda\" id=\"commModalAgenda\">Registrations opening soon.</span>\r\n      <p class=\"comm-modal-text\" id=\"commModalText\">\r\n        The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.\r\n      </p>\r\n\r\n      <div style=\"margin-top:12px;\">\r\n        <button id=\"commModalBgBtn\" class=\"btn-secondary\" style=\"display:none; margin-right:10px;\" onclick=\"(function(){ if(window.currentCommBg) window.open(window.currentCommBg, '_blank'); })()\">Background Guide</button>\r\n      </div>\r\n\r\n      <div id=\"waitlistContainer\">\r\n        <form id=\"waitlistForm\">\r\n          <div class=\"waitlist-form\">\r\n            <input type=\"email\" id=\"waitlistEmail\" placeholder=\"Enter your email address\" required>\r\n            <button type=\"submit\" class=\"waitlist-btn\" id=\"waitlistSubmitBtn\">Notify Me</button>\r\n          </div>\r\n        </form>\r\n        <p id=\"waitlistSuccess\" style=\"display: none; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 1rem; margin-top: 30px; opacity: 0.8;\">\r\n          You've been added to the priority list. We will be in touch.\r\n        </p>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</div>\r\n\r\n<!-- TERMS & CONDITIONS MODAL -->\r\n<div class=\"modal-overlay\" id=\"termsModal\">\r\n  <div class=\"modal-content terms-modal-content\">\r\n    <button class=\"modal-close\" onclick=\"closeTermsModal()\">\r\n      <svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n        <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>\r\n        <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>\r\n      </svg>\r\n    </button>\r\n    <div class=\"terms-modal-header\">\r\n      <h2 class=\"modal-title\">TERMS &amp; CONDITIONS</h2>\r\n      <span class=\"terms-modal-subtitle\">Resolve Model United Nations 2026</span>\r\n    </div>\r\n    <div class=\"terms-body\">\r\n      <p><strong>Last Updated:</strong> March 2026</p>\r\n      <p>Welcome to Resolve Model United Nations 2026 (“Resolve MUN”, “Conference”, “we”, “our”, or “us”). \r\n         By registering for, accessing, participating in, attending, or engaging with Resolve MUN 2026 in any capacity, you (“participant”, “delegate”, “attendee”, “school”, “faculty advisor”, “parent/guardian”, or “visitor”) acknowledge that you have read, understood, and agreed to comply with the following Terms &amp; Conditions.</p>\r\n      <p>If you do not agree to these Terms &amp; Conditions, you must not register for or participate in Resolve MUN 2026.</p>\r\n\r\n      <h3>1. Acceptance of Terms</h3>\r\n      <p>By submitting a registration form, making payment, attending the conference, participating in workshops, accessing conference materials, joining official communication groups, or engaging with Resolve MUN in any manner, you acknowledge and agree to be legally bound by these Terms &amp; Conditions.</p>\r\n      <p>For participants under 18 years of age, registration constitutes confirmation that a parent, guardian, school authority, or responsible adult has reviewed and approved participation.</p>\r\n\r\n      <h3>2. Registration Policy</h3>\r\n      <p>Registration for Resolve MUN 2026 is confirmed only upon successful submission of all required information and payment of applicable fees.</p>\r\n      <ul>\r\n        <li>Approve or reject registrations.</li>\r\n        <li>Limit delegation sizes.</li>\r\n        <li>Close registrations without prior notice.</li>\r\n        <li>Modify committee allocations.</li>\r\n        <li>Request additional verification where necessary.</li>\r\n      </ul>\r\n      <p>Delegate allocations are subject to committee capacity, experience level, country availability, and administrative discretion. Resolve MUN does not guarantee allocation of preferred committees, portfolios, or country assignments. All information submitted during registration must be accurate and truthful. Submission of false, misleading, or incomplete information may result in immediate cancellation of participation without refund.</p>\r\n\r\n      <h3>3. Payment Policy</h3>\r\n      <p>All registration fees are payable in full through officially approved payment methods only.</p>\r\n      <p>Registration fees are strictly non-refundable and non-transferable unless explicitly approved by the Secretariat in writing. No refunds shall be issued under circumstances including but not limited to participant withdrawal, scheduling conflicts, examination clashes, transport or travel issues, illness, failure to attend, dissatisfaction with committee allocation, disqualification, removal for misconduct, personal emergencies, or failure to obtain parental/school approval.</p>\r\n      <p>In the event of postponement, rescheduling, modification of dates, venue changes, operational restructuring, hybrid/online transition, committee restructuring, or administrative adjustments, all registrations shall remain valid for the revised conference format or schedule. Resolve MUN shall not be obligated to provide refunds, compensation, reimbursement, or damages arising from changes required due to logistical, institutional, governmental, weather-related, safety-related, technical, or unforeseen circumstances.</p>\r\n\r\n      <h3>4. Event Modifications &amp; Organisational Rights</h3>\r\n      <p>Resolve MUN reserves the absolute right to modify conference schedules, alter committee structures, change agendas, replace Executive Board members, reassign delegates, alter venues, revise conference policies, change event formats, or cancel specific activities where necessary.</p>\r\n      <p>Such modifications may occur without prior notice where operationally required. Resolve MUN shall not be held liable for any inconvenience, losses, expenses, or claims arising from such modifications.</p>\r\n\r\n      <h3>5. Code of Conduct</h3>\r\n      <p>All participants are expected to maintain professional, respectful, and diplomatic conduct throughout the conference.</p>\r\n      <ul>\r\n        <li>Follow committee procedure.</li>\r\n        <li>Respect conference staff and venue authorities.</li>\r\n        <li>Comply with all instructions issued by the Secretariat.</li>\r\n        <li>Maintain decorum during sessions.</li>\r\n        <li>Behave responsibly in both physical and online spaces associated with the conference.</li>\r\n      </ul>\r\n      <p>The following behaviors are strictly prohibited: harassment, bullying, discrimination, intimidation, hate speech, threats, abusive conduct, disruptive behavior, vandalism, academic dishonesty, impersonation, inappropriate online conduct, or any behavior deemed harmful to the conference environment. Resolve MUN reserves the right to suspend, remove, disqualify, or permanently ban any participant for misconduct without refund or compensation.</p>\r\n\r\n      <h3>6. Right of Admission</h3>\r\n      <p>Entry to Resolve MUN 2026 is subject to approval by the Secretariat and venue authorities. Resolve MUN reserves the unrestricted right to deny admission, revoke participation, or remove any individual from the conference premises or official platforms at its discretion.</p>\r\n      <p>Reasons for denial or removal may include misconduct, violation of conference rules, safety concerns, inappropriate conduct, misrepresentation, disruption of conference proceedings, or failure to comply with organizer instructions. Decisions regarding admission and participation are final and non-negotiable.</p>\r\n\r\n      <h3>7. Liability Disclaimer</h3>\r\n      <p>Participants attend and participate in Resolve MUN 2026 at their own responsibility. Resolve MUN, its Secretariat, organizers, volunteers, venue partners, collaborators, sponsors, and affiliated institutions shall not be held liable for injury, illness, theft, loss of belongings, transport delays, property damage, technical failures, internet disruptions, third-party service failures, emotional distress, financial losses, or any indirect or consequential damages.</p>\r\n      <p>Participants are solely responsible for safeguarding their belongings and personal property.</p>\r\n\r\n      <h3>8. Photography, Media &amp; Publicity Consent</h3>\r\n      <p>By participating in Resolve MUN 2026, all participants consent to being photographed, filmed, recorded, or featured in official conference media. Resolve MUN reserves the unrestricted right to use photographs, videos, recordings, names, school affiliations, statements, and conference-related content for promotional purposes, social media, publications, archival documentation, press releases, websites, marketing campaigns, and future conference materials.</p>\r\n      <p>No compensation, royalty, or additional consent shall be required for such usage.</p>\r\n\r\n      <h3>9. Certificates, Awards &amp; Recognition</h3>\r\n      <p>Certificates and awards are issued solely at the discretion of the Secretariat and Executive Board. Resolve MUN reserves the right to withhold certificates, awards, or recognitions in cases involving misconduct, absenteeism, procedural violations, plagiarism, or disciplinary action. Decisions regarding awards, rankings, recognitions, and committee evaluations are final and non-appealable.</p>\r\n\r\n      <h3>10. Transport, Food &amp; Accommodation</h3>\r\n      <p>Optional transport facilities, where provided, are subject to operational feasibility and availability. Resolve MUN shall not be held responsible for transport delays, traffic disruptions, third-party vehicle issues, missed pickups, or travel-related inconveniences.</p>\r\n      <p>Food preferences and dietary accommodations may be attempted but are not guaranteed. Accommodation is not included unless explicitly stated otherwise.</p>\r\n\r\n      <h3>11. Digital Platform Policy</h3>\r\n      <p>Participants engaging through online or hybrid platforms must maintain professional conduct in all digital spaces associated with Resolve MUN. Resolve MUN reserves the right to remove participants from official groups, meetings, or digital platforms for inappropriate conduct or misuse.</p>\r\n      <p>Unauthorized recording, redistribution of conference materials, impersonation, or misuse of official branding is prohibited.</p>\r\n\r\n      <h3>12. Intellectual Property</h3>\r\n      <p>All conference branding, logos, documents, graphics, committee materials, designs, and official content remain the intellectual property of Resolve MUN unless otherwise stated. Unauthorized reproduction, redistribution, commercial usage, or modification of official materials without written permission is prohibited.</p>\r\n\r\n      <h3>13. Force Majeure</h3>\r\n      <p>Resolve MUN shall not be held responsible for cancellation, delay, postponement, interruption, or modification caused by events beyond reasonable control, including but not limited to natural disasters, pandemics, governmental restrictions, institutional directives, political disturbances, civil unrest, infrastructure failures, technical outages, emergencies, or unforeseen operational circumstances.</p>\r\n      <p>Under such circumstances, registrations shall remain subject to conference policy and may be transferred to revised schedules or formats where applicable.</p>\r\n\r\n      <h3>14. Privacy &amp; Data Usage</h3>\r\n      <p>By registering, participants consent to the collection and processing of submitted information for conference administration, communication, logistics, and promotional purposes. Resolve MUN shall take reasonable measures to protect participant information but does not guarantee absolute security of digital systems or communication platforms.</p>\r\n\r\n      <h3>15. Final Authority</h3>\r\n      <p>The Secretariat of Resolve MUN 2026 retains final authority over all conference-related matters. All interpretations of conference policy, committee procedure, disciplinary matters, eligibility, awards, scheduling, and operational decisions made by the Secretariat shall be considered final and binding.</p>\r\n\r\n      <h3>16. Contact</h3>\r\n      <div class=\"terms-contact\">\r\n        <p>For official queries regarding these Terms &amp; Conditions, contact Resolve Model United Nations 2026:</p>\r\n        <div class=\"terms-contact-links\">\r\n          <a href=\"mailto:resolve.mun@gmail.com\">resolve.mun@gmail.com</a>\r\n          <a href=\"https://www.instagram.com/mun.resolve/\" target=\"_blank\" rel=\"noopener noreferrer\">@mun.resolve</a>\r\n          <span style=\"color: rgba(245,245,247,0.75);\">Hyderabad, India</span>\r\n        </div>\r\n      </div>\r\n\r\n      <p><strong>By submitting this form, I confirm that I have read, understood, and agreed to the Terms &amp; Conditions of Resolve MUN 2026.</strong></p>\r\n    </div>\r\n  </div>\r\n</div>\r\n\r\n  <div class=\"cursor-dot\" id=\"cursorDot\"></div>\r\n  <div class=\"cursor-reticle\" id=\"cursorReticle\"></div>\r\n\r\n<!-- NAV -->\r\n\r\n\r\n<div class=\"committee-prompt\" id=\"committeePrompt\" aria-hidden=\"true\">\r\n  <div class=\"committee-prompt__text\">\r\n    CHOOSE YOUR COMMITTEE\r\n    <span class=\"committee-prompt__subtext\">Background guides are live</span>\r\n  </div>\r\n</div>\r\n\r\n<!-- COUNTDOWN -->\r\n<div id=\"countdown\" class=\"reveal\">\r\n  <span class=\"countdown-label\">Conference Dates</span>\r\n  <div class=\"countdown-units-wrapper\" style=\"display:flex;align-items:center;justify-content:center;gap:16px;\">\r\n    <div class=\"countdown-unit\" style=\"min-width:280px;padding:14px 32px;border-radius:9999px;background:rgba(59,130,246,0.08);border:1px solid rgba(147,197,253,0.28);box-shadow:0 0 30px rgba(59,130,246,0.18);\">\r\n      <span class=\"countdown-num\" style=\"font-size:clamp(1.15rem,2.5vw,1.8rem);letter-spacing:0.16em;color:#93c5fd;font-weight:800;text-transform:uppercase;\">REVEALING SOON</span>\r\n      <span class=\"countdown-unit-label\" style=\"margin-top:4px;letter-spacing:0.12em;color:rgba(255,255,255,0.65);text-transform:uppercase;font-size:0.72rem;\">Stay Tuned · Edition 2.0</span>\r\n    </div>\r\n  </div>\r\n</div>\r\n\r\n<!-- ABOUT -->\r\n<section id=\"about\">\r\n<div class=\"about-inner\">\r\n  <div class=\"about-visual reveal\">\r\n    <div class=\"emblem-wrapper\">\r\n      <div class=\"logo-halo\"></div>\r\n      <img src=\"/images/Logo.svg\" alt=\"Resolve MUN 2026 Emblem - Symbol of Excellence and Diplomacy\" class=\"emblem-main\">\r\n      <div class=\"about-particles\">\r\n        <div class=\"about-particle\" style=\"top: 20%; left: 10%; animation-delay: 0s;\"></div>\r\n        <div class=\"about-particle\" style=\"top: 80%; left: 30%; animation-delay: 2s;\"></div>\r\n        <div class=\"about-particle\" style=\"top: 50%; left: 80%; animation-delay: 4s;\"></div>\r\n        <div class=\"about-particle\" style=\"top: 10%; left: 60%; animation-delay: 6s;\"></div>\r\n        <div class=\"about-particle\" style=\"top: 90%; left: 70%; animation-delay: 8s;\"></div>\r\n      </div>\r\n    </div>\r\n    \r\n    <div class=\"about-stat-grid\">\r\n      <div class=\"about-stat\">\r\n        <span class=\"num\">300+</span>\r\n        <div class=\"stat-divider\"></div>\r\n        <span class=\"desc\">Delegates</span>\r\n      </div>\r\n      <div class=\"about-stat\">\r\n        <span class=\"num text-[1.45rem] tracking-wider text-blue-300 font-sans\">RELEASING SOON</span>\r\n        <div class=\"stat-divider\"></div>\r\n        <span class=\"desc\">Committees</span>\r\n      </div>\r\n      <div class=\"about-stat cash-rewards-stat\">\r\n        <span class=\"num text-[1.45rem] tracking-wider text-blue-300 font-sans\">COMING SOON</span>\r\n        <div class=\"stat-divider\"></div>\r\n        <span class=\"desc\">Cash Rewards</span>\r\n      </div>\r\n      <div class=\"about-stat\">\r\n        <span class=\"num\">3</span>\r\n        <div class=\"stat-divider\"></div>\r\n        <span class=\"desc\">Days of Diplomacy</span>\r\n      </div>\r\n    </div>\r\n  </div>\r\n\r\n  <div class=\"reveal reveal-delay-2 about-content\">\r\n    <div class=\"section-label\">About the Conference</div>\r\n    <h2 class=\"section-title\">WHERE DIPLOMACY<br>MEETS <span class=\"title-accent\">AMBITION</span></h2>\r\n    <div class=\"title-line-divider\"></div>\r\n    \r\n    <p class=\"section-body\">Resolve MUN is not just a conference — it is an arena where the next generation of Hyderabad's leaders converge to debate, deliberate, and drive change. Built on the pillars of intellectual rigor and diplomatic excellence, Resolve MUN challenges delegates to engage with the city's and the world's most pressing issues.</p>\r\n    <p class=\"section-body\">From crisis committees that demand split-second decisions to general assemblies that require sweeping coalition-building, every moment at Resolve MUN is designed to forge leaders of consequence.</p>\r\n  </div>\r\n</div>\r\n</section>\r\n\r\n<div class=\"glow-line\"></div>\r\n<!-- SECRETARY GENERAL'S LETTER -->\r\n<section id=\"letter\" class=\"reveal\">\r\n  <div class=\"letter-bg-glow\"></div>\r\n  <div class=\"letter-inner\">\r\n    <div class=\"section-label reveal\" style=\"justify-content: center;\">Message from the Secretariat</div>\r\n    <h2 class=\"section-title reveal\" style=\"text-align: center;\">A LETTER FROM THE<br>SECRETARY GENERAL</h2>\r\n    \r\n    <div class=\"letter-container reveal reveal-delay-2\">\r\n      <div class=\"letter-content\">\r\n        <p>It is my privilege to welcome you to <strong>Resolve Model United Nations 2026</strong>.</p>\r\n        <p>Resolve was never meant to be just another conference. From the start, the idea was simple. If we were going to do this, we would do it properly. That meant focusing on quality, being intentional with every decision, and not compromising where it actually matters.</p>\r\n        <p>In a circuit where numbers often take priority, we chose to care more about what happens inside the room. Every committee has been put together with that in mind. Our Executive Board is made up of some of the strongest individuals in the Hyderabad circuit, and the expectation they bring is clear. <strong>Come prepared, think critically, and be ready to engage seriously.</strong></p>\r\n        <p>There is a certain standard attached to Resolve. Not because we say it, but because of how the conference is built. The pace will be demanding. The debate will be competitive. You will be pushed to do more than just speak. You will have to think, adapt, and actually understand what you are doing.</p>\r\n        <p>At the same time, Resolve is not just about committee sessions. The experience matters. The people you meet, the conversations you have, and the overall atmosphere are just as important. We have put equal effort into making sure that side of the conference feels just as strong.</p>\r\n        <p>As Secretary-General, I see Resolve as something we are building, not just hosting. If we get this right, it sets a standard going forward. That is the goal.</p>\r\n        <p>This conference is not meant to be easy.<br><strong>It is meant to be worth it.</strong></p>\r\n        <p>I look forward to welcoming you to Resolve MUN 2026.</p>\r\n      </div>\r\n      <div class=\"letter-signature\">\r\n        <div class=\"sig-avatar\">SB</div>\r\n        <div class=\"sig-details\">\r\n          <h4>Swayam Bakshi</h4>\r\n          <span>Secretary-General — Resolve Model United Nations 2026</span>\r\n        </div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<div class=\"glow-line\"></div>\r\n\r\n<!-- COMMITTEES -->\r\n<section id=\"committees\" class=\"reveal\" style=\"background: linear-gradient(0deg, rgba(7,6,22,0.7), rgba(7,6,22,0.3)), url('/images/committees-bg.svg'); background-size: cover; background-position: center;\">\r\n  <div class=\"section-label reveal\">Committees</div>\r\n  <h2 class=\"section-title reveal\">THE ARENA OF<br>HIGH-LEVEL DEBATE</h2>\r\n  <p class=\"section-body reveal\" style=\"max-width: 620px; margin: 0 auto 40px;\">Seven specialized diplomatic chambers are currently being finalized by the academic secretariat. Agendas, background guides, and portfolio matrices will be unveiled shortly.</p>\r\n  \r\n  <div class=\"releasing-soon-card reveal\">\r\n    <div class=\"releasing-badge-pill\">ANNOUNCEMENT</div>\r\n    <h3>COMMITTEES RELEASING SOON</h3>\r\n    <p>Prepare for unprecedented crisis simulations, bilateral negotiations, and multilateral draft resolutions.</p>\r\n  </div>\r\n</section>\r\n\r\n<div class=\"glow-line\"></div>\r\n\r\n<!-- VENUE -->\r\n<section id=\"venue\" class=\"reveal\">\r\n  <div class=\"section-label reveal\">Venue</div>\r\n  <h2 class=\"section-title reveal\">A STAGE WORTHY<br>OF THE DEBATE</h2>\r\n  <p class=\"section-body reveal\" style=\"max-width: 600px; margin: 0 auto 40px;\">A state-of-the-art diplomatic arena in Hyderabad, designed to foster collaboration and intense discourse.</p>\r\n  \r\n  <div class=\"releasing-soon-card reveal\">\r\n    <div class=\"releasing-badge-pill\">LOCATION</div>\r\n    <h3>VENUE RELEASING SOON</h3>\r\n    <p>Official venue announcement and campus walkthrough will be released soon.</p>\r\n  </div>\r\n</section>\r\n\r\n<div class=\"glow-line\"></div>\r\n\r\n<!-- SECRETARIAT -->\r\n<section id=\"secretariat\" class=\"reveal\">\r\n  <div class=\"sec-header reveal\">\r\n    <div class=\"section-label\">Secretariat</div>\r\n    <h2 class=\"section-title\">MEET THE TEAM</h2>\r\n    <p class=\"section-body\" style=\"max-width: 600px;\">The Secretariat of Resolve MUN comprises exceptional leaders dedicated to delivering a world-class conference experience.</p>\r\n  </div>\r\n  \r\n  <div class=\"sec-carousel-container\">\r\n    <div class=\"sec-track\" id=\"secTrack\">\r\n      <!-- Core Sec -->\r\n      <div class=\"sec-card sec-card--sg\">\r\n        <div class=\"sec-avatar\">SB</div>\r\n        <div class=\"sec-name\">Swayam Bakshi</div>\r\n        <div class=\"sec-role\">Secretary General</div>\r\n      </div>\r\n      <div class=\"sec-card sec-card--dsg\">\r\n        <div class=\"sec-avatar\">PS</div>\r\n        <div class=\"sec-name\">Poorvika Setti</div>\r\n        <div class=\"sec-role\">Deputy Secretary General</div>\r\n      </div>\r\n      <div class=\"sec-card sec-card--dg\">\r\n        <div class=\"sec-avatar\">AV</div>\r\n        <div class=\"sec-name\">Abhilash VijayaKumar</div>\r\n        <div class=\"sec-role\">Director General</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">SD</div>\r\n        <div class=\"sec-name\">Siddhi Kothari</div>\r\n        <div class=\"sec-role\">Charge D'Affairs</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">JK</div>\r\n        <div class=\"sec-name\">Jayakrishna</div>\r\n        <div class=\"sec-role\">OC Head</div>\r\n      </div>\r\n      <!-- Sec -->\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">MH</div>\r\n        <div class=\"sec-name\">Mahathi</div>\r\n        <div class=\"sec-role\">USG Finance</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">ED</div>\r\n        <div class=\"sec-name\">Eesha Datla</div>\r\n        <div class=\"sec-role\">USG Logistics</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">RY</div>\r\n        <div class=\"sec-name\">Rayon</div>\r\n        <div class=\"sec-role\">USG Logistics</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">JT</div>\r\n        <div class=\"sec-name\">Jagadeesh Ram Tekamudi</div>\r\n        <div class=\"sec-role\">USG Policy</div>\r\n      </div>\r\n            <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">AV</div>\r\n        <div class=\"sec-name\">Avni</div>\r\n        <div class=\"sec-role\">Delegate Affairs</div>\r\n      </div>\r\n            <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">AL</div>\r\n        <div class=\"sec-name\">Anmol Lokhande</div>\r\n        <div class=\"sec-role\">Delegate Affairs</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">AV</div>\r\n        <div class=\"sec-name\">Anvita Vijay</div>\r\n        <div class=\"sec-role\">USG Marketing</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">AC</div>\r\n        <div class=\"sec-name\">Aryan Chakravarthy</div>\r\n        <div class=\"sec-role\">USG Marketing</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">MG</div>\r\n        <div class=\"sec-name\">Madhurima Guduru</div>\r\n        <div class=\"sec-role\">USG Marketing</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">AA</div>\r\n        <div class=\"sec-name\">Anjuman Ara</div>\r\n        <div class=\"sec-role\">USG Design</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">PM</div>\r\n        <div class=\"sec-name\">Parnika M</div>\r\n        <div class=\"sec-role\">USG Design</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">PT</div>\r\n        <div class=\"sec-name\">Pratham</div>\r\n        <div class=\"sec-role\">USG Design</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">KN</div>\r\n        <div class=\"sec-name\">Kushnoor</div>\r\n        <div class=\"sec-role\">Head Of Outreach</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">PR</div>\r\n        <div class=\"sec-name\">Pranavi Reddy</div>\r\n        <div class=\"sec-role\">Head Of Outreach</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">AB</div>\r\n        <div class=\"sec-name\">Abhinaya</div>\r\n        <div class=\"sec-role\">Director of Content Creation</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">KT</div>\r\n        <div class=\"sec-name\">Keerthi</div>\r\n        <div class=\"sec-role\">Director of Content Creation</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">HM</div>\r\n        <div class=\"sec-name\">Harshita Muchhal</div>\r\n        <div class=\"sec-role\">USG Culturals</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">VR</div>\r\n        <div class=\"sec-name\">Vetsha Rithvik Siddarth</div>\r\n        <div class=\"sec-role\">USG Video & Productions</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">VG</div>\r\n        <div class=\"sec-name\">Vignesh</div>\r\n        <div class=\"sec-role\">USG Security</div>\r\n      </div>\r\n      <div class=\"sec-card\">\r\n        <div class=\"sec-avatar\">DH</div>\r\n        <div class=\"sec-name\">Dhamini</div>\r\n        <div class=\"sec-role\">USG Security</div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<div class=\"glow-line\"></div>\r\n\r\n<!-- SPONSORS -->\r\n<section id=\"sponsors\">\r\n  <div class=\"sponsors-inner reveal\" style=\"text-align: center;\">\r\n    <div class=\"section-label\" style=\"justify-content: center; margin-bottom: 24px;\">\r\n      Partner Organizations & Sponsors\r\n    </div>\r\n    \r\n    <h2 class=\"section-title\" style=\"text-align: center; margin-bottom: 60px;\">BECOME A PARTNER</h2>\r\n    \r\n    <div class=\"sponsors-row\" style=\"justify-content: center; gap: 20px;\">\r\n      <div class=\"sponsor-slot\">Sponsor</div>\r\n      <div class=\"sponsor-slot\">Partner</div>\r\n      <div class=\"sponsor-slot\">Media</div>\r\n      <div class=\"sponsor-slot\">Academic</div>\r\n      <div class=\"sponsor-slot\">Sponsor</div>\r\n    </div>\r\n    <div class=\"sponsors-contact\" style=\"margin-top: 48px;\">\r\n      Sponsorship packages available — <a href=\"mailto:contact@resolvemun.org\">Contact Us</a>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<div class=\"glow-line\"></div>\r\n\r\n<!-- OC APPLICATIONS (CLOSED) -->\r\n<section id=\"oc-applications\">\r\n  <div class=\"oc-inner\">\r\n    <div class=\"oc-layout\">\r\n      <!-- Left: Narrative -->\r\n      <div class=\"oc-text-content reveal\">\r\n        <div class=\"section-label\">Organizing Committee</div>\r\n        <h2 class=\"section-title\">JOIN THE<br>ARCHITECTS</h2>\r\n        <p class=\"section-body\">Help build one of Hyderabad's most ambitious Model United Nations conferences from the ground up.</p>\r\n        \r\n        <div class=\"oc-perks\">\r\n          <div class=\"oc-perk\">Elite Leadership Roles</div>\r\n          <div class=\"oc-perk\">Strategic Logistics & Planning</div>\r\n          <div class=\"oc-perk\">Prime Networking Context</div>\r\n          <div class=\"oc-perk\">Exclusive Certification</div>\r\n        </div>\r\n      </div>\r\n\r\n      <!-- Right: Action Card -->\r\n      <div class=\"oc-card reveal reveal-delay-2\">\r\n        <div class=\"oc-card-glow\"></div>\r\n        <div class=\"oc-icon\">\r\n          <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n            <path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/>\r\n            <path d=\"M23 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>\r\n          </svg>\r\n        </div>\r\n        <h3 class=\"oc-card-title\">OC</h3>\r\n        <p class=\"oc-card-body\">Build one of Hyderabad's most ambitious Model United Nations conferences from the ground up.</p>\r\n        <button class=\"btn-primary oc-btn\" disabled><span style=\"opacity: 0.6;\">APPLICATIONS CLOSED</span></button>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<div class=\"glow-line glow-line--blue\" style=\"margin: 80px 0;\"></div>\r\n\r\n<!-- EB APPLICATIONS -->\r\n<section id=\"eb-applications\">\r\n  <div class=\"eb-inner\">\r\n    <div class=\"eb-layout\">\r\n      <!-- Left: Narrative -->\r\n      <div class=\"eb-text-content reveal\">\r\n        <div class=\"section-label\">Executive Board</div>\r\n        <h2 class=\"section-title\">LEAD THE<br>DIALOGUE</h2>\r\n        <p class=\"section-body\">Shape the academic landscape of Resolve MUN. We are inviting seasoned debaters to chair our prestigious committees.</p>\r\n        \r\n        <div class=\"eb-perks\">\r\n          <div class=\"eb-perk\">Academic Authority</div>\r\n          <div class=\"eb-perk\">Strategic Committee Management</div>\r\n          <div class=\"eb-perk\">Mentorship & Evaluation</div>\r\n          <div class=\"eb-perk\">Honorarium & Benefits</div>\r\n        </div>\r\n      </div>\r\n\r\n      <!-- Right: Action Card -->\r\n      <div class=\"eb-card reveal reveal-delay-2\">\r\n        <div class=\"eb-card-glow\"></div>\r\n        <div class=\"eb-icon\">\r\n          <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n            <path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/><path d=\"M12 8v4\"/><path d=\"M12 16h.01\"/>\r\n          </svg>\r\n        </div>\r\n        <h3 class=\"eb-card-title\">Apply for EB</h3>\r\n        <p class=\"eb-card-body\">Join us as a Chairperson, Vice-Chairperson, or Rapporteur. Applications are now open for experienced MUNers.</p>\r\n        <button class=\"btn-primary eb-btn\" disabled><span>EB Applications Closed</span></button>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n\r\n  <!-- OC APPLICATION MODAL -->\r\n  <div class=\"modal-overlay\" id=\"ocModal\">\r\n    <canvas class=\"modal-particles\" id=\"ocModalParticles\"></canvas>\r\n    <div class=\"modal-content\">\r\n      <button class=\"modal-close\" id=\"closeOcModal\" aria-label=\"Close\">\r\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n          <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>\r\n          <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>\r\n        </svg>\r\n      </button>\r\n      \r\n      <div class=\"modal-header\">\r\n        <h2 class=\"modal-title\">OC APPLICATIONS</h2>\r\n        <span class=\"modal-subtitle\">Join the Organizing Committee</span>\r\n      </div>\r\n      \r\n      <form id=\"ocRegForm\">\r\n        <!-- STEP 1: PERSONAL & CORE DETAILS -->\r\n        <div class=\"form-step active\" id=\"ocStep1\">\r\n          <div class=\"form-group\">\r\n            <label for=\"ocName\">Full Name</label>\r\n            <input type=\"text\" id=\"ocName\" name=\"name\" autocomplete=\"name\" placeholder=\"Enter your full name\" required>\r\n          </div>\r\n          \r\n          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n            <div>\r\n              <label for=\"ocDob\">Date of Birth</label>\r\n              <input type=\"date\" id=\"ocDob\" name=\"dob\" autocomplete=\"bday\" required>\r\n            </div>\r\n            <div>\r\n              <label for=\"ocGrade\">Grade / Class</label>\r\n              <input type=\"text\" id=\"ocGrade\" name=\"grade\" placeholder=\"e.g. 10th, 1st Year\" required>\r\n            </div>\r\n          </div>\r\n          \r\n          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n            <div>\r\n              <label for=\"ocPhone\">Contact No (WhatsApp)</label>\r\n              <input type=\"tel\" id=\"ocPhone\" name=\"phone\" autocomplete=\"tel\" placeholder=\"10-digit number\" required pattern=\"[0-9]{10}\" minlength=\"10\" maxlength=\"10\" title=\"Please enter a valid 10-digit phone number\">\r\n            </div>\r\n            <div>\r\n              <label for=\"ocEmail\">Email ID</label>\r\n              <input type=\"email\" id=\"ocEmail\" name=\"email\" autocomplete=\"email\" placeholder=\"yourname@example.com\" required pattern=\"[a-z0-9._%+-]+@ [a-z0-9.-]+\\.[a-z]{2,}$\">\r\n            </div>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"ocInst\">Institution (School/College/University)</label>\r\n            <input type=\"text\" id=\"ocInst\" name=\"institute\" autocomplete=\"organization\" placeholder=\"Enter your institution\" required>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"ocInsta\">Instagram ID (Optional)</label>\r\n            <input type=\"text\" id=\"ocInsta\" name=\"instagram\" autocomplete=\"username\" placeholder=\"@username\">\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label>Number of MUNs attended</label>\r\n            <select id=\"ocMunCount\" required>\r\n              <option value=\"\" disabled selected>Select an option</option>\r\n              <option value=\"N/A\">N/A</option>\r\n              <option value=\"1-5\">1-5</option>\r\n              <option value=\"6-10\">6-10</option>\r\n              <option value=\"11+\">11 & more</option>\r\n            </select>\r\n          </div>\r\n\r\n          <button type=\"button\" class=\"btn-next\" onclick=\"nextOcStep(2)\">\r\n            Next Step\r\n            <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg>\r\n          </button>\r\n        </div>\r\n\r\n        <!-- STEP 2: MOTIVATION & ATTRIBUTES -->\r\n        <div class=\"form-step\" id=\"ocStep2\">\r\n          <div class=\"form-group\">\r\n            <label>Why do you want to be part of the Organizing Committee for Resolve MUN?</label>\r\n            <textarea id=\"ocWhy\" name=\"why\" rows=\"4\" placeholder=\"What do you hope to contribute?\" required style=\"resize: vertical; min-height: 120px;\"></textarea>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label>What attributes do you possess that make you well-suited for an OC position?</label>\r\n            <textarea id=\"ocAttributes\" name=\"attributes\" rows=\"4\" placeholder=\"Mention your skills and qualities...\" required style=\"resize: vertical; min-height: 120px;\"></textarea>\r\n          </div>\r\n\r\n          <div class=\"form-actions\">\r\n            <button type=\"button\" class=\"btn-back\" onclick=\"nextOcStep(1)\">Back</button>\r\n            <button type=\"button\" class=\"btn-next\" onclick=\"nextOcStep(3)\">Review & Pay</button>\r\n          </div>\r\n        </div>\r\n\r\n        <!-- STEP 3: PAYMENT -->\r\n        <div class=\"form-step\" id=\"ocStep3\">\r\n          <div class=\"payment-banner\">\r\n            <h3>Registration Fee: ₹1699</h3>\r\n            <p class=\"non-refundable-notice\" style=\"font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;\">⚠️ Payment is non-refundable once submitted</p>\r\n          </div>\r\n\r\n          <div class=\"payment-card\">\r\n            <div class=\"form-group\" style=\"margin-bottom: 0;\">\r\n              <label style=\"text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;\">1. SCAN TO PAY</label>\r\n              <div style=\"text-align: center;\">\r\n                <div class=\"qr-container\">\r\n                  <img id=\"ocPaymentQRImage\" src=\"/images/QR_Delegate_2599.svg\" alt=\"OC Payment QR Code\">\r\n                </div>\r\n                <div class=\"upi-box\">\r\n                  <span id=\"ocUpiID\">bhoomianilbasrani@okhdfcbank</span>\r\n                  <button type=\"button\" class=\"refresh-qr-btn\" onclick=\"generateDynamicQR('1699', 'ocPaymentQRImage', 'ocUpiID')\" title=\"Regenerate QR\">\r\n                    <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"23 4 23 10 17 10\"></polyline><polyline points=\"1 20 1 14 7 14\"></polyline><path d=\"M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15\"></path></svg>\r\n                  </button>\r\n                  <button type=\"button\" class=\"copy-btn\" onclick=\"copyOcUPI()\">\r\n                    <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>\r\n                  </button>\r\n                </div>\r\n              </div>\r\n            </div>\r\n\r\n            <div class=\"form-group\">\r\n              <label>2. TRANSACTION ID</label>\r\n              <input type=\"text\" id=\"ocTxnID\" name=\"txnID\" placeholder=\"Enter Transaction ID\" required>\r\n            </div>\r\n\r\n            <div class=\"form-group\">\r\n              <label>3. UTR ID (Optional)</label>\r\n              <input type=\"text\" id=\"ocUTR\" name=\"utr\" placeholder=\"Enter 12-digit UTR ID\">\r\n            </div>\r\n\r\n            <div class=\"form-group\">\r\n              <label>4. UPLOAD PAYMENT SCREENSHOT*</label>\r\n              <label class=\"file-upload-wrapper\" for=\"ocDriveLink\">\r\n                <span class=\"file-upload-btn\">Choose File</span>\r\n                <span class=\"file-name\">No file chosen</span>\r\n                <input type=\"file\" id=\"ocDriveLink\" class=\"file-upload-input\" accept=\"image/*\" required>\r\n              </label>\r\n            </div>\r\n            \r\n            <p style=\"text-align: center; font-size: 0.75rem; color: #ff4444; opacity: 0.8; margin-bottom: 20px;\">\r\n              * Applications without a payment screenshot will not be processed.\r\n            </p>\r\n          </div>\r\n\r\n          <div class=\"form-actions\">\r\n            <button type=\"button\" class=\"btn-back\" onclick=\"nextOcStep(2)\">Back</button>\r\n            <button type=\"submit\" class=\"btn-next\">Submit Application</button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n    </div>\r\n  </div>\r\n\r\n  
-  <!-- SECRETARIAT APPLICATION MODAL (Minimal Boxy Soft Typeform) -->
-  <div class=\"modal-overlay\" id=\"secModal\">
-    <canvas class=\"modal-particles\" id=\"secModalParticles\"></canvas>
-    <div class=\"modal-content\">
-      <button class=\"modal-close\" id=\"closeSecModal\" onclick=\"closeSecModal()\" aria-label=\"Close\">
-        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
-          <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>
-          <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>
-        </svg>
-      </button>
-      
-      <div class=\"modal-header\">
-        <div class=\"modal-pretitle\">EXECUTIVE LEADERSHIP · RESOLVE 2.0</div>
-        <h2 class=\"modal-title\">SECRETARIAT APPLICATION</h2>
-        <span class=\"modal-subtitle\">Join the Organizing Directorate</span>
+<!-- DELEGATE REGISTRATION MODAL -->
+<div class="modal-overlay" id="regModal">
+  <div class="modal-content">
+    <button class="modal-close" id="closeModal" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header">
+      <div class="modal-pretitle">INDIVIDUAL INTAKE · RESOLVE 2.0</div>
+      <h2 class="modal-title">DELEGATE REGISTRATION</h2>
+      <span class="modal-subtitle">Join Resolve MUN 2026</span>
+    </div>
+    
+    <form id="regForm" novalidate>
+      <!-- STEP 1: PERSONAL DETAILS -->
+      <div class="form-step active" id="step1">
+        <div class="form-group">
+          <label for="regName">Full Name</label>
+          <input type="text" id="regName" name="name" autocomplete="name" placeholder="Enter your full name" required>
+        </div>
+        
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="regGrade">Grade / Class</label>
+            <input type="text" id="regGrade" name="grade" autocomplete="off" placeholder="e.g. 10th, 1st Year" required>
+          </div>
+          <div>
+            <label for="regPhone">Phone Number</label>
+            <input type="tel" id="regPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="regEmail">Email Address</label>
+          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}">
+        </div>
+
+        <div class="form-group">
+          <label for="regInstitute">Institute name</label>
+          <input type="text" id="regInstitute" name="institute" autocomplete="organization" placeholder="School or University name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="regAddress">Full Residential Address</label>
+          <textarea id="regAddress" name="address" autocomplete="address-line1" rows="2" placeholder="Street, Area, City, Pincode" required style="resize: vertical; min-height: 64px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Do you require transportation?</label>
+          <select id="regTransport" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="regDob">Date of Birth</label>
+            <input type="date" id="regDob" required autocomplete="bday">
+          </div>
+          <div>
+            <label for="regReferral">Referral Code (Optional)</label>
+            <input type="text" id="regReferral" placeholder="e.g. RES-123" autocomplete="off">
+            <div id="referralFeedback" class="referral-feedback" style="font-size:0.75rem; margin-top:4px; color:var(--muted);"></div>
+          </div>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="regEmergencyName">Emergency Contact Name</label>
+            <input type="text" id="regEmergencyName" name="emergency-name" autocomplete="name" placeholder="Parent / Guardian name" required>
+          </div>
+          <div>
+            <label for="regEmergencyPhone">Emergency Contact Phone</label>
+            <input type="tel" id="regEmergencyPhone" name="emergency-phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>MUN Experience (Conference - Committee - Portfolio - Award/NA)</label>
+          <textarea id="regExp" rows="3" placeholder="List your experiences here..." required style="resize: vertical; min-height: 70px;"></textarea>
+        </div>
+
+        <button type="button" class="btn-next btn-full-width" onclick="nextStep(2)">
+          Next Step
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
       </div>
 
-      <div class=\"typeform-step-indicator\" id=\"secStepIndicator\">
-        <div class=\"step-pill active\" id=\"secPill1\"><span>1</span> Identity</div>
-        <div class=\"step-divider\"></div>
-        <div class=\"step-pill\" id=\"secPill2\"><span>2</span> Experience &amp; Vision</div>
-        <div class=\"step-divider\"></div>
-        <div class=\"step-pill\" id=\"secPill3\"><span>3</span> Submit</div>
+      <!-- STEP 2: COMMITTEE PREFERENCE -->
+      <div class="form-step" id="step2">
+        <a href="#" onclick="showCustomAlert('Country Matrix Coming Soon!', 'default')" class="btn-matrix">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Country Matrices
+        </a>
+
+        <!-- Preference 1 -->
+        <div class="form-group">
+          <label>Preference 1</label>
+          <select id="pref1_committee" required onchange="updatePortfolioOptions(1)">
+            <option value="" disabled selected>Select Committee Preference 1</option>
+            <option value="DISEC">DISEC</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="UNHRC">UNHRC</option>
+            <option value="CCC">CCC</option>
+            <option value="UNCSW">UNCSW</option>
+            <option value="IP">IP</option>
+          </select>
+          <div id="pref1_container" style="display: none; margin-top: 10px;">
+            <div id="pref1_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <input type="text" id="pref1_port1" placeholder="portfolio / country - 1" required>
+              <input type="text" id="pref1_port2" placeholder="portfolio / country - 2" required>
+            </div>
+            <select id="pref1_role" style="display: none;">
+              <option value="" disabled selected>Select Role</option>
+              <option value="Reporter">Reporter</option>
+              <option value="Photographer">Photographer</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Preference 2 -->
+        <div class="form-group">
+          <label>Preference 2</label>
+          <select id="pref2_committee" required onchange="updatePortfolioOptions(2)">
+            <option value="" disabled selected>Select Committee Preference 2</option>
+            <option value="DISEC">DISEC</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="UNHRC">UNHRC</option>
+            <option value="CCC">CCC</option>
+            <option value="UNCSW">UNCSW</option>
+            <option value="IP">IP</option>
+          </select>
+          <div id="pref2_container" style="display: none; margin-top: 10px;">
+            <div id="pref2_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <input type="text" id="pref2_port1" placeholder="portfolio / country - 1" required>
+              <input type="text" id="pref2_port2" placeholder="portfolio / country - 2" required>
+            </div>
+            <select id="pref2_role" style="display: none;">
+              <option value="" disabled selected>Select Role</option>
+              <option value="Reporter">Reporter</option>
+              <option value="Photographer">Photographer</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Preference 3 -->
+        <div class="form-group">
+          <label>Preference 3</label>
+          <select id="pref3_committee" required onchange="updatePortfolioOptions(3)">
+            <option value="" disabled selected>Select Committee Preference 3</option>
+            <option value="DISEC">DISEC</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="UNHRC">UNHRC</option>
+            <option value="CCC">CCC</option>
+            <option value="UNCSW">UNCSW</option>
+            <option value="IP">IP</option>
+          </select>
+          <div id="pref3_container" style="display: none; margin-top: 10px;">
+            <div id="pref3_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <input type="text" id="pref3_port1" placeholder="portfolio / country - 1" required>
+              <input type="text" id="pref3_port2" placeholder="portfolio / country - 2" required>
+            </div>
+            <select id="pref3_role" style="display: none;">
+              <option value="" disabled selected>Select Role</option>
+              <option value="Reporter">Reporter</option>
+              <option value="Photographer">Photographer</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextStep(1)">Back</button>
+          <button type="button" class="btn-next" onclick="nextStep(3)">Review & Pay</button>
+        </div>
       </div>
-      
-      <form id=\"secRegForm\" onsubmit=\"window.submitSecForm ? window.submitSecForm(event) : event.preventDefault()\">
-        <!-- STEP 1: PERSONAL & DEPARTMENT -->
-        <div class=\"form-step active\" id=\"secStep1\">
-          <div class=\"form-group\">
-            <label for=\"secName\">Full Name</label>
-            <input type=\"text\" id=\"secName\" name=\"name\" autocomplete=\"name\" placeholder=\"Enter your full name\" required>
+
+      <!-- STEP 3: PAYMENT & SUBMISSION -->
+      <div class="form-step" id="step3">
+        <div class="payment-banner">
+          <h3 id="regFeeDisplay">Registration Fee: ₹2699</h3>
+          <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
+        </div>
+
+        <div class="payment-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="text-align: center; margin-bottom: 12px; font-size: 0.62rem; letter-spacing: 0.15em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
+            <div style="text-align: center;">
+              <div class="qr-container">
+                <img id="paymentQRImage" src="/images/QR_Delegate_2599.svg" alt="Payment QR Code">
+              </div>
+              <div class="upi-box">
+                <span id="upiID">bhoomianilbasrani@okhdfcbank</span>
+                <button type="button" class="refresh-qr-btn" onclick="refreshDelegatePaymentQR()" title="Regenerate QR">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                </button>
+                <button type="button" class="copy-btn" onclick="copyUPI()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            </div>
+            <p class="payment-note" style="text-align: center; margin-bottom: 18px; font-style: normal; opacity: 0.5; font-size: 0.72rem;">Scan or use the UPI ID</p>
+          </div>
+
+          <div class="form-group">
+            <label>2. TRANSACTION ID</label>
+            <input type="text" id="regTxnID" placeholder="Enter Transaction ID" required>
+          </div>
+
+          <div class="form-group">
+            <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+            <label class="file-upload-wrapper" for="regDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="regDriveLink" class="file-upload-input" accept="image/*" required>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>4. UTR NUMBER (OPTIONAL)</label>
+            <input type="text" id="regUTR" placeholder="Enter 12-digit UTR">
+          </div>
+        </div>
+
+        <div class="payment-footer">
+          <p class="payment-contact">For Any Queries, contact: <span>+91 92121 07797</span></p>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextStep(2)">Back</button>
+          <button type="submit" class="btn-next">Submit Registration</button>
+        </div>
+        <p class="terms-confirmation">
+          By clicking Submit Registration, you agree to the
+          <a href="#" onclick="openTermsModal()">Terms &amp; Conditions</a>
+          of Resolve MUN 2026 shown below.
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- COMING SOON MODAL -->
+<div class="modal-overlay" id="commModal">
+  <div class="modal-content comm-modal-content">
+    <button class="modal-close" onclick="closeCommModal()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div class="comm-modal-inner">
+      <div class="comm-modal-icon" id="commModalIcon">ROUND ONE</div>
+      <h2 class="comm-modal-title" id="commModalTitle">RESOLVE 2026</h2>
+      <span class="comm-modal-agenda" id="commModalAgenda">Registrations opening soon.</span>
+      <p class="comm-modal-text" id="commModalText">
+        The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.
+      </p>
+
+      <div style="margin-top:12px;">
+        <button id="commModalBgBtn" class="btn-secondary" style="display:none; margin-right:10px;" onclick="(function(){ if(window.currentCommBg) window.open(window.currentCommBg, '_blank'); })()">Background Guide</button>
+      </div>
+
+      <div id="waitlistContainer">
+        <form id="waitlistForm">
+          <div class="waitlist-form">
+            <input type="email" id="waitlistEmail" placeholder="Enter your email address" required>
+            <button type="submit" class="waitlist-btn" id="waitlistSubmitBtn">Notify Me</button>
+          </div>
+        </form>
+        <p id="waitlistSuccess" style="display: none; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 0.95rem; margin-top: 20px; opacity: 0.85;">
+          You've been added to the priority list. We will be in touch.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TERMS & CONDITIONS MODAL -->
+<div class="modal-overlay" id="termsModal">
+  <div class="modal-content terms-modal-content">
+    <button class="modal-close" onclick="closeTermsModal()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div class="terms-modal-header">
+      <h2 class="modal-title">TERMS &amp; CONDITIONS</h2>
+      <span class="terms-modal-subtitle">Resolve Model United Nations 2026</span>
+    </div>
+    <div class="terms-body">
+      <p><strong>Last Updated:</strong> March 2026</p>
+      <p>Welcome to Resolve Model United Nations 2026 (“Resolve MUN”, “Conference”, “we”, “our”, or “us”). 
+         By registering for, accessing, participating in, attending, or engaging with Resolve MUN 2026 in any capacity, you acknowledge and agree to comply with these Terms &amp; Conditions.</p>
+      <h3>1. Acceptance of Terms</h3>
+      <p>By submitting a registration form, making payment, or attending the conference, you agree to be legally bound by these Terms &amp; Conditions.</p>
+      <h3>2. Registration &amp; Payment Policy</h3>
+      <p>Registration is confirmed upon receipt of applicable fees. Registration fees are non-refundable and non-transferable.</p>
+      <h3>3. Code of Conduct</h3>
+      <p>Participants must maintain diplomatic decorum and professionalism. Harassment, discrimination, or abusive behavior will result in immediate disqualification without refund.</p>
+      <div class="terms-contact">
+        <p>For queries: <a href="mailto:resolve.mun@gmail.com">resolve.mun@gmail.com</a> | <a href="https://www.instagram.com/mun.resolve/" target="_blank" rel="noopener noreferrer">@mun.resolve</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-reticle" id="cursorReticle"></div>
+
+<div class="committee-prompt" id="committeePrompt" aria-hidden="true">
+  <div class="committee-prompt__text">
+    CHOOSE YOUR COMMITTEE
+    <span class="committee-prompt__subtext">Background guides are live</span>
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div id="countdown" class="reveal">
+  <span class="countdown-label">Conference Opens In</span>
+  <div class="countdown-units-wrapper">
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-days">--</span>
+      <span class="countdown-unit-label">Days</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-hours">--</span>
+      <span class="countdown-unit-label">Hours</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-mins">--</span>
+      <span class="countdown-unit-label">Minutes</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-secs">--</span>
+      <span class="countdown-unit-label">Seconds</span>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+<div class="about-inner">
+  <div class="about-visual reveal">
+    <div class="emblem-wrapper">
+      <div class="logo-halo"></div>
+      <img src="/images/Logo.svg" alt="Resolve MUN 2026 Emblem - Symbol of Excellence and Diplomacy" class="emblem-main">
+      <div class="about-particles">
+        <div class="about-particle" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
+        <div class="about-particle" style="top: 80%; left: 30%; animation-delay: 2s;"></div>
+        <div class="about-particle" style="top: 50%; left: 80%; animation-delay: 4s;"></div>
+        <div class="about-particle" style="top: 10%; left: 60%; animation-delay: 6s;"></div>
+        <div class="about-particle" style="top: 90%; left: 70%; animation-delay: 8s;"></div>
+      </div>
+    </div>
+    
+    <div class="about-stat-grid">
+      <div class="about-stat">
+        <span class="num">300+</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Delegates</span>
+      </div>
+      <div class="about-stat">
+        <span class="num text-[1.2rem] tracking-wider text-blue-300 font-sans">RELEASING SOON</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Committees</span>
+      </div>
+      <div class="about-stat cash-rewards-stat">
+        <span class="num text-[1.2rem] tracking-wider text-blue-300 font-sans">COMING SOON</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Cash Rewards</span>
+      </div>
+      <div class="about-stat">
+        <span class="num">3</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Days of Diplomacy</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="reveal reveal-delay-2 about-content">
+    <div class="section-label">About the Conference</div>
+    <h2 class="section-title">WHERE DIPLOMACY<br>MEETS <span class="title-accent">AMBITION</span></h2>
+    <div class="title-line-divider"></div>
+    
+    <p class="section-body">Resolve MUN is not just a conference — it is an arena where the next generation of Hyderabad's leaders converge to debate, deliberate, and drive change. Built on the pillars of intellectual rigor and diplomatic excellence, Resolve MUN challenges delegates to engage with the city's and the world's most pressing issues.</p>
+    <p class="section-body">From crisis committees that demand split-second decisions to general assemblies that require sweeping coalition-building, every moment at Resolve MUN is designed to forge leaders of consequence.</p>
+  </div>
+</div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- SECRETARY GENERAL'S LETTER -->
+<section id="letter" class="reveal">
+  <div class="letter-bg-glow"></div>
+  <div class="letter-inner">
+    <div class="section-label reveal" style="justify-content: center;">Message from the Secretariat</div>
+    <h2 class="section-title reveal" style="text-align: center;">A LETTER FROM THE<br>SECRETARY GENERAL</h2>
+    
+    <div class="letter-container reveal reveal-delay-2">
+      <div class="letter-content">
+        <p>It is my privilege to welcome you to <strong>Resolve Model United Nations 2026</strong>.</p>
+        <p>Resolve was never meant to be just another conference. From the start, the idea was simple. If we were going to do this, we would do it properly. That meant focusing on quality, being intentional with every decision, and not compromising where it actually matters.</p>
+        <p>In a circuit where numbers often take priority, we chose to care more about what happens inside the room. Every committee has been put together with that in mind. Our Executive Board is made up of some of the strongest individuals in the Hyderabad circuit, and the expectation they bring is clear. <strong>Come prepared, think critically, and be ready to engage seriously.</strong></p>
+        <p>There is a certain standard attached to Resolve. Not because we say it, but because of how the conference is built. The pace will be demanding. The debate will be competitive. You will be pushed to do more than just speak. You will have to think, adapt, and actually understand what you are doing.</p>
+        <p>At the same time, Resolve is not just about committee sessions. The experience matters. The people you meet, the conversations you have, and the overall atmosphere are just as important. We have put equal effort into making sure that side of the conference feels just as strong.</p>
+        <p>As Secretary-General, I see Resolve as something we are building, not just hosting. If we get this right, it sets a standard going forward. That is the goal.</p>
+        <p>This conference is not meant to be easy.<br><strong>It is meant to be worth it.</strong></p>
+        <p>I look forward to welcoming you to Resolve MUN 2026.</p>
+      </div>
+      <div class="letter-signature">
+        <div class="sig-avatar">SB</div>
+        <div class="sig-details">
+          <h4>Swayam Bakshi</h4>
+          <span>Secretary-General — Resolve Model United Nations 2026</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- COMMITTEES -->
+<section id="committees" class="reveal" style="background: linear-gradient(0deg, rgba(7,6,22,0.7), rgba(7,6,22,0.3)), url('/images/committees-bg.svg'); background-size: cover; background-position: center;">
+  <div class="section-label reveal">Committees</div>
+  <h2 class="section-title reveal">THE ARENA OF<br>HIGH-LEVEL DEBATE</h2>
+  <p class="section-body reveal" style="max-width: 620px; margin: 0 auto 30px;">Seven specialized diplomatic chambers are currently being finalized by the academic secretariat. Agendas, background guides, and portfolio matrices will be unveiled shortly.</p>
+  
+  <div class="releasing-soon-card reveal">
+    <div class="releasing-badge-pill">ANNOUNCEMENT</div>
+    <h3>COMMITTEES RELEASING SOON</h3>
+    <p>Prepare for unprecedented crisis simulations, bilateral negotiations, and multilateral draft resolutions.</p>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- VENUE -->
+<section id="venue" class="reveal">
+  <div class="section-label reveal">Venue</div>
+  <h2 class="section-title reveal">A STAGE WORTHY<br>OF THE DEBATE</h2>
+  <p class="section-body reveal" style="max-width: 600px; margin: 0 auto 30px;">A state-of-the-art diplomatic arena in Hyderabad, designed to foster collaboration and intense discourse.</p>
+  
+  <div class="releasing-soon-card reveal">
+    <div class="releasing-badge-pill">LOCATION</div>
+    <h3>VENUE RELEASING SOON</h3>
+    <p>Official venue announcement and campus walkthrough will be released soon.</p>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- SECRETARIAT -->
+<section id="secretariat" class="reveal">
+  <div class="sec-header reveal">
+    <div class="section-label">Secretariat</div>
+    <h2 class="section-title">MEET THE TEAM</h2>
+    <p class="section-body" style="max-width: 600px;">The Secretariat of Resolve MUN comprises exceptional leaders dedicated to delivering a world-class conference experience.</p>
+  </div>
+  
+  <div class="sec-carousel-container">
+    <div class="sec-track" id="secTrack">
+      <div class="sec-card sec-card--sg">
+        <div class="sec-avatar">SB</div>
+        <div class="sec-name">Swayam Bakshi</div>
+        <div class="sec-role">Secretary General</div>
+      </div>
+      <div class="sec-card sec-card--dsg">
+        <div class="sec-avatar">PS</div>
+        <div class="sec-name">Poorvika Setti</div>
+        <div class="sec-role">Deputy Secretary General</div>
+      </div>
+      <div class="sec-card sec-card--dg">
+        <div class="sec-avatar">AV</div>
+        <div class="sec-name">Abhilash VijayaKumar</div>
+        <div class="sec-role">Director General</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">SD</div>
+        <div class="sec-name">Siddhi Kothari</div>
+        <div class="sec-role">Charge D'Affairs</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">JK</div>
+        <div class="sec-name">Jayakrishna</div>
+        <div class="sec-role">OC Head</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">MH</div>
+        <div class="sec-name">Mahathi</div>
+        <div class="sec-role">USG Finance</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">ED</div>
+        <div class="sec-name">Eesha Datla</div>
+        <div class="sec-role">USG Logistics</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">RY</div>
+        <div class="sec-name">Rayon</div>
+        <div class="sec-role">USG Logistics</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">JT</div>
+        <div class="sec-name">Jagadeesh Ram Tekamudi</div>
+        <div class="sec-role">USG Policy</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">AV</div>
+        <div class="sec-name">Avni</div>
+        <div class="sec-role">Delegate Affairs</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">AL</div>
+        <div class="sec-name">Anmol Lokhande</div>
+        <div class="sec-role">Delegate Affairs</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">AV</div>
+        <div class="sec-name">Anvita Vijay</div>
+        <div class="sec-role">USG Marketing</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">AC</div>
+        <div class="sec-name">Aryan Chakravarthy</div>
+        <div class="sec-role">USG Marketing</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">MG</div>
+        <div class="sec-name">Madhurima Guduru</div>
+        <div class="sec-role">USG Marketing</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">AA</div>
+        <div class="sec-name">Anjuman Ara</div>
+        <div class="sec-role">USG Design</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">PM</div>
+        <div class="sec-name">Parnika M</div>
+        <div class="sec-role">USG Design</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">PT</div>
+        <div class="sec-name">Pratham</div>
+        <div class="sec-role">USG Design</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">KN</div>
+        <div class="sec-name">Kushnoor</div>
+        <div class="sec-role">Head Of Outreach</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">PR</div>
+        <div class="sec-name">Pranavi Reddy</div>
+        <div class="sec-role">Head Of Outreach</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">AB</div>
+        <div class="sec-name">Abhinaya</div>
+        <div class="sec-role">Director of Content Creation</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">KT</div>
+        <div class="sec-name">Keerthi</div>
+        <div class="sec-role">Director of Content Creation</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">HM</div>
+        <div class="sec-name">Harshita Muchhal</div>
+        <div class="sec-role">USG Culturals</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">VR</div>
+        <div class="sec-name">Vetsha Rithvik Siddarth</div>
+        <div class="sec-role">USG Video & Productions</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">VG</div>
+        <div class="sec-name">Vignesh</div>
+        <div class="sec-role">USG Security</div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-avatar">DH</div>
+        <div class="sec-name">Dhamini</div>
+        <div class="sec-role">USG Security</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- SPONSORS -->
+<section id="sponsors">
+  <div class="sponsors-inner reveal" style="text-align: center;">
+    <div class="section-label" style="justify-content: center; margin-bottom: 20px;">
+      Partner Organizations & Sponsors
+    </div>
+    
+    <h2 class="section-title" style="text-align: center; margin-bottom: 40px;">BECOME A PARTNER</h2>
+    
+    <div class="sponsors-row" style="justify-content: center; gap: 16px;">
+      <div class="sponsor-slot">Sponsor</div>
+      <div class="sponsor-slot">Partner</div>
+      <div class="sponsor-slot">Media</div>
+      <div class="sponsor-slot">Academic</div>
+      <div class="sponsor-slot">Sponsor</div>
+    </div>
+    <div class="sponsors-contact" style="margin-top: 36px;">
+      Sponsorship packages available — <a href="mailto:contact@resolvemun.org">Contact Us</a>
+    </div>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- OC APPLICATIONS (CLOSED) -->
+<section id="oc-applications">
+  <div class="oc-inner">
+    <div class="oc-layout">
+      <!-- Left: Narrative -->
+      <div class="oc-text-content reveal">
+        <div class="section-label">Organizing Committee</div>
+        <h2 class="section-title">JOIN THE<br>ARCHITECTS</h2>
+        <p class="section-body">Help build one of Hyderabad's most ambitious Model United Nations conferences from the ground up.</p>
+        
+        <div class="oc-perks">
+          <div class="oc-perk">Elite Leadership Roles</div>
+          <div class="oc-perk">Strategic Logistics & Planning</div>
+          <div class="oc-perk">Prime Networking Context</div>
+          <div class="oc-perk">Exclusive Certification</div>
+        </div>
+      </div>
+
+      <!-- Right: Action Card -->
+      <div class="oc-card reveal reveal-delay-2">
+        <div class="oc-card-glow"></div>
+        <div class="oc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <h3 class="oc-card-title">OC</h3>
+        <p class="oc-card-body">Build one of Hyderabad's most ambitious Model United Nations conferences from the ground up.</p>
+        <button class="btn-primary oc-btn" disabled><span style="opacity: 0.6;">APPLICATIONS CLOSED</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="glow-line glow-line--blue" style="margin: 60px 0;"></div>
+
+<!-- EB APPLICATIONS -->
+<section id="eb-applications">
+  <div class="eb-inner">
+    <div class="eb-layout">
+      <!-- Left: Narrative -->
+      <div class="eb-text-content reveal">
+        <div class="section-label">Executive Board</div>
+        <h2 class="section-title">LEAD THE<br>DIALOGUE</h2>
+        <p class="section-body">Shape the academic landscape of Resolve MUN. We are inviting seasoned debaters to chair our prestigious committees.</p>
+        
+        <div class="eb-perks">
+          <div class="eb-perk">Academic Authority</div>
+          <div class="eb-perk">Strategic Committee Management</div>
+          <div class="eb-perk">Mentorship & Evaluation</div>
+          <div class="eb-perk">Honorarium & Benefits</div>
+        </div>
+      </div>
+
+      <!-- Right: Action Card -->
+      <div class="eb-card reveal reveal-delay-2">
+        <div class="eb-card-glow"></div>
+        <div class="eb-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+        </div>
+        <h3 class="eb-card-title">Apply for EB</h3>
+        <p class="eb-card-body">Join us as a Chairperson, Vice-Chairperson, or Rapporteur. Applications are now open for experienced MUNers.</p>
+        <button class="btn-primary eb-btn" disabled><span>EB Applications Closed</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OC APPLICATION MODAL -->
+<div class="modal-overlay" id="ocModal">
+  <div class="modal-content">
+    <button class="modal-close" id="closeOcModal" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header">
+      <div class="modal-pretitle">STAFF CORPS · RESOLVE 2.0</div>
+      <h2 class="modal-title">OC APPLICATIONS</h2>
+      <span class="modal-subtitle">Join the Organizing Committee</span>
+    </div>
+    
+    <form id="ocRegForm">
+      <!-- STEP 1: PERSONAL & CORE DETAILS -->
+      <div class="form-step active" id="ocStep1">
+        <div class="form-group">
+          <label for="ocName">Full Name</label>
+          <input type="text" id="ocName" name="name" autocomplete="name" placeholder="Enter your full name" required>
+        </div>
+        
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="ocDob">Date of Birth</label>
+            <input type="date" id="ocDob" name="dob" autocomplete="bday" required>
+          </div>
+          <div>
+            <label for="ocGrade">Grade / Class</label>
+            <input type="text" id="ocGrade" name="grade" placeholder="e.g. 10th, 1st Year" required>
+          </div>
+        </div>
+        
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="ocPhone">Contact No (WhatsApp)</label>
+            <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+          </div>
+          <div>
+            <label for="ocEmail">Email ID</label>
+            <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="ocInst">Institution (School/College/University)</label>
+          <input type="text" id="ocInst" name="institute" autocomplete="organization" placeholder="Enter your institution" required>
+        </div>
+
+        <div class="form-group">
+          <label for="ocInsta">Instagram ID (Optional)</label>
+          <input type="text" id="ocInsta" name="instagram" autocomplete="username" placeholder="@username">
+        </div>
+
+        <div class="form-group">
+          <label>Number of MUNs attended</label>
+          <select id="ocMunCount" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="N/A">N/A</option>
+            <option value="1-5">1-5</option>
+            <option value="6-10">6-10</option>
+            <option value="11+">11 & more</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn-next btn-full-width" onclick="nextOcStep(2)">
+          Next Step
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- STEP 2: MOTIVATION & ATTRIBUTES -->
+      <div class="form-step" id="ocStep2">
+        <div class="form-group">
+          <label>Why do you want to be part of the Organizing Committee for Resolve MUN?</label>
+          <textarea id="ocWhy" name="why" rows="3" placeholder="What do you hope to contribute?" required style="resize: vertical; min-height: 80px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>What attributes do you possess that make you well-suited for an OC position?</label>
+          <textarea id="ocAttributes" name="attributes" rows="3" placeholder="Mention your skills and qualities..." required style="resize: vertical; min-height: 80px;"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextOcStep(1)">Back</button>
+          <button type="button" class="btn-next" onclick="nextOcStep(3)">Review & Pay</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: PAYMENT -->
+      <div class="form-step" id="ocStep3">
+        <div class="payment-banner">
+          <h3>Registration Fee: ₹1699</h3>
+          <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
+        </div>
+
+        <div class="payment-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="text-align: center; margin-bottom: 12px; font-size: 0.62rem; letter-spacing: 0.15em; opacity: 0.6;">1. SCAN TO PAY</label>
+            <div style="text-align: center;">
+              <div class="qr-container">
+                <img id="ocPaymentQRImage" src="/images/QR_Delegate_2599.svg" alt="OC Payment QR Code">
+              </div>
+              <div class="upi-box">
+                <span id="ocUpiID">bhoomianilbasrani@okhdfcbank</span>
+                <button type="button" class="refresh-qr-btn" onclick="generateDynamicQR('1699', 'ocPaymentQRImage', 'ocUpiID')" title="Regenerate QR">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                </button>
+                <button type="button" class="copy-btn" onclick="copyOcUPI()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>2. TRANSACTION ID</label>
+            <input type="text" id="ocTxnID" name="txnID" placeholder="Enter Transaction ID" required>
+          </div>
+
+          <div class="form-group">
+            <label>3. UTR ID (Optional)</label>
+            <input type="text" id="ocUTR" name="utr" placeholder="Enter 12-digit UTR ID">
+          </div>
+
+          <div class="form-group">
+            <label>4. UPLOAD PAYMENT SCREENSHOT*</label>
+            <label class="file-upload-wrapper" for="ocDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*" required>
+            </label>
           </div>
           
-          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 16px;\">
-            <div>
-              <label for=\"secPhone\">Contact No (WhatsApp)</label>
-              <input type=\"tel\" id=\"secPhone\" name=\"phone\" autocomplete=\"tel\" placeholder=\"10-digit number\" required pattern=\"[0-9]{10}\" minlength=\"10\" maxlength=\"10\">
-            </div>
-            <div>
-              <label for=\"secEmail\">Email ID</label>
-              <input type=\"email\" id=\"secEmail\" name=\"email\" autocomplete=\"email\" placeholder=\"yourname@example.com\" required>
-            </div>
-          </div>
-
-          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 16px;\">
-            <div>
-              <label for=\"secInst\">Institution (School/College)</label>
-              <input type=\"text\" id=\"secInst\" name=\"institute\" autocomplete=\"organization\" placeholder=\"Enter your institution\" required>
-            </div>
-            <div>
-              <label for=\"secDept\">Preferred Secretariat Department</label>
-              <select id=\"secDept\" name=\"department\" required>
-                <option value=\"\" disabled selected>Select Department</option>
-                <option value=\"Delegate Affairs\">Delegate Affairs</option>
-                <option value=\"Marketing & Outreach\">Marketing &amp; Outreach</option>
-                <option value=\"Design & Media\">Design &amp; Media</option>
-                <option value=\"Logistics & Operations\">Logistics &amp; Operations</option>
-                <option value=\"Policy & Academics\">Policy &amp; Academics</option>
-                <option value=\"Finance & Sponsorship\">Finance &amp; Sponsorship</option>
-                <option value=\"Culturals & Hospitality\">Culturals &amp; Hospitality</option>
-                <option value=\"Security & Protocol\">Security &amp; Protocol</option>
-              </select>
-            </div>
-          </div>
-
-          <button type=\"button\" class=\"btn-next btn-full-width\" onclick=\"nextSecStep(2)\">
-            Next: Experience &amp; Vision
-            <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg>
-          </button>
+          <p style="text-align: center; font-size: 0.72rem; color: #f87171; opacity: 0.85; margin-bottom: 16px;">
+            * Applications without a payment screenshot will not be processed.
+          </p>
         </div>
 
-        <!-- STEP 2: EXPERIENCE & VISION -->
-        <div class=\"form-step\" id=\"secStep2\">
-          <div class=\"form-group\">
-            <label for=\"secExp\">Past MUN &amp; Organizing Experience</label>
-            <textarea id=\"secExp\" name=\"experience\" rows=\"3\" placeholder=\"List conferences attended, past roles, awards, or leadership posts...\" required style=\"resize: vertical; min-height: 90px;\"></textarea>
-          </div>
-
-          <div class=\"form-group\">
-            <label for=\"secWhy\">Why do you want to join the Secretariat &amp; what is your vision?</label>
-            <textarea id=\"secWhy\" name=\"vision\" rows=\"3\" placeholder=\"What unique strengths and ideas will you bring to Resolve MUN 2.0?\" required style=\"resize: vertical; min-height: 90px;\"></textarea>
-          </div>
-
-          <div class=\"form-group\">
-            <label for=\"secPortfolio\">Portfolio / Resume / LinkedIn URL (Optional)</label>
-            <input type=\"url\" id=\"secPortfolio\" name=\"portfolio\" placeholder=\"https://...\">
-          </div>
-
-          <div class=\"form-actions\">
-            <button type=\"button\" class=\"btn-back\" onclick=\"nextSecStep(1)\">Back</button>
-            <button type=\"button\" class=\"btn-next\" onclick=\"nextSecStep(3)\">Review &amp; Submit</button>
-          </div>
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextOcStep(2)">Back</button>
+          <button type="submit" class="btn-next">Submit Application</button>
         </div>
-
-        <!-- STEP 3: REVIEW & CONFIRMATION -->
-        <div class=\"form-step\" id=\"secStep3\">
-          <div class=\"payment-banner\" style=\"background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);\">
-            <h3>DIRECTORATE APPLICATION DOSSIER</h3>
-            <p style=\"font-size: 0.7rem; opacity: 0.85; margin-top: 4px;\">Direct Review by Secretary-General &amp; Executive Directorate</p>
-          </div>
-
-          <div class=\"payment-card\">
-            <p style=\"font-size: 0.82rem; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 12px;\">
-              Thank you for applying to serve on the Resolve MUN 2.0 Secretariat. Applications are reviewed on a rolling basis. Shortlisted candidates will be contacted for an executive interview.
-            </p>
-            <div style=\"padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-size: 0.75rem; color: #a5b4fc;\">
-              <strong>SELECTION STAGES:</strong> Dossier Screening &rarr; Departmental Interview &rarr; Official Appointment Letter
-            </div>
-          </div>
-
-          <div class=\"form-actions\">
-            <button type=\"button\" class=\"btn-back\" onclick=\"nextSecStep(2)\">Back</button>
-            <button type=\"submit\" class=\"btn-next\" id=\"secSubmitBtn\">Submit Application</button>
-          </div>
-        </div>
-      </form>
-    </div>
+      </div>
+    </form>
   </div>
-<!-- EB APPLICATION MODAL -->\r\n  <div class=\"modal-overlay\" id=\"ebModal\">\r\n    <canvas class=\"modal-particles\" id=\"ebModalParticles\"></canvas>\r\n    <div class=\"modal-content\">\r\n      <button class=\"modal-close\" id=\"closeEbModal\" aria-label=\"Close\">\r\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n          <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>\r\n          <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>\r\n        </svg>\r\n      </button>\r\n      \r\n      <div class=\"modal-header\">\r\n        <h2 class=\"modal-title\">EB APPLICATIONS</h2>\r\n        <span class=\"modal-subtitle\">Executive Board Recruitment</span>\r\n      </div>\r\n      \r\n      <form id=\"ebRegForm\">\r\n        <!-- STEP 1: PERSONAL DETAILS -->\r\n        <div class=\"form-step active\" id=\"ebStep1\">\r\n          <div class=\"form-group\">\r\n            <label for=\"ebName\">Full Name</label>\r\n            <input type=\"text\" id=\"ebName\" placeholder=\"Enter your full name\" required autocomplete=\"name\">\r\n          </div>\r\n          \r\n          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n            <div>\r\n              <label for=\"ebPhone\">Phone (WhatsApp)</label>\r\n              <input type=\"tel\" id=\"ebPhone\" placeholder=\"10-digit number\" required autocomplete=\"tel\" pattern=\"[0-9]{10}\" minlength=\"10\" maxlength=\"10\" title=\"Please enter a valid 10-digit phone number\">\r\n            </div>\r\n            <div>\r\n              <label for=\"ebEmail\">Email Address</label>\r\n              <input type=\"email\" id=\"ebEmail\" placeholder=\"you@example.com\" required autocomplete=\"email\" pattern=\"[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}\">\r\n            </div>\r\n          </div>\r\n\r\n          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n            <div>\r\n              <label for=\"ebDob\">Date of Birth</label>\r\n              <input type=\"date\" id=\"ebDob\" required autocomplete=\"bday\">\r\n            </div>\r\n            <div>\r\n              <label for=\"ebReferral\">Referral Code (Optional)</label>\r\n              <input type=\"text\" id=\"ebReferral\" placeholder=\"e.g. RES-123\" autocomplete=\"off\">\r\n            </div>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"ebInst\">Institution / School / College</label>\r\n            <input type=\"text\" id=\"ebInst\" placeholder=\"Name of your current school/college\" required>\r\n          </div>\r\n\r\n          <button type=\"button\" class=\"btn-next\" onclick=\"nextEbStep(2)\">\r\n            Next: Experience\r\n            <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg>\r\n          </button>\r\n        </div>\r\n\r\n        <!-- STEP 2: EXPERIENCE -->\r\n        <div class=\"form-step\" id=\"ebStep2\">\r\n          <div class=\"form-group\">\r\n            <label for=\"ebRole\">Preferred Role</label>\r\n            <select id=\"ebRole\" required>\r\n              <option value=\"\" disabled selected>Select a role</option>\r\n              <option value=\"Chairperson\">Chairperson</option>\r\n              <option value=\"Vice-Chairperson\">Vice-Chairperson</option>\r\n              <option value=\"Rapporteur\">Rapporteur</option>\r\n            </select>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"ebMunCount\">Number of MUNs attended</label>\r\n            <select id=\"ebMunCount\" required>\r\n              <option value=\"\" disabled selected>Select an option</option>\r\n              <option value=\"15-20\">15-20</option>\r\n              <option value=\"21-30\">21-30</option>\r\n              <option value=\"31-50\">31-50</option>\r\n              <option value=\"51+\">51 & More</option>\r\n            </select>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"ebExp\">MUN Experience (Detailed Summary)</label>\r\n            <textarea id=\"ebExp\" placeholder=\"List committees chaired, awards won, and notable MUN experience\" required style=\"height: 120px;\"></textarea>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"ebWhy\">Why should we select you?</label>\r\n            <textarea id=\"ebWhy\" placeholder=\"Tell us about your moderation style and committee management skills\" required style=\"height: 100px;\"></textarea>\r\n          </div>\r\n\r\n          <div class=\"form-actions\">\r\n            <button type=\"button\" class=\"btn-back\" onclick=\"nextEbStep(1)\">Back</button>\r\n            <button type=\"button\" class=\"btn-next\" onclick=\"nextEbStep(3)\">Committees</button>\r\n          </div>\r\n        </div>\r\n\r\n        <!-- STEP 3: PREFERENCES -->\r\n        <div class=\"form-step\" id=\"ebStep3\">\r\n          <p style=\"font-size: 0.8rem; color: var(--gold); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;\">Committee Preferences</p>\r\n          \r\n          <div class=\"form-group\">\r\n            <label>Preference 1</label>\r\n            <select id=\"ebPref1\" required>\r\n              <option value=\"\" disabled selected>Select Committee</option>\r\n              <option value=\"DISEC\">DISEC</option>\r\n              <option value=\"LOK SABHA\">Lok Sabha</option>\r\n              <option value=\"UNHRC\">UNHRC</option>\r\n              <option value=\"CCC\">CCC</option>\r\n              <option value=\"UNCSW\">UNCSW</option>\r\n              <option value=\"IP (International Press)\">IP (International Press)</option>\r\n            </select>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label>Preference 2</label>\r\n            <select id=\"ebPref2\" required>\r\n              <option value=\"\" disabled selected>Select Committee</option>\r\n              <option value=\"DISEC\">DISEC</option>\r\n              <option value=\"LOK SABHA\">Lok Sabha</option>\r\n              <option value=\"UNHRC\">UNHRC</option>\r\n              <option value=\"CCC\">CCC</option>\r\n              <option value=\"UNCSW\">UNCSW</option>\r\n              <option value=\"IP (International Press)\">IP (International Press)</option>\r\n            </select>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"ebCv\">Upload CV / Portfolio (PDF or Image)</label>\r\n            <label class=\"file-upload-wrapper\" for=\"ebCv\">\r\n              <span class=\"file-upload-btn\">Choose File</span>\r\n              <span class=\"file-name\">No file chosen</span>\r\n              <input type=\"file\" id=\"ebCv\" class=\"file-upload-input\" accept=\".pdf,image/*\" required>\r\n            </label>\r\n          </div>\r\n\r\n          <div class=\"form-actions\">\r\n            <button type=\"button\" class=\"btn-back\" onclick=\"nextEbStep(2)\">Back</button>\r\n            <button type=\"submit\" class=\"btn-next\">Submit EB Application</button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n    </div>\r\n  </div>\r\n\r\n  <!-- DELEGATION REGISTRATION MODAL -->\r\n  <div class=\"modal-overlay\" id=\"delModal\">\r\n    <canvas class=\"modal-particles\" id=\"delModalParticles\"></canvas>\r\n    <div class=\"modal-content\" style=\"max-height: 90vh;\">\r\n      <button class=\"modal-close\" id=\"closeDelModal\" aria-label=\"Close\">\r\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\r\n          <line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line>\r\n          <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line>\r\n        </svg>\r\n      </button>\r\n      \r\n      <div class=\"modal-header\">\r\n        <h2 class=\"modal-title\">DELEGATION APPLICATIONS</h2>\r\n        <span class=\"modal-subtitle\">Register as a Delegation</span>\r\n      </div>\r\n      \r\n      <form id=\"delRegForm\" novalidate>\r\n        <!-- STEP 1: INSTITUTION DETAILS -->\r\n        <div class=\"form-step active\" id=\"delStep1\">\r\n          <div class=\"form-group\">\r\n            <label for=\"delInstName\">Name of Institution</label>\r\n            <input type=\"text\" id=\"delInstName\" name=\"instName\" autocomplete=\"organization\" placeholder=\"School/College/University Name\" required>\r\n          </div>\r\n          \r\n          <div class=\"form-group\">\r\n            <label for=\"delAdviserName\">Faculty Adviser Name</label>\r\n            <input type=\"text\" id=\"delAdviserName\" name=\"adviserName\" autocomplete=\"name\" placeholder=\"Full name of faculty in-charge\" required>\r\n          </div>\r\n\r\n          <div class=\"form-group\" style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px;\">\r\n            <div>\r\n              <label for=\"delAdviserPhone\">Adviser Phone</label>\r\n              <input type=\"tel\" id=\"delAdviserPhone\" name=\"adviserPhone\" autocomplete=\"tel\" placeholder=\"10-digit number\" required pattern=\"[0-9]{10}\" minlength=\"10\" maxlength=\"10\" title=\"Please enter a valid 10-digit phone number\">\r\n            </div>\r\n            <div>\r\n              <label for=\"delAdviserEmail\">Adviser Email</label>\r\n              <input type=\"email\" id=\"delAdviserEmail\" name=\"adviserEmail\" autocomplete=\"email\" placeholder=\"faculty@example.com\" required pattern=\"[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}\">\r\n            </div>\r\n          </div>\r\n\r\n          <div class=\"form-group\">\r\n            <label for=\"delSize\">Number of Delegates</label>\r\n            <input type=\"number\" id=\"delSize\" name=\"delSize\" min=\"8\" value=\"8\" placeholder=\"Minimum 8 delegates\" required oninput=\"updateDelPrice(); updateDelegateFields();\">\r\n          </div>\r\n\r\n          <button type=\"button\" class=\"btn-next\" onclick=\"nextDelStep(2)\">\r\n            Next Step\r\n            <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg>\r\n          </button>\r\n        </div>\r\n\r\n        <!-- STEP 2: DELEGATE DETAILS -->\r\n        <div class=\"form-step\" id=\"delStep2\">\r\n          <a href=\"javascript:void(0)\" onclick=\"showCustomAlert('Country Matrix Coming Soon!', 'default')\" class=\"btn-matrix\" style=\"margin-bottom: 20px;\">\r\n            <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/></svg>\r\n            Country Matrices\r\n          </a>\r\n          <div id=\"delegateInputsContainer\" style=\"max-height: 350px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px;\">\r\n            <!-- Dynamic delegate fields will be injected here -->\r\n          </div>\r\n\r\n          <div class=\"form-actions\">\r\n            <button type=\"button\" class=\"btn-back\" onclick=\"nextDelStep(1)\">Back</button>\r\n            <button type=\"button\" class=\"btn-next\" onclick=\"nextDelStep(3)\">Payment Details</button>\r\n          </div>\r\n        </div>\r\n\r\n        <!-- STEP 3: PAYMENT & CONFIRMATION -->\r\n        <div class=\"form-step\" id=\"delStep3\">\r\n          <div class=\"payment-banner\">\r\n            <h3 id=\"delTotalPriceDisplay\">Total Amount: ₹17,592</h3>\r\n            <p style=\"font-size: 0.7rem; opacity: 0.7; margin-top: 5px;\">(₹2199 per delegate)</p>\r\n            <p class=\"non-refundable-notice\" style=\"font-size: 0.65rem; color: #ef4444; opacity: 0.9; margin-top: 8px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;\">⚠️ Payment is non-refundable once submitted</p>\r\n          </div>\r\n\r\n          <div class=\"payment-card\">\r\n            <div class=\"form-group\" style=\"margin-bottom: 0;\">\r\n              <label style=\"text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;\">1. COMPLETE THE PAYMENT</label>\r\n              <div style=\"text-align: center;\">\r\n                <div class=\"qr-container\">\r\n                  <img id=\"delPaymentQRImage\" src=\"/images/QR_Delegate_2599.svg\" alt=\"Delegation Payment QR Code\">\r\n                </div>\r\n                <div class=\"upi-box\">\r\n                  <span id=\"delUpiID\">bhoomianilbasrani@okhdfcbank</span>\r\n                  <button type=\"button\" class=\"refresh-qr-btn\" onclick=\"const size = parseInt(document.getElementById('delSize').value) || 8; generateDynamicQR((size * 2199).toString(), 'delPaymentQRImage', 'delUpiID')\" title=\"Regenerate QR\">\r\n                    <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"23 4 23 10 17 10\"></polyline><polyline points=\"1 20 1 14 7 14\"></polyline><path d=\"M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15\"></path></svg>\r\n                  </button>\r\n                  <button type=\"button\" class=\"copy-btn\" onclick=\"copyDelUPI()\">\r\n                    <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>\r\n                  </button>\r\n                </div>\r\n              </div>\r\n              <p class=\"payment-note\" style=\"text-align: center; margin-bottom: 24px; font-style: normal; opacity: 0.5;\">Scan or use the UPI ID</p>\r\n            </div>\r\n\r\n            <div class=\"form-group\">\r\n              <label>2. TRANSACTION ID</label>\r\n              <input type=\"text\" id=\"delTxnID\" placeholder=\"Enter Transaction ID\" required>\r\n            </div>\r\n\r\n            <div class=\"form-group\">\r\n              <label>3. UPLOAD PAYMENT SCREENSHOT</label>\r\n              <label class=\"file-upload-wrapper\" for=\"delDriveLink\">\r\n                <span class=\"file-upload-btn\">Choose File</span>\r\n                <span class=\"file-name\">No file chosen</span>\r\n                <input type=\"file\" id=\"delDriveLink\" class=\"file-upload-input\" accept=\"image/*\" required>\r\n              </label>\r\n            </div>\r\n\r\n            <div class=\"form-group\">\r\n              <label>4. UTR NUMBER (OPTIONAL)</label>\r\n              <input type=\"text\" id=\"delUTR\" placeholder=\"Enter 12-digit UTR\">\r\n            </div>\r\n          </div>\r\n\r\n          <div class=\"payment-footer\">\r\n            <p class=\"payment-contact\">For Any Queries, contact: <span>+91 92121 07797</span></p>\r\n          </div>\r\n\r\n          <div class=\"form-actions\">\r\n            <button type=\"button\" class=\"btn-back\" onclick=\"nextDelStep(2)\">Back</button>\r\n            <button type=\"submit\" class=\"btn-next\">Submit Delegation</button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n    </div>\r\n  </div>\r\n\r\n</section>\r\n\r\n<div class=\"glow-line\"></div>\r\n\r\n<!-- CTA -->\r\n<section id=\"register\">\r\n  <div class=\"cta-inner\">\r\n    <p class=\"cta-eyebrow reveal visible\">Limited Spots Available</p>\r\n    <h2 class=\"cta-title reveal\">TAKE YOUR<br>SEAT AT<br>THE TABLE</h2>\r\n    <p class=\"cta-body reveal\">\r\n      Resolve MUN is where future statesmen are forged. Join 300+ delegates from all over Hyderabad in three days of rigorous, transformative diplomacy.\r\n    </p>\r\n    <div class=\"cta-actions reveal\">
-      <button class=\"adaptive-hero-btn cta-btn-hero-match\" onclick=\"window.selectPathway ? window.selectPathway('delegate') : (window.openRegistration ? window.openRegistration() : (window.openAuthModal ? window.openAuthModal() : alert('Opening Registration...')))\">
+</div>
+
+<!-- SECRETARIAT APPLICATION MODAL -->
+<div class="modal-overlay" id="secModal">
+  <div class="modal-content">
+    <button class="modal-close" id="closeSecModal" onclick="closeSecModal()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header">
+      <div class="modal-pretitle">EXECUTIVE LEADERSHIP · RESOLVE 2.0</div>
+      <h2 class="modal-title">SECRETARIAT APPLICATION</h2>
+      <span class="modal-subtitle">Join the Organizing Directorate</span>
+    </div>
+
+    <div class="typeform-step-indicator" id="secStepIndicator">
+      <div class="step-pill active" id="secPill1"><span>1</span> Identity</div>
+      <div class="step-divider"></div>
+      <div class="step-pill" id="secPill2"><span>2</span> Experience &amp; Vision</div>
+      <div class="step-divider"></div>
+      <div class="step-pill" id="secPill3"><span>3</span> Submit</div>
+    </div>
+    
+    <form id="secRegForm" onsubmit="window.submitSecForm ? window.submitSecForm(event) : event.preventDefault()">
+      <!-- STEP 1: PERSONAL & DEPARTMENT -->
+      <div class="form-step active" id="secStep1">
+        <div class="form-group">
+          <label for="secName">Full Name</label>
+          <input type="text" id="secName" name="name" autocomplete="name" placeholder="Enter your full name" required>
+        </div>
+        
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="secPhone">Contact No (WhatsApp)</label>
+            <input type="tel" id="secPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10">
+          </div>
+          <div>
+            <label for="secEmail">Email ID</label>
+            <input type="email" id="secEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="secInst">Institution (School/College)</label>
+            <input type="text" id="secInst" name="institute" autocomplete="organization" placeholder="Enter your institution" required>
+          </div>
+          <div>
+            <label for="secDept">Preferred Secretariat Department</label>
+            <select id="secDept" name="department" required>
+              <option value="" disabled selected>Select Department</option>
+              <option value="Delegate Affairs">Delegate Affairs</option>
+              <option value="Marketing & Outreach">Marketing &amp; Outreach</option>
+              <option value="Design & Media">Design &amp; Media</option>
+              <option value="Logistics & Operations">Logistics &amp; Operations</option>
+              <option value="Policy & Academics">Policy &amp; Academics</option>
+              <option value="Finance & Sponsorship">Finance &amp; Sponsorship</option>
+              <option value="Culturals & Hospitality">Culturals &amp; Hospitality</option>
+              <option value="Security & Protocol">Security &amp; Protocol</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" class="btn-next btn-full-width" onclick="nextSecStep(2)">
+          Next: Experience &amp; Vision
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- STEP 2: EXPERIENCE & VISION -->
+      <div class="form-step" id="secStep2">
+        <div class="form-group">
+          <label for="secExp">Past MUN &amp; Organizing Experience</label>
+          <textarea id="secExp" name="experience" rows="3" placeholder="List conferences attended, past roles, awards, or leadership posts..." required style="resize: vertical; min-height: 75px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="secWhy">Why do you want to join the Secretariat &amp; what is your vision?</label>
+          <textarea id="secWhy" name="vision" rows="3" placeholder="What unique strengths and ideas will you bring to Resolve MUN 2.0?" required style="resize: vertical; min-height: 75px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="secPortfolio">Portfolio / Resume / LinkedIn URL (Optional)</label>
+          <input type="url" id="secPortfolio" name="portfolio" placeholder="https://...">
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextSecStep(1)">Back</button>
+          <button type="button" class="btn-next" onclick="nextSecStep(3)">Review &amp; Submit</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: REVIEW & CONFIRMATION -->
+      <div class="form-step" id="secStep3">
+        <div class="payment-banner" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);">
+          <h3>DIRECTORATE APPLICATION DOSSIER</h3>
+          <p style="font-size: 0.68rem; opacity: 0.85; margin-top: 4px;">Direct Review by Secretary-General &amp; Executive Directorate</p>
+        </div>
+
+        <div class="payment-card">
+          <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); line-height: 1.5; margin-bottom: 10px;">
+            Thank you for applying to serve on the Resolve MUN 2.0 Secretariat. Applications are reviewed on a rolling basis. Shortlisted candidates will be contacted for an executive interview.
+          </p>
+          <div style="padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-size: 0.72rem; color: #a5b4fc;">
+            <strong>SELECTION STAGES:</strong> Dossier Screening &rarr; Departmental Interview &rarr; Official Appointment Letter
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextSecStep(2)">Back</button>
+          <button type="submit" class="btn-next" id="secSubmitBtn">Submit Application</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EB APPLICATION MODAL -->
+<div class="modal-overlay" id="ebModal">
+  <div class="modal-content">
+    <button class="modal-close" id="closeEbModal" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header">
+      <div class="modal-pretitle">ACADEMIC BOARD · RESOLVE 2.0</div>
+      <h2 class="modal-title">EB APPLICATIONS</h2>
+      <span class="modal-subtitle">Executive Board Recruitment</span>
+    </div>
+    
+    <form id="ebRegForm">
+      <!-- STEP 1: PERSONAL DETAILS -->
+      <div class="form-step active" id="ebStep1">
+        <div class="form-group">
+          <label for="ebName">Full Name</label>
+          <input type="text" id="ebName" placeholder="Enter your full name" required autocomplete="name">
+        </div>
+        
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="ebPhone">Phone (WhatsApp)</label>
+            <input type="tel" id="ebPhone" placeholder="10-digit number" required autocomplete="tel" pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+          </div>
+          <div>
+            <label for="ebEmail">Email Address</label>
+            <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email" pattern="[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}">
+          </div>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="ebDob">Date of Birth</label>
+            <input type="date" id="ebDob" required autocomplete="bday">
+          </div>
+          <div>
+            <label for="ebReferral">Referral Code (Optional)</label>
+            <input type="text" id="ebReferral" placeholder="e.g. RES-123" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="ebInst">Institution / School / College</label>
+          <input type="text" id="ebInst" placeholder="Name of your current school/college" required>
+        </div>
+
+        <button type="button" class="btn-next btn-full-width" onclick="nextEbStep(2)">
+          Next: Experience
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- STEP 2: EXPERIENCE -->
+      <div class="form-step" id="ebStep2">
+        <div class="form-group">
+          <label for="ebRole">Preferred Role</label>
+          <select id="ebRole" required>
+            <option value="" disabled selected>Select a role</option>
+            <option value="Chairperson">Chairperson</option>
+            <option value="Vice-Chairperson">Vice-Chairperson</option>
+            <option value="Rapporteur">Rapporteur</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ebMunCount">Number of MUNs attended</label>
+          <select id="ebMunCount" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="15-20">15-20</option>
+            <option value="21-30">21-30</option>
+            <option value="31-50">31-50</option>
+            <option value="51+">51 & More</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ebExp">MUN Experience (Detailed Summary)</label>
+          <textarea id="ebExp" placeholder="List committees chaired, awards won, and notable MUN experience" required style="min-height: 80px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="ebWhy">Why should we select you?</label>
+          <textarea id="ebWhy" placeholder="Tell us about your moderation style and committee management skills" required style="min-height: 70px;"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextEbStep(1)">Back</button>
+          <button type="button" class="btn-next" onclick="nextEbStep(3)">Committees</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: PREFERENCES -->
+      <div class="form-step" id="ebStep3">
+        <p style="font-size: 0.75rem; color: var(--gold); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Committee Preferences</p>
+        
+        <div class="form-group">
+          <label>Preference 1</label>
+          <select id="ebPref1" required>
+            <option value="" disabled selected>Select Committee</option>
+            <option value="DISEC">DISEC</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="UNHRC">UNHRC</option>
+            <option value="CCC">CCC</option>
+            <option value="UNCSW">UNCSW</option>
+            <option value="IP (International Press)">IP (International Press)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Preference 2</label>
+          <select id="ebPref2" required>
+            <option value="" disabled selected>Select Committee</option>
+            <option value="DISEC">DISEC</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="UNHRC">UNHRC</option>
+            <option value="CCC">CCC</option>
+            <option value="UNCSW">UNCSW</option>
+            <option value="IP (International Press)">IP (International Press)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ebCv">Upload CV / Portfolio (PDF or Image)</label>
+          <label class="file-upload-wrapper" for="ebCv">
+            <span class="file-upload-btn">Choose File</span>
+            <span class="file-name">No file chosen</span>
+            <input type="file" id="ebCv" class="file-upload-input" accept=".pdf,image/*" required>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextEbStep(2)">Back</button>
+          <button type="submit" class="btn-next">Submit EB Application</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DELEGATION REGISTRATION MODAL -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal-content" style="max-height: 90vh;">
+    <button class="modal-close" id="closeDelModal" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header">
+      <div class="modal-pretitle">INSTITUTIONAL INTAKE · RESOLVE 2.0</div>
+      <h2 class="modal-title">DELEGATION APPLICATIONS</h2>
+      <span class="modal-subtitle">Register as a Delegation</span>
+    </div>
+    
+    <form id="delRegForm" novalidate>
+      <!-- STEP 1: INSTITUTION DETAILS -->
+      <div class="form-step active" id="delStep1">
+        <div class="form-group">
+          <label for="delInstName">Name of Institution</label>
+          <input type="text" id="delInstName" name="instName" autocomplete="organization" placeholder="School/College/University Name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="delAdviserName">Faculty Adviser Name</label>
+          <input type="text" id="delAdviserName" name="adviserName" autocomplete="name" placeholder="Full name of faculty in-charge" required>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="delAdviserPhone">Adviser Phone</label>
+            <input type="tel" id="delAdviserPhone" name="adviserPhone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+          </div>
+          <div>
+            <label for="delAdviserEmail">Adviser Email</label>
+            <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required pattern="[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="delSize">Number of Delegates</label>
+          <input type="number" id="delSize" name="delSize" min="8" value="8" placeholder="Minimum 8 delegates" required oninput="updateDelPrice(); updateDelegateFields();">
+        </div>
+
+        <button type="button" class="btn-next btn-full-width" onclick="nextDelStep(2)">
+          Next Step
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- STEP 2: DELEGATE DETAILS -->
+      <div class="form-step" id="delStep2">
+        <a href="#" onclick="showCustomAlert('Country Matrix Coming Soon!', 'default')" class="btn-matrix" style="margin-bottom: 16px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Country Matrices
+        </a>
+        <div id="delegateInputsContainer" style="max-height: 300px; overflow-y: auto; padding-right: 8px; margin-bottom: 16px;">
+          <!-- Dynamic delegate fields will be injected here -->
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextDelStep(1)">Back</button>
+          <button type="button" class="btn-next" onclick="nextDelStep(3)">Payment Details</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: PAYMENT & CONFIRMATION -->
+      <div class="form-step" id="delStep3">
+        <div class="payment-banner">
+          <h3 id="delTotalPriceDisplay">Total Amount: ₹17,592</h3>
+          <p style="font-size: 0.68rem; opacity: 0.7; margin-top: 4px;">(₹2199 per delegate)</p>
+          <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; opacity: 0.9; margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
+        </div>
+
+        <div class="payment-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="text-align: center; margin-bottom: 12px; font-size: 0.62rem; letter-spacing: 0.15em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
+            <div style="text-align: center;">
+              <div class="qr-container">
+                <img id="delPaymentQRImage" src="/images/QR_Delegate_2599.svg" alt="Delegation Payment QR Code">
+              </div>
+              <div class="upi-box">
+                <span id="delUpiID">bhoomianilbasrani@okhdfcbank</span>
+                <button type="button" class="refresh-qr-btn" onclick="const size = parseInt(document.getElementById('delSize').value) || 8; generateDynamicQR((size * 2199).toString(), 'delPaymentQRImage', 'delUpiID')" title="Regenerate QR">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                </button>
+                <button type="button" class="copy-btn" onclick="copyDelUPI()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            </div>
+            <p class="payment-note" style="text-align: center; margin-bottom: 18px; font-style: normal; opacity: 0.5; font-size: 0.72rem;">Scan or use the UPI ID</p>
+          </div>
+
+          <div class="form-group">
+            <label>2. TRANSACTION ID</label>
+            <input type="text" id="delTxnID" placeholder="Enter Transaction ID" required>
+          </div>
+
+          <div class="form-group">
+            <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+            <label class="file-upload-wrapper" for="delDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="delDriveLink" class="file-upload-input" accept="image/*" required>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>4. UTR NUMBER (OPTIONAL)</label>
+            <input type="text" id="delUTR" placeholder="Enter 12-digit UTR">
+          </div>
+        </div>
+
+        <div class="payment-footer">
+          <p class="payment-contact">For Any Queries, contact: <span>+91 92121 07797</span></p>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextDelStep(2)">Back</button>
+          <button type="submit" class="btn-next">Submit Delegation</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CTA -->
+<section id="register">
+  <div class="cta-inner">
+    <p class="cta-eyebrow reveal visible">Limited Spots Available</p>
+    <h2 class="cta-title reveal">TAKE YOUR<br>SEAT AT<br>THE TABLE</h2>
+    <p class="cta-body reveal">
+      Resolve MUN is where future statesmen are forged. Join 300+ delegates from all over Hyderabad in three days of rigorous, transformative diplomacy.
+    </p>
+    <div class="cta-actions reveal">
+      <button class="adaptive-hero-btn cta-btn-hero-match" onclick="window.selectPathway ? window.selectPathway('delegate') : (window.openRegistration ? window.openRegistration() : (window.openAuthModal ? window.openAuthModal() : alert('Opening Registration...')))">
         <span>REGISTER AS A DELEGATE</span>
       </button>
-      <button class=\"adaptive-hero-btn cta-btn-hero-match cta-btn-secondary\" onclick=\"window.selectPathway ? window.selectPathway('delegation') : (window.openDelRegistration ? window.openDelRegistration() : (window.openAuthModal ? window.openAuthModal() : alert('Opening Registration...')))\">
+      <button class="adaptive-hero-btn cta-btn-hero-match cta-btn-secondary" onclick="window.selectPathway ? window.selectPathway('delegation') : (window.openDelRegistration ? window.openDelRegistration() : (window.openAuthModal ? window.openAuthModal() : alert('Opening Registration...')))">
         <span>REGISTER A DELEGATION</span>
       </button>
     </div>
   </div>
-</section>\r\n\r\n<!-- Footer rendered via React component -->\r\n\r\n<!-- RECAPTCHA CONFIGURATION\r\n     Site Key:   YOUR_RECAPTCHA_SITE_KEY\r\n     Secret Key: YOUR_RECAPTCHA_SECRET_KEY\r\n-->\r\n\r";
+</section>
+`;

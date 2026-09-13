@@ -35,7 +35,7 @@ export function MetalButton({
       <button
         type={type}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-full font-medium tracking-[-0.01em]",
+          "inline-flex items-center justify-center gap-2 rounded-xl font-medium tracking-[-0.01em]",
           "text-white bg-purple-950/40 border border-purple-500/30",
           SIZE[size] || SIZE.md,
           className
@@ -54,12 +54,12 @@ export function MetalButton({
       theme={resolved}
       strength={strength}
       paused={paused}
-      className={cn("inline-flex cursor-pointer select-none", wrapperClassName)}
+      className={cn("inline-flex cursor-pointer select-none rounded-xl", wrapperClassName)}
     >
       <button
         type={type}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-full font-medium tracking-[-0.01em] transition-[transform,background-color] duration-200 ease-out cursor-pointer",
+          "inline-flex items-center justify-center gap-2 rounded-xl font-medium tracking-[-0.01em] transition-[transform,background-color] duration-200 ease-out cursor-pointer",
           "text-white hover:opacity-90 active:scale-[0.97]",
           "focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60",
           SIZE[size] || SIZE.md,

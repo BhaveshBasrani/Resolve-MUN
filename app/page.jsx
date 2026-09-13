@@ -1,6 +1,6 @@
 "use client";
 
-import { auth, onAuthStateChanged } from "@/lib/firebase";
+import { auth, submitDelegateApplication, onAuthStateChanged } from "@/lib/firebase";
 import Link from "next/link";
 import { MetalButton } from "@/components/ui/metal-button";
 import { Sparkles, ArrowUpRight, FileText, X } from "lucide-react";
@@ -10,51 +10,76 @@ import { homeHtml } from "./pageContent";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthModal } from "@/components/AuthModal";
+import ModalShaderBackdrop from "@/components/ModalShaderBackdrop";
 import { GradientBackground } from "@/components/ui/paper-design-shader-background";
 
 export default function Home() {
   const [authOpen, setAuthOpen] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState("signup");
   const [currentUser, setCurrentUser] = useState(null);
   const [showWelcomeBox, setShowWelcomeBox] = useState(false);
 
   const [delegationInviteCode, setDelegationInviteCode] = useState(null);
+  const auth = { get currentUser() { return currentUser; } };
 
   useEffect(() => {
     // Check URL for permanent delegation code
     if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      const delParam = searchParams.get('delegation') || searchParams.get('del') || searchParams.get('invite');
-      if (delParam) {
-        const cleanCode = delParam.trim().toUpperCase();
-        localStorage.setItem('resolve_permanent_delegation', cleanCode);
-        sessionStorage.setItem('resolve_permanent_delegation', cleanCode);
-        setDelegationInviteCode(cleanCode);
-      } else {
-        const stored = localStorage.getItem('resolve_permanent_delegation') || sessionStorage.getItem('resolve_permanent_delegation');
-        if (stored) setDelegationInviteCode(stored);
-      }
+      try {
+        localStorage.removeItem('resolve_theme');
+        document.documentElement.classList.remove('theme-light');
+        document.body.classList.remove('theme-light');
+      } catch (_) {}
 
-      const openParam = searchParams.get('open') || searchParams.get('modal') || searchParams.get('type');
-      if (openParam) {
+      const params = new URLSearchParams(window.location.search);
+      const del = params.get('del');
+      if (del) {
+        setDelegationInviteCode(del.trim());
+        try {
+          localStorage.setItem('resolve_perm_del', del.trim());
+        } catch (_) {}
         setTimeout(() => {
-          if (openParam === 'delegate') {
-            if (window.openRegistration) window.openRegistration();
-          } else if (openParam === 'delegation') {
+          const banner = document.getElementById('delegationBanner');
+          if (banner) banner.style.display = 'block';
+          const span = document.getElementById('bannerDelCode');
+          if (span) span.textContent = del.trim();
+          if (!auth.currentUser) {
+            window.pendingPathway = 'delegation';
+            setAuthOpen(true);
+          } else {
             if (window.openDelRegistration) window.openDelRegistration();
           }
         }, 600);
       }
     }
 
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) {
+    const syncUser = (rawUser) => {
+      if (rawUser) {
+        const u = {
+          ...rawUser,
+          uid: rawUser.uid || rawUser.id,
+          displayName:
+            rawUser.displayName ||
+            rawUser.user_metadata?.full_name ||
+            rawUser.user_metadata?.name ||
+            rawUser.email?.split("@")[0] ||
+            "Delegate",
+          photoURL:
+            rawUser.photoURL ||
+            rawUser.user_metadata?.avatar_url ||
+            rawUser.user_metadata?.picture ||
+            "",
+        };
         if (typeof window !== "undefined") {
-          localStorage.setItem('resolve_user_name', u.displayName || '');
-          localStorage.setItem('resolve_user_email', u.email || '');
-          localStorage.setItem('resolve_user_photo', u.photoURL || '');
+          localStorage.setItem("resolve_user_name", u.displayName || "");
+          localStorage.setItem("resolve_user_email", u.email || "");
+          localStorage.setItem("resolve_user_photo", u.photoURL || "");
           if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
         }
-        const dismissed = typeof window !== "undefined" ? sessionStorage.getItem("resolve_welcome_dismissed_" + u.uid) : null;
+        const dismissed =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("resolve_welcome_dismissed_" + u.uid)
+            : null;
         if (!dismissed) {
           setShowWelcomeBox(true);
         }
@@ -65,35 +90,31 @@ export default function Home() {
             if (window.selectPathway) window.selectPathway(target);
           }, 300);
         }
+        setCurrentUser(u);
       } else {
         setShowWelcomeBox(false);
+        setCurrentUser(null);
       }
-      setCurrentUser(u);
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (rawUser) => {
+      syncUser(rawUser || null);
     });
-    return () => unsub();
-  }, []);
+
+    if (typeof window !== "undefined") {
+      window.submitDelegateToFirebase = async (formData) => {
+        return await submitDelegateApplication(formData, currentUser);
+      };
+      window.submitDelegateToSupabase = window.submitDelegateToFirebase;
+    }
+
+    return () => unsubscribe();
+  }, [currentUser]);
   const containerRef = useRef(null);
 
   const handleOpenSelection = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    // If user is already signed in AND has been through auth at least once before,
-    // go directly to the selection modal — skip the auth screen
-    if (
-      typeof window !== "undefined" &&
-      auth.currentUser &&
-      localStorage.getItem("resolve_selection_opened") === "true"
-    ) {
-      if (window.openSelectionModal) {
-        window.openSelectionModal();
-      } else {
-        const modal = document.getElementById("selectionModal");
-        if (modal) {
-          modal.classList.add("active");
-          document.body.style.overflow = "hidden";
-        }
-      }
-      return;
-    }
+    setAuthInitialMode("pathway");
     setAuthOpen(true);
   };
 
@@ -106,7 +127,7 @@ export default function Home() {
     // Instant Countdown Initialization (Never shows -- : --)
     let cdInterval = null;
     try {
-      const countdownDate = new Date("2026-11-21T00:00:00");
+      const countdownDate = new Date("2026-11-20T08:00:00");
       const updateCd = () => {
         const cdDays = document.getElementById("cd-days");
         const cdHours = document.getElementById("cd-hours");
@@ -143,16 +164,21 @@ export default function Home() {
         const modal = document.getElementById(modalId);
         if (modal) {
           modal.classList.remove("active");
-          const anyActive = document.querySelector(".modal-overlay.active");
-          if (!anyActive) {
-            document.body.style.overflow = "";
-          }
+        }
+        const anyActive = document.querySelector(".modal-overlay.active");
+        if (!anyActive) {
+          document.body.style.overflow = "";
+          document.body.classList.remove("modal-locked");
+        }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("modalStateChange"));
         }
       };
 
       window.closeModalById = closeModalById;
 
-      window.openAuthModal = function () {
+      window.openAuthModal = function (mode = "signup") {
+        setAuthInitialMode(mode);
         setAuthOpen(true);
       };
       window.closeAuthModal = function () {
@@ -161,14 +187,12 @@ export default function Home() {
 
       window.openSelectionModal = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        const modal = document.getElementById("selectionModal");
-        if (modal) {
-          modal.classList.add("active");
-          document.body.style.overflow = "hidden";
-        }
+        setAuthInitialMode("pathway");
+        setAuthOpen(true);
       };
 
       window.openSelection = window.openSelectionModal;
+      window.openPathwayModal = window.openSelectionModal;
 
       // Helper: Lock permanent delegation banner & hidden field
       function applyPermanentDelegationLock() {
@@ -689,6 +713,21 @@ export default function Home() {
         }
       });
 
+      // Catch-all for any close button with .modal-close class
+      document.querySelectorAll(".modal-close").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const parentOverlay = btn.closest(".modal-overlay");
+          if (parentOverlay && parentOverlay.id) {
+            closeModalById(parentOverlay.id);
+          } else if (parentOverlay) {
+            parentOverlay.classList.remove("active");
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("modalStateChange"));
+            }
+          }
+        });
+      });
+
       // Overlay background click to close
       modalList.forEach((modalId) => {
         const modal = document.getElementById(modalId);
@@ -789,26 +828,26 @@ export default function Home() {
     const t1 = setTimeout(makeAllVisible, 300);
     const t2 = setTimeout(makeAllVisible, 1000);
 
-    // 3. Smooth loading screen dismissal
-    const loader = document.getElementById("loading-screen");
-    if (loader) {
-      loader.style.display = "none";
-    }
+    // 3. Fast, ultra-smooth cinematic loading screen dismissal (Non-hang)
+    const dismissLoader = () => {
+      const loader = document.getElementById("loading-screen");
+      if (loader && !loader.classList.contains("hidden")) {
+        loader.classList.add("hidden");
+        setTimeout(() => {
+          if (loader) loader.style.display = "none";
+        }, 380);
+      }
+    };
 
-    // Dispatch lifecycle events for archive-script.js
-    const timerInit = setTimeout(() => {
-      document.dispatchEvent(
-        new Event("DOMContentLoaded", { bubbles: true, cancelable: true })
-      );
-      window.dispatchEvent(new Event("load"));
-      window.dispatchEvent(new Event("DOMContentLoaded"));
-    }, 150);
+    const loaderTimer = setTimeout(dismissLoader, 400);
+    const hardSafetyTimer = setTimeout(dismissLoader, 900);
 
     return () => {
       if (cdInterval) clearInterval(cdInterval);
       clearTimeout(t1);
       clearTimeout(t2);
-      clearTimeout(timerInit);
+      clearTimeout(loaderTimer);
+      clearTimeout(hardSafetyTimer);
     };
   }, []);
 
@@ -867,7 +906,7 @@ export default function Home() {
         <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "900px", margin: "0 auto" }}>
           {/* Eyebrow */}
           <div className="hero-eyebrow">
-            DATES REVEALING SOON
+            20TH - 22ND NOVEMBER 2026
           </div>
 
           {/* Adaptive Hero Title — NEVER overlaps navbar */}
@@ -983,8 +1022,8 @@ export default function Home() {
       
       {/* POST-AUTH WELCOME DIALOG (Diplomatic Luxury Identity) */}
       {showWelcomeBox && currentUser && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="relative w-full max-w-md p-7 sm:p-8 rounded-2xl border border-white/15 bg-[#060814]/98 backdrop-blur-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(99,102,241,0.15)] text-center overflow-hidden">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm p-5 sm:p-6 rounded-2xl border border-white/15 bg-[#060814]/98 backdrop-blur-3xl shadow-[0_24px_70px_rgba(0,0,0,0.95),0_0_30px_rgba(99,102,241,0.12)] text-center overflow-hidden">
             {/* Top Hairline Accent */}
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
 
@@ -995,14 +1034,14 @@ export default function Home() {
                 sessionStorage.setItem("resolve_welcome_dismissed_" + currentUser.uid, "true");
                 setShowWelcomeBox(false);
               }}
-              className="absolute top-4 right-4 w-7 h-7 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors cursor-pointer"
+              className="absolute top-3.5 right-3.5 w-6.5 h-6.5 rounded-xl text-white/40 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors cursor-pointer"
               aria-label="Close dialog"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
 
             {/* Official Resolve MUN Emblem */}
-            <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-white/[0.03] border border-white/10 p-2 flex items-center justify-center shadow-inner">
+            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-white/[0.03] border border-white/10 p-1.5 flex items-center justify-center shadow-inner">
               <img
                 src="https://resolvemun.in/images/Logo.svg"
                 alt="Resolve MUN Emblem"
@@ -1011,23 +1050,23 @@ export default function Home() {
             </div>
 
             {/* Eyebrow & Title */}
-            <span className="font-mono text-[10px] tracking-[0.22em] text-indigo-300 uppercase block mb-1 font-semibold">
+            <span className="font-mono text-[9px] tracking-[0.2em] text-indigo-300 uppercase block mb-1 font-semibold">
               CREDENTIALS VERIFIED · RESOLVE 2026
             </span>
             <h3
-              className="text-xl sm:text-2xl font-extrabold uppercase tracking-wide text-white mb-2"
+              className="text-lg sm:text-xl font-extrabold uppercase tracking-wide text-white mb-1.5"
               style={{ fontFamily: "'Oswald', sans-serif" }}
             >
               WELCOME, {currentUser.displayName ? currentUser.displayName.split(" ")[0] : "DELEGATE"}
             </h3>
 
             {/* Diplomatic Copy */}
-            <p className="text-xs text-white/65 leading-relaxed max-w-sm mx-auto mb-5 font-normal">
+            <p className="text-[11px] text-white/60 leading-relaxed max-w-xs mx-auto mb-4 font-normal">
               Your delegate session is active. Access your official committee allotment matrix, encrypted digital QR pass, and conference dossier from the Command Dashboard.
             </p>
 
             {/* Micro Credential Strip */}
-            <div className="flex items-center justify-center gap-3 py-2 px-3 rounded-lg bg-white/[0.02] border border-white/5 text-[10px] font-mono text-white/50 mb-6">
+            <div className="flex items-center justify-center gap-2 py-1.5 px-2.5 rounded-lg bg-white/[0.02] border border-white/5 text-[9px] font-mono text-white/50 mb-4">
               <span>STATUS: <strong className="text-emerald-400 font-semibold">VERIFIED</strong></span>
               <span className="text-white/20">|</span>
               <span>ROLE: <strong className="text-white/80 font-semibold">DELEGATE</strong></span>
@@ -1036,17 +1075,17 @@ export default function Home() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2.5">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Link
                 href="/dashboard"
                 onClick={() => {
                   sessionStorage.setItem("resolve_welcome_dismissed_" + currentUser.uid, "true");
                   setShowWelcomeBox(false);
                 }}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-xs tracking-wider uppercase shadow-[0_0_20px_rgba(99,102,241,0.35)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] active:scale-[0.98] transition-all cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 h-9.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-xs tracking-wider uppercase shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.45)] active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>ACCESS DASHBOARD</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
+                <ArrowUpRight className="w-3 h-3" />
               </Link>
               <button
                 type="button"
@@ -1054,7 +1093,7 @@ export default function Home() {
                   sessionStorage.setItem("resolve_welcome_dismissed_" + currentUser.uid, "true");
                   setShowWelcomeBox(false);
                 }}
-                className="h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/70 hover:text-white text-xs font-semibold tracking-wide transition-colors cursor-pointer"
+                className="h-9.5 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/70 hover:text-white text-xs font-semibold tracking-wide transition-colors cursor-pointer"
               >
                 CONTINUE BROWSING
               </button>
@@ -1063,7 +1102,12 @@ export default function Home() {
         </div>
       )}
 
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+      <ModalShaderBackdrop />
+      <AuthModal
+        isOpen={authOpen}
+        initialMode={authInitialMode}
+        onClose={() => setAuthOpen(false)}
+      />
     </>
   );
 }

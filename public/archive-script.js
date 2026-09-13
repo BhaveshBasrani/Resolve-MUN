@@ -210,7 +210,7 @@
   }
 
   // Override window.alert
-  const originalAlert = window.alert;
+  var originalAlert = window.alert;
   window.alert = function (message) {
     showCustomAlert(message);
   };
@@ -315,6 +315,9 @@
    * This function gets a token from Google and should be called before form submission.
    */
   async function getRecaptchaToken(actionName) {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+      return null;
+    }
     return new Promise((resolve, reject) => {
       if (typeof grecaptcha === 'undefined') {
         console.error('reCAPTCHA not loaded');
@@ -367,14 +370,166 @@
       }
     } catch (_) { }
   }
+  // Submission spinner and simple client-side validation helpers
+  function showSpinner() {
+    const s = document.getElementById('submitSpinner');
+    if (s) s.style.display = 'flex';
+  }
+
+  function hideSpinner() {
+    const s = document.getElementById('submitSpinner');
+    if (s) s.style.display = 'none';
+  }
+
+  function validateForm(formEl) {
+    if (!formEl) return true;
+    let valid = true;
+    const inputs = formEl.querySelectorAll('input[required], select[required], textarea[required]');
+    inputs.forEach(input => {
+      clearError(input);
+      const val = input.value ? String(input.value).trim() : '';
+      if (!val) {
+        showError(input, 'This field is required.');
+        valid = false;
+        return;
+      }
+
+      // Email validation
+      if (input.type === 'email' || /email/i.test(input.id) || /email/i.test(input.name)) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(val)) {
+          showError(input, 'Enter a valid email address.');
+          valid = false;
+          return;
+        }
+      }
+
+      // Phone validation
+      if (input.type === 'tel') {
+        const phoneVal = val.replace(/\D/g, '');
+        const phoneRegex = /^[1-9][0-9]{9}$/;
+        if (!phoneRegex.test(phoneVal)) {
+          showError(input, 'Enter a valid 10-digit phone number.');
+          valid = false;
+          return;
+        }
+      }
+
+      // UTR validation (12 digits expected if field mentions UTR)
+      if (/utr/i.test(input.id) || /utr/i.test(input.name) || /txn|transaction/i.test(input.id) && /utr/i.test(input.placeholder || '')) {
+        const digits = val.replace(/\D/g, '');
+        if (digits.length !== 12) {
+          showError(input, 'Enter a valid 12-digit UTR.');
+          valid = false;
+          return;
+        }
+      }
+
+      // File input validation (if required)
+      if (input.type === 'file') {
+        if (input.files && input.files.length > 0) {
+          const f = input.files[0];
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          const allowed = ['image/png', 'image/jpeg', 'application/pdf'];
+          if (f.size > maxSize) {
+            showError(input, 'File too large (max 5MB).');
+            valid = false;
+            return;
+          }
+          if (allowed.indexOf(f.type) === -1) {
+            showError(input, 'Unsupported file type (jpg, png, pdf allowed).');
+            valid = false;
+            return;
+          }
+        }
+      }
+    });
+
+    if (!valid) showCustomAlert('Please correct the highlighted fields before submitting.', 'error', 4000);
+    return valid;
+  }
+
+  // Lightweight haptic + smooth interaction handler
+  (function initHaptics() {
+    try {
+      const selector = '.btn-primary, .btn-secondary, .copy-btn, .nav-cta, .committee-card, .refresh-qr-btn';
+      document.addEventListener('pointerdown', (e) => {
+        const el = e.target.closest ? e.target.closest(selector) : null;
+        if (!el) return;
+        // brief vibration where supported
+        if (navigator.vibrate) navigator.vibrate(8);
+        // add visual press class
+        el.classList && el.classList.add('interaction-press');
+        setTimeout(() => el.classList && el.classList.remove('interaction-press'), 160);
+      }, { passive: true });
+    } catch (err) { /* noop */ }
+  })();
+
+  /**
+   * RECAPTCHA v3 EXECUTION
+   * This function gets a token from Google and should be called before form submission.
+   */
+  async function getRecaptchaTokenLegacy(actionName) {
+    return new Promise((resolve, reject) => {
+      if (typeof grecaptcha === 'undefined') {
+        console.error('reCAPTCHA not loaded');
+        resolve(null);
+        return;
+      }
+      grecaptcha.ready(() => {
+        grecaptcha.execute(window.RECAPTCHA_SITE_KEY, { action: actionName })
+          .then(token => resolve(token))
+          .catch(err => {
+            console.error('reCAPTCHA execution failed:', err);
+            resolve(null);
+          });
+      });
+    });
+  }
+
+  // INITIAL LOADING SCREEN - Bulletproof dismissal
+  let legacyLoaderDismissed = false;
+  function dismissLoadingScreenLegacy() {
+    if (legacyLoaderDismissed) return;
+    legacyLoaderDismissed = true;
+    const loader = document.getElementById('loading-screen');
+    if (loader) {
+      loader.classList.add('hidden');
+      setTimeout(() => {
+        if (loader) loader.style.display = 'none';
+      }, 800);
+    }
+    if (document.body) {
+      document.body.classList.add('loaded');
+      document.body.style.overflow = '';
+    }
+
+    // AUTO-OPEN REGISTRATION VIA URL PARAMETER ?open=registration
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const openParam = urlParams.get('open');
+
+      if (openParam === 'registration' || openParam === 'selection') {
+        setTimeout(openSelection, 500);
+      } else if (openParam === 'delegate') {
+        setTimeout(openRegistration, 500);
+      } else if (openParam === 'eb') {
+        setTimeout(openEbRegistration, 500);
+      } else if (openParam === 'oc') {
+        setTimeout(openOcRegistration, 500);
+      } else if (openParam === 'delegation') {
+        setTimeout(openDelRegistration, 500);
+      }
+    } catch (_) { }
+  }
 
   if (document.readyState === 'complete') {
-    setTimeout(dismissLoadingScreen, 500);
+    setTimeout(dismissLoadingScreen, 300);
   } else {
-    window.addEventListener('load', () => setTimeout(dismissLoadingScreen, 500));
+    window.addEventListener('load', () => setTimeout(dismissLoadingScreen, 300));
   }
   // Hard safety timeout
-  setTimeout(dismissLoadingScreen, 1200);
+  setTimeout(dismissLoadingScreen, 600);
 
   // REGISTRATION MODAL LOGIC
   // =============================================
@@ -1242,7 +1397,16 @@
         referral: document.getElementById("regReferral")?.value || ""
       };
 
-      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+      if (typeof window.submitDelegateToSupabase === 'function') {
+        try {
+          await window.submitDelegateToSupabase(data);
+        } catch (supaErr) {
+          console.warn('Supabase direct insert notice, falling back to Sheets:', supaErr);
+          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+        }
+      } else {
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+      }
       showCustomAlert('Registration Submitted Successfully! The Secretariat will review your application and notify you soon.', 'success', 6000);
       clearFormData();
       closeRegistration();
@@ -1988,7 +2152,7 @@
         }
       }
     }
-  });
+  }, { passive: true });
 
   // SCROLL REVEAL
   const observer = new IntersectionObserver(entries => {
@@ -1999,8 +2163,8 @@
   });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // COUNTDOWN — target date: November 21, 2026 00:00
-  const countdownDate = new Date('2026-11-21T00:00:00');
+  // COUNTDOWN — target date: November 20, 2026 08:00
+  const countdownDate = new Date('2026-11-20T08:00:00');
   function updateCountdown() {
     const cdDays = document.getElementById('cd-days');
     const cdHours = document.getElementById('cd-hours');
@@ -2032,7 +2196,15 @@
   // PARTICLES
   const canvas = document.getElementById('particles');
   const ctx = canvas && typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
-  let W, H, particles = [];
+  let W = 0, H = 0, particles = [];
+  mx = -1000;
+  my = -1000;
+  if (typeof window !== 'undefined') {
+    window.addEventListener('mousemove', (e) => {
+      mx = e.clientX;
+      my = e.clientY;
+    }, { passive: true });
+  }
 
   // Adaptive performance profile: 'high' | 'medium' | 'low'
   const PERFORMANCE_PROFILE = (function detectPerformanceProfile() {
@@ -2363,34 +2535,30 @@
       const fileInput = document.getElementById("ebCv");
       let fileBase64 = "";
       let fileName = "";
-      if (fileInput.files.length > 0) {
+      if (fileInput && fileInput.files && fileInput.files.length > 0) {
         const file = fileInput.files[0];
         fileBase64 = await fileToBase64(file);
         fileName = file.name;
       }
 
       const data = {
-        action: 'SUBMIT_EB',
         type: 'EB_APPLICATION',
-        cvBase64: fileBase64,
-        cvName: fileName,
         recaptcha_token: token,
-        name: document.getElementById("ebName").value,
-        phone: document.getElementById("ebPhone").value,
-        email: document.getElementById("ebEmail").value,
-        institute: document.getElementById("ebInst").value,
-        position: document.getElementById("ebRole").value,
-        experience: document.getElementById("ebExp").value,
-        why: document.getElementById("ebWhy").value,
-        committees: document.getElementById("ebPref1").value + " & " + document.getElementById("ebPref2").value,
+        name: document.getElementById("ebName") ? document.getElementById("ebName").value : "",
+        phone: document.getElementById("ebPhone") ? document.getElementById("ebPhone").value : "",
+        email: document.getElementById("ebEmail") ? document.getElementById("ebEmail").value : "",
+        institute: document.getElementById("ebInst") ? document.getElementById("ebInst").value : "",
+        position: document.getElementById("ebRole") ? document.getElementById("ebRole").value : "",
+        experience: document.getElementById("ebExp") ? document.getElementById("ebExp").value : "",
+        why: document.getElementById("ebWhy") ? document.getElementById("ebWhy").value : "",
+        committees: (document.getElementById("ebPref1") ? document.getElementById("ebPref1").value : "") + " & " + (document.getElementById("ebPref2") ? document.getElementById("ebPref2").value : ""),
         cv_file: fileBase64,
-        dob: document.getElementById("ebDob").value,
-        referral: document.getElementById("ebReferral").value,
-        munCount: document.getElementById("ebMunCount").value
+        dob: document.getElementById("ebDob") ? document.getElementById("ebDob").value : "",
+        referral: document.getElementById("ebReferral") ? document.getElementById("ebReferral").value : "",
+        munCount: document.getElementById("ebMunCount") ? document.getElementById("ebMunCount").value : ""
       };
 
-      // Reusing GOOGLE_SHEET_TAB_EB for EB applications
-      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 }); 
       showCustomAlert('EB Application Submitted Successfully! The Secretariat will review your profile and contact you for an interview.', 'success', 6000);
       ebRegForm.reset();
       clearEbFormData();
@@ -2411,101 +2579,6 @@
     if (e.target === ebModal) closeEbRegistration();
   });
 
-  // MODAL PARTICLES (Interaction)
-  function initModalParticles(canvasId) {
-    const mCanvas = document.getElementById(canvasId);
-    if (!mCanvas) return;
-    const mCtx = mCanvas.getContext('2d');
-    let mW, mH, mParticles = [];
-    const modalEl = mCanvas.closest && mCanvas.closest('.modal-overlay');
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-    function mResize() {
-      mW = Math.floor(window.innerWidth);
-      mH = Math.floor(window.innerHeight);
-      // Use devicePixelRatio for crisp rendering without stretching layout
-      mCanvas.width = mW * dpr;
-      mCanvas.height = mH * dpr;
-      mCanvas.style.width = mW + 'px';
-      mCanvas.style.height = mH + 'px';
-      mCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      createMParticles();
-    }
-
-    function createMParticles() {
-      mParticles = [];
-      // Reduce particle count for better performance and more premium feel
-      const count = window.innerWidth < 768 ? 30 : 80;
-      for (let i = 0; i < count; i++) {
-        mParticles.push({
-          x: Math.random() * mW,
-          y: Math.random() * mH,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: (Math.random() - 0.5) * 0.4,
-          size: Math.random() * 2 + 1,
-          baseSize: 0,
-          o: Math.random() * 0.5 + 0.1
-        });
-        mParticles[i].baseSize = mParticles[i].size;
-      }
-    }
-
-    function drawMParticles() {
-      // If modal isn't visible/active, pause expensive drawing and poll infrequently
-      const isActive = modalEl ? modalEl.classList.contains('active') : true;
-      if (!isActive) {
-        // clear the canvas less frequently when hidden
-        mCtx.clearRect(0, 0, mW, mH);
-        setTimeout(() => requestAnimationFrame(drawMParticles), 600);
-        return;
-      }
-
-      mCtx.clearRect(0, 0, mW, mH);
-      for (let i = 0; i < mParticles.length; i++) {
-        const p = mParticles[i];
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = mW; if (p.x > mW) p.x = 0;
-        if (p.y < 0) p.y = mH; if (p.y > mH) p.y = 0;
-
-        const dx = mx - p.x;
-        const dy = my - p.y;
-        const dist2 = dx * dx + dy * dy;
-        const maxDistance = 150;
-        const maxDist2 = maxDistance * maxDistance;
-        if (dist2 < maxDist2) {
-          const dist = Math.sqrt(dist2);
-          p.size = p.baseSize * (1 + (maxDistance - dist) / 50);
-          const inv = dist > 0 ? 1 / dist : 0;
-          p.x -= (dx * inv) * 0.01;
-          p.y -= (dy * inv) * 0.01;
-          mCtx.beginPath();
-          mCtx.moveTo(p.x, p.y);
-          mCtx.lineTo(mx, my);
-          mCtx.strokeStyle = `rgba(51, 14, 92, ${0.1 * (1 - dist / maxDistance)})`;
-          mCtx.stroke();
-        } else {
-          p.size = p.baseSize;
-        }
-
-        mCtx.beginPath();
-        mCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        mCtx.fillStyle = `rgba(96, 165, 250, ${p.o})`;
-        mCtx.fill();
-      }
-      requestAnimationFrame(drawMParticles);
-    }
-
-    mResize();
-    window.addEventListener('resize', mResize);
-    drawMParticles();
-  }
-
-  // Initialize particles for all modals
-  initModalParticles('modalParticles');
-  initModalParticles('ocModalParticles');
-  initModalParticles('delModalParticles');
-  initModalParticles('ebModalParticles');
-
   // EXPERIENCE tabs
   const expItems = document.querySelectorAll('.exp-item');
   const expVisuals = document.querySelectorAll('.showcase-visual');
@@ -2514,7 +2587,7 @@
 
   const updateExp = (index) => {
     if (!expItems.length || !expItems[index]) return;
-
+    
     // Update items
     expItems.forEach(i => i.classList.remove('active'));
     expItems[index].classList.add('active');
@@ -2527,7 +2600,7 @@
         v.classList.add('active');
       }
     });
-
+    
     currentExpIdx = index;
   };
 
@@ -2549,7 +2622,7 @@
       stopAutoPlay();
       updateExp(idx);
     });
-
+    
     item.addEventListener('mouseleave', () => {
       startAutoPlay();
     });
@@ -2557,8 +2630,6 @@
     item.addEventListener('click', () => {
       stopAutoPlay();
       updateExp(idx);
-      // Optional: don't restart autoplay on click to let user "stick" to a slide
-      // startAutoPlay(); 
     });
   });
 
@@ -2619,7 +2690,7 @@
     let startX;
     let scrollLeft = 0;
     let trackWidth = 0;
-    let animationSpeed = 0.5; // matches 80s for ~4000px length
+    let animationSpeed = 0.5;
     let currentX = 0;
     let isDragging = false;
 
@@ -2629,7 +2700,6 @@
     updateTrackWidth();
     window.addEventListener('resize', updateTrackWidth);
 
-    // Initial state
     track.classList.add('is-animating');
 
     function animate() {
@@ -2642,13 +2712,10 @@
       }
       requestAnimationFrame(animate);
     }
-
-    // Start the JS-based animation for better control
-    // Remove the CSS animation class as we are using JS frame-by-frame
+    
     track.classList.remove('is-animating');
     requestAnimationFrame(animate);
 
-    // --- MOUSE DRAG LOGIC ---
     container.addEventListener('mousedown', (e) => {
       isDown = true;
       isDragging = false;
@@ -2675,14 +2742,12 @@
       const walk = (x - startX) * 1.2;
       currentX = scrollLeft + walk;
 
-      // Infinite loop wrap during drag
       if (currentX > 0) currentX -= trackWidth;
       if (currentX < -trackWidth) currentX += trackWidth;
 
       track.style.transform = `translateX(${currentX}px)`;
     });
 
-    // --- TOUCH DRAG LOGIC FOR MOBILE ---
     container.addEventListener('touchstart', (e) => {
       isDown = true;
       isDragging = false;
@@ -2700,142 +2765,119 @@
       if (!isDown) return;
       isDragging = true;
       const x = e.touches[0].pageX - container.offsetLeft;
-      const walk = (x - startX) * 1.5; // Slightly faster multiplier for touch responsiveness
+      const walk = (x - startX) * 1.5;
       currentX = scrollLeft + walk;
 
-      // Infinite loop wrap during drag
       if (currentX > 0) currentX -= trackWidth;
       if (currentX < -trackWidth) currentX += trackWidth;
 
       track.style.transform = `translateX(${currentX}px)`;
     }, { passive: true });
 
-    // --- WHEEL / TRACKPAD LOGIC ---
     container.addEventListener('wheel', (e) => {
-      // e.deltaX for horizontal scrolling (shift + scroll)
-      // e.deltaY for vertical scrolling maps to horizontal
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-
       currentX -= delta * 0.5;
-
-      // Infinite loop wrap
       if (currentX > 0) currentX -= trackWidth;
       if (currentX < -trackWidth) currentX += trackWidth;
-
       track.style.transform = `translateX(${currentX}px)`;
       e.preventDefault();
     }, { passive: false });
-
-    // Stop link clicking while dragging
-    // --- CINEMATIC EASTER EGG (The "Resolve" Event) ---
-    let resolveKeyBuffer = "";
-
-    window.addEventListener('keydown', (e) => {
-      if (!e.key) return;
-      const key = e.key.toLowerCase();
-      if ("resolve".includes(key)) {
-        const expected = "resolve"[resolveKeyBuffer.length];
-        if (key === expected) {
-          resolveKeyBuffer += key;
-          if (resolveKeyBuffer === "resolve") {
-            triggerCinematicResolve();
-            resolveKeyBuffer = "";
-          }
-        } else {
-          resolveKeyBuffer = (key === 'r') ? 'r' : "";
-        }
-      } else {
-        resolveKeyBuffer = "";
-      }
-    });
-
-    function triggerCinematicResolve() {
-      // --- VIEWPORT ANCHOR ---
-      const overlay = document.createElement('div');
-      overlay.className = 'resolve-event-overlay';
-
-      // --- CRITICAL FIX: Attach to documentElement or Body with fixed position ---
-      // This ensures it layer correctly over fixed/transformed parents
-      document.documentElement.appendChild(overlay);
-
-      const bg = document.createElement('div');
-      bg.className = 'resolve-event-bg';
-      overlay.appendChild(bg);
-
-      const text = document.createElement('div');
-      text.className = 'resolve-event-text';
-      text.textContent = 'RESOLVE';
-      overlay.appendChild(text);
-
-      // Add cinematic scanlines - strictly centered
-      for (let i = 0; i < 3; i++) {
-        const line = document.createElement('div');
-        line.className = 'resolve-event-line';
-        line.style.position = 'absolute';
-        line.style.top = '50%';
-        line.style.left = '0';
-        line.style.marginTop = `${(i - 1) * 15}px`;
-        overlay.appendChild(line);
-        line.animate([
-          { transform: 'translateY(-25vh) scaleX(0.5)', opacity: 0 },
-          { transform: 'translateY(0) scaleX(1)', opacity: 0.8, offset: 0.5 },
-          { transform: 'translateY(25vh) scaleX(0.5)', opacity: 0 }
-        ], { duration: 2500, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', delay: i * 200 });
-      }
-
-      document.documentElement.appendChild(overlay);
-
-      // Core Animations - Extended to 5 seconds for absolute cinematic feel
-      bg.animate([
-        { opacity: 0, backdropFilter: 'grayscale(0) blur(0px)' },
-        { opacity: 1, backdropFilter: 'grayscale(1) blur(15px)', offset: 0.1 },
-        { opacity: 1, backdropFilter: 'grayscale(1) blur(15px)', offset: 0.85 },
-        { opacity: 0, backdropFilter: 'grayscale(0) blur(0px)' }
-      ], { duration: 5000 });
-
-      text.animate([
-        { opacity: 0, scale: 0.85, filter: 'blur(30px)', letterSpacing: '12vw' },
-        { opacity: 1, scale: 1, filter: 'blur(0px)', letterSpacing: '5vw', offset: 0.15 },
-        { opacity: 1, scale: 1.02, filter: 'blur(0px)', letterSpacing: '4.5vw', offset: 0.8 },
-        { opacity: 0, scale: 1.15, filter: 'blur(50px)', letterSpacing: '2vw' }
-      ], { duration: 5000, easing: 'cubic-bezier(0.19, 1, 0.22, 1)' });
-
-      // Velocity particles - absolute white streaks
-      for (let i = 0; i < 60; i++) {
-        const p = document.createElement('div');
-        p.className = 'resolve-event-particle';
-        p.style.position = 'absolute';
-        const left = Math.random() * 100;
-        const delay = Math.random() * 1500;
-        p.style.left = `${left}%`;
-        p.style.top = '-15%';
-        overlay.appendChild(p);
-
-        p.animate([
-          { transform: 'translateY(0) scaleY(1)', opacity: 0 },
-          { transform: 'translateY(115vh) scaleY(4)', opacity: 0.8 }
-        ], { duration: 1000 + Math.random() * 1000, easing: 'linear', delay: delay });
-      }
-
-      setTimeout(() => overlay.remove(), 5200);
-
-      // Filter Flash - Absolute B&W Transition
-      document.body.animate([
-        { filter: 'brightness(1) saturate(1)' },
-        { filter: 'brightness(2) saturate(0) contrast(1.5)', offset: 0.1 },
-        { filter: 'brightness(1.5) saturate(0) contrast(1.2)', offset: 0.8 },
-        { filter: 'brightness(1) saturate(1)' }
-      ], { duration: 5000 });
-    }
-
-
-
 
     container.addEventListener('click', (e) => {
       if (isDragging) e.preventDefault();
     });
   }
 
+  // --- CINEMATIC EASTER EGG (The "Resolve" Event) ---
+  let resolveKeyBuffer = "";
+  
+  window.addEventListener('keydown', (e) => {
+    if (!e.key) return;
+    const key = e.key.toLowerCase();
+    if ("resolve".includes(key)) {
+      const expected = "resolve"[resolveKeyBuffer.length];
+      if (key === expected) {
+        resolveKeyBuffer += key;
+        if (resolveKeyBuffer === "resolve") {
+          triggerCinematicResolve();
+          resolveKeyBuffer = "";
+        }
+      } else {
+        resolveKeyBuffer = (key === 'r') ? 'r' : "";
+      }
+    } else {
+      resolveKeyBuffer = "";
+    }
+  });
+
+  function triggerCinematicResolve() {
+    const overlay = document.createElement('div');
+    overlay.className = 'resolve-event-overlay';
+    document.documentElement.appendChild(overlay);
+    
+    const bg = document.createElement('div');
+    bg.className = 'resolve-event-bg';
+    overlay.appendChild(bg);
+    
+    const text = document.createElement('div');
+    text.className = 'resolve-event-text';
+    text.textContent = 'RESOLVE';
+    overlay.appendChild(text);
+    
+    for (let i = 0; i < 3; i++) {
+      const line = document.createElement('div');
+      line.className = 'resolve-event-line';
+      line.style.position = 'absolute';
+      line.style.top = '50%';
+      line.style.left = '0';
+      line.style.marginTop = `${(i - 1) * 15}px`;
+      overlay.appendChild(line);
+      line.animate([
+        { transform: 'translateY(-25vh) scaleX(0.5)', opacity: 0 },
+        { transform: 'translateY(0) scaleX(1)', opacity: 0.8, offset: 0.5 },
+        { transform: 'translateY(25vh) scaleX(0.5)', opacity: 0 }
+      ], { duration: 2500, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', delay: i * 200 });
+    }
+
+    bg.animate([
+      { opacity: 0, backdropFilter: 'grayscale(0) blur(0px)' }, 
+      { opacity: 1, backdropFilter: 'grayscale(1) blur(15px)', offset: 0.1 }, 
+      { opacity: 1, backdropFilter: 'grayscale(1) blur(15px)', offset: 0.85 },
+      { opacity: 0, backdropFilter: 'grayscale(0) blur(0px)' }
+    ], { duration: 5000 });
+
+    text.animate([
+      { opacity: 0, scale: 0.85, filter: 'blur(30px)', letterSpacing: '12vw' },
+      { opacity: 1, scale: 1, filter: 'blur(0px)', letterSpacing: '5vw', offset: 0.15 },
+      { opacity: 1, scale: 1.02, filter: 'blur(0px)', letterSpacing: '4.5vw', offset: 0.8 },
+      { opacity: 0, scale: 1.15, filter: 'blur(50px)', letterSpacing: '2vw' }
+    ], { duration: 5000, easing: 'cubic-bezier(0.19, 1, 0.22, 1)' });
+
+    for (let i = 0; i < 60; i++) {
+      const p = document.createElement('div');
+      p.className = 'resolve-event-particle';
+      p.style.position = 'absolute';
+      const left = Math.random() * 100;
+      const delay = Math.random() * 1500;
+      p.style.left = `${left}%`;
+      p.style.top = '-15%';
+      overlay.appendChild(p);
+
+      p.animate([
+        { transform: 'translateY(0) scaleY(1)', opacity: 0 },
+        { transform: 'translateY(115vh) scaleY(4)', opacity: 0.8 }
+      ], { duration: 1000 + Math.random() * 1000, easing: 'linear', delay: delay });
+    }
+
+    setTimeout(() => overlay.remove(), 5200);
+
+    document.body.animate([
+      { filter: 'brightness(1) saturate(1)' },
+      { filter: 'brightness(2) saturate(0) contrast(1.5)', offset: 0.1 },
+      { filter: 'brightness(1.5) saturate(0) contrast(1.2)', offset: 0.8 },
+      { filter: 'brightness(1) saturate(1)' }
+    ], { duration: 5000 });
+  }
 
   // Global exports for inline HTML onclick handlers
   if (typeof window !== 'undefined') {

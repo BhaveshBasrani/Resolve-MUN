@@ -1,55 +1,200 @@
-﻿"use client";
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { GrainGradient } from "@paper-design/shaders-react";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import {
-  auth, googleProvider, signInWithPopup, signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged,
+  auth,
+  signInWithGoogle,
+  signInWithEmail,
+  signUpWithEmail,
+  sendPasswordReset,
+  signOutUser,
+  sendVerificationCodeEmail,
+  onAuthStateChanged,
 } from "@/lib/firebase";
-import { X, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, ArrowLeft, Sparkles, Globe, Award, QrCode, ChevronRight, ArrowRight } from "lucide-react";
+import {
+  X,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ArrowLeft,
+  ChevronRight,
+} from "lucide-react";
+import Link from "next/link";
 
-/* Floating ambient orbs */
-function Orbs() {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      <div className="absolute top-[-20%] left-[-15%] w-[60%] h-[60%] rounded-full bg-violet-700/15 blur-[100px] animate-pulse" style={{ animationDuration: "9s" }} />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-600/12 blur-[90px] animate-pulse" style={{ animationDuration: "13s", animationDelay: "4s" }} />
-    </div>
-  );
+export function cn(...inputs) {
+  return twMerge(clsx(inputs));
 }
 
-/* Google icon */
-function GoogleIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-    </svg>
-  );
-}
-
-export function AuthModal({ isOpen, onClose }) {
-  const [mode, setMode] = useState("signin");
+export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
+  const [mode, setMode] = useState(initialMode); // "signup" | "signin" | "forgot" | "profile" | "pathway" | "code"
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [receiveUpdates, setReceiveUpdates] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [shaderMounted, setShaderMounted] = useState(false);
 
+  // 6-Digit Email Verification Code State
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const codeInputRefs = useRef([]);
+  const [pendingSignup, setPendingSignup] = useState(null); // { email, password, fullName, code }
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Auto-focus first input on code screen
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
-    return () => unsub();
+    if (mode === "code") {
+      const t = setTimeout(() => {
+        if (codeInputRefs.current[0]) {
+          codeInputRefs.current[0].focus();
+        }
+      }, 350);
+      return () => clearTimeout(t);
+    }
+  }, [mode]);
+
+  // Resend countdown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  const handleCodeChange = (index, value) => {
+    const val = value.replace(/[^0-9]/g, "");
+    if (val.length <= 1) {
+      const newCode = [...code];
+      newCode[index] = val;
+      setCode(newCode);
+
+      // Focus next input if digit entered
+      if (val && index < 5) {
+        codeInputRefs.current[index + 1]?.focus();
+      }
+
+      // Check if complete 6-digit code
+      if (index === 5 && val) {
+        const full = newCode.join("");
+        if (full.length === 6 && !newCode.includes("")) {
+          setTimeout(() => {
+            handleVerifyCode(full);
+          }, 150);
+        }
+      }
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !code[index] && index > 0) {
+      codeInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || !pendingSignup) return;
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const newOtp = String(Math.floor(100000 + Math.random() * 900000));
+      setPendingSignup((prev) => ({ ...prev, code: newOtp }));
+      await sendVerificationCodeEmail(pendingSignup.email, newOtp, pendingSignup.fullName);
+      setSuccess("A new 6-digit verification code has been sent to your email.");
+      setResendCooldown(45);
+      setCode(["", "", "", "", "", ""]);
+      setTimeout(() => {
+        codeInputRefs.current[0]?.focus();
+      }, 100);
+    } catch (err) {
+      setError("Failed to resend code: " + (err.message || "Please try again later."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (overrideCode) => {
+    const entered = typeof overrideCode === "string" ? overrideCode : code.join("");
+    if (entered.length < 6) {
+      setError("Please enter the complete 6-digit verification code.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      if (!pendingSignup || entered !== pendingSignup.code) {
+        throw new Error("Invalid verification code. Please check your email and try again.");
+      }
+
+      // Verification matched! Create verified user account in Firebase
+      const u = await signUpWithEmail(pendingSignup.email, pendingSignup.password, pendingSignup.fullName);
+
+      if (typeof window !== "undefined") {
+        const name = pendingSignup.fullName || u?.displayName || u?.email?.split("@")[0] || "Delegate";
+        localStorage.setItem("resolve_user_name", name);
+        localStorage.setItem("resolve_user_email", pendingSignup.email || "");
+        localStorage.setItem("resolve_user_verified", "true");
+        if (window.autofillAllKnownFields && u) window.autofillAllKnownFields(u);
+      }
+
+      setSuccess("Email verified successfully! Welcome to Resolve MUN 2.0.");
+      setTimeout(() => {
+        setMode("pathway");
+      }, 600);
+    } catch (err) {
+      setError(err.message || "Verification failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Firebase auth state subscription
+  useEffect(() => {
+    setShaderMounted(true);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setCurrentUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Delegate",
+          photoURL: firebaseUser.photoURL || "",
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    const handle = (e) => { if (e.key === "Escape" && isOpen) onClose(); };
-    window.addEventListener("keydown", handle);
-    return () => window.removeEventListener("keydown", handle);
+    if (isOpen) {
+      setMode(initialMode || (currentUser ? "profile" : "signup"));
+      setError("");
+      setSuccess("");
+    }
+  }, [isOpen, initialMode, currentUser]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape" && isOpen) onClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, [isOpen, onClose]);
 
   useEffect(() => {
@@ -57,361 +202,870 @@ export function AuthModal({ isOpen, onClose }) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
-      setError(""); setSuccess("");
+      setError("");
+      setSuccess("");
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleEmailAuth = async (e) => {
-    e.preventDefault(); setError(""); setSuccess(""); setLoading(true);
+    if (e && e.preventDefault) e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (mode === "signup") {
+      if (!agreeTerms || !agreePrivacy) {
+        setError("Please check both the Terms & Conditions and Privacy Policy boxes to proceed.");
+        return;
+      }
+    }
+
+    setLoading(true);
+
     try {
       if (mode === "forgot") {
         if (!email) throw new Error("Please enter your email address.");
-        await sendPasswordResetEmail(auth, email);
-        setSuccess("Password reset link sent! Check your inbox.");
-        setLoading(false); return;
+        await sendPasswordReset(email);
+        setSuccess("Password reset instructions have been sent to your email.");
+        setLoading(false);
+        return;
       }
+
       if (mode === "signup") {
-        if (!email || !password) throw new Error("Please fill in all fields.");
+        if (!email || !password) throw new Error("Please fill in your email and password.");
         if (password.length < 6) throw new Error("Password must be at least 6 characters.");
-        if (password !== confirmPassword) throw new Error("Passwords do not match.");
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        if (typeof window !== "undefined" && cred.user) {
-          localStorage.setItem("resolve_user_email", cred.user.email || "");
-          if (window.autofillAllKnownFields) window.autofillAllKnownFields(cred.user);
-        }
-        setSuccess("Account created! Welcome to Resolve MUN 2.0.");
+
+        const fullName = `${firstName} ${lastName}`.trim() || "Delegate";
+        const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+
+        setPendingSignup({
+          email: email.trim(),
+          password,
+          fullName,
+          code: otpCode,
+        });
+
+        // Dispatch verification code via Google Apps Script mailer
+        await sendVerificationCodeEmail(email.trim(), otpCode, fullName);
+
+        setCode(["", "", "", "", "", ""]);
+        setResendCooldown(45);
+        setMode("code");
+        setSuccess(`Verification code sent to ${email.trim()}. Enter below to activate.`);
+        setLoading(false);
+        return;
       } else {
-        if (!email || !password) throw new Error("Please enter email and password.");
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        if (typeof window !== "undefined" && cred.user) {
-          localStorage.setItem("resolve_user_email", cred.user.email || "");
-          if (window.autofillAllKnownFields) window.autofillAllKnownFields(cred.user);
+        // Sign in mode
+        if (!email || !password) throw new Error("Please enter both email and password.");
+        const u = await signInWithEmail(email, password);
+
+        if (typeof window !== "undefined" && u) {
+          const name = u.displayName || u.email?.split("@")[0] || "Delegate";
+          localStorage.setItem("resolve_user_name", name);
+          localStorage.setItem("resolve_user_email", u.email || "");
+          localStorage.setItem("resolve_user_photo", u.photoURL || "");
+          if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
         }
         setSuccess("Signed in successfully!");
       }
     } catch (err) {
       let msg = err.message || "Authentication failed.";
-      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") msg = "Invalid email or password.";
-      else if (err.code === "auth/user-not-found") msg = "No account found with this email.";
-      else if (err.code === "auth/email-already-in-use") msg = "An account already exists with this email.";
-      else if (err.code === "auth/weak-password") msg = "Password should be at least 6 characters.";
-      else if (err.code === "auth/invalid-email") msg = "Please enter a valid email address.";
-      else if (err.code === "auth/popup-closed-by-user") msg = "Sign in popup closed before finishing.";
+      if (err.code === "auth/invalid-credential" || err.message?.includes("invalid-credential")) {
+        msg = "Invalid email or password. Please check your credentials.";
+      } else if (err.code === "auth/email-already-in-use" || err.message?.includes("email-already-in-use")) {
+        msg = "An account with this email already exists. Please sign in.";
+      } else if (err.code === "auth/user-not-found") {
+        msg = "No account found with this email. Please sign up.";
+      } else if (err.code === "auth/wrong-password") {
+        msg = "Incorrect password. Please try again.";
+      }
       setError(msg);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSocialAuth = async () => {
-    setError(""); setSuccess(""); setSocialLoading(true);
+    setError("");
+    setSuccess("");
+
+    if (mode === "signup" && (!agreeTerms || !agreePrivacy)) {
+      setError("Please check both the Terms and Conditions and Privacy Policy boxes before registering with Google.");
+      return;
+    }
+
+    setSocialLoading(true);
     try {
-      const cred = await signInWithPopup(auth, googleProvider);
-      const u = cred.user;
+      const u = await signInWithGoogle();
       if (typeof window !== "undefined" && u) {
-        localStorage.setItem("resolve_user_name", u.displayName || "");
+        const name = u.displayName || u.email?.split("@")[0] || "Delegate";
+        localStorage.setItem("resolve_user_name", name);
         localStorage.setItem("resolve_user_email", u.email || "");
         localStorage.setItem("resolve_user_photo", u.photoURL || "");
+        localStorage.setItem("resolve_user_verified", "true");
         if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
       }
-      setSuccess("Signed in with Google!");
     } catch (err) {
-      setError(err.code === "auth/popup-closed-by-user" ? "Sign-in cancelled." : (err.message || "Google sign-in failed."));
-    } finally { setSocialLoading(false); }
+      setError(err.message || "Google sign-in failed.");
+    } finally {
+      setSocialLoading(false);
+    }
   };
 
-  const handleProceedToRegistration = () => {
+  const handlePathwaySelect = (track) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("resolve_selection_opened", "true");
     }
     onClose();
-    if (typeof window.openSelectionModal === "function") {
-      window.openSelectionModal();
-    } else {
-      const modal = document.getElementById("selectionModal");
-      if (modal) { modal.classList.add("active"); document.body.style.overflow = "hidden"; }
+
+    if (typeof window !== "undefined") {
+      if (track === "delegate") {
+        if (window.selectPathway) window.selectPathway("delegate");
+        else if (window.openRegistration) window.openRegistration();
+      } else if (track === "delegation") {
+        if (window.selectPathway) window.selectPathway("delegation");
+        else if (window.openDelRegistration) window.openDelRegistration();
+      } else if (track === "secretariat") {
+        if (window.selectPathway) window.selectPathway("secretariat");
+        else {
+          const m = document.getElementById("secretariatModal");
+          if (m) m.classList.add("active");
+        }
+      }
     }
   };
 
   const handleSignOut = async () => {
-    try { await signOut(auth); setSuccess("Signed out."); } catch (err) { setError(err.message); }
+    try {
+      await signOutUser();
+      setSuccess("Signed out successfully.");
+      setMode("signin");
+    } catch (err) {
+      setError(err.message || "Failed to sign out.");
+    }
   };
 
-  const switchMode = (m) => { setMode(m); setError(""); setSuccess(""); };
+  const switchMode = (m) => {
+    setMode(m);
+    setError("");
+    setSuccess("");
+  };
+
+  const isSignupLocked = mode === "signup" && (!agreeTerms || !agreePrivacy);
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex bg-[#050507] overflow-hidden"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl overflow-hidden overscroll-none select-none font-sans"
       role="dialog"
       aria-modal="true"
     >
-      {/* ── LEFT PANEL: Immersive Visual ── */}
-      <div className="hidden md:flex relative w-[45%] shrink-0 flex-col justify-between overflow-hidden bg-[#06040f]">
-        {/* Full cover image */}
-        <img
-          src="/images/image.png"
-          alt="Resolve MUN"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
-        />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#06040f] via-[#06040f]/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#06040f] via-transparent to-transparent" />
+      {/* Background click dismiss */}
+      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-        {/* Top logo */}
-        <div className="relative z-10 p-8">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-[0_0_16px_rgba(124,58,237,0.6)]">
-              <span className="text-white font-black font-mono text-base">R</span>
-            </div>
-            <div>
-              <p className="text-[9px] font-mono uppercase tracking-[0.35em] text-violet-300/70">Official Portal</p>
-              <p className="text-sm font-extrabold tracking-widest text-white uppercase">RESOLVE MUN 2.0</p>
-            </div>
-          </div>
-        </div>
+      {/* Main Two-Column Container */}
+      <div className="relative z-10 w-full max-w-[1040px] h-auto max-h-[90vh] rounded-2xl border-2 border-white/25 bg-[#07080e] shadow-[0_20px_58px_rgba(0,0,0,0.80),0_0_28px_rgba(99,102,241,0.10)] overflow-hidden grid md:grid-cols-[1.26fr_0.74fr]">
+        
+        {/* Rounded-Edge Square High-Visibility Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3.5 right-3.5 z-40 w-10 h-10 rounded-xl bg-black/75 hover:bg-black border-2 border-white/35 hover:border-white/70 text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.6)] active:scale-95 group"
+        >
+          <X className="w-5 h-5 text-white/90 group-hover:text-white transition-colors" strokeWidth={2.2} />
+        </button>
 
-        {/* Bottom copy */}
-        <div className="relative z-10 p-8 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/20 border border-violet-400/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse inline-block" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-violet-300 font-bold">Applications Open</span>
-          </div>
-          <h2 className="text-4xl font-bold text-white leading-tight" style={{ fontFamily: "Crimson Pro, serif" }}>
-            Where Diplomacy<br />Meets Ambition
-          </h2>
-          <p className="text-sm text-white/55 leading-relaxed max-w-xs">
-            Hyderabad's premier Model United Nations conference returns. Join 300+ delegates for three days of rigorous diplomacy.
-          </p>
-          <div className="grid grid-cols-3 gap-2 pt-2">
-            {[{ v: "300+", l: "Delegates" }, { v: "3", l: "Days" }, { v: "2.0", l: "Edition" }].map(({ v, l }) => (
-              <div key={l} className="p-3 rounded-2xl bg-white/[0.06] border border-white/[0.08] text-center">
-                <p className="text-base font-black text-white">{v}</p>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-white/40 mt-0.5">{l}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+        {/* ── LEFT COLUMN ── */}
+        <div className="flex flex-col justify-between overflow-y-auto px-5 py-6 sm:px-7 sm:py-7 border-b md:border-b-0 md:border-r border-white/10 max-h-[90vh] scrollbar-none">
+          <div key={mode} className="auth-phase w-full max-w-[490px] mx-auto my-auto">
+            
+            {/* 1. CODE VERIFICATION VIEW */}
+            {mode === "code" && (
+              <section className="space-y-4 text-center" aria-labelledby="code-title">
+                {/* Top Nav Back Link */}
+                <div className="flex items-center justify-between text-left">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signup");
+                      setCode(["", "", "", "", "", ""]);
+                      setError("");
+                      setSuccess("");
+                    }}
+                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/45 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-white/40 group-hover:text-white" />
+                    <span>Back to sign up</span>
+                  </button>
+                  <span className="text-[10px] font-mono tracking-[0.2em] text-amber-400 uppercase font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                    UNVERIFIED
+                  </span>
+                </div>
 
-      {/* ── RIGHT PANEL: Auth Form ── */}
-      <div className="relative flex-1 flex flex-col bg-[#060818] overflow-y-auto">
-        <Orbs />
+                <div className="space-y-1.5 pt-1">
+                  <span className="block text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">
+                    Security Verification
+                  </span>
+                  <h1 id="code-title" className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-white uppercase">
+                    We sent you a code
+                  </h1>
+                  <p className="text-xs sm:text-[13px] text-white/50 font-normal leading-relaxed max-w-[40ch] mx-auto font-sans">
+                    Please enter the 6-digit activation code sent to{" "}
+                    <strong className="text-white font-medium">{pendingSignup?.email || email}</strong>
+                  </p>
+                </div>
 
-        {/* Top bar */}
-        <div className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center gap-2 text-xs font-semibold text-white/50 hover:text-white px-4 py-2 rounded-full bg-white/[0.06] hover:bg-white/10 border border-white/10 transition-all cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
-          </button>
+                {/* Feedback Alerts */}
+                {error && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs text-left animate-in fade-in duration-150">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                    <span className="leading-snug">{error}</span>
+                  </div>
+                )}
+                {success && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs text-left animate-in fade-in duration-150">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span className="leading-snug">{success}</span>
+                  </div>
+                )}
 
-          {/* Mobile logo */}
-          <div className="md:hidden flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
-              <span className="text-white font-black font-mono text-xs">R</span>
-            </div>
-            <span className="text-xs font-black tracking-widest uppercase text-white">RESOLVE <span className="text-violet-400">2.0</span></span>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/[0.06] hover:bg-white/15 border border-white/10 text-white/50 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Auth content */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-10">
-          <div className="w-full max-w-[400px]">
-
-            {/* ── LOGGED IN STATE ── */}
-            {currentUser ? (
-              <div className="flex flex-col items-center text-center py-4 space-y-6">
-                {/* Avatar */}
-                <div className="relative">
-                  {currentUser.photoURL ? (
-                    <img src={currentUser.photoURL} alt={currentUser.displayName} className="w-20 h-20 rounded-2xl object-cover border-2 border-violet-400/30 shadow-[0_0_32px_rgba(124,58,237,0.3)]" />
-                  ) : (
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-white font-black text-2xl border border-violet-400/30 shadow-[0_0_32px_rgba(124,58,237,0.3)]">
-                      {(currentUser.displayName || currentUser.email || "D").slice(0, 1).toUpperCase()}
+                {/* 6-Digit Capsule Container */}
+                <div className="w-full py-2">
+                  <div className="relative rounded-full py-3.5 px-4 sm:px-6 border border-white/15 bg-white/[0.03] shadow-inner max-w-sm mx-auto">
+                    <div className="flex items-center justify-center">
+                      {code.map((digit, i) => (
+                        <div key={i} className="flex items-center">
+                          <div className="relative w-8 sm:w-9 h-9 flex items-center justify-center">
+                            <input
+                              ref={(el) => {
+                                codeInputRefs.current[i] = el;
+                              }}
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={1}
+                              value={digit}
+                              onChange={(e) => handleCodeChange(i, e.target.value)}
+                              onKeyDown={(e) => handleKeyDown(i, e)}
+                              className="w-8 sm:w-9 text-center text-xl sm:text-2xl bg-transparent text-white border-none focus:outline-none focus:ring-0 appearance-none font-mono font-bold"
+                              style={{ caretColor: "transparent" }}
+                              aria-label={`Verification digit ${i + 1}`}
+                            />
+                            {!digit && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <span className="text-xl sm:text-2xl text-white/20 font-mono font-light">0</span>
+                              </div>
+                            )}
+                          </div>
+                          {i < 5 && (
+                            <span className="text-white/15 text-lg sm:text-xl px-1 sm:px-1.5 select-none font-light">|</span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-emerald-500 border-2 border-[#060818] flex items-center justify-center shadow-[0_0_16px_rgba(52,211,153,0.5)]">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                   </div>
                 </div>
 
+                {/* Resend Code Link */}
                 <div>
-                  <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-violet-400 mb-2">Authentication Successful</p>
-                  <h2 className="text-3xl font-bold text-white mb-1.5" style={{ fontFamily: "Crimson Pro, serif" }}>
-                    Welcome, {currentUser.displayName?.split(" ")[0] || "Delegate"}!
-                  </h2>
-                  <p className="text-sm text-white/45">{currentUser.email}</p>
-                </div>
-
-                {/* Benefits preview */}
-                <div className="w-full grid grid-cols-3 gap-2 text-center">
-                  {[{ icon: Globe, label: "Country\nAllocation" }, { icon: QrCode, label: "Digital\nPass" }, { icon: Award, label: "Conference\nCertificate" }].map(({ icon: Icon, label }) => (
-                    <div key={label} className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.07]">
-                      <Icon className="w-4 h-4 mx-auto mb-1.5 text-violet-400" />
-                      <p className="text-[9px] font-mono text-white/40 whitespace-pre-line">{label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="w-full space-y-3">
                   <button
                     type="button"
-                    onClick={handleProceedToRegistration}
-                    className="w-full h-13 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold text-sm tracking-wider uppercase transition-all shadow-[0_8px_32px_rgba(124,58,237,0.4)] hover:shadow-[0_12px_48px_rgba(124,58,237,0.6)] active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2.5"
-                    style={{ height: "52px" }}
+                    onClick={handleResendCode}
+                    disabled={resendCooldown > 0 || loading}
+                    className={`text-xs font-mono transition-colors ${
+                      resendCooldown > 0
+                        ? "text-white/30 cursor-not-allowed"
+                        : "text-white/50 hover:text-white cursor-pointer underline underline-offset-4"
+                    }`}
                   >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Proceed</span>
-                    <ArrowRight className="w-4 h-4" />
+                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
                   </button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex w-full gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signup");
+                      setCode(["", "", "", "", "", ""]);
+                      setError("");
+                      setSuccess("");
+                    }}
+                    className="rounded-full bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-3 transition-colors text-xs uppercase tracking-wider cursor-pointer active:scale-95"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyCode()}
+                    disabled={!code.every((d) => d !== "") || loading}
+                    className={`flex-1 rounded-full font-bold py-3 text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
+                      code.every((d) => d !== "") && !loading
+                        ? "bg-white text-black border-transparent hover:bg-white/90 cursor-pointer active:scale-95 shadow-lg"
+                        : "bg-white/5 text-white/35 border border-white/10 cursor-not-allowed"
+                    }`}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Verifying...</span>
+                      </>
+                    ) : (
+                      <span>Verify &amp; Activate</span>
+                    )}
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-white/35 pt-2 leading-relaxed">
+                  Keep this window open. Entering the code will authenticate and activate your delegate profile.
+                </p>
+              </section>
+            )}
+
+            {/* 2. PATHWAY VIEW */}
+            {mode === "pathway" && (
+              <section className="space-y-4" aria-labelledby="pathway-title">
+                {/* Top Nav Back Link */}
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => switchMode(currentUser ? "profile" : "signup")}
+                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/45 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-white/40 group-hover:text-white" />
+                    <span>{currentUser ? "Back to profile" : "Back to sign in"}</span>
+                  </button>
+                  <span className="text-[10px] font-mono tracking-[0.2em] text-indigo-400/80 uppercase font-semibold">
+                    HYDERABAD 2026
+                  </span>
+                </div>
+
+                {/* Header */}
+                <div>
+                  <span className="block mb-2 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">Select your role</span>
+                  <h1 id="pathway-title" className="font-sans !text-[28px] sm:!text-[31px] font-semibold tracking-[-0.045em] leading-none text-white">
+                    Choose Pathway
+                  </h1>
+                  <p className="mt-2 text-[13px] text-white/50 leading-relaxed font-sans max-w-[42ch]">
+                    Select your participation track for Resolve MUN 2.0.
+                  </p>
+                </div>
+
+                <div className="space-y-2" aria-label="Participation pathways">
+                  {/* Delegate */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handlePathwaySelect("delegate")}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("delegate"); } }}
+                    className="group relative flex w-full items-center justify-between gap-5 rounded-2xl border-2 border-white/[0.24] bg-[#0b0c14] px-5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/[0.50] hover:bg-[#10111b] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 active:translate-y-0 active:scale-[0.99] cursor-pointer"
+                  >
+                    <span className="space-y-1 text-left min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                          Delegate
+                        </span>
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-400/20 text-violet-200/90 font-medium">
+                          Individual
+                        </span>
+                      </div>
+                      <span className="block text-xs text-white/50 leading-5 group-hover:text-white/70 transition-colors">
+                        Single delegate representation in one specialized diplomatic committee.
+                      </span>
+                    </span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white/[0.22] bg-white/[0.025] text-white/45 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-white/[0.52] group-hover:bg-white/[0.10] group-hover:text-white" aria-hidden="true">
+                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
+                  </div>
+
+                  {/* Delegation */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handlePathwaySelect("delegation")}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("delegation"); } }}
+                    className="group relative flex w-full items-center justify-between gap-5 rounded-2xl border-2 border-white/[0.24] bg-[#0b0c14] px-5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/[0.50] hover:bg-[#10111b] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 active:translate-y-0 active:scale-[0.99] cursor-pointer"
+                  >
+                    <span className="space-y-1 text-left min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                          Delegation
+                        </span>
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-200/90 font-medium">
+                          Institution
+                        </span>
+                      </div>
+                      <span className="block text-xs text-white/50 leading-5 group-hover:text-white/70 transition-colors">
+                        School or university delegations with 8+ student representatives.
+                      </span>
+                    </span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white/[0.22] bg-white/[0.025] text-white/45 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-white/[0.52] group-hover:bg-white/[0.10] group-hover:text-white" aria-hidden="true">
+                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
+                  </div>
+
+                  {/* Secretariat */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handlePathwaySelect("secretariat")}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("secretariat"); } }}
+                    className="group relative flex w-full items-center justify-between gap-5 rounded-2xl border-2 border-white/[0.24] bg-[#0b0c14] px-5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/[0.50] hover:bg-[#10111b] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 active:translate-y-0 active:scale-[0.99] cursor-pointer"
+                  >
+                    <span className="space-y-1 text-left min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                          Secretariat
+                        </span>
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-200/90 font-medium">
+                          Executive
+                        </span>
+                      </div>
+                      <span className="block text-xs text-white/50 leading-5 group-hover:text-white/70 transition-colors">
+                        High-command leadership, USG positions, and directors.
+                      </span>
+                    </span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white/[0.22] bg-white/[0.025] text-white/45 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-white/[0.52] group-hover:bg-white/[0.10] group-hover:text-white" aria-hidden="true">
+                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
+                  </div>
+                </div>
+
+                {/* Subdued Footer for Closed Tracks */}
+                <div className="pt-3.5 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-sans">
+                  <span>Looking for OC or EB?</span>
+                  <span className="font-mono uppercase tracking-wider text-[10px] text-white/30">
+                    Round 1 Closed
+                  </span>
+                </div>
+              </section>
+            )}
+
+            {/* 3. AUTHENTICATED PROFILE VIEW */}
+            {mode === "profile" && currentUser && (
+              <div className="py-2 text-center space-y-4">
+                <div className="flex flex-col items-center">
+                  {currentUser.photoURL ? (
+                    <img
+                      src={currentUser.photoURL}
+                      alt={currentUser.displayName || "Delegate"}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.15)] mb-3"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-500 text-white font-bold text-xl flex items-center justify-center border-2 border-white/30 shadow-[0_0_20px_rgba(99,102,241,0.3)] mb-3 font-sans">
+                      {(currentUser.displayName || currentUser.email || "D").slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <h2 className="font-sans text-xl sm:text-2xl font-bold text-white tracking-tight">
+                    Welcome, {currentUser.displayName || "Delegate"}
+                  </h2>
+                  <p className="text-xs text-white/50 font-mono mt-0.5 truncate max-w-[280px]">
+                    {currentUser.email}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white/60 leading-relaxed text-left space-y-1.5 font-sans">
+                  <p className="font-semibold text-white/90">Active Delegate Session</p>
+                  <p>
+                    Your delegate credentials are verified. Proceed to submit your conference application or access your real-time dashboard.
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  {/* Clean Solid White Primary Button */}
+                  <button
+                    type="button"
+                    onClick={() => switchMode("pathway")}
+                    className="w-full h-11 flex items-center justify-center rounded-xl bg-white text-black font-semibold text-xs sm:text-sm tracking-tight transition-all hover:bg-white/90 active:scale-[0.99] cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                  >
+                    Proceed to Applications
+                  </button>
+
+                  {/* Clean Obsidian Secondary Button */}
+                  <Link
+                    href="/dashboard"
+                    onClick={onClose}
+                    className="w-full h-11 flex items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs sm:text-sm font-medium tracking-tight transition-colors"
+                  >
+                    Open Delegate Dashboard
+                  </Link>
+
+                  {/* Minimal Sign Out Link */}
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="w-full h-11 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/15 text-white/60 hover:text-white text-xs font-semibold tracking-wider transition-all cursor-pointer"
+                    className="w-full text-center py-1.5 text-xs font-medium text-white/40 hover:text-rose-300 transition-colors cursor-pointer"
                   >
-                    Sign Out
+                    Sign out of session
                   </button>
                 </div>
               </div>
-            ) : (
-              /* ── SIGN IN / UP / FORGOT FORM ── */
-              <div>
+            )}
+
+            {/* 4. SIGNUP / SIGNIN / FORGOT VIEW */}
+            {mode !== "code" && mode !== "pathway" && !(mode === "profile" && currentUser) && (
+              <div className="space-y-4">
                 {/* Header */}
-                <div className="mb-7">
-                  <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-violet-400 mb-2">
-                    {mode === "signin" ? "Delegate Portal" : mode === "signup" ? "Create Account" : "Password Recovery"}
-                  </p>
-                  <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" style={{ fontFamily: "Crimson Pro, serif" }}>
-                    {mode === "signin" && "Welcome Back"}
-                    {mode === "signup" && "Join Resolve MUN"}
-                    {mode === "forgot" && "Reset Password"}
+                <div>
+                  <h1 className="font-sans text-2xl sm:text-[26px] font-bold tracking-tight text-white">
+                    {mode === "signup" && "Create an account"}
+                    {mode === "signin" && "Sign in to account"}
+                    {mode === "forgot" && "Recover password"}
                   </h1>
-                  <p className="text-sm text-white/45 mt-2">
-                    {mode === "signin" && (<>No account?{" "}<button type="button" onClick={() => switchMode("signup")} className="text-violet-400 hover:text-violet-300 font-semibold underline underline-offset-4 cursor-pointer transition-colors">Sign up</button></>)}
-                    {mode === "signup" && (<>Have an account?{" "}<button type="button" onClick={() => switchMode("signin")} className="text-violet-400 hover:text-violet-300 font-semibold underline underline-offset-4 cursor-pointer transition-colors">Sign in</button></>)}
-                    {mode === "forgot" && (<>Remembered?{" "}<button type="button" onClick={() => switchMode("signin")} className="text-violet-400 hover:text-violet-300 font-semibold underline underline-offset-4 cursor-pointer transition-colors">Back to sign in</button></>)}
-                  </p>
+                  
+                  {/* Sleek inline mode switcher */}
+                  <div className="flex items-center gap-1.5 mt-1 text-xs text-white/50 font-normal font-sans">
+                    <span>
+                      {mode === "signup" && "Already have an account?"}
+                      {mode === "signin" && "New to Resolve MUN?"}
+                      {mode === "forgot" && "Remember your password?"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => switchMode(mode === "signup" ? "signin" : mode === "signin" ? "signup" : "signin")}
+                      className="font-semibold text-violet-400 hover:text-violet-300 transition-colors cursor-pointer underline-offset-2 hover:underline"
+                    >
+                      {mode === "signup" && "Sign in"}
+                      {mode === "signin" && "Create account"}
+                      {mode === "forgot" && "Back to sign in"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Google Button with requirement enforcement */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleSocialAuth}
+                    disabled={socialLoading || loading}
+                    className={cn(
+                      "w-full h-10 flex items-center justify-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.05] hover:bg-white/[0.1] active:scale-[0.99] text-xs font-semibold text-white transition-all cursor-pointer shadow-sm disabled:opacity-60",
+                      isSignupLocked && "opacity-70 hover:border-white/25"
+                    )}
+                  >
+                    <GoogleIcon />
+                    <span>{socialLoading ? "Connecting to Google..." : "Continue with Google"}</span>
+                  </button>
+                  {mode === "signup" && (!agreeTerms || !agreePrivacy) && (
+                    <p className="text-[10px] text-white/40 text-center mt-1.5 font-sans">
+                      * Check both agreements below to enable registration
+                    </p>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex-1 h-px bg-white/10" />
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+                    or continue with email
+                  </span>
+                  <div className="flex-1 h-px bg-white/10" />
                 </div>
 
                 {/* Alerts */}
                 {error && (
-                  <div className="mb-5 p-4 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs flex items-start gap-2 animate-in fade-in duration-150">
                     <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
-                    <span>{error}</span>
+                    <span className="leading-snug">{error}</span>
                   </div>
                 )}
                 {success && (
-                  <div className="mb-5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs flex items-start gap-2 animate-in fade-in duration-150">
                     <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
-                    <span>{success}</span>
+                    <span className="leading-snug">{success}</span>
                   </div>
                 )}
 
-                {/* Form */}
-                <form onSubmit={handleEmailAuth} className="space-y-4">
-                  {/* Email */}
-                  <div>
-                    <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-white/45 mb-2">Email Address</label>
-                    <input
-                      type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      className="w-full h-12 px-4 rounded-2xl bg-white/[0.06] border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-violet-400 focus:bg-white/[0.08] transition-all"
-                    />
-                  </div>
-
-                  {/* Password */}
-                  {mode !== "forgot" && (
-                    <div>
-                      <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-white/45 mb-2">Password</label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full h-12 px-4 pr-12 rounded-2xl bg-white/[0.06] border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-violet-400 focus:bg-white/[0.08] transition-all"
-                        />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 hover:text-white transition-colors cursor-pointer">
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Confirm Password */}
+                {/* Form Inputs */}
+                <form onSubmit={handleEmailAuth} className="space-y-3">
                   {mode === "signup" && (
-                    <div>
-                      <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-white/45 mb-2">Confirm Password</label>
-                      <input
-                        type={showPassword ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full h-12 px-4 rounded-2xl bg-white/[0.06] border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-violet-400 focus:bg-white/[0.08] transition-all"
+                    <div className="grid gap-3 grid-cols-2">
+                      <FieldBox
+                        label="First Name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="John"
+                      />
+                      <FieldBox
+                        label="Last Name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="Doe"
                       />
                     </div>
                   )}
 
-                  {/* Forgot link */}
+                  <FieldBox
+                    label="Email Address"
+                    value={email}
+                    type="email"
+                    required
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="delegate@example.com"
+                  />
+
+                  {mode !== "forgot" && (
+                    <FieldBox
+                      label="Password"
+                      value={password}
+                      type="password"
+                      required
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                    />
+                  )}
+
                   {mode === "signin" && (
-                    <div className="text-right -mt-1">
-                      <button type="button" onClick={() => switchMode("forgot")} className="text-xs text-white/40 hover:text-violet-300 transition-colors cursor-pointer">Forgot password?</button>
+                    <div className="flex justify-end pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => switchMode("forgot")}
+                        className="text-[11px] text-white/45 hover:text-white transition-colors cursor-pointer"
+                      >
+                        Forgot password?
+                      </button>
                     </div>
                   )}
 
-                  {/* Submit */}
+                  {/* Dual Mandatory Checkboxes for Registration */}
+                  {mode === "signup" && (
+                    <div className={cn(
+                      "space-y-2 pt-1 p-2.5 rounded-xl transition-colors",
+                      error && (!agreeTerms || !agreePrivacy) ? "bg-red-500/[0.06] border border-red-500/20" : ""
+                    )}>
+                      {/* 1. Terms and Conditions */}
+                      <CheckboxLine
+                        checked={agreeTerms}
+                        onChange={(e) => {
+                          setAgreeTerms(e.target.checked);
+                          if (error) setError("");
+                        }}
+                      >
+                        I agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (typeof window !== "undefined" && window.openTermsModal) {
+                              window.openTermsModal();
+                            }
+                          }}
+                          className="font-medium text-white/90 underline underline-offset-2 hover:text-white cursor-pointer bg-transparent border-none p-0 inline"
+                        >
+                          Terms &amp; Conditions
+                        </button>
+                      </CheckboxLine>
+
+                      {/* 2. Privacy Policy */}
+                      <CheckboxLine
+                        checked={agreePrivacy}
+                        onChange={(e) => {
+                          setAgreePrivacy(e.target.checked);
+                          if (error) setError("");
+                        }}
+                      >
+                        I agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (typeof window !== "undefined" && window.openTermsModal) {
+                              window.openTermsModal();
+                            }
+                          }}
+                          className="font-medium text-white/90 underline underline-offset-2 hover:text-white cursor-pointer bg-transparent border-none p-0 inline"
+                        >
+                          Privacy Policy
+                        </button>
+                      </CheckboxLine>
+
+                      {/* 3. Optional Updates */}
+                      <CheckboxLine
+                        checked={receiveUpdates}
+                        onChange={(e) => setReceiveUpdates(e.target.checked)}
+                      >
+                        Receive matrix releases &amp; dossier notifications
+                      </CheckboxLine>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
                   <button
                     type="submit"
                     disabled={loading || socialLoading}
-                    className="w-full h-12 rounded-2xl bg-white text-[#060818] hover:bg-violet-50 font-black text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all shadow-[0_4px_24px_rgba(255,255,255,0.2)] active:scale-[0.98] disabled:opacity-60 cursor-pointer mt-1"
+                    className={cn(
+                      "mt-2 flex h-10 w-full items-center justify-center rounded-xl bg-white text-xs sm:text-sm font-semibold text-black transition-all hover:bg-white/90 active:scale-[0.99] cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)] disabled:opacity-60",
+                      isSignupLocked && "opacity-70 hover:opacity-90"
+                    )}
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin text-[#060818]" /> : (
-                      <>
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-black" />
+                    ) : (
+                      <span>
+                        {mode === "signup" && "Submit & Register"}
                         {mode === "signin" && "Sign In"}
-                        {mode === "signup" && "Create Account"}
                         {mode === "forgot" && "Send Reset Link"}
-                      </>
+                      </span>
                     )}
                   </button>
                 </form>
-
-                {/* Divider */}
-                <div className="relative my-6 flex items-center gap-4">
-                  <div className="flex-1 h-px bg-white/[0.08]" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">or</span>
-                  <div className="flex-1 h-px bg-white/[0.08]" />
-                </div>
-
-                {/* Google */}
-                <button
-                  type="button"
-                  onClick={handleSocialAuth}
-                  disabled={loading || socialLoading}
-                  className="w-full h-12 px-4 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 hover:border-white/20 text-white text-sm font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-60 cursor-pointer"
-                >
-                  {socialLoading ? <Loader2 className="w-4 h-4 animate-spin text-violet-400" /> : <GoogleIcon className="w-5 h-5 shrink-0" />}
-                  <span>Continue with Google</span>
-                </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="relative z-10 px-6 py-4 border-t border-white/[0.05] text-center">
-          <p className="text-[10px] font-mono text-white/20 tracking-widest uppercase">RESOLVE MUN 2.0 · Secure Authentication</p>
+        {/* ── RIGHT COLUMN: SHADER & BRAND VISUAL ── */}
+        <div className="relative hidden md:flex min-h-[480px] overflow-hidden rounded-xl bg-black p-6 xl:p-8 text-white flex-col justify-between m-2 border border-white/10 select-none">
+          {/* GrainGradient Background */}
+          {shaderMounted ? (
+            <GrainGradient
+              speed={0.9}
+              scale={1}
+              rotation={0}
+              offsetX={0}
+              offsetY={0}
+              softness={0.5}
+              intensity={0.5}
+              noise={0.25}
+              shape="corners"
+              frame={2854.5}
+              colors={["#FFFFFF", "#8B5CF6", "#3B82F6", "#FFFFFF"]}
+              colorBack="#00000000"
+              className="absolute inset-0 bg-black pointer-events-none"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-[#100726] via-[#090b1c] to-[#04050a]" />
+          )}
+
+          {/* Top Info */}
+          <div className="relative z-10 flex items-center justify-start">
+            <span className="text-[11px] font-mono tracking-[0.25em] text-white/60 font-semibold uppercase">
+              EDITION 2026
+            </span>
+          </div>
+
+          {/* Headline & Copy */}
+          <div className="relative z-10 py-6 my-auto">
+            <h2 className="max-w-[360px] text-3xl sm:text-4xl font-medium tracking-[-0.04em] text-white leading-[1.02] font-sans">
+              Resolve.
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-200 via-indigo-200 to-blue-200">
+                Reform.
+              </span>
+              <br />
+              Reconcile.
+            </h2>
+            <p className="mt-3.5 max-w-[300px] text-xs sm:text-sm text-white/65 leading-relaxed font-sans">
+              Hyderabad's premier conference. Multilateral debate, crisis diplomacy, and strategic consensus across 6 dynamic committees.
+            </p>
+          </div>
+
+          {/* Bottom Accent Line */}
+          <div className="relative z-10 h-0.5 w-10 bg-gradient-to-r from-violet-400 to-blue-400 rounded-full opacity-60" />
         </div>
       </div>
     </div>
   );
 }
 
-export default AuthModal;
+function FieldBox({
+  label,
+  value,
+  onChange,
+  type = "text",
+  required = false,
+  placeholder,
+  className,
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const effectiveType = isPassword && showPassword ? "text" : type;
+
+  return (
+    <div className={cn("flex flex-col gap-1 text-left", className)}>
+      <label className="text-[11px] font-medium text-white/70 font-sans tracking-wide">
+        {label}
+        {required && <span className="text-violet-400 ml-0.5">*</span>}
+      </label>
+      <div className="relative">
+        <input
+          type={effectiveType}
+          value={value}
+          onChange={onChange}
+          required={required}
+          placeholder={placeholder}
+          className="h-9.5 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder-white/25 transition-all focus:border-white/40 focus:bg-white/[0.07] focus:outline-none font-sans"
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors cursor-pointer"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CheckboxLine({ checked, onChange, children }) {
+  return (
+    <label className="flex items-start gap-2 cursor-pointer select-none group text-left">
+      <div className="relative flex items-center justify-center mt-0.5">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          className="peer sr-only"
+        />
+        <div className="w-3.5 h-3.5 rounded border border-white/30 bg-white/5 transition-all peer-checked:bg-white peer-checked:border-white peer-focus-visible:ring-2 peer-focus-visible:ring-violet-400 group-hover:border-white/50" />
+        <svg
+          className="absolute w-2.5 h-2.5 text-black opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+      <span className="text-[11px] text-white/55 leading-tight group-hover:text-white/75 transition-colors font-sans">
+        {children}
+      </span>
+    </label>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+      <path
+        fill="#EA4335"
+        d="M12 5c1.56 0 2.96.54 4.07 1.43l3.05-3.05C17.27 1.7 14.81 1 12 1 7.58 1 3.77 3.52 1.95 7.19l3.66 2.84C6.49 7.37 8.98 5 12 5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58l3.71 2.88c2.16-2 3.71-4.95 3.71-8.7z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.61 14.71a7.48 7.48 0 0 1 0-5.42L1.95 6.45A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.35l3.7-2.88.66-.76z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c3.24 0 5.95-1.08 7.93-2.91l-3.71-2.88c-1.07.73-2.44 1.16-4.22 1.16-3.02 0-5.51-2.37-6.39-5.03L1.95 16.18C3.77 19.85 7.58 22.37 12 23z"
+      />
+    </svg>
+  );
+}

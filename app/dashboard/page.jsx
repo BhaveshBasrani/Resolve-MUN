@@ -2,7 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { auth, onAuthStateChanged, signOut } from "@/lib/firebase";
+import {
+  auth,
+  signOutUser,
+  onAuthStateChanged,
+  fetchDelegateApplicationCached,
+  fetchSystemSettingsCached,
+} from "@/lib/firebase";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
@@ -148,37 +154,62 @@ export default function DelegateDashboard() {
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const normalized = {
+          uid: firebaseUser.uid,
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Delegate",
+          photoURL: firebaseUser.photoURL || "",
+        };
+        setUser(normalized);
+        fetchDelegateProfile(normalized.uid, normalized.email);
+      } else {
+        setUser(null);
+        setDelegateRecord(null);
+      }
       setAuthLoading(false);
-      if (u?.email) fetchDelegateProfile(u.email);
     });
-    return () => unsub();
+
+    return () => unsubscribe();
   }, []);
 
-  const fetchDelegateProfile = async (email) => {
+  const fetchDelegateProfile = async (userId, email, force = false) => {
     setDataLoading(true);
     try {
-      const [dRes, sRes] = await Promise.all([
-        fetch(`/api/delegate?email=${encodeURIComponent(email)}`),
-        fetch("/api/admin?adminKey=ResolveMUNAdmin2026@Secure"),
+      const [record, settings] = await Promise.all([
+        fetchDelegateApplicationCached(userId, email, force),
+        fetchSystemSettingsCached(force),
       ]);
-      if (dRes.ok) {
-        const j = await dRes.json();
-        setDelegateRecord(j.found && j.delegate ? j.delegate : null);
+
+      if (record) {
+        setDelegateRecord({
+          ...record,
+          delegateId: record.id ? `DEL-${record.id.slice(0, 6).toUpperCase()}` : null,
+          fullName: record.name,
+          paymentUTR: record.payment_utr,
+          paymentStatus: record.payment_status,
+          allocatedCommittee: record.allocated_committee,
+          allocatedCountry: record.allocated_country,
+          institution: record.institute,
+          pref1: record.pref1_committee ? `${record.pref1_committee} · ${record.pref1_country || 'General'}` : null,
+          pref2: record.pref2_committee ? `${record.pref2_committee} · ${record.pref2_country || 'General'}` : null,
+          pref3: record.pref3_committee ? `${record.pref3_committee} · ${record.pref3_country || 'General'}` : null,
+        });
+      } else {
+        setDelegateRecord(null);
       }
-      if (sRes.ok) {
-        const a = await sRes.json();
-        if (a.settings) {
-          setSystemSettings({
-            registrationsOpen: a.settings.registrationsOpen !== false,
-            roundName: a.settings.roundName || "Round 1 Priority Applications",
-          });
-        }
+
+      if (settings) {
+        setSystemSettings({
+          registrationsOpen: settings.registrations_open !== false,
+          roundName: settings.round_name || "Round 1 Priority Applications",
+        });
       }
       setSynced(true);
     } catch (e) {
-      console.error(e);
+      console.error("[Dashboard] Error fetching profile:", e);
     } finally {
       setDataLoading(false);
     }
@@ -326,7 +357,7 @@ export default function DelegateDashboard() {
 
               <button
                 type="button"
-                onClick={() => fetchDelegateProfile(user.email)}
+                onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
                 disabled={dataLoading}
                 className="h-8 px-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] text-[11px] font-mono text-neutral-600 dark:text-white/70 hover:text-neutral-900 dark:hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
               >
@@ -579,7 +610,7 @@ export default function DelegateDashboard() {
 
             <button
               type="button"
-              onClick={() => fetchDelegateProfile(user.email)}
+              onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
               className="group flex items-center gap-3 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.025] hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.06] hover:border-indigo-500/30 transition-all cursor-pointer w-full text-left"
             >
               <RefreshCw className={`w-4 h-4 text-neutral-400 dark:text-white/35 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors shrink-0 ${dataLoading ? "animate-spin" : ""}`} />

@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./sleek-modern.css";
 import Script from "next/script";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://resolvemun.in";
@@ -93,7 +94,7 @@ export default function RootLayout({ children }) {
         />
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
         </head>
       <body className="loaded" suppressHydrationWarning>

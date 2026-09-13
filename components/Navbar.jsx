@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { MetalButton } from "@/components/ui/metal-button";
 import { Menu, X, ArrowUpRight, LayoutDashboard, LogOut, User as UserIcon, ChevronDown, Shield } from "lucide-react";
-import { auth, signOut, onAuthStateChanged } from "@/lib/firebase";
+import { auth, signOutUser, onAuthStateChanged } from "@/lib/firebase";
 import Link from "next/link";
 
 export function Navbar() {
@@ -15,10 +15,19 @@ export function Navbar() {
   const userMenuRef = useRef(null);
 
   useEffect(() => {
-    // Listen to Firebase auth changes
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Delegate",
+          photoURL: firebaseUser.photoURL || "",
+        });
+      } else {
+        setUser(null);
+      }
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -96,7 +105,7 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOutUser();
       setUserMenuOpen(false);
       if (typeof window !== "undefined" && window.showAlert) {
         window.showAlert("Signed out successfully", "info");
@@ -107,15 +116,22 @@ export function Navbar() {
   };
 
   const getUserInitials = () => {
-    if (!user) return "U";
-    if (user.displayName) {
-      const parts = user.displayName.trim().split(" ");
-      return parts.length >= 2
-        ? (parts[0][0] + parts[1][0]).toUpperCase()
-        : parts[0].slice(0, 2).toUpperCase();
+    if (!user) return "D";
+    const name = (user.displayName || "").trim();
+    if (name) {
+      const parts = name.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2 && parts[0] && parts[1] && parts[0][0] && parts[1][0]) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      if (parts.length >= 1 && parts[0]) {
+        return parts[0].slice(0, 1).toUpperCase();
+      }
     }
-    if (user.email) return user.email.slice(0, 2).toUpperCase();
-    return "U";
+    if (user.email) {
+      const clean = user.email.trim();
+      return clean.slice(0, 1).toUpperCase();
+    }
+    return "D";
   };
 
   const navLinks = [
@@ -129,7 +145,7 @@ export function Navbar() {
   return (
     <>
       {/* Header container */}
-      <header className="fixed top-0 left-0 right-0 z-[1000] flex justify-center pointer-events-none">
+      <header id="navbar" className="fixed top-0 left-0 right-0 z-[10000] flex justify-center pointer-events-none">
         <div
           style={{
             willChange: "transform, max-width, padding, border-radius, background-color, box-shadow",
@@ -137,10 +153,11 @@ export function Navbar() {
           }}
           className={[
             "pointer-events-auto flex items-center justify-between gap-3 sm:gap-4 select-none",
-            "transition-[max-width,width,padding,margin,border-radius,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            "transition-all duration-300 ease-out",
+            "mt-2.5 sm:mt-3 md:mt-4 py-2 px-4 sm:px-6 lg:px-7 rounded-xl border backdrop-blur-2xl w-[94%] sm:w-[92%] lg:w-[88%] max-w-5xl",
             scrolled
-              ? "mt-2 md:mt-3 py-1.5 px-4 sm:px-6 lg:px-8 rounded-full border border-white/[0.14] bg-[#060818]/85 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.7),0_0_24px_rgba(59,130,246,0.18)] w-[95%] md:w-[90%] lg:w-[88%] max-w-5xl"
-              : "mt-0 py-2.5 px-4 md:py-3.5 md:px-8 rounded-none border-b border-white/[0.06] bg-[#050714]/65 backdrop-blur-xl w-full max-w-full shadow-none",
+              ? "bg-[#050614]/98 border-white/25 shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_30px_rgba(59,130,246,0.25)]"
+              : "bg-[#060818]/92 border-white/[0.15] shadow-[0_16px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(59,130,246,0.18)]",
           ].join(" ")}
         >
           {/* Logo & Brand */}
@@ -152,10 +169,13 @@ export function Navbar() {
             <div className="relative shrink-0 flex items-center justify-center">
               <img
                 src="/images/Logo.svg"
+                onError={(e) => {
+                  e.currentTarget.src = "https://resolvemun.in/images/Logo.svg";
+                }}
                 alt="Resolve MUN"
                 className="w-7 h-7 md:w-8 md:h-8 object-contain block transition-transform duration-300 group-hover:scale-105"
               />
-              <div className="absolute inset-0 rounded-full bg-blue-500/25 blur-md opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
+              <div className="absolute inset-0 rounded-lg bg-blue-500/25 blur-md opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
             </div>
             <span
               className="text-[1.25rem] md:text-[1.38rem] tracking-[0.12em] leading-none text-white group-hover:text-blue-300 transition-colors duration-200"
@@ -166,9 +186,13 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav Pills */}
-          <nav className="hidden lg:flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.1] rounded-full px-2 py-1 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
+          <div role="navigation" aria-label="Main Navigation" className="hidden lg:flex items-center gap-1 bg-white/[0.04] border border-white/[0.1] rounded-xl px-2.5 py-1 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
             {navLinks.map((l) => (
-              <a key={l.label} href={l.href} className="nav-pill-link">
+              <a
+                key={l.label}
+                href={l.href}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-white/75 hover:text-white hover:bg-white/[0.08] transition-all duration-150 inline-block"
+              >
                 {l.label}
               </a>
             ))}
@@ -184,14 +208,14 @@ export function Navbar() {
                   window.showAlert("Delegate Brochure releasing soon!");
                 }
               }}
-              className="nav-pill-link inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed select-none pointer-events-auto"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-white/40 inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed select-none pointer-events-auto"
             >
               <span>Brochure</span>
-              <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 inline-block leading-none">
+              <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-400/30 inline-block leading-none">
                 Soon
               </span>
             </button>
-          </nav>
+          </div>
 
           {/* Right Action: PFP AVATAR (WHEN LOGGED IN) OR REGISTER BUTTON (WHEN LOGGED OUT) */}
           <div className="flex items-center gap-2.5 shrink-0" ref={userMenuRef}>
@@ -200,8 +224,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="h-9 max-h-9 px-1.5 pr-2.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 flex items-center gap-2 transition-all duration-200 cursor-pointer active:scale-95"
-                  style={{ height: '36px', maxHeight: '36px' }}
+                  className="h-9 pl-1.5 pr-3 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/20 flex items-center gap-2 transition-all duration-150 cursor-pointer active:scale-95 shadow-sm overflow-hidden"
                   aria-label="User menu"
                   aria-expanded={userMenuOpen}
                 >
@@ -209,56 +232,74 @@ export function Navbar() {
                     <img
                       src={user.photoURL}
                       alt={user.displayName || "User"}
-                      className="w-6.5 h-6.5 rounded-full object-cover shrink-0 border border-blue-400/50"
-                      style={{ width: '26px', height: '26px', minWidth: '26px', minHeight: '26px' }}
+                      className="w-6 h-6 min-w-[24px] min-h-[24px] rounded-full object-cover shrink-0 border border-white/30"
                     />
                   ) : (
                     <div
-                      className="rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-[11px] flex items-center justify-center border border-white/30 shrink-0"
-                      style={{ width: '26px', height: '26px', minWidth: '26px', minHeight: '26px' }}
+                      className="w-6 h-6 min-w-[24px] min-h-[24px] rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-[11px] flex items-center justify-center border border-white/30 shrink-0 select-none overflow-hidden"
                     >
                       {getUserInitials()}
                     </div>
                   )}
-                  <span className="text-xs font-semibold text-white/90 max-w-[80px] truncate hidden sm:inline-block">
-                    {user.displayName ? user.displayName.split(" ")[0] : "Delegate"}
+                  <span className="text-xs font-semibold text-white/95 max-w-[85px] truncate leading-none">
+                    {user.displayName ? user.displayName.trim().split(/\s+/)[0] : "Delegate"}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-white/50 hidden sm:inline-block shrink-0" />
+                  <ChevronDown className="w-3 h-3 text-white/60 shrink-0" />
                 </button>
 
-                {/* User Dropdown Menu */}
+                {/* User Dropdown Menu - Spaced, Solid High-Contrast & Sleek */}
                 {userMenuOpen && (
                   <div
-                    className="absolute right-0 mt-2.5 w-64 p-3 rounded-2xl border border-white/15 bg-[#080b20]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(59,130,246,0.2)] animate-in fade-in zoom-in-95 duration-200 z-[1001]"
+                    className="absolute right-0 mt-4 sm:mt-5 w-60 p-2 rounded-2xl border border-white/20 bg-[#0c0d18] shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_30px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-100 z-[100000] select-none"
                   >
-                    <div className="px-2 py-2 border-b border-white/10 mb-2">
-                      <p className="text-xs font-bold text-white truncate">
-                        {user.displayName || "Delegate"}
-                      </p>
-                      <p className="text-[11px] text-white/50 truncate">
-                        {user.email}
-                      </p>
+                    <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-white/[0.06] border border-white/[0.1] mb-1.5">
+                      {user.photoURL ? (
+                        <img
+                          src={user.photoURL}
+                          alt={user.displayName || "User"}
+                          className="w-7 h-7 rounded-full object-cover shrink-0 border border-white/30"
+                          style={{ width: '28px', height: '28px', minWidth: '28px', minHeight: '28px' }}
+                        />
+                      ) : (
+                        <div
+                          className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0 border border-white/30"
+                          style={{ width: '28px', height: '28px', minWidth: '28px', minHeight: '28px' }}
+                        >
+                          {getUserInitials()}
+                        </div>
+                      )}
+                      <div className="overflow-hidden min-w-0 flex-1">
+                        <p className="text-xs font-bold text-white truncate leading-tight">
+                          {user.displayName || "Delegate"}
+                        </p>
+                        <p className="text-[11px] text-white/85 truncate font-mono mt-0.5">
+                          {user.email}
+                        </p>
+                      </div>
                     </div>
 
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-white/90 hover:text-white hover:bg-white/[0.08] transition-colors"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-blue-400" />
-                      <span>Delegate Dashboard</span>
-                    </Link>
+                    <div className="space-y-0.5">
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold text-white/90 hover:text-white hover:bg-white/[0.09] transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LayoutDashboard className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          <span>Dashboard</span>
+                        </div>
+                        <ArrowUpRight className="w-3 h-3 text-white/40" />
+                      </Link>
 
-                    
-
-                    <button
-                      type="button"
-                      onClick={handleSignOut}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left mt-1 cursor-pointer"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 transition-colors text-left cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5 shrink-0" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -266,10 +307,10 @@ export function Navbar() {
               <MetalButton
                 preset="chromatic"
                 size="xs"
-                strength={0.6}
+                strength={0.7}
                 onClick={openModal}
                 wrapperClassName="shrink-0"
-                className="nav-register-btn h-7.5 px-3.5 text-[11px] font-bold tracking-wider"
+                className="nav-register-btn h-8 px-4 text-[11px] font-bold tracking-wider uppercase"
               >
                 REGISTER
               </MetalButton>
@@ -279,11 +320,11 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full bg-white/[0.08] border border-white/20 text-white hover:bg-white/15 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="lg:hidden flex items-center justify-center min-w-[36px] min-h-[36px] w-9 h-9 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] border border-white/20 text-white active:scale-95 transition-all duration-200 cursor-pointer shadow-sm shrink-0"
               aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileOpen}
             >
-              {mobileOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+              {mobileOpen ? <X className="w-4.5 h-4.5 text-white" /> : <Menu className="w-4.5 h-4.5 text-white" />}
             </button>
           </div>
         </div>
@@ -292,7 +333,7 @@ export function Navbar() {
       {/* Mobile Drawer Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-[998] bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-[10001] bg-black/70 backdrop-blur-md lg:hidden transition-opacity duration-300"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
@@ -301,7 +342,7 @@ export function Navbar() {
       {/* Mobile Refined Navigation Drawer */}
       {mobileOpen && (
         <div
-          className="fixed inset-x-3 top-[68px] z-[999] p-5 rounded-[24px] flex flex-col gap-1 lg:hidden select-none animate-in fade-in slide-in-from-top-4 duration-300"
+          className="fixed inset-x-3 top-[68px] z-[10002] p-4 rounded-xl flex flex-col gap-1 lg:hidden select-none animate-in fade-in slide-in-from-top-4 duration-300"
           style={{
             background: "rgba(6, 9, 26, 0.96)",
             backdropFilter: "blur(32px) saturate(190%)",
@@ -313,16 +354,16 @@ export function Navbar() {
           aria-label="Mobile Navigation"
         >
           {user && (
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.05] border border-white/10 mb-2">
+            <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.05] border border-white/10 mb-2">
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
                   alt={user.displayName || "User"}
-                  className="w-10 h-10 rounded-full object-cover shrink-0 border border-blue-400/50"
-                  style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}
+                  className="w-9 h-9 rounded-full object-cover shrink-0 border border-blue-400/50"
+                  style={{ width: '36px', height: '36px', minWidth: '36px', minHeight: '36px' }}
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-sm flex items-center justify-center border border-white/30">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-xs flex items-center justify-center border border-white/30">
                   {getUserInitials()}
                 </div>
               )}
@@ -340,9 +381,9 @@ export function Navbar() {
               <Link
                 href="/dashboard"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 min-h-[48px] px-4 rounded-xl text-[1rem] font-bold text-blue-300 bg-blue-500/10 border border-blue-400/20"
+                className="flex items-center gap-2.5 min-h-[44px] px-3.5 rounded-lg text-sm font-bold text-blue-300 bg-blue-500/10 border border-blue-400/20"
               >
-                <LayoutDashboard className="w-5 h-5 text-blue-400" />
+                <LayoutDashboard className="w-4 h-4 text-blue-400" />
                 <span>Go to Dashboard</span>
               </Link>
             )}
@@ -351,7 +392,7 @@ export function Navbar() {
               <a
                 key={l.label}
                 href={l.href}
-                className="flex items-center min-h-[48px] px-4 rounded-xl text-[1rem] font-semibold text-white/85 hover:text-white hover:bg-white/[0.06] active:bg-white/10 transition-colors"
+                className="flex items-center min-h-[44px] px-3.5 rounded-lg text-sm font-semibold text-white/85 hover:text-white hover:bg-white/[0.06] active:bg-white/10 transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 {l.label}
@@ -362,11 +403,11 @@ export function Navbar() {
             <button
               type="button"
               disabled
-              className="flex items-center justify-between min-h-[48px] px-4 rounded-xl text-[1rem] font-semibold text-white/40 cursor-not-allowed w-full text-left"
+              className="flex items-center justify-between min-h-[44px] px-3.5 rounded-lg text-sm font-semibold text-white/40 cursor-not-allowed w-full text-left"
             >
               <span className="flex items-center gap-2">
                 <span>Delegate Brochure</span>
-                <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">
                   Releasing Soon
                 </span>
               </span>
@@ -379,7 +420,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl text-sm font-bold text-red-400 bg-red-500/10 border border-red-500/20 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 min-h-[44px] rounded-lg text-sm font-bold text-red-400 bg-red-500/10 border border-red-500/20 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>SIGN OUT</span>

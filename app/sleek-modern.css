@@ -1,0 +1,629 @@
+/* ==========================================================================
+   RESOLVE MUN 2.0 — ARCHITECTURAL SLEEK & TECHNICAL DESIGN OVERRIDES
+   - Square buttons & cards with slightly rounded edges (6px - 8px)
+   - Exact chromatic metal styling matching "REGISTER NOW" for CTA buttons
+   - Compact section spacing (brought close together, no potato bloat)
+   - Flat, locked-to-page dialogue boxes with crazy GrainGradient shader backdrop
+   ========================================================================== */
+
+/* --- SECTION CLOSENESS (ELIMINATE BLOATED VERTICAL GAPS) --- */
+section,
+#about,
+#letter,
+#committees,
+#venue,
+#secretariat,
+#sponsors,
+#oc-applications,
+#eb-applications,
+#register {
+  padding-top: 45px !important;
+  padding-bottom: 45px !important;
+}
+
+#hero {
+  padding-top: 90px !important;
+  padding-bottom: 45px !important;
+  min-height: 80vh !important;
+}
+
+.section-header {
+  margin-bottom: 24px !important;
+}
+
+.section-title {
+  margin-bottom: 8px !important;
+}
+
+/* --- LOCK PAGE SCROLL WHEN MODAL IS ACTIVE --- */
+body.modal-locked {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+
+/* --- ERADICATE MODAL PARTICLES & FULLSCREEN WHITE GLITCHES --- */
+.modal-particles {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+}
+
+.qr-container {
+  background: white !important;
+  padding: 10px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+/* --- APPLICATION MODAL OVERLAYS (SUBTLE, MINIMAL, NO STUPID PARTICLES) --- */
+.modal-overlay {
+  background: rgba(4, 5, 12, 0.85) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+  padding: 16px !important;
+  z-index: 100000 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+/* Flat, Defined Dialogue Box (Auth Page Style, Zero Visible Scrollbars) */
+.modal-content,
+.selection-modal-content,
+.terms-modal-content {
+  width: 100% !important;
+  max-width: 540px !important;
+  max-height: 88vh !important;
+  background: #080911 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 18px !important; /* Smooth squircle dialogue box */
+  padding: 24px 28px !important;
+  box-shadow: 
+    0 24px 70px rgba(0, 0, 0, 0.95),
+    0 0 35px rgba(99, 102, 241, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  transform: none !important;
+  scrollbar-width: none !important; /* Hide Firefox scrollbar */
+  -ms-overflow-style: none !important; /* Hide IE/Edge scrollbar */
+}
+
+.modal-content::-webkit-scrollbar,
+.selection-modal-content::-webkit-scrollbar,
+.terms-modal-content::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.selection-modal-content {
+  max-width: 660px !important;
+  padding: 22px 26px !important;
+}
+
+.terms-modal-content {
+  max-width: 740px !important;
+}
+
+/* Minimalist Rounded-Edge Square High-Visibility Close Button */
+.modal-close {
+  top: 14px !important;
+  right: 14px !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  z-index: 50 !important;
+}
+
+.modal-close svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 2.2px !important;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  color: #ffffff !important;
+  transform: scale(1.04) !important;
+}
+
+/* --- MODAL HEADERS & TYPOGRAPHY --- */
+.modal-header {
+  text-align: center !important;
+  margin-bottom: 14px !important;
+}
+
+.modal-pretitle {
+  font-family: 'Inter', monospace, sans-serif !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
+  color: #818cf8 !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+}
+
+.modal-title {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 1.45rem !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.02em !important;
+  color: #ffffff !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+}
+
+.modal-subtitle {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.74rem !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+  margin-top: 4px !important;
+}
+
+/* --- SELECTION / INTAKE CARDS --- */
+.selection-top-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+  margin-top: 14px !important;
+}
+
+.selection-bottom-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important;
+  margin-top: 10px !important;
+}
+
+@media (max-width: 600px) {
+  .selection-top-grid,
+  .selection-bottom-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.selection-card {
+  min-height: 110px !important;
+  border-radius: 14px !important; /* Squircle with softly rounded corners */
+  padding: 14px 16px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  cursor: pointer !important;
+  position: relative !important;
+}
+
+.selection-card--featured {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  border-color: rgba(129, 140, 248, 0.3) !important;
+}
+
+.selection-card:hover:not(.selection-card--closed):not(.selection-card--disabled) {
+  background: rgba(255, 255, 255, 0.065) !important;
+  border-color: rgba(129, 140, 248, 0.5) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2) !important;
+}
+
+.selection-card--closed {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.selection-badge {
+  font-family: 'Inter', monospace, sans-serif !important;
+  font-size: 0.58rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+}
+
+.selection-badge--primary {
+  background: rgba(99, 102, 241, 0.2) !important;
+  color: #a5b4fc !important;
+  border: 1px solid rgba(129, 140, 248, 0.3) !important;
+}
+
+.selection-badge--accent {
+  background: rgba(168, 85, 247, 0.2) !important;
+  color: #d8b4fe !important;
+  border: 1px solid rgba(192, 132, 252, 0.3) !important;
+}
+
+.selection-badge--muted {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.selection-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+}
+
+.selection-card-icon {
+  font-size: 1.15rem !important;
+  line-height: 1 !important;
+}
+
+.selection-card-body h3 {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 0 0 3px 0 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.selection-card-body p {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.68rem !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+}
+
+.selection-card-action {
+  margin-top: 8px !important;
+}
+
+.selection-btn-primary {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  color: #a5b4fc !important;
+  transition: color 0.15s ease !important;
+}
+
+.selection-card:hover .selection-btn-primary {
+  color: #c7d2fe !important;
+}
+
+.selection-btn-ghost {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* --- STEPPED FORM INDICATOR --- */
+.typeform-step-indicator {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 8px auto 14px !important;
+  padding: 4px 12px !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.step-pill {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+}
+
+.step-pill span {
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 5px !important;
+  font-size: 0.58rem !important;
+  font-weight: 800 !important;
+}
+
+/* --- FORM GROUPS, INPUTS, SELECTS, TEXTAREAS --- */
+.form-group {
+  margin-bottom: 10px !important;
+}
+
+.form-group label {
+  display: block !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.64rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  margin-bottom: 3px !important;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100% !important;
+  height: 38px !important;
+  padding: 6px 12px !important;
+  border-radius: 10px !important; /* Square with smoothly rounded corners */
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: #ffffff !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.8rem !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, background 0.15s ease !important;
+}
+
+.form-group textarea {
+  height: auto !important;
+  min-height: 58px !important;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #818cf8 !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.18) !important;
+}
+
+.file-upload-wrapper {
+  min-height: 38px !important;
+  padding: 3px 6px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.file-upload-btn {
+  padding: 4px 12px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+}
+
+/* --- BUTTONS & ACTIONS (SQUARE WITH LIL ROUNDED EDGES) --- */
+.form-actions {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-top: 16px !important;
+}
+
+.btn-back,
+.btn-next {
+  height: 38px !important;
+  padding: 0 18px !important;
+  border-radius: 10px !important; /* Square with smoothly rounded corners */
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+}
+
+.btn-back {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.btn-next {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3) !important;
+}
+
+/* --- CTA BUTTONS: EXACT CHROMATIC METAL STYLING MATCHING "REGISTER NOW" --- */
+#register .cta-actions button,
+#register .cta-actions .adaptive-hero-btn,
+.cta-btn-hero-match {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 28px !important;
+  border-radius: 12px !important; /* Square button with smoothly rounded corners */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, rgba(35, 30, 50, 0.95) 0%, rgba(18, 16, 28, 0.98) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.7),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.6) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  user-select: none !important;
+  overflow: hidden !important;
+}
+
+/* Chromatic Iridescent Rainbow Sheen Matching MetalButton preset="chromatic" */
+#register .cta-actions button::before,
+#register .cta-actions .adaptive-hero-btn::before,
+.cta-btn-hero-match::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: 12px !important;
+  padding: 1.5px !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(99, 102, 241, 0.9) 20%,
+    rgba(236, 72, 153, 0.9) 45%,
+    rgba(234, 179, 8, 0.8) 65%,
+    rgba(59, 130, 246, 0.9) 85%,
+    rgba(255, 255, 255, 0.7) 100%
+  ) !important;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask-composite: exclude !important;
+  pointer-events: none !important;
+  opacity: 0.85 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+#register .cta-actions button:hover,
+#register .cta-actions .adaptive-hero-btn:hover,
+.cta-btn-hero-match:hover {
+  transform: translateY(-2px) scale(1.01) !important;
+  box-shadow: 
+    0 0 25px rgba(99, 102, 241, 0.45),
+    0 12px 30px rgba(0, 0, 0, 0.85),
+    inset 0 1px 2px rgba(255, 255, 255, 0.6) !important;
+}
+
+#register .cta-actions button:hover::before,
+#register .cta-actions .adaptive-hero-btn:hover::before,
+.cta-btn-hero-match:hover::before {
+  opacity: 1 !important;
+}
+
+#register .cta-actions button:active,
+#register .cta-actions .adaptive-hero-btn:active,
+.cta-btn-hero-match:active {
+  transform: translateY(1px) scale(0.98) !important;
+}
+
+.cta-btn-secondary {
+  background: linear-gradient(180deg, rgba(22, 20, 34, 0.95) 0%, rgba(11, 10, 18, 0.98) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.adaptive-hero-btn,
+.dotted-brochure-wrap,
+.dotted-brochure-wrap button,
+.dotted-badge {
+  border-radius: 12px !important;
+}
+
+/* --- PAYMENT COMPONENT STYLING --- */
+.payment-banner {
+  background: linear-gradient(135deg, rgba(49, 46, 129, 0.4) 0%, rgba(88, 28, 135, 0.4) 100%) !important;
+  padding: 8px 12px !important;
+  border-radius: 10px !important;
+  margin-bottom: 10px !important;
+  border: 1px solid rgba(129, 140, 248, 0.25) !important;
+}
+
+.payment-banner h3 {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+}
+
+.payment-card {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  padding: 12px !important;
+  margin-bottom: 10px !important;
+}
+
+.qr-container {
+  width: 115px !important;
+  height: 115px !important;
+  margin: 0 auto 8px !important;
+  padding: 6px !important;
+  border-radius: 10px !important;
+}
+
+.qr-container::after {
+  inset: 4px !important;
+  border-radius: 8px !important;
+}
+
+.upi-box {
+  padding: 5px 10px !important;
+  border-radius: 8px !important;
+  font-size: 0.74rem !important;
+}
+
+/* --- ALL CARDS, TILES & COUNTDOWN UNITS: SQUARE WITH SOFTLY ROUNDED CORNERS --- */
+.countdown-unit,
+.committee-card,
+.venue-card,
+.team-card,
+.sponsor-card,
+.auth-card {
+  border-radius: 14px !important;
+}
+
+.countdown-unit {
+  padding: 10px 18px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* --- MOBILE SLEEK REFINEMENT --- */
+@media (max-width: 640px) {
+  .modal-content,
+  .selection-modal-content,
+  .terms-modal-content {
+    max-width: 95% !important;
+    padding: 18px 16px !important;
+    border-radius: 8px !important;
+  }
+  
+  .selection-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .selection-card {
+    min-height: auto !important;
+    padding: 12px 14px !important;
+    border-radius: 6px !important;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    height: 35px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .cta-btn-hero-match {
+    width: 100% !important;
+    padding: 0 16px !important;
+  }
+}
