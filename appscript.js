@@ -32,8 +32,7 @@ const SHEET_NAMES = {
 
     EB: "Sheet4",                    // Tab for EB Applications
 
-    SOLARIS: "Sheet5"                // Tab for Solaris Delegates (Vanga Verse)
-
+    
 };
 
 
@@ -49,60 +48,32 @@ function grantPermissions() {
 
 
 function doPost(e) {
-
+    const lock = LockService.getScriptLock();
     try {
+        // Wait up to 30s to prevent concurrent write collisions
+        lock.waitLock(30000);
 
         const data = JSON.parse((e && e.postData && e.postData.contents) ? e.postData.contents : "{}");
-
         const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-        // BLOCK ALL REGISTRATION REQUESTS (Event Completed)
-        const blockTypes = [
-            "WAITLIST_ENTRY",
-            "DELEGATE_REGISTRATION",
-            "OC_APPLICATION",
-            "DELEGATION_APPLICATION",
-            "EB_APPLICATION"
-        ];
-        if (data.type && blockTypes.includes(data.type)) {
-            return ContentService.createTextOutput(JSON.stringify({
-                status: "error",
-                message: "Registrations for Resolve MUN 2026 are now closed. Thanks for attending! Stay tuned for 2.0."
-            })).setMimeType(ContentService.MimeType.JSON);
-        }
-
         // ROUTE DASHBOARD ACTIONS FIRST (bypass normal registration recaptcha)
-
         if (data.action) {
-
             return handleDashboardActions(ss, data);
-
         }
-
-
 
         // 1. RECAPTCHA V3 VERIFICATION
-
         if (!data.recaptcha_token) throw new Error("Security verification missing.");
-
         const verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
-
         const recaptchaResp = UrlFetchApp.fetch(verifyUrl, {
-
             method: "post",
-
-            payload: { secret: RECAPTCHA_SECRET_KEY, response: data.recaptcha_token }
-
+            payload: { secret: RECAPTCHA_SECRET_KEY, response: data.recaptcha_token },
+            muteHttpExceptions: true
         });
-
-        if (!JSON.parse(recaptchaResp.getContentText()).success) throw new Error("reCAPTCHA Failed.");
-
-
+        const recaptchaData = JSON.parse(recaptchaResp.getContentText());
+        if (!recaptchaData.success) throw new Error("Security verification failed. Please refresh and try again.");
 
         let emailType = "";
-
         let recipientName = data.name || "Delegate";
-
         let targetEmail = data.email || data.adviserEmail;
 
 
@@ -127,63 +98,9 @@ function doPost(e) {
 
         else if (data.type === "DELEGATE_REGISTRATION") {
 
-            const referralCode = String(data.referral || "").trim().toUpperCase();
-
-            const isSolaris = (referralCode === "SOLARIS");
-
-            const sheetName = isSolaris ? SHEET_NAMES.SOLARIS : SHEET_NAMES.DELEGATE;
-
-            const sheet = getOrCreateSheet(ss, sheetName);
-
+            const sheet = getOrCreateSheet(ss, SHEET_NAMES.DELEGATE);
             const fileUrl = saveFileToDrive(data.payment_screenshot_link, (data.name || "Delegate") + "_Payment", "Delegate Payments");
-
-
-
-            if (isSolaris) {
-
-                sheet.appendRow([
-
-                    data.name || "",            // 1. Name
-
-                    data.grade || "",           // 2. Grade/Class
-
-                    data.phone || "",           // 3. Phone Number
-
-                    data.email || "",           // 4. Email
-
-                    data.institute || "",       // 5. Institute Name
-
-                    data.dob || "",             // 6. DOB
-
-                    data.emergency_name || "",  // 7. Emergency Contact Name
-
-                    data.emergency_phone || "", // 8. Emergency Contact Phone Number
-
-                    data.experience || "",      // 9. MUN Experience
-
-                    data.payment_utr || data.txn_id || "", // 10. Transaction ID
-
-                    "Vanga Verse",              // 11. Committee
-
-                    "To Be Allocated",          // 12. Allocation
-
-                    "",                         // 13. Delegate ID
-
-                    "",                         // 14. Password
-
-                    "Absent",                   // 15. Check-in Day 1
-
-                    "Absent",                   // 16. Check-in Day 2
-
-                    "Absent",                   // 17. Check-in Day 3
-
-                    "Pending"                   // 18. Application Status
-
-                ]);
-
-            } else {
-
-                sheet.appendRow([
+            sheet.appendRow([
 
                     new Date(),                 // 1. Timestamp
 
@@ -400,11 +317,12 @@ function doPost(e) {
 
 
     } catch (err) {
-
         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
-
+    } finally {
+        try {
+            lock.releaseLock();
+        } catch (e) {}
     }
-
 }
 
 
@@ -785,11 +703,7 @@ function delegateLogin(ss, data) {
 
 
 
-    // Search Solaris Sheet (Sheet5) second
-
-    const solarisSheet = ss.getSheetByName(SHEET_NAMES.SOLARIS);
-
-    result = findDelegateInSheet(solarisSheet, email, password);
+    
 
     if (result) return result;
 
@@ -817,9 +731,7 @@ function findDelegateInSheet(sheet, email, password) {
 
 
 
-    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
-
-    const maxCols = isSolaris ? 18 : Math.max(sheet.getLastColumn(), 35);
+    const maxCols = Math.max(sheet.getLastColumn(), 35);
 
     const values = sheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
 
@@ -833,75 +745,10 @@ function findDelegateInSheet(sheet, email, password) {
 
 
 
-        if (isSolaris) {
+        rowEmail = String(row[4] || "").trim().toLowerCase();      // Column 5: Email Address
+        rowDelId = String(row[22] || "").trim().toLowerCase();     // Column 23: Delegate ID
+        rowPassword = String(row[31] || "").trim();               // Column 32: Password
 
-            rowEmail = String(row[3] || "").trim().toLowerCase();      // Column 4: Email
-
-            rowDelId = String(row[12] || "").trim().toLowerCase();     // Column 13: Delegate ID
-
-            rowPassword = String(row[13] || "").trim();               // Column 14: Password
-
-
-
-            if ((email === rowEmail || email === rowDelId) && password === rowPassword) {
-
-                const appStatus = String(row[17] || "").trim();       // Column 18: Application Status
-
-                if (appStatus === "Pending") {
-
-                    return ContentService.createTextOutput(JSON.stringify({ 
-
-                        status: "error", 
-
-                        message: "Your registration payment verification is pending. Please contact the Secretariat." 
-
-                    })).setMimeType(ContentService.MimeType.JSON);
-
-                }
-
-
-
-                delegateData = {
-
-                    name: row[0],
-
-                    email: row[3],
-
-                    phone: row[2],
-
-                    delegateId: row[12],
-
-                    committee: row[10] || "Vanga Verse",
-
-                    country: row[11] || "To Be Allocated",
-
-                    checkinDay1: row[14] || "Absent",
-
-                    checkinDay2: row[15] || "Absent",
-
-                    checkinDay3: row[16] || "Absent"
-
-                };
-
-
-
-                return ContentService.createTextOutput(JSON.stringify({
-
-                    status: "success",
-
-                    delegate: delegateData
-
-                })).setMimeType(ContentService.MimeType.JSON);
-
-            }
-
-        } else {
-
-            rowEmail = String(row[4] || "").trim().toLowerCase();      // Column 5: Email Address
-
-            rowDelId = String(row[22] || "").trim().toLowerCase();     // Column 23: Delegate ID
-
-            rowPassword = String(row[31] || "").trim();               // Column 32: Password
 
 
 
@@ -933,7 +780,7 @@ function findDelegateInSheet(sheet, email, password) {
 
                     delegateId: row[22],
 
-                    committee: row[23] || "Vanga Verse",
+                    committee: row[23] || "To Be Allocated",
 
                     country: row[24] || "To Be Allocated",
 
@@ -969,11 +816,7 @@ function findDelegateInSheet(sheet, email, password) {
 
 function getTargetSheetName(data) {
 
-    if (data && data.targetSheet === "SOLARIS") {
-
-        return SHEET_NAMES.SOLARIS;
-
-    }
+    
 
     return SHEET_NAMES.DELEGATE;
 
@@ -981,15 +824,7 @@ function getTargetSheetName(data) {
 
 
 
-function initializeSolarisSheet(ss) {
 
-    let sheet = ss.getSheetByName(SHEET_NAMES.SOLARIS);
-
-    if (!sheet) {
-
-        sheet = ss.insertSheet(SHEET_NAMES.SOLARIS);
-
-    }
 
     const defaultHeaders = [
 
@@ -1011,7 +846,7 @@ function initializeSolarisSheet(ss) {
 
 function adminGetData(ss) {
 
-    initializeSolarisSheet(ss);
+    
 
 
 
@@ -1019,9 +854,7 @@ function adminGetData(ss) {
 
         waitlist: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.WAITLIST)),
 
-        delegates: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.DELEGATE)),
-
-        solaris: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.SOLARIS))
+        delegates: getSheetDataAsObjects(ss.getSheetByName(SHEET_NAMES.DELEGATE)),)
 
     };
 
@@ -1063,9 +896,7 @@ function adminApproveDelegate(ss, data) {
 
     const sheet = ss.getSheetByName(sheetName);
 
-    const isSolaris = (sheetName === SHEET_NAMES.SOLARIS);
-
-    const maxColsNeeded = isSolaris ? 18 : 35;
+    const maxColsNeeded = 35;
 
     const currentMaxCols = sheet.getMaxColumns();
 
@@ -1085,9 +916,9 @@ function adminApproveDelegate(ss, data) {
 
 
 
-    const recipientName = isSolaris ? (rowValues[0] || "Delegate") : (rowValues[1] || "Delegate");
+    const recipientName = (rowValues[1] || "Delegate");
 
-    const targetEmail = isSolaris ? rowValues[3] : rowValues[4];
+    const targetEmail = rowValues[4];
 
 
 
@@ -1099,11 +930,11 @@ function adminApproveDelegate(ss, data) {
 
 
 
-    let delegateId = String(isSolaris ? rowValues[12] : rowValues[22]).trim();
+    let delegateId = String(rowValues[22]).trim();
 
-    let password = String(isSolaris ? rowValues[13] : rowValues[31]).trim();
+    let password = String(rowValues[31]).trim();
 
-    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+    const idPrefix = "RES-DEL-";
 
 
 
@@ -1121,27 +952,7 @@ function adminApproveDelegate(ss, data) {
 
 
 
-    if (isSolaris) {
-
-        sheet.getRange(rowIndex, 18).setValue("Approved");       // Application Status
-
-        sheet.getRange(rowIndex, 13).setValue(delegateId);       // Delegate ID
-
-        sheet.getRange(rowIndex, 11).setValue(committee);        // Committee
-
-        sheet.getRange(rowIndex, 12).setValue(country);          // Allocation (Portfolio)
-
-        sheet.getRange(rowIndex, 14).setValue(password);         // Password
-
-        
-
-        if (!sheet.getRange(rowIndex, 15).getValue()) sheet.getRange(rowIndex, 15).setValue("Absent");
-
-        if (!sheet.getRange(rowIndex, 16).getValue()) sheet.getRange(rowIndex, 16).setValue("Absent");
-
-        if (!sheet.getRange(rowIndex, 17).getValue()) sheet.getRange(rowIndex, 17).setValue("Absent");
-
-    } else {
+     else {
 
         sheet.getRange(rowIndex, 22).setValue("Approved");       // Application Status
 
@@ -1203,9 +1014,7 @@ function adminVerifyPayment(ss, data) {
 
     const sheet = ss.getSheetByName(sheetName);
 
-    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
-
-    const maxColsNeeded = isSolaris ? 18 : 35;
+    const maxColsNeeded = 35;
 
     const currentMaxCols = sheet.getMaxColumns();
 
@@ -1223,11 +1032,11 @@ function adminVerifyPayment(ss, data) {
 
 
 
-    let delegateId = String(isSolaris ? rowValues[12] : rowValues[22]).trim();
+    let delegateId = String(rowValues[22]).trim();
 
-    let password = String(isSolaris ? rowValues[13] : rowValues[31]).trim();
+    let password = String(rowValues[31]).trim();
 
-    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+    const idPrefix = "RES-DEL-";
 
 
 
@@ -1245,23 +1054,7 @@ function adminVerifyPayment(ss, data) {
 
 
 
-    if (isSolaris) {
-
-        sheet.getRange(rowIndex, 18).setValue("Verified");  // Application Status
-
-        sheet.getRange(rowIndex, 13).setValue(delegateId);  // Delegate ID
-
-        sheet.getRange(rowIndex, 14).setValue(password);    // Password
-
-        
-
-        if (!sheet.getRange(rowIndex, 15).getValue()) sheet.getRange(rowIndex, 15).setValue("Absent");
-
-        if (!sheet.getRange(rowIndex, 16).getValue()) sheet.getRange(rowIndex, 16).setValue("Absent");
-
-        if (!sheet.getRange(rowIndex, 17).getValue()) sheet.getRange(rowIndex, 17).setValue("Absent");
-
-    } else {
+     else {
 
         sheet.getRange(rowIndex, 22).setValue("Verified");  // Application Status
 
@@ -1323,19 +1116,7 @@ function adminAllocateDelegate(ss, data) {
 
     const sheet = ss.getSheetByName(sheetName);
 
-    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
-
-
-
-    if (isSolaris) {
-
-        sheet.getRange(rowIndex, 11).setValue(committee); // Committee
-
-        sheet.getRange(rowIndex, 12).setValue(country);   // Allocation
-
-        sheet.getRange(rowIndex, 18).setValue("Allocated"); // Application Status
-
-    } else {
+     else {
 
         sheet.getRange(rowIndex, 24).setValue(committee); // Allocation Committee
 
@@ -1385,17 +1166,7 @@ function adminAllocateAndSendCredentials(ss, data) {
 
     const sheet = ss.getSheetByName(sheetName);
 
-    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
-
-
-
-    if (isSolaris) {
-
-        sheet.getRange(rowIndex, 11).setValue(committee); // Committee
-
-        sheet.getRange(rowIndex, 12).setValue(country);   // Allocation
-
-    } else {
+     else {
 
         sheet.getRange(rowIndex, 24).setValue(committee); // Allocation Committee
 
@@ -1407,7 +1178,7 @@ function adminAllocateAndSendCredentials(ss, data) {
 
 
 
-    const maxColsNeeded = isSolaris ? 18 : 35;
+    const maxColsNeeded = 35;
 
     const rowRange = sheet.getRange(rowIndex, 1, 1, maxColsNeeded);
 
@@ -1415,13 +1186,13 @@ function adminAllocateAndSendCredentials(ss, data) {
 
 
 
-    const recipientName = isSolaris ? (rowValues[0] || "Delegate") : (rowValues[1] || "Delegate");
+    const recipientName = (rowValues[1] || "Delegate");
 
-    const targetEmail = isSolaris ? rowValues[3] : rowValues[4];
+    const targetEmail = rowValues[4];
 
-    let delegateId = String(isSolaris ? rowValues[12] : rowValues[22]).trim();
+    let delegateId = String(rowValues[22]).trim();
 
-    let password = String(isSolaris ? rowValues[13] : rowValues[31]).trim();
+    let password = String(rowValues[31]).trim();
 
 
 
@@ -1433,7 +1204,7 @@ function adminAllocateAndSendCredentials(ss, data) {
 
 
 
-    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+    const idPrefix = "RES-DEL-";
 
 
 
@@ -1441,7 +1212,7 @@ function adminAllocateAndSendCredentials(ss, data) {
 
         delegateId = generateDelegateId(sheet, idPrefix);
 
-        sheet.getRange(rowIndex, isSolaris ? 13 : 23).setValue(delegateId);
+        sheet.getRange(rowIndex, 23).setValue(delegateId);
 
     }
 
@@ -1451,7 +1222,7 @@ function adminAllocateAndSendCredentials(ss, data) {
 
         password = generatePassword();
 
-        sheet.getRange(rowIndex, isSolaris ? 14 : 32).setValue(password);
+        sheet.getRange(rowIndex, 32).setValue(password);
 
     }
 
@@ -1461,7 +1232,7 @@ function adminAllocateAndSendCredentials(ss, data) {
 
 
 
-    sheet.getRange(rowIndex, isSolaris ? 18 : 22).setValue("Confirmed");
+    sheet.getRange(rowIndex, 22).setValue("Confirmed");
 
 
 
@@ -1493,11 +1264,7 @@ function adminSendCredentials(ss, data) {
 
     const sheet = ss.getSheetByName(sheetName);
 
-    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
-
-    
-
-    const maxColsNeeded = isSolaris ? 18 : 35;
+    const maxColsNeeded = 35;
 
     const rowRange = sheet.getRange(rowIndex, 1, 1, maxColsNeeded);
 
@@ -1505,17 +1272,17 @@ function adminSendCredentials(ss, data) {
 
 
 
-    const recipientName = isSolaris ? (rowValues[0] || "Delegate") : (rowValues[1] || "Delegate");
+    const recipientName = (rowValues[1] || "Delegate");
 
-    const targetEmail = isSolaris ? rowValues[3] : rowValues[4];
+    const targetEmail = rowValues[4];
 
-    let delegateId = String(isSolaris ? rowValues[12] : rowValues[22]).trim();
+    let delegateId = String(rowValues[22]).trim();
 
-    const committee = String(isSolaris ? rowValues[10] : rowValues[23]).trim();
+    const committee = String(rowValues[23]).trim();
 
-    const country = String(isSolaris ? rowValues[11] : rowValues[24]).trim();
+    const country = String(rowValues[24]).trim();
 
-    let password = String(isSolaris ? rowValues[13] : rowValues[31]).trim();
+    let password = String(rowValues[31]).trim();
 
 
 
@@ -1527,7 +1294,7 @@ function adminSendCredentials(ss, data) {
 
 
 
-    const idPrefix = isSolaris ? "SOL-DEL-" : "RES-DEL-";
+    const idPrefix = "RES-DEL-";
 
 
 
@@ -1535,7 +1302,7 @@ function adminSendCredentials(ss, data) {
 
         delegateId = generateDelegateId(sheet, idPrefix);
 
-        sheet.getRange(rowIndex, isSolaris ? 13 : 23).setValue(delegateId);
+        sheet.getRange(rowIndex, 23).setValue(delegateId);
 
     }
 
@@ -1543,7 +1310,7 @@ function adminSendCredentials(ss, data) {
 
         password = generatePassword();
 
-        sheet.getRange(rowIndex, isSolaris ? 14 : 32).setValue(password);
+        sheet.getRange(rowIndex, 32).setValue(password);
 
     }
 
@@ -1553,7 +1320,7 @@ function adminSendCredentials(ss, data) {
 
 
 
-    sheet.getRange(rowIndex, isSolaris ? 18 : 22).setValue("Confirmed"); // Application Status
+    sheet.getRange(rowIndex, 22).setValue("Confirmed"); // Application Status
 
 
 
@@ -1627,9 +1394,7 @@ function adminCheckinDelegate(ss, data) {
 
 
 
-    const isSolaris = delegateId.toUpperCase().startsWith("SOL-DEL-");
-
-    const sheetName = isSolaris ? SHEET_NAMES.SOLARIS : SHEET_NAMES.DELEGATE;
+    const sheetName = SHEET_NAMES.DELEGATE;
 
     const sheet = ss.getSheetByName(sheetName);
 
@@ -1643,7 +1408,7 @@ function adminCheckinDelegate(ss, data) {
 
 
 
-    const colId = isSolaris ? 13 : 23;
+    const colId = 23;
 
     const ids = sheet.getRange(2, colId, lastRow - 1, 1).getValues().flat();
 
@@ -1671,7 +1436,7 @@ function adminCheckinDelegate(ss, data) {
 
 
 
-    const targetCol = isSolaris ? (14 + day) : (32 + day);
+    const targetCol = (32 + day);
 
     sheet.getRange(rowIndex, targetCol).setValue(checkinStatus);
 
@@ -1707,9 +1472,7 @@ function generateDelegateId(sheet, prefix = "RES-DEL-") {
 
 
 
-    const isSolaris = (sheet.getName() === SHEET_NAMES.SOLARIS);
-
-    const colId = isSolaris ? 13 : 23;
+    const colId = 23;
 
     const ids = sheet.getRange(2, colId, lastRow - 1, 1).getValues().flat();
 

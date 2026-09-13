@@ -1,692 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resolve MUN 2026 | Completed</title>
-  <meta name="description" content="Thank you for attending Resolve MUN 2026. Stay tuned for 2.0!">
-  <link rel="icon" type="image/webp" href="images/favicon.ico">
-  
-  <!-- Typography from Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    /* Styling tokens */
-    :root {
-      --black: #040406;
-      --deep: #06060e;
-      --purple: #1f083a;
-      --magenta: #5d2db2;
-      --gold: #7c3aed;
-      --gold-light: #a855f7;
-      --white: #f5f5f7;
-      --muted: #86868b;
-      --glow-color: rgba(168, 85, 247, 0.4);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      background: var(--black);
-      /* Cyber Grid Background Pattern for High-End Depth */
-      background-image: 
-        radial-gradient(circle at center, transparent 35%, var(--black) 95%),
-        linear-gradient(rgba(255, 255, 255, 0.008) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.008) 1px, transparent 1px);
-      background-size: 100% 100%, 40px 40px, 40px 40px;
-      color: var(--white);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      overflow: hidden;
-      width: 100%;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      perspective: 1200px;
-    }
-
-    /* Custom Cursor styles - desktop only */
-    .cursor-dot, .cursor-reticle {
-      display: none;
-    }
-
-    @media (pointer: fine) {
-      .cursor-dot {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 8px;
-        height: 8px;
-        background: var(--white);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 9999;
-        transform: translate(-50%, -50%);
-        will-change: transform;
-        mix-blend-mode: difference;
-        transition: width 0.2s, height 0.2s, background-color 0.2s;
-        display: block;
-      }
-
-      .cursor-reticle {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 40px;
-        height: 40px;
-        border: 1px solid var(--gold-light);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 9998;
-        transform: translate(-50%, -50%);
-        will-change: transform;
-        transition: width 0.3s cubic-bezier(0.19, 1, 0.22, 1), height 0.3s cubic-bezier(0.19, 1, 0.22, 1), border-color 0.3s;
-        display: block;
-      }
-
-      body, a, button {
-        cursor: none !important;
-      }
-    }
-
-    /* Holographic rotating circles inside reticle */
-    .cursor-reticle::before, .cursor-reticle::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      border-radius: 50%;
-      border: 1px dashed var(--gold-light);
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-
-    .cursor-reticle::before {
-      width: 120%;
-      height: 120%;
-      border-top-color: transparent;
-      border-bottom-color: transparent;
-      animation: rotateRing 4s linear infinite;
-    }
-
-    .cursor-reticle::after {
-      width: 80%;
-      height: 80%;
-      border-left-color: transparent;
-      border-right-color: transparent;
-      animation: rotateRing 2s linear infinite reverse;
-      opacity: 0.5;
-    }
-
-    @keyframes rotateRing {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-
-    /* Background Canvas */
-    #canvas-particles {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    /* Ambient animated background orbs (Increased Opacity) */
-    .bg-orbs {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(140px);
-      opacity: 0.22;
-      will-change: transform;
-    }
-
-    .orb-1 {
-      top: -10%;
-      left: -10%;
-      width: 60vw;
-      height: 60vw;
-      background: var(--gold-light);
-      animation: floatOrb 22s infinite alternate ease-in-out;
-    }
-
-    .orb-2 {
-      bottom: -15%;
-      right: -10%;
-      width: 70vw;
-      height: 70vw;
-      background: var(--magenta);
-      animation: floatOrb 26s infinite alternate-reverse ease-in-out;
-    }
-
-    .orb-3 {
-      top: 35%;
-      left: 30%;
-      width: 45vw;
-      height: 45vw;
-      background: var(--purple);
-      animation: floatOrb 18s infinite alternate ease-in-out;
-      opacity: 0.15;
-    }
-
-    @keyframes floatOrb {
-      0% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(4vw, 6vh) scale(1.08); }
-      100% { transform: translate(-4vw, -4vh) scale(0.95); }
-    }
-
-    /* Holographic concentric rings in background */
-    .hologram-radar {
-      position: absolute;
-      z-index: 2;
-      width: min(650px, 90vw);
-      height: min(650px, 90vw);
-      pointer-events: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      opacity: 0.15;
-    }
-
-    .radar-ring {
-      position: absolute;
-      border: 1px solid rgba(168, 85, 247, 0.2);
-      border-radius: 50%;
-    }
-
-    .ring-1 {
-      width: 100%;
-      height: 100%;
-      border-style: dashed;
-      animation: rotateRadar 90s linear infinite;
-    }
-
-    .ring-2 {
-      width: 78%;
-      height: 78%;
-      border-top-color: var(--gold-light);
-      animation: rotateRadar 60s linear infinite reverse;
-    }
-
-    .ring-3 {
-      width: 52%;
-      height: 52%;
-      border-style: dotted;
-      animation: rotateRadar 30s linear infinite;
-    }
-
-    @keyframes rotateRadar {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    /* Centered Glassmorphism Container */
-    .main-container {
-      position: relative;
-      z-index: 10;
-      width: 90%;
-      max-width: 640px;
-      transform-style: preserve-3d;
-      will-change: transform;
-    }
-
-    .glass-card {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.005) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.03);
-      border-radius: 28px;
-      padding: 55px 40px;
-      backdrop-filter: blur(35px) saturate(180%);
-      -webkit-backdrop-filter: blur(35px) saturate(180%);
-      box-shadow: 
-        0 40px 100px rgba(0, 0, 0, 0.75),
-        0 0 50px rgba(168, 85, 247, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      transition: border-color 0.4s, box-shadow 0.4s;
-      transform: translateZ(30px);
-    }
-
-    /* Fully Compatible Glass Border Highlight (Fixed mask-composite in Chrome) */
-    .glass-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 28px;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent 45%, transparent 65%, rgba(168, 85, 247, 0.25));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      -webkit-mask-composite: destination-out;
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-
-    .glass-card:hover {
-      border-color: rgba(168, 85, 247, 0.2);
-      box-shadow: 
-        0 50px 120px rgba(0, 0, 0, 0.85),
-        0 0 70px rgba(168, 85, 247, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    }
-
-    /* Logo Layout & Glow */
-    .logo-container {
-      margin-bottom: 35px;
-      transform: translateZ(50px);
-      position: relative;
-      display: inline-block;
-    }
-
-    /* Ambient glow behind logo */
-    .logo-container::before {
-      content: '';
-      position: absolute;
-      inset: -15px;
-      background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, transparent 70%);
-      filter: blur(10px);
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    .logo-img {
-      max-width: 290px;
-      height: auto;
-      max-height: 80px;
-      object-fit: contain;
-      display: block;
-    }
-
-    /* Premium Bold Typographic Reveals (Bebas Neue & Oswald) */
-    .heading-wrapper {
-      overflow: hidden;
-      margin-bottom: 20px;
-      transform: translateZ(40px);
-    }
-
-    .heading-text {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(2.6rem, 5.5vw, 4.4rem);
-      font-weight: 400;
-      line-height: 0.95;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: #ffffff;
-      opacity: 0;
-      transform: translateY(100%);
-      animation: revealText 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-    }
-
-    .heading-text span {
-      background: linear-gradient(135deg, #ffffff 10%, #d8b4fe 60%, #a855f7 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      display: block;
-      margin-top: 5px;
-    }
-
-    @keyframes revealText {
-      0% { opacity: 0; transform: translateY(100%); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Staggered Subheading Text */
-    .subheading-wrapper {
-      overflow: hidden;
-      margin-bottom: 40px;
-      transform: translateZ(30px);
-    }
-
-    .subheading-text {
-      font-family: 'Oswald', sans-serif;
-      font-size: clamp(0.95rem, 2.2vw, 1.2rem);
-      font-weight: 300;
-      letter-spacing: 0.45em;
-      text-transform: uppercase;
-      color: rgba(245, 245, 247, 0.65);
-      text-shadow: 0 0 15px rgba(168, 85, 247, 0.45);
-      opacity: 0;
-      transform: translateY(100%);
-      animation: revealText 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
-    }
-
-    /* Social Link Glowing Button */
-    .social-btn-container {
-      transform: translateZ(40px);
-      opacity: 0;
-      animation: fadeIn 1.2s ease-out 1.1s forwards;
-    }
-
-    .social-btn {
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      text-decoration: none;
-      color: #ffffff;
-      background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(93, 45, 178, 0.04) 100%);
-      border: 1px solid rgba(168, 85, 247, 0.3);
-      padding: 14px 34px;
-      border-radius: 14px;
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.05);
-    }
-
-    .social-btn:hover {
-      color: #ffffff;
-      background: linear-gradient(135deg, rgba(168, 85, 247, 0.35) 0%, rgba(93, 45, 178, 0.12) 100%);
-      border-color: #a855f7;
-      box-shadow: 0 8px 30px rgba(168, 85, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      transform: translateY(-2px);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateZ(40px) translateY(10px); }
-      to { opacity: 1; transform: translateZ(40px) translateY(0); }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Dynamic particles canvas -->
-  <canvas id="canvas-particles"></canvas>
-
-  <!-- Ambient blur background -->
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-
-  <!-- Holographic radar background decoration -->
-  <div class="hologram-radar">
-    <div class="radar-ring ring-1"></div>
-    <div class="radar-ring ring-2"></div>
-    <div class="radar-ring ring-3"></div>
-  </div>
-
-  <!-- Main Card Container -->
-  <div class="main-container" id="tilt-container">
-    <div class="glass-card">
-      
-      <!-- Floating Logo -->
-      <div class="logo-container">
-        <!-- Reusing preloaded local logo paths -->
-        <img src="images/Logo.png" alt="Resolve MUN Logo" class="logo-img" onerror="this.src='images/Logo.svg'">
-      </div>
-
-      <!-- Shutter reveal heading -->
-      <div class="heading-wrapper">
-        <h1 class="heading-text">Thanks for Attending <span>Resolve MUN 2026</span></h1>
-      </div>
-
-      <!-- Staggered subheading -->
-      <div class="subheading-wrapper">
-        <p class="subheading-text">Stay Tuned for 2.0</p>
-      </div>
-
-      <!-- Connect button -->
-      <div class="social-btn-container">
-        <a href="https://www.instagram.com/mun.resolve/" target="_blank" class="social-btn" id="ig-link">
-          <span>Follow Us on Instagram</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-          </svg>
-        </a>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Custom HUD elements -->
-  <div class="cursor-dot" id="dot"></div>
-  <div class="cursor-reticle" id="reticle"></div>
-
-  <script>
-    // Custom Cursor tracking
-    const dot = document.getElementById('dot');
-    const reticle = document.getElementById('reticle');
-    const interactiveElements = document.querySelectorAll('a, button, #tilt-container');
-
-    // Initialize mouse coordinate far off-screen so particles don't repel from center on load
-    let mouseX = -1000;
-    let mouseY = -1000;
-    let dotX = window.innerWidth / 2;
-    let dotY = window.innerHeight / 2;
-    let reticleX = window.innerWidth / 2;
-    let reticleY = window.innerHeight / 2;
-
-    window.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
-
-    // Smooth cursor interpolation (only active when pointer is fine)
-    function animateCursor() {
-      // Dot is snappy
-      dotX += (mouseX - dotX) * 0.25;
-      dotY += (mouseY - dotY) * 0.25;
-      dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) translate(-50%, -50%)`;
-
-      // Reticle has lag/elastic feel
-      reticleX += (mouseX - reticleX) * 0.12;
-      reticleY += (mouseY - reticleY) * 0.12;
-      reticle.style.transform = `translate3d(${reticleX}px, ${reticleY}px, 0) translate(-50%, -50%)`;
-
-      requestAnimationFrame(animateCursor);
-    }
-    animateCursor();
-
-    // Hover locking states
-    interactiveElements.forEach(el => {
-      el.addEventListener('mouseenter', () => {
-        reticle.style.width = '65px';
-        reticle.style.height = '65px';
-        reticle.style.borderColor = '#ffffff';
-        dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) translate(-50%, -50%) scale(1.6)`;
-        dot.style.backgroundColor = '#a855f7';
-      });
-
-      el.addEventListener('mouseleave', () => {
-        reticle.style.width = '40px';
-        reticle.style.height = '40px';
-        reticle.style.borderColor = 'rgba(168, 85, 247, 0.8)';
-        dot.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) translate(-50%, -50%) scale(1)`;
-        dot.style.backgroundColor = '#ffffff';
-      });
-    });
-
-    // 3D Tilt Effect - Caching bounds to prevent layout thrashing
-    const card = document.getElementById('tilt-container');
-    let bounds;
-    function updateBounds() {
-      if (card) {
-        bounds = card.getBoundingClientRect();
-      }
-    }
-    updateBounds();
-    window.addEventListener('resize', updateBounds);
-    window.addEventListener('scroll', updateBounds);
-
-    window.addEventListener('mousemove', (e) => {
-      if (!bounds) return;
-      const mouseXRaw = e.clientX;
-      const mouseYRaw = e.clientY;
-      const cardX = bounds.left + bounds.width / 2;
-      const cardY = bounds.top + bounds.height / 2;
-
-      // Calculate angles relative to center of the card
-      const deltaX = mouseXRaw - cardX;
-      const deltaY = mouseYRaw - cardY;
-
-      // Restrict tilt angle max to 10 deg
-      const rotateX = -(deltaY / (window.innerHeight / 2)) * 12;
-      const rotateY = (deltaX / (window.innerWidth / 2)) * 12;
-
-      card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    });
-
-    // Reset tilt on mouseleave
-    document.body.addEventListener('mouseleave', () => {
-      if (card) {
-        card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-      }
-    });
-
-    // HTML5 Canvas Fluid Particles with High-DPI support
-    const canvas = document.getElementById('canvas-particles');
-    const ctx = canvas.getContext('2d');
-
-    let particles = [];
-    const maxParticles = 90;
-
-    function resizeCanvas() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.scale(dpr, dpr);
-      updateBounds(); // Recalculate card bounds on resize
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    class Particle {
-      constructor() {
-        this.reset();
-      }
-
-      reset() {
-        this.x = Math.random() * window.innerWidth;
-        this.y = Math.random() * window.innerHeight;
-        this.size = Math.random() * 2.5 + 0.5;
-        this.speedX = Math.random() * 0.4 - 0.2;
-        this.speedY = Math.random() * 0.4 - 0.2;
-        this.alpha = Math.random() * 0.5 + 0.1;
-        this.color = Math.random() > 0.5 ? '#a855f7' : '#510e92';
-        this.originalAlpha = this.alpha;
-      }
-
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-
-        // Wrap around boundaries (logical bounds)
-        if (this.x < 0 || this.x > window.innerWidth) this.speedX *= -1;
-        if (this.y < 0 || this.y > window.innerHeight) this.speedY *= -1;
-
-        // Interaction with cursor position (only if mouse is on-screen)
-        if (mouseX > -500) {
-          const dx = mouseX - this.x;
-          const dy = mouseY - this.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // Push particles away if cursor is close
-          const repulseRadius = 130;
-          if (distance < repulseRadius) {
-            const force = (repulseRadius - distance) / repulseRadius;
-            this.x -= (dx / distance) * force * 1.5;
-            this.y -= (dy / distance) * force * 1.5;
-            this.alpha = Math.min(0.9, this.alpha + 0.05);
-          } else {
-            if (this.alpha > this.originalAlpha) {
-              this.alpha -= 0.01;
-            }
-          }
-        }
-      }
-
-      draw() {
-        ctx.save();
-        ctx.globalAlpha = this.alpha;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    // Initialize particles
-    for (let i = 0; i < maxParticles; i++) {
-      particles.push(new Particle());
-    }
-
-    // Canvas animation loop
-    function animateParticles() {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      
-      particles.forEach(p => {
-        p.update();
-        p.draw();
-      });
-
-      requestAnimationFrame(animateParticles);
-    }
-    animateParticles();
-
-    // Mouse click explosion effect
-    window.addEventListener('click', (e) => {
-      for (let i = 0; i < 8; i++) {
-        const p = new Particle();
-        p.x = e.clientX;
-        p.y = e.clientY;
-        p.speedX = Math.random() * 4 - 2;
-        p.speedY = Math.random() * 4 - 2;
-        p.size = Math.random() * 3 + 1;
-        p.color = '#ffffff';
-        p.alpha = 1.0;
-        p.originalAlpha = 0.1;
-        particles.push(p);
-        
-        if (particles.length > maxParticles + 30) {
-          particles.shift();
-        }
-      }
-    });
-
-  </script>
-</body>
-</html>
-
-
-<!-- ORIGINAL_CODE_START
-<!DOCTYPE html>
-<html lang="en">
-<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title> Resolve MUN 2026 | Hyderabad's Premier Model United Nations | Top MUN in India </title>
+<title>Resolve MUN 2.0 | Hyderabad's Premier Model United Nations | Edition 2.0</title>
 <meta name="google-site-verification" content="Luukbj2qjCAm0PVNfeYUbQzIsCARGqIjL6gt-vtopMU" />
-<meta name="description" content="Resolve MUN 2026 is Hyderabad's premier Model United Nations conference. Join the best MUN in Hyderabad 2026 for elite student leadership and diplomacy. Secure your spot at the top MUN Hyderabad event.">
-<meta name="keywords" content="Resolve MUN, mun hyderabad, mun in hyderabad, muns in hyderabad 2026, muns in hyderabad, model united nations hyderabad, hyderabad mun, mun hyderabad 2026, biggest MUN in India 2026, mun tracker hyderabad, MUN India 2026, student leadership summit Hyderabad, diplomacy conferences Hyderabad, Hyderabad MUN registrations, MUNs in May 2026 India">
+<meta name="description" content="Resolve MUN 2.0 is Hyderabad's premier Model United Nations conference. Returning bigger and bolder with elite student leadership, high-stakes diplomacy, and 7 specialized committees. Secure your spot at Edition 2.0.">
+<meta name="keywords" content="Resolve MUN 2.0, resolve mun, mun hyderabad 2.0, mun in hyderabad, muns in hyderabad 2026, muns in hyderabad, model united nations hyderabad, hyderabad mun, biggest MUN in India, student leadership summit Hyderabad, diplomacy conferences Hyderabad, Hyderabad MUN registrations, Edition 2.0">
 <meta name="author" content="Resolve MUN">
 <link rel="canonical" href="https://resolvemun.in/">
 <meta name="theme-color" content="#330e5c">
@@ -694,33 +14,33 @@
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://resolvemun.in/">
-<meta property="og:title" content="Resolve MUN 2026 | Premier Model United Nations in Hyderabad">
-<meta property="og:description" content="Experience the best MUN in Hyderabad! Join student leaders at Resolve MUN 2026 for the most impactful diplomacy event of the year. Registered on the MUN tracker.">
+<meta property="og:title" content="Resolve MUN 2.0 | Premier Model United Nations in Hyderabad">
+<meta property="og:description" content="Experience the next evolution of diplomacy at Resolve MUN 2.0! Join student leaders in Hyderabad for transformative debate, strategic negotiation, and networking.">
 <meta property="og:image" content="https://resolvemun.in/images/OG.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="Resolve MUN">
 
-<!--* Twitter --*>
+<!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://resolvemun.in/">
-<meta property="twitter:title" content="Resolve MUN 2026 | Hyderabad's Grandest Model United Nations">
-<meta property="twitter:description" content="Experience elite diplomacy at the biggest MUN in Hyderabad 2026! Join Resolve MUN for high-impact debate and networking this May.">
+<meta property="twitter:title" content="Resolve MUN 2.0 | Hyderabad's Grandest Model United Nations">
+<meta property="twitter:description" content="Experience elite diplomacy at Resolve MUN 2.0! Join student leaders for high-impact debate, strategic resolution, and networking in Hyderabad.">
 <meta property="twitter:image" content="https://resolvemun.in/images/OG.jpg">
 
-<!--* Additional Meta for Flawless Sharing --*>
+<!-- Additional Meta for Flawless Sharing -->
 <meta name="apple-mobile-web-app-title" content="Resolve MUN">
 <meta name="application-name" content="Resolve MUN">
 <meta name="msapplication-TileColor" content="#330e5c">
 
-<!--* Local Business & Event SEO (Schema.org) --*>
+<!-- Local Business & Event SEO (Schema.org) -->
 <script type="application/ld+json">
 [
   {
     "@context": "https://schema.org",
     "@type": "Event",
-    "name": "Resolve MUN 2026 - Hyderabad's #1 Model United Nations",
-    "description": "The premier Model United Nations conference in Hyderabad, featuring 200+ student leaders, intense diplomatic debate, and world-class networking at Laurus The Universal School.",
+    "name": "Resolve MUN 2.0 - Hyderabad's #1 Model United Nations",
+    "description": "The premier Model United Nations conference in Hyderabad returns for Edition 2.0, featuring 350+ student leaders, intense diplomatic debate, and world-class networking at Laurus The Universal School.",
     "startDate": "2026-06-12T09:00:00+05:30",
     "endDate": "2026-06-14T18:00:00+05:30",
     "eventStatus": "https://schema.org/EventScheduled",
@@ -783,14 +103,14 @@
   }
 ]
 </script>
-<!--* 
+<!-- 
   SETTINGS & TOGGLES
   Change 'isLive' to:
   true  - Reveal everything
   false - Hide applications, blur Illuminati/Secretariat/Cash Prize
---*>
+-->
 <script>
-  window.isLive = false;
+  window.isLive = true;
   window.RECAPTCHA_SITE_KEY = "6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH";
 </script>
 <script src="https://www.google.com/recaptcha/api.js?render=6LfocLUqAAAAAKvgW1VeJUdMgQs9RA4TKFRp74GH" async defer></script>
@@ -5120,11 +4440,96 @@
     from { transform: translateY(0); opacity: 1; }
     to { transform: translateY(-30px); opacity: 0; }
   }
+
+  /* Cyber Grid & 2.0 Enhancements */
+  body {
+    background: var(--black) !important;
+    background-image: 
+      radial-gradient(circle at 50% 15%, rgba(124, 58, 237, 0.12) 0%, transparent 65%),
+      linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px) !important;
+    background-size: 100% 100%, 45px 45px, 45px 45px !important;
+    background-attachment: fixed !important;
+  }
+
+  .nav-edition-pill {
+    display: inline-block;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    margin-left: 6px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #a855f7 0%, #6d28d9 100%);
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
+    vertical-align: middle;
+  }
+
+  .pulse-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a855f7;
+    margin-right: 8px;
+    box-shadow: 0 0 12px #a855f7;
+    animation: blinkPulse 1.8s infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes blinkPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.8); }
+  }
+
+  .hero-title .edition-badge {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    font-size: clamp(1.8rem, 4.5vw, 3.8rem) !important;
+    line-height: 1 !important;
+    letter-spacing: 0.04em !important;
+    padding: 6px 22px !important;
+    margin-top: 14px !important;
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #4c1d95 100%) !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-clip: initial !important;
+    color: #ffffff !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 0 32px rgba(168, 85, 247, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    transition: all 0.9s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  body.loaded .hero-title .edition-badge {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition-delay: 1s;
+    animation: pulseGlowBadge 3s ease-in-out infinite alternate 1.5s;
+  }
+
+  @keyframes pulseGlowBadge {
+    0% { box-shadow: 0 0 24px rgba(168, 85, 247, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+    100% { box-shadow: 0 0 45px rgba(168, 85, 247, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.65); }
+  }
+
+  .edition-highlight {
+    color: var(--gold-light);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
 </style>
 </head>
 <body data-cursor="none">
 
-<!--* SUBMIT SPINNER (hidden by default) --*>
+<!-- SUBMIT SPINNER (hidden by default) -->
 <div id="submitSpinner" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;">
   <div style="text-align:center;color:#fff;">
     <div style="width:72px;height:72px;border-radius:50%;border:6px solid rgba(255,255,255,0.12);border-top-color:#7c3aed;animation:spin 1s linear infinite;margin:0 auto 12px;"></div>
@@ -5133,18 +4538,18 @@
 </div>
 
 
-<!--* CUSTOM ALERT CONTAINER --*>
+<!-- CUSTOM ALERT CONTAINER -->
 <div id="custom-alert-container"></div>
 <div id="loading-screen">
-  <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2026 - Official Logo" class="loader-logo">
+  <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2.0 - Official Logo" class="loader-logo">
   <div class="loader-bar-container">
     <div class="loader-bar-fill"></div>
   </div>
   <span class="loader-text">Initializing Diplomacy</span>
 </div>
 
-<!--* REGISTRATION MODAL --*>
-  <!--* SELECTION MODAL --*>
+<!-- REGISTRATION MODAL -->
+  <!-- SELECTION MODAL -->
   <div class="modal-overlay" id="selectionModal">
     <canvas class="modal-particles" id="selectionParticles"></canvas>
     <div class="modal-content">
@@ -5208,11 +4613,11 @@
     
     <div class="modal-header">
       <h2 class="modal-title">DELEGATE REGISTRATION</h2>
-      <span class="modal-subtitle">Join Resolve MUN 2026</span>
+      <span class="modal-subtitle">Join Resolve MUN 2.0</span>
     </div>
     
     <form id="regForm" novalidate>
-      <!--* STEP 1: PERSONAL DETAILS --*>
+      <!-- STEP 1: PERSONAL DETAILS -->
       <div class="form-step active" id="step1">
         <div class="form-group">
           <label for="regName">Full Name</label>
@@ -5288,14 +4693,14 @@
         </button>
       </div>
 
-      <!--* STEP 2: COMMITTEE PREFERENCE --*>
+      <!-- STEP 2: COMMITTEE PREFERENCE -->
       <div class="form-step" id="step2">
         <a href="javascript:void(0)" onclick="showCustomAlert('Country Matrix Coming Soon!', 'default')" class="btn-matrix">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           Country Matrices
         </a>
 
-        <!--* Preference 1 --*>
+        <!-- Preference 1 -->
         <div class="form-group">
           <label>Preference 1</label>
           <select id="pref1_committee" required onchange="updatePortfolioOptions(1)">
@@ -5320,7 +4725,7 @@
           </div>
         </div>
 
-        <!--* Preference 2 --*>
+        <!-- Preference 2 -->
         <div class="form-group">
           <label>Preference 2</label>
           <select id="pref2_committee" required onchange="updatePortfolioOptions(2)">
@@ -5345,7 +4750,7 @@
           </div>
         </div>
 
-        <!--* Preference 3 --*>
+        <!-- Preference 3 -->
         <div class="form-group">
           <label>Preference 3</label>
           <select id="pref3_committee" required onchange="updatePortfolioOptions(3)">
@@ -5376,7 +4781,7 @@
         </div>
       </div>
 
-      <!--* STEP 3: PAYMENT & SUBMISSION --*>
+      <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner">
           <h3 id="regFeeDisplay">Registration Fee: ₹2699</h3>
@@ -5388,7 +4793,7 @@
             <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
             <div style="text-align: center;">
               <div class="qr-container">
-                <img id="paymentQRImage" src="images/QR_Delegate_2599.svg" alt="Payment QR Code">
+                <div id="paymentQRImage" style="display:none;"></div>
               </div>
               <div class="upi-box">
                 <span id="upiID">bhoomianilbasrani@okhdfcbank</span>
@@ -5434,14 +4839,14 @@
         <p class="terms-confirmation">
           By clicking Submit Registration, you agree to the
           <a href="javascript:void(0)" onclick="openTermsModal()">Terms &amp; Conditions</a>
-          of Resolve MUN 2026 shown below.
+          of Resolve MUN 2.0 shown below.
         </p>
       </div>
     </form>
   </div>
 </div>
 
-<!--* COMMING SOON MODAL --*>
+<!-- COMMING SOON MODAL -->
 <div class="modal-overlay" id="commModal">
   <div class="modal-content comm-modal-content">
     <button class="modal-close" onclick="closeCommModal()">
@@ -5452,7 +4857,7 @@
     </button>
     <div class="comm-modal-inner">
       <div class="comm-modal-icon" id="commModalIcon">ROUND ONE</div>
-      <h2 class="comm-modal-title" id="commModalTitle">RESOLVE 2026</h2>
+      <h2 class="comm-modal-title" id="commModalTitle">RESOLVE 2.0</h2>
       <span class="comm-modal-agenda" id="commModalAgenda">Registrations opening soon.</span>
       <p class="comm-modal-text" id="commModalText">
         The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.
@@ -5477,7 +4882,7 @@
   </div>
 </div>
 
-<!--* TERMS & CONDITIONS MODAL --*>
+<!-- TERMS & CONDITIONS MODAL -->
 <div class="modal-overlay" id="termsModal">
   <div class="modal-content terms-modal-content">
     <button class="modal-close" onclick="closeTermsModal()">
@@ -5488,20 +4893,20 @@
     </button>
     <div class="terms-modal-header">
       <h2 class="modal-title">TERMS &amp; CONDITIONS</h2>
-      <span class="terms-modal-subtitle">Resolve Model United Nations 2026</span>
+      <span class="terms-modal-subtitle">Resolve Model United Nations 2.0</span>
     </div>
     <div class="terms-body">
       <p><strong>Last Updated:</strong> March 2026</p>
-      <p>Welcome to Resolve Model United Nations 2026 (“Resolve MUN”, “Conference”, “we”, “our”, or “us”). 
-         By registering for, accessing, participating in, attending, or engaging with Resolve MUN 2026 in any capacity, you (“participant”, “delegate”, “attendee”, “school”, “faculty advisor”, “parent/guardian”, or “visitor”) acknowledge that you have read, understood, and agreed to comply with the following Terms &amp; Conditions.</p>
-      <p>If you do not agree to these Terms &amp; Conditions, you must not register for or participate in Resolve MUN 2026.</p>
+      <p>Welcome to Resolve Model United Nations 2.0 (“Resolve MUN”, “Conference”, “we”, “our”, or “us”). 
+         By registering for, accessing, participating in, attending, or engaging with Resolve MUN 2.0 in any capacity, you (“participant”, “delegate”, “attendee”, “school”, “faculty advisor”, “parent/guardian”, or “visitor”) acknowledge that you have read, understood, and agreed to comply with the following Terms &amp; Conditions.</p>
+      <p>If you do not agree to these Terms &amp; Conditions, you must not register for or participate in Resolve MUN 2.0.</p>
 
       <h3>1. Acceptance of Terms</h3>
       <p>By submitting a registration form, making payment, attending the conference, participating in workshops, accessing conference materials, joining official communication groups, or engaging with Resolve MUN in any manner, you acknowledge and agree to be legally bound by these Terms &amp; Conditions.</p>
       <p>For participants under 18 years of age, registration constitutes confirmation that a parent, guardian, school authority, or responsible adult has reviewed and approved participation.</p>
 
       <h3>2. Registration Policy</h3>
-      <p>Registration for Resolve MUN 2026 is confirmed only upon successful submission of all required information and payment of applicable fees.</p>
+      <p>Registration for Resolve MUN 2.0 is confirmed only upon successful submission of all required information and payment of applicable fees.</p>
       <ul>
         <li>Approve or reject registrations.</li>
         <li>Limit delegation sizes.</li>
@@ -5532,15 +4937,15 @@
       <p>The following behaviors are strictly prohibited: harassment, bullying, discrimination, intimidation, hate speech, threats, abusive conduct, disruptive behavior, vandalism, academic dishonesty, impersonation, inappropriate online conduct, or any behavior deemed harmful to the conference environment. Resolve MUN reserves the right to suspend, remove, disqualify, or permanently ban any participant for misconduct without refund or compensation.</p>
 
       <h3>6. Right of Admission</h3>
-      <p>Entry to Resolve MUN 2026 is subject to approval by the Secretariat and venue authorities. Resolve MUN reserves the unrestricted right to deny admission, revoke participation, or remove any individual from the conference premises or official platforms at its discretion.</p>
+      <p>Entry to Resolve MUN 2.0 is subject to approval by the Secretariat and venue authorities. Resolve MUN reserves the unrestricted right to deny admission, revoke participation, or remove any individual from the conference premises or official platforms at its discretion.</p>
       <p>Reasons for denial or removal may include misconduct, violation of conference rules, safety concerns, inappropriate conduct, misrepresentation, disruption of conference proceedings, or failure to comply with organizer instructions. Decisions regarding admission and participation are final and non-negotiable.</p>
 
       <h3>7. Liability Disclaimer</h3>
-      <p>Participants attend and participate in Resolve MUN 2026 at their own responsibility. Resolve MUN, its Secretariat, organizers, volunteers, venue partners, collaborators, sponsors, and affiliated institutions shall not be held liable for injury, illness, theft, loss of belongings, transport delays, property damage, technical failures, internet disruptions, third-party service failures, emotional distress, financial losses, or any indirect or consequential damages.</p>
+      <p>Participants attend and participate in Resolve MUN 2.0 at their own responsibility. Resolve MUN, its Secretariat, organizers, volunteers, venue partners, collaborators, sponsors, and affiliated institutions shall not be held liable for injury, illness, theft, loss of belongings, transport delays, property damage, technical failures, internet disruptions, third-party service failures, emotional distress, financial losses, or any indirect or consequential damages.</p>
       <p>Participants are solely responsible for safeguarding their belongings and personal property.</p>
 
       <h3>8. Photography, Media &amp; Publicity Consent</h3>
-      <p>By participating in Resolve MUN 2026, all participants consent to being photographed, filmed, recorded, or featured in official conference media. Resolve MUN reserves the unrestricted right to use photographs, videos, recordings, names, school affiliations, statements, and conference-related content for promotional purposes, social media, publications, archival documentation, press releases, websites, marketing campaigns, and future conference materials.</p>
+      <p>By participating in Resolve MUN 2.0, all participants consent to being photographed, filmed, recorded, or featured in official conference media. Resolve MUN reserves the unrestricted right to use photographs, videos, recordings, names, school affiliations, statements, and conference-related content for promotional purposes, social media, publications, archival documentation, press releases, websites, marketing campaigns, and future conference materials.</p>
       <p>No compensation, royalty, or additional consent shall be required for such usage.</p>
 
       <h3>9. Certificates, Awards &amp; Recognition</h3>
@@ -5565,11 +4970,11 @@
       <p>By registering, participants consent to the collection and processing of submitted information for conference administration, communication, logistics, and promotional purposes. Resolve MUN shall take reasonable measures to protect participant information but does not guarantee absolute security of digital systems or communication platforms.</p>
 
       <h3>15. Final Authority</h3>
-      <p>The Secretariat of Resolve MUN 2026 retains final authority over all conference-related matters. All interpretations of conference policy, committee procedure, disciplinary matters, eligibility, awards, scheduling, and operational decisions made by the Secretariat shall be considered final and binding.</p>
+      <p>The Secretariat of Resolve MUN 2.0 retains final authority over all conference-related matters. All interpretations of conference policy, committee procedure, disciplinary matters, eligibility, awards, scheduling, and operational decisions made by the Secretariat shall be considered final and binding.</p>
 
       <h3>16. Contact</h3>
       <div class="terms-contact">
-        <p>For official queries regarding these Terms &amp; Conditions, contact Resolve Model United Nations 2026:</p>
+        <p>For official queries regarding these Terms &amp; Conditions, contact Resolve Model United Nations 2.0:</p>
         <div class="terms-contact-links">
           <a href="mailto:resolve.mun@gmail.com">resolve.mun@gmail.com</a>
           <a href="https://www.instagram.com/mun.resolve/" target="_blank" rel="noopener noreferrer">@mun.resolve</a>
@@ -5577,7 +4982,7 @@
         </div>
       </div>
 
-      <p><strong>By submitting this form, I confirm that I have read, understood, and agreed to the Terms &amp; Conditions of Resolve MUN 2026.</strong></p>
+      <p><strong>By submitting this form, I confirm that I have read, understood, and agreed to the Terms &amp; Conditions of Resolve MUN 2.0.</strong></p>
     </div>
   </div>
 </div>
@@ -5585,11 +4990,11 @@
   <div class="cursor-dot" id="cursorDot"></div>
   <div class="cursor-reticle" id="cursorReticle"></div>
 
-<!--* NAV --*>
+<!-- NAV -->
 <nav id="navbar">
   <a href="#hero" class="nav-logo">
-    <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2026 Logo - Hyderabad's Premier Model United Nations Conference" class="nav-logo-mark">
-    RESOLVE MUN
+    <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2.0 Logo - Hyderabad's Premier Model United Nations Conference" class="nav-logo-mark">
+    RESOLVE MUN <span class="nav-edition-pill">2.0</span>
   </a>
   <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">
     <span></span>
@@ -5601,44 +5006,46 @@
     <li><a href="#about">About</a></li>
     <li><a href="#letter">Letter</a></li>
     <li><a href="#committees">Committees</a></li>
-    <li><a href="javascript:void(0)" onclick="openCommitteeIntro()">Background Guides</a></li>
-    <li><a href="documents/Delegate Brochure.pdf" target="_blank">Brochure</a></li>
     <li><a href="#venue">Venue</a></li>
     <li><a href="#secretariat">Secretariat</a></li>
     <li><a href="portal.html" style="color: var(--gold-light); font-weight: 600;">Portal</a></li>
   </ul>
-  <a href="javascript:void(0)" class="nav-cta" onclick="openSelection()">Register Now</a>
+  <a href="javascript:void(0)" class="nav-cta" onclick="openSelection('eb')">Apply for Secretariat</a>
 </nav>
 
-<div class="committee-prompt" id="committeePrompt" aria-hidden="true">
+<div aria-hidden="true" class="committee-prompt" id="committeePrompt">
   <div class="committee-prompt__text">
     CHOOSE YOUR COMMITTEE
     <span class="committee-prompt__subtext">Background guides are live</span>
   </div>
 </div>
 
-<!--* HERO --*>
+
+
+
+<!-- HERO -->
 <section id="hero">
   <div class="hero-bg"></div>
   <div class="hero-grid"></div>
   <canvas class="particles-canvas" id="particles"></canvas>
 
-  <div class="hero-eyebrow">June 12th — 14th 2026</div>
+  <div class="hero-eyebrow"><span class="pulse-dot"></span> EDITION 2.0 &bull; DATES ANNOUNCING SOON</div>
   <h1 class="hero-title">
     <span>RESOLVE</span>
     <span class="mun">MUN</span>
+    <span class="edition-badge">2.0</span>
   </h1>
-  <p class="hero-tagline"><strong>Resolve.</strong> &nbsp;Reform. &nbsp;<strong>Reconcile.</strong></p>
+  <p class="hero-tagline"><strong>Resolve.</strong> &nbsp;Reform. &nbsp;<strong>Reconcile.</strong> &mdash; <span class="edition-highlight">The Next Evolution</span></p>
 
   <div class="hero-meta">
     <div class="hero-meta-item">
       <span class="label">Edition</span>
-      <span class="value" data-target="2026">0</span>
+      <span class="value" data-target="2.0" data-is-decimal="true">2.0</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
       <span class="label">Delegates</span>
-      <span class="value" data-target="250">0</span><span class="value-suffix">+</span>
+      <span class="value" data-target="350">0</span><span class="value-suffix">+</span>
     </div>
     <div class="hero-meta-divider"></div>
     <div class="hero-meta-item">
@@ -5653,14 +5060,14 @@
   </div>
 
   <div class="hero-actions reveal">
-    <button class="btn-primary hero-reg-btn" onclick="openSelectionModal()"><span>Register Now</span></button>
+    <button class="btn-primary hero-reg-btn" onclick="openSelection('eb')"><span>Apply for Secretariat</span></button>
     <a href="documents/Delegate Brochure.pdf" target="_blank" class="btn-secondary">Delegate Brochure</a>
   </div>
 </section>
 
-<!--* COUNTDOWN --*>
+<!-- COUNTDOWN -->
 <div id="countdown">
-  <span class="countdown-label">Conference Opens In</span>
+  <span class="countdown-label">Edition 2.0 Dates Unlocking Soon</span>
   <div class="countdown-units-wrapper">
     <div class="countdown-unit">
       <span class="countdown-num" id="cd-days">--</span>
@@ -5684,13 +5091,13 @@
   </div>
 </div>
 
-<!--* ABOUT --*>
+<!-- ABOUT -->
 <section id="about">
 <div class="about-inner">
   <div class="about-visual reveal">
     <div class="emblem-wrapper">
       <div class="logo-halo"></div>
-      <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2026 Emblem - Symbol of Excellence and Diplomacy" class="emblem-main">
+      <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN 2.0 Emblem - Symbol of Excellence and Diplomacy" class="emblem-main">
       <div class="about-particles">
         <div class="about-particle" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
         <div class="about-particle" style="top: 80%; left: 30%; animation-delay: 2s;"></div>
@@ -5729,14 +5136,14 @@
     <h2 class="section-title">WHERE DIPLOMACY<br>MEETS <span class="title-accent">AMBITION</span></h2>
     <div class="title-line-divider"></div>
     
-    <p class="section-body">Resolve MUN is not just a conference — it is an arena where the next generation of Hyderabad's leaders converge to debate, deliberate, and drive change. Built on the pillars of intellectual rigor and diplomatic excellence, Resolve MUN challenges delegates to engage with the city's and the world's most pressing issues.</p>
+    <p class="section-body">Resolve MUN 2.0 is not just a conference — it is an arena where the next generation of leaders converge to debate, deliberate, and drive change. Building upon our acclaimed inaugural summit, Edition 2.0 expands the arena for high-stakes diplomacy. Built on the pillars of intellectual rigor and diplomatic excellence, Resolve MUN challenges delegates to engage with the city's and the world's most pressing issues.</p>
     <p class="section-body">From crisis committees that demand split-second decisions to general assemblies that require sweeping coalition-building, every moment at Resolve MUN is designed to forge leaders of consequence.</p>
   </div>
 </div>
 </section>
 
 <div class="glow-line"></div>
-<!--* SECRETARY GENERAL'S LETTER --*>
+<!-- SECRETARY GENERAL'S LETTER -->
 <section id="letter" class="reveal">
   <div class="letter-bg-glow"></div>
   <div class="letter-inner">
@@ -5745,20 +5152,20 @@
     
     <div class="letter-container reveal reveal-delay-2">
       <div class="letter-content">
-        <p>It is my privilege to welcome you to <strong>Resolve Model United Nations 2026</strong>.</p>
+        <p>It is my privilege to welcome you to <strong>Resolve Model United Nations 2.0</strong>.</p>
         <p>Resolve was never meant to be just another conference. From the start, the idea was simple. If we were going to do this, we would do it properly. That meant focusing on quality, being intentional with every decision, and not compromising where it actually matters.</p>
         <p>In a circuit where numbers often take priority, we chose to care more about what happens inside the room. Every committee has been put together with that in mind. Our Executive Board is made up of some of the strongest individuals in the Hyderabad circuit, and the expectation they bring is clear. <strong>Come prepared, think critically, and be ready to engage seriously.</strong></p>
         <p>There is a certain standard attached to Resolve. Not because we say it, but because of how the conference is built. The pace will be demanding. The debate will be competitive. You will be pushed to do more than just speak. You will have to think, adapt, and actually understand what you are doing.</p>
         <p>At the same time, Resolve is not just about committee sessions. The experience matters. The people you meet, the conversations you have, and the overall atmosphere are just as important. We have put equal effort into making sure that side of the conference feels just as strong.</p>
         <p>As Secretary-General, I see Resolve as something we are building, not just hosting. If we get this right, it sets a standard going forward. That is the goal.</p>
         <p>This conference is not meant to be easy.<br><strong>It is meant to be worth it.</strong></p>
-        <p>I look forward to welcoming you to Resolve MUN 2026.</p>
+        <p>I look forward to welcoming you to Resolve MUN 2.0.</p>
       </div>
       <div class="letter-signature">
-        <div class="sig-avatar">SK</div>
+        <div class="sig-avatar">NB</div>
         <div class="sig-details">
-          <h4>Siddhi Kothari</h4>
-          <span>Secretary-General — Resolve Model United Nations 2026</span>
+          <h4>Niveditt Basrani</h4>
+          <span>Secretary-General — Resolve Model United Nations 2.0</span>
         </div>
       </div>
     </div>
@@ -5767,7 +5174,7 @@
 
 <div class="glow-line"></div>
 
-<!--* COMMITTEES --*>
+<!-- COMMITTEES -->
 <section id="committees" class="reveal" style="background: linear-gradient(0deg, rgba(7,6,22,0.6), rgba(7,6,22,0.2)), url('images/committees-bg.svg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
   <div class="section-label reveal">Committees</div>
   <h2 class="section-title reveal">THE ARENA OF<br>HIGH-LEVEL DEBATE</h2>
@@ -5821,17 +5228,17 @@
 
 <div class="glow-line"></div>
 
-<!--* VENUE --*>
+<!-- VENUE -->
 <section id="venue" class="reveal">
   <div class="section-label reveal">Venue</div>
   <h2 class="section-title reveal">A STAGE WORTHY<br>OF THE DEBATE</h2>
   <div class="venue-layout">
     <div class="venue-visual reveal">
-      <img src="https://resolvemun.in/images/Venue.svg" alt="Resolve MUN 2026 will be hosted at Laurus The Universal School, Hyderabad's top international school campus.">
+      <img src="https://resolvemun.in/images/Venue.svg" alt="Resolve MUN 2.0 will be hosted at Laurus The Universal School, Hyderabad's top international school campus.">
     </div>
     <div class="venue-info reveal reveal-delay-2">
       <h3>LAURUS THE UNIVERSAL SCHOOL</h3>
-      <p>Resolve MUN 2026 will be hosted at <strong>Laurus The Universal School, Hyderabad</strong>, a premier academic campus set within a thoughtfully designed landscape of greenery and open spaces.</p>
+      <p>Resolve MUN 2.0 will be hosted at <strong>Laurus The Universal School, Hyderabad</strong>, a premier academic campus set within a thoughtfully designed landscape of greenery and open spaces.</p>
       <p>The campus features expansive, sunlight-filled halls and modern facilities optimized for simultaneous committee sessions, ensuring a professional and focused environment for intellectual exchange.</p>
       <p>Strategically located for easy accessibility, the venue provides a grand stage for diplomacy, where natural surroundings foster collaboration beyond the formal debate floor.</p>
       <div class="venue-tags">
@@ -5848,20 +5255,20 @@
 
 <div class="glow-line"></div>
 
-<!--* SECRETARIAT --*>
+<!-- SECRETARIAT -->
 <section id="secretariat" class="reveal">
   <div class="sec-header reveal">
     <div class="section-label">Secretariat</div>
     <h2 class="section-title">MEET THE TEAM</h2>
-    <p class="section-body" style="max-width: 600px;">The Secretariat of Resolve MUN comprises exceptional leaders dedicated to delivering a world-class conference experience.</p>
+    <p class="section-body" style="max-width: 600px;">The Secretariat of Resolve MUN 2.0 comprises exceptional leaders dedicated to delivering a world-class conference experience.</p>
   </div>
   
   <div class="sec-carousel-container">
     <div class="sec-track" id="secTrack">
-      <!--* Core Sec --*>
+      <!-- Core Sec -->
       <div class="sec-card sec-card--sg">
-        <div class="sec-avatar">SK</div>
-        <div class="sec-name">Siddhi Kothari</div>
+        <div class="sec-avatar">NB</div>
+        <div class="sec-name">Niveditt Basrani</div>
         <div class="sec-role">Secretary General</div>
       </div>
       <div class="sec-card sec-card--dsg">
@@ -5884,7 +5291,7 @@
         <div class="sec-name">Jayakrishna</div>
         <div class="sec-role">OC Head</div>
       </div>
-      <!--* Sec --*>
+      <!-- Sec -->
       <div class="sec-card">
         <div class="sec-avatar">MH</div>
         <div class="sec-name">Mahathi</div>
@@ -5991,7 +5398,7 @@
 
 <div class="glow-line"></div>
 
-<!--* SPONSORS --*>
+<!-- SPONSORS -->
 <section id="sponsors">
   <div class="sponsors-inner reveal" style="text-align: center;">
     <div class="section-label" style="justify-content: center; margin-bottom: 24px;">
@@ -6015,11 +5422,11 @@
 
 <div class="glow-line"></div>
 
-<!--* OC APPLICATIONS (CLOSED) --*>
+<!-- OC APPLICATIONS (CLOSED) -->
 <section id="oc-applications">
   <div class="oc-inner">
     <div class="oc-layout">
-      <!--* Left: Narrative --*>
+      <!-- Left: Narrative -->
       <div class="oc-text-content reveal">
         <div class="section-label">Organizing Committee</div>
         <h2 class="section-title">JOIN THE<br>ARCHITECTS</h2>
@@ -6033,7 +5440,7 @@
         </div>
       </div>
 
-      <!--* Right: Action Card --*>
+      <!-- Right: Action Card -->
       <div class="oc-card reveal reveal-delay-2">
         <div class="oc-card-glow"></div>
         <div class="oc-icon">
@@ -6052,11 +5459,11 @@
 
 <div class="glow-line glow-line--blue" style="margin: 80px 0;"></div>
 
-<!--* EB APPLICATIONS --*>
+<!-- EB APPLICATIONS -->
 <section id="eb-applications">
   <div class="eb-inner">
     <div class="eb-layout">
-      <!--* Left: Narrative --*>
+      <!-- Left: Narrative -->
       <div class="eb-text-content reveal">
         <div class="section-label">Executive Board</div>
         <h2 class="section-title">LEAD THE<br>DIALOGUE</h2>
@@ -6070,7 +5477,7 @@
         </div>
       </div>
 
-      <!--* Right: Action Card --*>
+      <!-- Right: Action Card -->
       <div class="eb-card reveal reveal-delay-2">
         <div class="eb-card-glow"></div>
         <div class="eb-icon">
@@ -6087,7 +5494,7 @@
 </section>
 
 
-  <!--* OC APPLICATION MODAL --*>
+  <!-- OC APPLICATION MODAL -->
   <div class="modal-overlay" id="ocModal">
     <canvas class="modal-particles" id="ocModalParticles"></canvas>
     <div class="modal-content">
@@ -6104,7 +5511,7 @@
       </div>
       
       <form id="ocRegForm">
-        <!--* STEP 1: PERSONAL & CORE DETAILS --*>
+        <!-- STEP 1: PERSONAL & CORE DETAILS -->
         <div class="form-step active" id="ocStep1">
           <div class="form-group">
             <label for="ocName">Full Name</label>
@@ -6160,7 +5567,7 @@
           </button>
         </div>
 
-        <!--* STEP 2: MOTIVATION & ATTRIBUTES --*>
+        <!-- STEP 2: MOTIVATION & ATTRIBUTES -->
         <div class="form-step" id="ocStep2">
           <div class="form-group">
             <label>Why do you want to be part of the Organizing Committee for Resolve MUN?</label>
@@ -6178,7 +5585,7 @@
           </div>
         </div>
 
-        <!--* STEP 3: PAYMENT --*>
+        <!-- STEP 3: PAYMENT -->
         <div class="form-step" id="ocStep3">
           <div class="payment-banner">
             <h3>Registration Fee: ₹1699</h3>
@@ -6190,7 +5597,7 @@
               <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. SCAN TO PAY</label>
               <div style="text-align: center;">
                 <div class="qr-container">
-                  <img id="ocPaymentQRImage" src="images/QR_Delegate_2599.svg" alt="OC Payment QR Code">
+                  <div id="ocPaymentQRImage" style="display:none;"></div>
                 </div>
                 <div class="upi-box">
                   <span id="ocUpiID">bhoomianilbasrani@okhdfcbank</span>
@@ -6237,7 +5644,7 @@
     </div>
   </div>
 
-  <!--* EB APPLICATION MODAL --*>
+  <!-- EB APPLICATION MODAL -->
   <div class="modal-overlay" id="ebModal">
     <canvas class="modal-particles" id="ebModalParticles"></canvas>
     <div class="modal-content">
@@ -6254,7 +5661,7 @@
       </div>
       
       <form id="ebRegForm">
-        <!--* STEP 1: PERSONAL DETAILS --*>
+        <!-- STEP 1: PERSONAL DETAILS -->
         <div class="form-step active" id="ebStep1">
           <div class="form-group">
             <label for="ebName">Full Name</label>
@@ -6294,7 +5701,7 @@
           </button>
         </div>
 
-        <!--* STEP 2: EXPERIENCE --*>
+        <!-- STEP 2: EXPERIENCE -->
         <div class="form-step" id="ebStep2">
           <div class="form-group">
             <label for="ebRole">Preferred Role</label>
@@ -6333,7 +5740,7 @@
           </div>
         </div>
 
-        <!--* STEP 3: PREFERENCES --*>
+        <!-- STEP 3: PREFERENCES -->
         <div class="form-step" id="ebStep3">
           <p style="font-size: 0.8rem; color: var(--gold); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Committee Preferences</p>
           
@@ -6381,7 +5788,7 @@
     </div>
   </div>
 
-  <!--* DELEGATION REGISTRATION MODAL --*>
+  <!-- DELEGATION REGISTRATION MODAL -->
   <div class="modal-overlay" id="delModal">
     <canvas class="modal-particles" id="delModalParticles"></canvas>
     <div class="modal-content" style="max-height: 90vh;">
@@ -6398,7 +5805,7 @@
       </div>
       
       <form id="delRegForm" novalidate>
-        <!--* STEP 1: INSTITUTION DETAILS --*>
+        <!-- STEP 1: INSTITUTION DETAILS -->
         <div class="form-step active" id="delStep1">
           <div class="form-group">
             <label for="delInstName">Name of Institution</label>
@@ -6432,14 +5839,14 @@
           </button>
         </div>
 
-        <!--* STEP 2: DELEGATE DETAILS --*>
+        <!-- STEP 2: DELEGATE DETAILS -->
         <div class="form-step" id="delStep2">
           <a href="javascript:void(0)" onclick="showCustomAlert('Country Matrix Coming Soon!', 'default')" class="btn-matrix" style="margin-bottom: 20px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             Country Matrices
           </a>
           <div id="delegateInputsContainer" style="max-height: 350px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px;">
-            <!--* Dynamic delegate fields will be injected here --*>
+            <!-- Dynamic delegate fields will be injected here -->
           </div>
 
           <div class="form-actions">
@@ -6448,7 +5855,7 @@
           </div>
         </div>
 
-        <!--* STEP 3: PAYMENT & CONFIRMATION --*>
+        <!-- STEP 3: PAYMENT & CONFIRMATION -->
         <div class="form-step" id="delStep3">
           <div class="payment-banner">
             <h3 id="delTotalPriceDisplay">Total Amount: ₹17,592</h3>
@@ -6461,7 +5868,7 @@
               <label style="text-align: center; margin-bottom: 16px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6;">1. COMPLETE THE PAYMENT</label>
               <div style="text-align: center;">
                 <div class="qr-container">
-                  <img id="delPaymentQRImage" src="images/QR_Delegate_2599.svg" alt="Delegation Payment QR Code">
+                  <div id="delPaymentQRImage" style="display:none;"></div>
                 </div>
                 <div class="upi-box">
                   <span id="delUpiID">bhoomianilbasrani@okhdfcbank</span>
@@ -6513,7 +5920,7 @@
 
 <div class="glow-line"></div>
 
-<!--* CTA --*>
+<!-- CTA -->
 <section id="register">
   <div class="cta-inner">
     <p class="cta-eyebrow reveal visible">Limited Spots Available</p>
@@ -6528,7 +5935,7 @@
   </div>
 </section>
 
-<!--* FOOTER --*>
+<!-- FOOTER -->
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
@@ -6552,7 +5959,6 @@
       <ul>
         <li><a href="#hero">Home</a></li>
         <li><a href="javascript:void(0)" onclick="openSelection()">Register</a></li>
-        <li><a href="javascript:void(0)" onclick="openCommitteeIntro()">Background Guides</a></li>
         <li><a href="javascript:void(0)" onclick="openCommModal('Delegate Guide', '📖')">Delegate Guide</a></li>
       </ul>
     </div>
@@ -6567,27 +5973,27 @@
       </ul>
     </div>
   </div>
-  <!--* SEO Hidden Geographic Signals --*>
+  <!-- SEO Hidden Geographic Signals -->
   <div style="display:none;">
     <p>Upcoming Model United Nations (MUN) in Hyderabad June 2026. Top MUN conferences in Telangana including Resolve MUN at Laurus The Universal School.</p>
     <p>Best school and college MUN in Hyderabad. International relations and diplomacy events in Hyderabad.</p>
   </div>
   <div class="footer-bottom">
-    <p class="footer-copy">© 2026 Resolve MUN. All rights reserved.</p>
+    <p class="footer-copy">© 2026 Resolve MUN 2.0. All rights reserved.</p>
     
     <div class="footer-date-pill" onclick="const target = document.getElementById('countdown'); const navHeight = document.getElementById('navbar').offsetHeight; const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navHeight; window.scrollTo({ top: targetPosition, behavior: 'smooth' });" style="cursor: pointer;">
       <div class="pill-dot"></div>
-      <span>June 12th — 14th 2026</span>
+      <span>Edition 2.0 &bull; Hyderabad, India</span>
     </div>
 
     <span class="footer-tagline">RESOLVE · REFORM · RECONCILE</span>
   </div>
 </footer>
 
-<!--* RECAPTCHA CONFIGURATION
+<!-- RECAPTCHA CONFIGURATION
      Site Key:   YOUR_RECAPTCHA_SITE_KEY
      Secret Key: YOUR_RECAPTCHA_SECRET_KEY
---*>
+-->
 
   <script>
   // ==========================================
@@ -6601,8 +6007,7 @@
     DIYA: 2499,
     ICFAI: 2000,
     NYA200: 2699,
-    SOLARIS: 2599,
-    PROMOTION: 2349,
+PROMOTION: 2349,
     UNT100: 2349,
     HET100: 2399,
     YCE200: 2399,
@@ -6891,15 +6296,25 @@
     });
   }
 
-  // INITIAL LOADING SCREEN
-  window.addEventListener('load', () => {
+    // INITIAL LOADING SCREEN - Bulletproof dismissal
+  let loaderDismissed = false;
+  function dismissLoadingScreen() {
+    if (loaderDismissed) return;
+    loaderDismissed = true;
     const loader = document.getElementById('loading-screen');
-    setTimeout(() => {
+    if (loader) {
       loader.classList.add('hidden');
+      setTimeout(() => {
+        if (loader) loader.style.display = 'none';
+      }, 800);
+    }
+    if (document.body) {
       document.body.classList.add('loaded');
       document.body.style.overflow = '';
-      
-      // AUTO-OPEN REGISTRATION VIA URL PARAMETER ?open=registration
+    }
+    
+    // AUTO-OPEN REGISTRATION VIA URL PARAMETER ?open=registration
+    try {
       const urlParams = new URLSearchParams(window.location.search);
       const openParam = urlParams.get('open');
       
@@ -6914,8 +6329,16 @@
       } else if (openParam === 'delegation') {
         setTimeout(openDelRegistration, 500);
       }
-    }, 1500); 
-  });
+    } catch (_) {}
+  }
+
+  if (document.readyState === 'complete') {
+    setTimeout(dismissLoadingScreen, 800);
+  } else {
+    window.addEventListener('load', () => setTimeout(dismissLoadingScreen, 800));
+  }
+  // Hard safety timeout: unconditionally dismiss after 2000ms
+  setTimeout(dismissLoadingScreen, 2000);
 
   // REGISTRATION MODAL LOGIC
   // =============================================
@@ -7045,7 +6468,7 @@
     /*
     if (typeof window.isLive !== 'undefined' && !window.isLive) {
       mIcon.innerText = "SUMMIT STATUS";
-      mTitle.innerText = "RESOLVE 2026";
+      mTitle.innerText = "RESOLVE 2.0";
       mAgenda.innerText = "REGISTRATIONS OPENING SOON";
       mText.innerText = "The premier diplomatic summit is meticulously preparing its corridors. Join the elite waitlist to receive priority access to delegate allocations, committee preferences, and exclusive early-bird benefits.";
       waitlist.style.display = 'block';
@@ -7249,7 +6672,7 @@
     });
   };
 
-const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiuVmRoIPGq5TNXdUfeQGNsWAI0P6axhuEtD2O9FRft_pkqVOESB38ID3-nCdYsMcr/exec";
+const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
 
 async function submitToGoogleSheet(data) {
   try {
@@ -7583,7 +7006,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
     });
   }
 
-  closeModal.addEventListener('click', closeRegistration);
+  if (closeModal) closeModal.addEventListener('click', closeRegistration);
 
   // HERO SCROLL FADE
   const heroScroll = document.querySelector('.hero-scroll');
@@ -7714,7 +7137,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
   });
 
   // Handle form submission
-  regForm.addEventListener('submit', async function(e) {
+  if (regForm) regForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     if (!validateForm(e.target)) return;
     const btn = e.target.querySelector('button[type="submit"]');
@@ -8163,7 +7586,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
     }
   }
 
-  delRegForm.addEventListener('submit', async function(e) {
+  if (delRegForm) delRegForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     const closeBtn = document.getElementById('closeDelModal');
@@ -8371,7 +7794,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
     });
   }
 
-  ocRegForm.addEventListener('submit', async function(e) {
+  if (ocRegForm) ocRegForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     const closeBtn = document.getElementById('closeOcModal');
@@ -8443,7 +7866,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
   const navLinks = document.getElementById('navLinks');
 
-  mobileMenuBtn.addEventListener('click', () => {
+  if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => {
     mobileMenuBtn.classList.toggle('active');
     navLinks.classList.toggle('mobile-active');
     // Lock background scroll
@@ -8525,8 +7948,11 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
   });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // COUNTDOWN — target date: June 12, 2026 00:00
-  const countdownDate = new Date('2026-06-12T00:00:00');
+  // COUNTDOWN — dynamic target for Edition 2.0
+  let countdownDate = new Date('2026-11-20T09:00:00+05:30');
+  if (countdownDate - new Date() <= 0) {
+    countdownDate = new Date(Date.now() + 65 * 24 * 60 * 60 * 1000);
+  }
   function updateCountdown() {
     const now = new Date();
     const diff = countdownDate - now;
@@ -8882,7 +8308,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
     if (targetStep) targetStep.classList.add('active');
   }
 
-  ebRegForm.addEventListener('submit', async function(e) {
+  if (ebRegForm) ebRegForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     const closeBtn = document.getElementById('closeEbModal');
@@ -9102,13 +8528,17 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
   // Start the 2-second rotation initially
   startAutoPlay();
 
-  // HERO META NUMBER SCROLL EFFECT
-  const animateValue = (obj, start, end, duration) => {
+  // HERO META NUMBER SCROLL EFFECT (Supports Decimals like 2.0)
+  const animateValue = (obj, start, end, duration, isDecimal) => {
     let startTimestamp = null;
     const step = (timestamp) => {
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      obj.innerHTML = Math.floor(progress * (end - start) + start);
+      if (isDecimal) {
+        obj.innerHTML = (progress * (end - start) + start).toFixed(1);
+      } else {
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+      }
       if (progress < 1) {
         window.requestAnimationFrame(step);
       }
@@ -9125,9 +8555,10 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
       if (entry.isIntersecting) {
         const valueElements = entry.target.querySelectorAll('.value');
         valueElements.forEach(el => {
-          const target = parseInt(el.getAttribute('data-target'));
+          const isDecimal = el.getAttribute('data-is-decimal') === 'true';
+          const target = parseFloat(el.getAttribute('data-target'));
           if (!isNaN(target)) {
-            animateValue(el, 0, target, 2000);
+            animateValue(el, 0, target, 2000, isDecimal);
           }
         });
         heroMetaObserver.unobserve(entry.target);
@@ -9376,5 +8807,3 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
 
 </body>
 </html>
-
-ORIGINAL_CODE_END -->

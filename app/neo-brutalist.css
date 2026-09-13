@@ -1,0 +1,180 @@
+/* ============================================================
+   NEO-BRUTALIST (GUMROAD-STYLE) UTILITIES
+   ============================================================ */
+:root {
+  --bg: #eaeaea;
+  --neo-border: 3px solid #000;
+  --neo-shadow: 6px 6px 0px #000;
+  --neo-shadow-hover: 8px 8px 0px #000;
+  --neon-pink: #ff90e8;
+  --neon-cyan: #38bdf8;
+  --star-yellow: #ffc900;
+  --success-green: #22c55e;
+}
+
+body {
+  background-color: var(--bg);
+}
+
+.neo-section {
+  padding: 100px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.neo-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.neo-card {
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  border-radius: 0; /* Sharp corners */
+  transition: transform 0.2s, box-shadow 0.2s;
+  background-color: #fff;
+}
+
+.neo-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--neo-shadow-hover);
+}
+
+.neo-btn {
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  border-radius: 0;
+  padding: 14px 28px;
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.neo-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--neo-shadow-hover);
+}
+
+.neo-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #000;
+}
+
+.neo-badge {
+  border: var(--neo-border);
+  box-shadow: 4px 4px 0px #000;
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-family: var(--font-heading), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: inline-block;
+}
+
+.neo-title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1.1;
+  letter-spacing: 0.05em;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.neo-text {
+  font-family: var(--font-body), sans-serif;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.neo-border {
+  border: var(--neo-border);
+}
+
+.neo-grid {
+  display: grid;
+  gap: 30px;
+}
+
+/* About Layout */
+.about-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.emblem-wrapper {
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  background: var(--bg);
+  border-bottom: var(--neo-border);
+}
+
+.emblem-main {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  filter: drop-shadow(4px 4px 0px #000);
+}
+
+.about-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fff;
+}
+
+.about-stat {
+  padding: 30px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.about-stat:nth-child(1), .about-stat:nth-child(2) {
+  border-bottom: var(--neo-border);
+}
+.about-stat:nth-child(1), .about-stat:nth-child(3) {
+  border-right: var(--neo-border);
+}
+
+.about-stat .num {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #000;
+}
+
+.about-stat .desc {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #000;
+  margin-top: 10px;
+}
+
+.about-content {
+  padding: 50px;
+}
+
+@media (max-width: 900px) {
+  .about-inner {
+    grid-template-columns: 1fr;
+  }
+}

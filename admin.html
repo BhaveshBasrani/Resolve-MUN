@@ -193,7 +193,6 @@
     <div class="flex border-b border-white/10 mb-6 font-mono text-sm tracking-wider overflow-x-auto whitespace-nowrap">
       <button id="btnTabDelegates" onclick="switchTab('delegatesTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors tab-active">DELEGATES & VERIFICATION</button>
       <button id="btnTabWaitlist" onclick="switchTab('waitlistTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">WAITLIST</button>
-      <button id="btnTabSolaris" onclick="switchTab('solarisTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">SOLARIS DELEGATES</button>
       <button id="btnTabScanner" onclick="switchTab('scannerTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">QR GATE SCANNER</button>
     </div>
 
@@ -273,51 +272,7 @@
         </div>
       </section>
 
-      <!-- TAB 4: SOLARIS DELEGATES (VANGA VERSE) -->
-      <section id="solarisTab" class="space-y-6" style="display: none;">
-
-
-        <!-- Filters and Search -->
-        <div class="glass p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="w-full md:w-1/3">
-            <input type="text" id="searchSolaris" oninput="filterSolaris()" placeholder="Search Name, Email, ID, School..." class="w-full px-4 py-2 rounded glass-input text-sm">
-          </div>
-          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <span class="font-mono text-xs text-white/40 uppercase mr-2">Filter Status:</span>
-            <button onclick="filterSolStatus('all')" id="chipSolAll" class="px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active">ALL</button>
-            <button onclick="filterSolStatus('pending')" id="chipSolPending" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-yellow-500 text-yellow-500/60 hover:text-yellow-500">PENDING</button>
-            <button onclick="filterSolStatus('verified')" id="chipSolVerified" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-green-500 text-green-500/60 hover:text-green-500">VERIFIED</button>
-            <button onclick="filterSolStatus('unallocated')" id="chipSolUnallocated" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-cyan-500 text-cyan-500/60 hover:text-cyan-500">UNALLOCATED</button>
-          </div>
-        </div>
-        
-        <!-- Registrations Data Table -->
-        <div class="glass rounded-lg overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm border-collapse">
-              <thead class="bg-black/40 font-mono text-[11px] tracking-wider uppercase text-accent border-b border-accent/20">
-                <tr>
-                  <th class="p-4">Row</th>
-                  <th class="p-4">Delegate Details</th>
-                  <th class="p-4">Institution</th>
-                  <th class="p-4">Contact</th>
-                  <th class="p-4">Status</th>
-                  <th class="p-4">Delegate ID</th>
-                  <th class="p-4">Allocation</th>
-                  <th class="p-4">Attendance Pass</th>
-                  <th class="p-4 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="solarisTableBody" class="divide-y divide-white/5 font-sans">
-                <!-- Dynamically populated -->
-              </tbody>
-            </table>
-          </div>
-          <div id="noSolarisMsg" class="py-12 text-center font-mono text-xs text-white/30" style="display: none;">
-            NO SOLARIS DELEGATES FOUND MATCHING THE FILTERS.
-          </div>
-        </div>
-      </section>
+      
 
       <!-- TAB 3: QR CHECK-IN SCANNER -->
       <section id="scannerTab" class="space-y-6" style="display: none;">
@@ -445,7 +400,8 @@
               <option value="CCC">CCC (Crisis Committee)</option>
               <option value="UNCSW">UNCSW</option>
               <option value="IP">IP (International Press)</option>
-              <option value="VANGA VERSE">Vanga Verse</option>
+              <option value="INTERNATIONAL PRESS">International Press</option>
+              <option value="ILLUMINATI">Illuminati</option>
             </select>
           </div>
           <div class="form-group">
@@ -521,7 +477,7 @@
 
   <script>
     // Config: replace with actual sheet Web App URL
-    const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiuVmRoIPGq5TNXdUfeQGNsWAI0P6axhuEtD2O9FRft_pkqVOESB38ID3-nCdYsMcr/exec";
+    const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
 
     // Auth variables
     let ADMIN_KEY = "";
@@ -927,7 +883,7 @@
         const school = d["School / Institution"] || "";
         const rowIdx = d.rowIndex;
         const delId = d["Delegate ID"] || "";
-        const comm = d["Allocation Committee"] || "Vanga Verse";
+        const comm = d["Allocation Committee"] || "";
         const country = d["Allocation Country"] || "";
         
         const payStatus = String(d["Payment Verified"] || "").trim();
@@ -1071,9 +1027,6 @@
 
       // Set allocated defaults to preference 1
       let preselectedCommittee = delegate["Allocation Committee"] || delegate["Preference 1 Committee"] || "";
-      if (targetSheet === "SOLARIS" && !preselectedCommittee) {
-        preselectedCommittee = "VANGA VERSE";
-      }
       if (preselectedCommittee === "LOKSABHA") {
         preselectedCommittee = "LOK SABHA";
       }

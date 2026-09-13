@@ -4,23 +4,23 @@
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   <url>
     <loc>https://resolvemun.in/</loc>
-    <lastmod>2026-04-29</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <!-- Indexing key high-value images for Google Image Search -->
     <image:image>
       <image:loc>https://resolvemun.in/images/L1.png</image:loc>
-      <image:title>Resolve MUN 2026 Hyderabad Logo</image:title>
-      <image:caption>Official logo of Resolve MUN 2026, the premier Model United Nations in Hyderabad.</image:caption>
+      <image:title>Resolve MUN 2.0 Hyderabad Logo</image:title>
+      <image:caption>Official logo of Resolve MUN 2.0, the premier Model United Nations in Hyderabad.</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://resolvemun.in/images/Venue.svg</image:loc>
-      <image:title>Resolve MUN 2026 Venue - Laurus The Universal School</image:title>
-      <image:caption>The beautiful campus of Laurus The Universal School, Hyderabad, hosting Resolve MUN 2026.</image:caption>
+      <image:title>Resolve MUN 2.0 Venue - Laurus The Universal School</image:title>
+      <image:caption>The beautiful campus of Laurus The Universal School, Hyderabad, hosting Resolve MUN 2.0.</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://resolvemun.in/images/OG.jpg</image:loc>
-      <image:title>Resolve MUN 2026 Hyderabad Official Poster</image:title>
+      <image:title>Resolve MUN 2.0 Hyderabad Official Poster</image:title>
     </image:image>
   </url>
 </urlset>
