@@ -17,10 +17,13 @@ export default function Home() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState("signup");
   const [currentUser, setCurrentUser] = useState(null);
-  const [showWelcomeBox, setShowWelcomeBox] = useState(false);
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
+  const [showWelcomeBox, setShowWelcomeBox] = useState(false);
   const [delegationInviteCode, setDelegationInviteCode] = useState(null);
-  const auth = { get currentUser() { return currentUser; } };
 
   useEffect(() => {
     // Check URL for permanent delegation code
@@ -43,7 +46,7 @@ export default function Home() {
           if (banner) banner.style.display = 'block';
           const span = document.getElementById('bannerDelCode');
           if (span) span.textContent = del.trim();
-          if (!auth.currentUser) {
+          if (!currentUserRef.current) {
             window.pendingPathway = 'delegation';
             setAuthOpen(true);
           } else {
@@ -55,27 +58,33 @@ export default function Home() {
 
     const syncUser = (rawUser) => {
       if (rawUser) {
+        const uid = rawUser.uid || rawUser.id;
+        const displayName =
+          rawUser.displayName ||
+          rawUser.user_metadata?.full_name ||
+          rawUser.user_metadata?.name ||
+          rawUser.email?.split("@")[0] ||
+          "Delegate";
+        const photoURL =
+          rawUser.photoURL ||
+          rawUser.user_metadata?.avatar_url ||
+          rawUser.user_metadata?.picture ||
+          "";
+
         const u = {
           ...rawUser,
-          uid: rawUser.uid || rawUser.id,
-          displayName:
-            rawUser.displayName ||
-            rawUser.user_metadata?.full_name ||
-            rawUser.user_metadata?.name ||
-            rawUser.email?.split("@")[0] ||
-            "Delegate",
-          photoURL:
-            rawUser.photoURL ||
-            rawUser.user_metadata?.avatar_url ||
-            rawUser.user_metadata?.picture ||
-            "",
+          uid,
+          displayName,
+          photoURL,
         };
+
         if (typeof window !== "undefined") {
           localStorage.setItem("resolve_user_name", u.displayName || "");
           localStorage.setItem("resolve_user_email", u.email || "");
           localStorage.setItem("resolve_user_photo", u.photoURL || "");
           if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
         }
+
         const dismissed =
           typeof window !== "undefined"
             ? sessionStorage.getItem("resolve_welcome_dismissed_" + u.uid)
@@ -90,7 +99,10 @@ export default function Home() {
             if (window.selectPathway) window.selectPathway(target);
           }, 300);
         }
-        setCurrentUser(u);
+        setCurrentUser((prev) => {
+          if (prev && prev.uid === uid && prev.email === rawUser.email) return prev;
+          return u;
+        });
       } else {
         setShowWelcomeBox(false);
         setCurrentUser(null);
@@ -103,13 +115,13 @@ export default function Home() {
 
     if (typeof window !== "undefined") {
       window.submitDelegateToFirebase = async (formData) => {
-        return await submitDelegateApplication(formData, currentUser);
+        return await submitDelegateApplication(formData, currentUserRef.current);
       };
       window.submitDelegateToSupabase = window.submitDelegateToFirebase;
     }
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, []);
   const containerRef = useRef(null);
 
   const handleOpenSelection = (e) => {

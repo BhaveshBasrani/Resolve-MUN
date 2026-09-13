@@ -40,7 +40,7 @@ export default function ModalShaderBackdrop() {
     const checkModals = () => {
       const active = document.querySelector(".modal-overlay.active");
       const isNowActive = Boolean(active);
-      setModalActive(isNowActive);
+      setModalActive((prev) => (prev !== isNowActive ? isNowActive : prev));
       if (isNowActive) {
         if (!document.body.classList.contains("modal-locked")) {
           document.body.classList.add("modal-locked");
@@ -56,9 +56,7 @@ export default function ModalShaderBackdrop() {
     checkModals();
 
     const handleCheck = () => {
-      // Run synchronously and again after a frame
       checkModals();
-      requestAnimationFrame(checkModals);
     };
 
     // Use capture phase so stopPropagation cannot suppress modal close checks
@@ -66,11 +64,20 @@ export default function ModalShaderBackdrop() {
     window.addEventListener("modalStateChange", handleCheck);
     window.addEventListener("keydown", handleCheck, true);
 
-    // MutationObserver to immediately detect when .active is added or removed from any modal
+    // MutationObserver to detect modal open/close without body loop
     let observer = null;
     try {
-      observer = new MutationObserver(() => {
-        checkModals();
+      observer = new MutationObserver((mutations) => {
+        let shouldCheck = false;
+        for (const m of mutations) {
+          if (m.target && m.target !== document.body && m.target.className && typeof m.target.className === "string") {
+            if (m.target.className.includes("modal") || m.target.className.includes("active")) {
+              shouldCheck = true;
+              break;
+            }
+          }
+        }
+        if (shouldCheck) checkModals();
       });
       observer.observe(document.body, {
         attributes: true,
