@@ -34,76 +34,79 @@ export const homeHtml = `
       <p class="modal-subtitle">Select your participation track for Hyderabad 2026</p>
     </div>
 
-    <div class="selection-top-grid">
-      <!-- 1. Delegate -->
-      <div class="selection-card selection-card--delegate selection-card--featured" onclick="selectPathway('delegate')">
+    <div class="selection-top-grid" style="grid-template-columns: 1fr;">
+      <!-- 1. Secretariat (THE ONLY ACTIVE APPLICATION) -->
+      <div class="selection-card selection-card--sec selection-card--featured" style="border: 2px solid #818cf8; background: linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); box-shadow: 0 0 30px rgba(99, 102, 241, 0.25);" onclick="selectPathway('secretariat')">
         <div class="selection-card-header">
-          <span class="selection-badge selection-badge--primary">INDIVIDUAL</span>
+          <span class="selection-badge" style="background: #22c55e; color: #042f2e; font-weight: 800; letter-spacing: 0.08em;">NOW OPEN · ZERO FEE</span>
+          <span style="font-size: 11px; color: #a5b4fc; font-family: monospace;">HYDERABAD 2026</span>
         </div>
-        <div class="selection-card-body">
-          <h3>DELEGATE</h3>
-          <p>Single delegate representation in one specialized diplomatic committee.</p>
+        <div class="selection-card-body" style="padding: 10px 0;">
+          <h3 style="font-size: 1.4rem; color: #ffffff;">SECRETARIAT 2.0</h3>
+          <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); line-height: 1.5;">
+            Join the executive high-command of Resolve MUN 2.0. Open leadership tracks across USG, Operations, IT, Media, and Delegate Affairs. No application or participation fees.
+          </p>
         </div>
         <div class="selection-card-action">
-          <span class="selection-btn-primary">Apply Now &rarr;</span>
-        </div>
-      </div>
-
-      <!-- 2. Delegation -->
-      <div class="selection-card selection-card--delegation selection-card--featured" onclick="selectPathway('delegation')">
-        <div class="selection-card-header">
-          <span class="selection-badge selection-badge--primary">INSTITUTION</span>
-        </div>
-        <div class="selection-card-body">
-          <h3>DELEGATION</h3>
-          <p>School or university delegations with 8+ student representatives.</p>
-        </div>
-        <div class="selection-card-action">
-          <span class="selection-btn-primary">Register Delegation &rarr;</span>
+          <span class="selection-btn-primary" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: 700;">Open Official Application &rarr;</span>
         </div>
       </div>
     </div>
 
-    <div class="selection-bottom-grid">
-      <!-- 3. Secretariat -->
-      <div class="selection-card selection-card--sec" onclick="selectPathway('secretariat')">
+    <div class="selection-bottom-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-top: 14px;">
+      <!-- 2. Delegate (Closed) -->
+      <div class="selection-card selection-card--delegate selection-card--closed" style="opacity: 0.6; cursor: not-allowed;" onclick="window.showCustomAlert ? window.showCustomAlert('Delegate registrations are currently closed. Only Secretariat Applications are open.', 'info') : alert('Delegate registrations are currently closed.')">
         <div class="selection-card-header">
-          <span class="selection-badge selection-badge--accent">EXECUTIVE</span>
+          <span class="selection-badge selection-badge--muted">CLOSED</span>
         </div>
         <div class="selection-card-body">
-          <h3>SECRETARIAT</h3>
-          <p>High-command leadership, USG positions, and directors.</p>
+          <h3 style="font-size: 1rem;">DELEGATE</h3>
+          <p style="font-size: 0.72rem;">Individual delegate registration currently closed.</p>
         </div>
         <div class="selection-card-action">
-          <span class="selection-btn-primary">Open Application &rarr;</span>
+          <span class="selection-btn-ghost opacity-40 text-xs">Closed</span>
         </div>
       </div>
 
-      <!-- 4. OC -->
-      <div class="selection-card selection-card--oc selection-card--closed" onclick="window.showCustomAlert ? window.showCustomAlert('OC applications are closed.', 'info') : alert('OC Applications are closed.')">
+      <!-- 3. Delegation (Closed) -->
+      <div class="selection-card selection-card--delegation selection-card--closed" style="opacity: 0.6; cursor: not-allowed;" onclick="window.showCustomAlert ? window.showCustomAlert('Delegation registrations are currently closed. Only Secretariat Applications are open.', 'info') : alert('Delegation registrations are currently closed.')">
         <div class="selection-card-header">
-          <span class="selection-badge selection-badge--muted">LEADERSHIP</span>
+          <span class="selection-badge selection-badge--muted">CLOSED</span>
         </div>
         <div class="selection-card-body">
-          <h3>ORGANIZING COMMITTEE</h3>
-          <p>Operations, crisis design, and logistics.</p>
+          <h3 style="font-size: 1rem;">DELEGATION</h3>
+          <p style="font-size: 0.72rem;">Institutional delegations currently closed.</p>
         </div>
         <div class="selection-card-action">
-          <span class="selection-btn-ghost opacity-40">Closed</span>
+          <span class="selection-btn-ghost opacity-40 text-xs">Closed</span>
         </div>
       </div>
 
-      <!-- 5. EB (Disabled) -->
-      <div class="selection-card selection-card--disabled selection-card--closed" onclick="window.showCustomAlert ? window.showCustomAlert('Round 1 Executive Board applications are closed. Follow @mun.resolve for future announcements.', 'info') : alert('Round 1 EB Applications are closed.')">
+      <!-- 4. OC (Closed) -->
+      <div class="selection-card selection-card--oc selection-card--closed" style="opacity: 0.6; cursor: not-allowed;" onclick="window.showCustomAlert ? window.showCustomAlert('OC applications are closed. Only Secretariat Applications are open.', 'info') : alert('OC Applications are closed.')">
         <div class="selection-card-header">
-          <span class="selection-badge selection-badge--muted">EXECUTIVE BOARD</span>
+          <span class="selection-badge selection-badge--muted">CLOSED</span>
         </div>
         <div class="selection-card-body">
-          <h3>EXECUTIVE BOARD</h3>
-          <p>Chairs and committee moderation.</p>
+          <h3 style="font-size: 1rem;">OC</h3>
+          <p style="font-size: 0.72rem;">Organizing Committee is closed.</p>
         </div>
         <div class="selection-card-action">
-          <span class="selection-btn-ghost opacity-40">Closed</span>
+          <span class="selection-btn-ghost opacity-40 text-xs">Closed</span>
+        </div>
+      </div>
+
+      <!-- 5. EB (Closed) -->
+      <div class="selection-card selection-card--disabled selection-card--closed" style="opacity: 0.6; cursor: not-allowed;" onclick="window.showCustomAlert ? window.showCustomAlert('Executive Board applications are closed.', 'info') : alert('Executive Board applications are closed.')">
+        <div class="selection-card-header">
+          <span class="selection-badge selection-badge--muted">CLOSED</span>
+        </div>
+        <div class="selection-card-body">
+          <h3 style="font-size: 1rem;">EB</h3>
+          <p style="font-size: 0.72rem;">Executive Board is closed.</p>
+        </div>
+        <div class="selection-card-action">
+          <span class="selection-btn-ghost opacity-40 text-xs">Closed</span>
         </div>
       </div>
     </div>
@@ -1008,9 +1011,9 @@ export const homeHtml = `
   </div>
 </div>
 
-<!-- SECRETARIAT APPLICATION MODAL -->
+<!-- SECRETARIAT APPLICATION MODAL (1:1 GOOGLE FORM ENGINE) -->
 <div class="modal-overlay" id="secModal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
     <button class="modal-close" id="closeSecModal" onclick="closeSecModal()" aria-label="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1018,113 +1021,213 @@ export const homeHtml = `
       </svg>
     </button>
     
-    <div class="modal-header">
-      <div class="modal-pretitle">EXECUTIVE LEADERSHIP · RESOLVE 2.0</div>
-      <h2 class="modal-title">SECRETARIAT APPLICATION</h2>
-      <span class="modal-subtitle">Join the Organizing Directorate</span>
+    <div class="modal-header" style="text-align: left; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+        <span class="selection-badge" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.3); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;">RESOLVE MUN 2.0 · HIGH COMMAND</span>
+        <span style="font-size: 10px; color: #34d399; font-weight: 700; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.25);">ZERO REGISTRATION FEE</span>
+      </div>
+      <h2 class="modal-title" style="font-size: 1.5rem; letter-spacing: 0.02em; margin: 4px 0;">Secretariat Applications &mdash; Resolve MUN 2.0</h2>
+      <span class="modal-subtitle" style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Hyderabad &bull; 20th &ndash; 22nd November 2026</span>
     </div>
 
-    <div class="typeform-step-indicator" id="secStepIndicator">
-      <div class="step-pill active" id="secPill1"><span>1</span> Identity</div>
+    <!-- 3-STEP PROGRESS INDICATOR -->
+    <div class="typeform-step-indicator" id="secStepIndicator" style="margin: 16px 0 20px;">
+      <div class="step-pill active" id="secPill1"><span>1</span> Overview</div>
       <div class="step-divider"></div>
-      <div class="step-pill" id="secPill2"><span>2</span> Experience &amp; Vision</div>
+      <div class="step-pill" id="secPill2"><span>2</span> Personal Details</div>
       <div class="step-divider"></div>
-      <div class="step-pill" id="secPill3"><span>3</span> Submit</div>
+      <div class="step-pill" id="secPill3"><span>3</span> Role &amp; Portfolio</div>
     </div>
     
     <form id="secRegForm" onsubmit="window.submitSecForm ? window.submitSecForm(event) : event.preventDefault()">
-      <!-- STEP 1: PERSONAL & DEPARTMENT -->
+      <!-- STEP 1: BRIEFING & INVITATION (FROM GOOGLE FORM PAGE 1) -->
       <div class="form-step active" id="secStep1">
+        <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 20px; line-height: 1.65;">
+          <p style="font-size: 0.88rem; color: #ffffff; font-weight: 600; margin-top: 0; margin-bottom: 12px;">
+            Resolve MUN is inviting motivated individuals to apply for our Secretariat for Resolve MUN 2.0.
+          </p>
+          <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 12px;">
+            As part of the Secretariat, you'll be at the core of how this conference comes together, working across areas like delegate affairs, logistics, committee management, PR and media, IT, and sponsorship outreach. You'll get hands-on experience planning and coordinating a conference for 500+ delegates, working closely with the Executive Board to make sure every committee runs smoothly, and being part of the behind-the-scenes decision-making that turns a three-day event from an idea into reality.
+          </p>
+          <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 12px;">
+            This is real responsibility, not a title. You'll be involved from the planning stage right through to execution on the ground, gaining experience in leadership, crisis management, negotiation, and large-scale event operations that goes well beyond what a typical school activity offers.
+          </p>
+          <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 12px;">
+            Prior experience in MUN or event organising is a plus, but not mandatory. What matters most is that you're motivated, reliable, and ready to put in the work.
+          </p>
+          <p style="font-size: 0.85rem; color: #a5b4fc; font-weight: 600; margin-bottom: 0;">
+            If this sounds like you, we'd love to have you on board. Apply now and be part of the team building Resolve MUN 2.0.
+          </p>
+        </div>
+
+        <!-- Google Form Sync Banner -->
+        <div style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #818cf8;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          </div>
+          <div>
+            <p style="margin: 0; font-size: 0.78rem; font-weight: 600; color: #ffffff;">Cloud Synchronized Application</p>
+            <p style="margin: 2px 0 0 0; font-size: 0.72rem; color: rgba(255,255,255,0.55);">
+              Your contact information, resume, and portfolio will be securely recorded in the official Resolve Directorate Google Drive repository.
+            </p>
+          </div>
+        </div>
+
+        <button type="button" class="btn-next btn-full-width" style="padding: 13px 20px; font-weight: 700; letter-spacing: 0.04em;" onclick="nextSecStep(2)">
+          <span>Next: Secretariat Application Details</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- STEP 2: PERSONAL DETAILS (FROM GOOGLE FORM PAGE 2) -->
+      <div class="form-step" id="secStep2">
+        <div style="margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <h3 style="font-size: 1.1rem; color: #ffffff; margin: 0;">Secretariat Application</h3>
+          <p style="font-size: 0.75rem; color: #f87171; margin: 4px 0 0 0;">* Indicates required question</p>
+        </div>
+
         <div class="form-group">
-          <label for="secName">Full Name</label>
-          <input type="text" id="secName" name="name" autocomplete="name" placeholder="Enter your full name" required>
+          <label for="secName">Full Name <span style="color:#f87171;">*</span></label>
+          <input type="text" id="secName" name="name" autocomplete="name" placeholder="Your answer" required>
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
-            <label for="secPhone">Contact No (WhatsApp)</label>
-            <input type="tel" id="secPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10">
+            <label for="secEmail">Email ID <span style="color:#f87171;">*</span></label>
+            <input type="email" id="secEmail" name="email" autocomplete="email" placeholder="Your answer" required>
           </div>
           <div>
-            <label for="secEmail">Email ID</label>
-            <input type="email" id="secEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required>
+            <label for="secPhone">Contact Number <span style="color:#f87171;">*</span></label>
+            <input type="tel" id="secPhone" name="phone" autocomplete="tel" placeholder="10-digit mobile number" required pattern="[0-9]{10}" minlength="10" maxlength="10">
           </div>
         </div>
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
-            <label for="secInst">Institution (School/College)</label>
-            <input type="text" id="secInst" name="institute" autocomplete="organization" placeholder="Enter your institution" required>
+            <label for="secInsta">Instagram Handle (Optional)</label>
+            <input type="text" id="secInsta" name="instagram" placeholder="@username">
           </div>
           <div>
-            <label for="secDept">Preferred Secretariat Department</label>
-            <select id="secDept" name="department" required>
-              <option value="" disabled selected>Select Department</option>
-              <option value="Delegate Affairs">Delegate Affairs</option>
-              <option value="Marketing & Outreach">Marketing &amp; Outreach</option>
-              <option value="Design & Media">Design &amp; Media</option>
-              <option value="Logistics & Operations">Logistics &amp; Operations</option>
-              <option value="Policy & Academics">Policy &amp; Academics</option>
-              <option value="Finance & Sponsorship">Finance &amp; Sponsorship</option>
-              <option value="Culturals & Hospitality">Culturals &amp; Hospitality</option>
-              <option value="Security & Protocol">Security &amp; Protocol</option>
+            <label for="secSchool">School/College <span style="color:#f87171;">*</span></label>
+            <input type="text" id="secSchool" name="schoolCollege" autocomplete="organization" placeholder="Your answer" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="secAddress">Full Residential Address</label>
+          <input type="text" id="secAddress" name="residentialAddress" placeholder="Your residential address">
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="secDob">Date of Birth <span style="color:#f87171;">*</span></label>
+            <input type="date" id="secDob" name="dob" required style="color-scheme: dark;">
+          </div>
+          <div>
+            <label>Grade <span style="color:#f87171;">*</span></label>
+            <select id="secGrade" name="grade" required>
+              <option value="" disabled selected>Select Grade</option>
+              <option value="9th">9th</option>
+              <option value="10th">10th</option>
+              <option value="11th">11th</option>
+              <option value="12th">12th</option>
+              <option value="Undergraduate">Undergraduate / College</option>
+              <option value="Other">Other</option>
             </select>
           </div>
         </div>
 
-        <button type="button" class="btn-next btn-full-width" onclick="nextSecStep(2)">
-          Next: Experience &amp; Vision
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-      </div>
-
-      <!-- STEP 2: EXPERIENCE & VISION -->
-      <div class="form-step" id="secStep2">
-        <div class="form-group">
-          <label for="secExp">Past MUN &amp; Organizing Experience</label>
-          <textarea id="secExp" name="experience" rows="3" placeholder="List conferences attended, past roles, awards, or leadership posts..." required style="resize: vertical; min-height: 75px;"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="secWhy">Why do you want to join the Secretariat &amp; what is your vision?</label>
-          <textarea id="secWhy" name="vision" rows="3" placeholder="What unique strengths and ideas will you bring to Resolve MUN 2.0?" required style="resize: vertical; min-height: 75px;"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="secPortfolio">Portfolio / Resume / LinkedIn URL (Optional)</label>
-          <input type="url" id="secPortfolio" name="portfolio" placeholder="https://...">
-        </div>
-
-        <div class="form-actions">
+        <div class="form-actions" style="margin-top: 20px;">
           <button type="button" class="btn-back" onclick="nextSecStep(1)">Back</button>
-          <button type="button" class="btn-next" onclick="nextSecStep(3)">Review &amp; Submit</button>
+          <button type="button" class="btn-next" onclick="nextSecStep(3)">
+            <span>Next: Role &amp; Experience</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
         </div>
       </div>
 
-      <!-- STEP 3: REVIEW & CONFIRMATION -->
+      <!-- STEP 3: EXPERIENCE, POSITION & DRIVE UPLOADS (FROM GOOGLE FORM PAGE 3) -->
       <div class="form-step" id="secStep3">
-        <div class="payment-banner" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);">
-          <h3>DIRECTORATE APPLICATION DOSSIER</h3>
-          <p style="font-size: 0.68rem; opacity: 0.85; margin-top: 4px;">Direct Review by Secretary-General &amp; Executive Directorate</p>
+        <div style="margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <h3 style="font-size: 1.1rem; color: #ffffff; margin: 0;">Previous experiences (any, if qualifying)</h3>
+          <p style="font-size: 0.75rem; color: rgba(255,255,255,0.6); margin: 4px 0 0 0;">Position selection &amp; portfolio uploads</p>
         </div>
 
-        <div class="payment-card">
-          <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); line-height: 1.5; margin-bottom: 10px;">
-            Thank you for applying to serve on the Resolve MUN 2.0 Secretariat. Applications are reviewed on a rolling basis. Shortlisted candidates will be contacted for an executive interview.
-          </p>
-          <div style="padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-size: 0.72rem; color: #a5b4fc;">
-            <strong>SELECTION STAGES:</strong> Dossier Screening &rarr; Departmental Interview &rarr; Official Appointment Letter
-          </div>
+        <div class="form-group">
+          <label for="secPosition">Which position are you applying for? <span style="color:#f87171;">*</span></label>
+          <select id="secPosition" name="position" required style="font-size: 0.88rem; padding: 11px 14px;">
+            <option value="" disabled selected>Choose a position...</option>
+            <option value="Secretary-General">Secretary-General</option>
+            <option value="Deputy Secretary-General">Deputy Secretary-General</option>
+            <option value="Director-General">Director-General</option>
+            <option value="USG Delegate Affairs (with experience)">USG Delegate Affairs (with experience)</option>
+            <option value="USG Logistics/Operations">USG Logistics/Operations</option>
+            <option value="USG Marketing & Outreach (with experience)">USG Marketing & Outreach (with experience)</option>
+            <option value="USG Sponsorships/Partnerships">USG Sponsorships/Partnerships</option>
+            <option value="USG Design & Media (with experience)">USG Design & Media (with experience)</option>
+            <option value="USG IT/Technical">USG IT/Technical</option>
+            <option value="USG Hospitality">USG Hospitality</option>
+            <option value="USG Policy (with experience)">USG Policy (with experience)</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="secWhy">Why do you want to join Resolve Secretariat? <span style="color:#f87171;">*</span></label>
+          <textarea id="secWhy" name="whyJoin" rows="3" placeholder="Your answer" required style="resize: vertical; min-height: 80px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="secContribution">What do you think you can contribute to this specific role? <span style="color:#f87171;">*</span></label>
+          <textarea id="secContribution" name="contribution" rows="3" placeholder="Your answer" required style="resize: vertical; min-height: 80px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="secHours">How many hours per day can realistically commit? <span style="color:#f87171;">*</span></label>
+          <input type="text" id="secHours" name="dailyCommitment" placeholder="e.g. 2-3 hours / day" required>
+        </div>
+
+        <!-- DRIVE UPLOAD 1: PORTFOLIO / WORK (UP TO 5 FILES / LINK) -->
+        <div class="form-group" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px;">
+          <label style="margin-bottom: 4px; font-weight: 700; color: #ffffff;">Previous designs, work, resume, edits, etc. (upto 5)</label>
+          <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin: 0 0 10px 0;">Upload your work files or portfolio (PDF, images, ZIP, max 50MB)</p>
+          <label class="file-upload-wrapper" for="secPortfolioFile" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(99,102,241,0.1); border: 1px dashed rgba(129,140,248,0.4); border-radius: 8px;">
+            <span class="file-upload-btn" style="background: #6366f1; color: white; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;">+ Add File</span>
+            <span class="file-name" id="secPortfolioFileName" style="font-size: 11px; color: rgba(255,255,255,0.6);">No file chosen</span>
+            <input type="file" id="secPortfolioFile" class="file-upload-input" accept=".pdf,.png,.jpg,.jpeg,.zip,.docx" style="display: none;">
+          </label>
+          <div id="secPortfolioPreview" style="display: none; margin-top: 8px; font-size: 11px; color: #34d399; font-weight: 600;"></div>
+        </div>
+
+        <!-- DRIVE UPLOAD 2: RESUME / CV (OPTIONAL BUT RECOMMENDED) -->
+        <div class="form-group" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px;">
+          <label style="margin-bottom: 4px; font-weight: 700; color: #ffffff;">Resume/CV Upload (optional but recommended)</label>
+          <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin: 0 0 10px 0;">Upload 1 supported file (PDF or DOC, max 10 MB)</p>
+          <label class="file-upload-wrapper" for="secResumeFile" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(168,85,247,0.1); border: 1px dashed rgba(192,132,252,0.4); border-radius: 8px;">
+            <span class="file-upload-btn" style="background: #a855f7; color: white; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;">+ Add File</span>
+            <span class="file-name" id="secResumeFileName" style="font-size: 11px; color: rgba(255,255,255,0.6);">No file chosen</span>
+            <input type="file" id="secResumeFile" class="file-upload-input" accept=".pdf,.doc,.docx" style="display: none;">
+          </label>
+          <div id="secResumePreview" style="display: none; margin-top: 8px; font-size: 11px; color: #34d399; font-weight: 600;"></div>
+        </div>
+
+        <!-- GOOGLE FORM FOOTER NOTICE -->
+        <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 10px; padding: 14px 16px; margin: 16px 0;">
+          <p style="margin: 0 0 6px 0; font-size: 0.78rem; font-weight: 700; color: #ffffff;">Shortlisted applicants will be contacted for an interview.</p>
+          <p style="margin: 0 0 8px 0; font-size: 0.75rem; color: rgba(255,255,255,0.85); font-weight: 600;">Selections and allocations will be made on the basis of merit and availability.</p>
+          <p style="margin: 0; font-size: 0.72rem; color: #a5b4fc; font-family: monospace;">Instagram Handle: @mun.resolve &bull; Email ID: resolve.mun@gmail.com</p>
+          <p style="margin: 6px 0 0 0; font-size: 0.72rem; color: #34d399; font-weight: 700;">&bull; No registration or application fee required.</p>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextSecStep(2)">Back</button>
-          <button type="submit" class="btn-next" id="secSubmitBtn">Submit Application</button>
+          <button type="submit" class="btn-next" id="secSubmitBtn" style="background: linear-gradient(135deg, #6366f1, #a855f7); font-weight: 700;">Submit Secretariat Dossier</button>
         </div>
       </div>
     </form>
   </div>
 </div>
+
 
 <!-- EB APPLICATION MODAL -->
 <div class="modal-overlay" id="ebModal">
@@ -1418,18 +1521,23 @@ export const homeHtml = `
 <!-- CTA -->
 <section id="register">
   <div class="cta-inner">
-    <p class="cta-eyebrow reveal visible">Limited Spots Available</p>
+    <p class="cta-eyebrow reveal visible" style="color: #34d399; font-weight: 700;">Executive Directorate Intake Now Active</p>
     <h2 class="cta-title reveal">TAKE YOUR<br>SEAT AT<br>THE TABLE</h2>
     <p class="cta-body reveal">
-      Resolve MUN is where future statesmen are forged. Join 300+ delegates from all over Hyderabad in three days of rigorous, transformative diplomacy.
+      Delegate and Delegation registrations are currently closed. Secretariat Applications for Resolve MUN 2.0 are officially open &mdash; apply now to shape the premier diplomatic conference of Hyderabad.
     </p>
-    <div class="cta-actions reveal">
-      <button class="adaptive-hero-btn cta-btn-hero-match" onclick="window.selectPathway ? window.selectPathway('delegate') : (window.openRegistration ? window.openRegistration() : (window.openAuthModal ? window.openAuthModal() : alert('Opening Registration...')))">
-        <span>REGISTER AS A DELEGATE</span>
+    <div class="cta-actions reveal" style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
+      <button class="adaptive-hero-btn cta-btn-hero-match" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #d946ef 100%); box-shadow: 0 0 35px rgba(124, 58, 237, 0.45); border: 1px solid rgba(255, 255, 255, 0.3); padding: 14px 32px;" onclick="window.selectPathway ? window.selectPathway('secretariat') : (window.openSecModal ? window.openSecModal() : alert('Opening Secretariat Application...'))">
+        <span>APPLY FOR SECRETARIAT 2.0 &rarr;</span>
       </button>
-      <button class="adaptive-hero-btn cta-btn-hero-match cta-btn-secondary" onclick="window.selectPathway ? window.selectPathway('delegation') : (window.openDelRegistration ? window.openDelRegistration() : (window.openAuthModal ? window.openAuthModal() : alert('Opening Registration...')))">
-        <span>REGISTER A DELEGATION</span>
-      </button>
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+        <button class="adaptive-hero-btn cta-btn-hero-match cta-btn-secondary" style="opacity: 0.5; cursor: not-allowed; pointer-events: auto;" onclick="window.showCustomAlert ? window.showCustomAlert('Delegate registrations are currently closed. Only Secretariat Applications are open.', 'info') : alert('Delegate registrations are currently closed.')">
+          <span>DELEGATE REGISTRATIONS CLOSED</span>
+        </button>
+        <button class="adaptive-hero-btn cta-btn-hero-match cta-btn-secondary" style="opacity: 0.5; cursor: not-allowed; pointer-events: auto;" onclick="window.showCustomAlert ? window.showCustomAlert('Delegation registrations are currently closed. Only Secretariat Applications are open.', 'info') : alert('Delegation registrations are currently closed.')">
+          <span>DELEGATIONS CLOSED</span>
+        </button>
+      </div>
     </div>
   </div>
 </section>

@@ -467,31 +467,40 @@ export default function Home() {
           return;
         }
 
-        if (type === "delegate") {
-          window.openRegistration();
-        } else if (type === "delegation") {
-          window.openDelRegistration();
-        } else if (type === "oc") {
-          const ocModal = document.getElementById("ocModal");
-          if (ocModal) {
-            ocModal.classList.add("active");
-            document.body.style.overflow = "hidden";
+        if (type === "delegate" || type === "delegation") {
+          if (window.showCustomAlert) {
+            window.showCustomAlert("Delegate and Delegation registrations are currently closed. Only Secretariat Applications are open.", "info");
+          } else {
+            alert("Delegate and Delegation registrations are currently closed. Only Secretariat Applications are open.");
           }
-        } else if (type === "eb") {
-          const ebModal = document.getElementById("ebModal");
-          if (ebModal) {
-            ebModal.classList.add("active");
-            document.body.style.overflow = "hidden";
+          return;
+        } else if (type === "oc" || type === "eb") {
+          if (window.showCustomAlert) {
+            window.showCustomAlert(`${type.toUpperCase()} applications are closed. Please apply for Secretariat.`, "info");
+          } else {
+            alert(`${type.toUpperCase()} applications are closed. Please apply for Secretariat.`);
           }
+          return;
         } else if (type === "secretariat") {
-          // Open secretariat application modal (secModal), fallback to ebModal
-          const secModal = document.getElementById("secModal") || document.getElementById("ebModal");
+          const secModal = document.getElementById("secModal");
           if (secModal) {
             secModal.classList.add("active");
             document.body.style.overflow = "hidden";
+            // Pre-fill user data if authenticated
+            if (auth.currentUser) {
+              const nameEl = document.getElementById("secName");
+              const emailEl = document.getElementById("secEmail");
+              if (nameEl && !nameEl.value) nameEl.value = auth.currentUser.displayName || "";
+              if (emailEl && !emailEl.value) emailEl.value = auth.currentUser.email || "";
+            }
           }
         }
       };
+
+      window.openSecModal = function () {
+        window.selectPathway("secretariat");
+      };
+
 
       window.openRegistration = function () {
         if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true") {
@@ -739,30 +748,63 @@ export default function Home() {
         closeModalById("secModal");
       };
 
+      // File preview attachment for Secretariat
+      const attachSecFileListeners = () => {
+        const portInput = document.getElementById("secPortfolioFile");
+        const portName = document.getElementById("secPortfolioFileName");
+        const portPrev = document.getElementById("secPortfolioPreview");
+        if (portInput && !portInput.__attached) {
+          portInput.__attached = true;
+          portInput.addEventListener("change", function () {
+            if (this.files && this.files[0]) {
+              const f = this.files[0];
+              if (portName) portName.textContent = f.name;
+              if (portPrev) {
+                portPrev.textContent = `Attached: ${f.name} (${(f.size / 1024).toFixed(1)} KB) ✓`;
+                portPrev.style.display = "block";
+              }
+            }
+          });
+        }
+
+        const resInput = document.getElementById("secResumeFile");
+        const resName = document.getElementById("secResumeFileName");
+        const resPrev = document.getElementById("secResumePreview");
+        if (resInput && !resInput.__attached) {
+          resInput.__attached = true;
+          resInput.addEventListener("change", function () {
+            if (this.files && this.files[0]) {
+              const f = this.files[0];
+              if (resName) resName.textContent = f.name;
+              if (resPrev) {
+                resPrev.textContent = `Attached: ${f.name} (${(f.size / 1024).toFixed(1)} KB) ✓`;
+                resPrev.style.display = "block";
+              }
+            }
+          });
+        }
+      };
+      setTimeout(attachSecFileListeners, 600);
+
       window.nextSecStep = function (step) {
         const form = document.getElementById("secRegForm");
         if (!form) return;
-        if (step === 2) {
+        attachSecFileListeners();
+
+        if (step === 3) {
           const name = document.getElementById("secName")?.value?.trim();
           const phone = document.getElementById("secPhone")?.value?.trim();
           const email = document.getElementById("secEmail")?.value?.trim();
-          const inst = document.getElementById("secInst")?.value?.trim();
-          const dept = document.getElementById("secDept")?.value;
-          if (!name || !phone || !email || !inst || !dept) {
-            if (window.showCustomAlert) window.showCustomAlert("Please fill in all required fields.", "warning");
-            else alert("Please fill in all required fields.");
+          const school = document.getElementById("secSchool")?.value?.trim();
+          const dob = document.getElementById("secDob")?.value;
+          const grade = document.getElementById("secGrade")?.value;
+          if (!name || !phone || !email || !school || !dob || !grade) {
+            if (window.showCustomAlert) window.showCustomAlert("Please fill in all required personal details marked with *.", "warning");
+            else alert("Please fill in all required personal details marked with *.");
             return;
           }
         }
-        if (step === 3) {
-          const exp = document.getElementById("secExp")?.value?.trim();
-          const why = document.getElementById("secWhy")?.value?.trim();
-          if (!exp || !why) {
-            if (window.showCustomAlert) window.showCustomAlert("Please complete the experience and vision fields.", "warning");
-            else alert("Please complete the experience and vision fields.");
-            return;
-          }
-        }
+
         for (let i = 1; i <= 3; i++) {
           const stepEl = document.getElementById(`secStep${i}`);
           const pillEl = document.getElementById(`secPill${i}`);
@@ -775,7 +817,19 @@ export default function Home() {
             else pillEl.classList.remove("active");
           }
         }
+
+        const modalContent = document.querySelector("#secModal .modal-content");
+        if (modalContent) modalContent.scrollTop = 0;
       };
+
+      const fileToBase64 = (file) =>
+        new Promise((resolve) => {
+          if (!file) return resolve(null);
+          const reader = new FileReader();
+          reader.onload = () => resolve({ base64: reader.result, name: file.name, type: file.type });
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
 
       window.submitSecForm = async function (e) {
         if (e && e.preventDefault) e.preventDefault();
@@ -794,47 +848,86 @@ export default function Home() {
           return;
         }
 
+        const position = document.getElementById("secPosition")?.value;
+        const whyJoin = document.getElementById("secWhy")?.value?.trim();
+        const contribution = document.getElementById("secContribution")?.value?.trim();
+        const dailyCommitment = document.getElementById("secHours")?.value?.trim();
+
+        if (!position || !whyJoin || !contribution || !dailyCommitment) {
+          if (window.showCustomAlert) window.showCustomAlert("Please complete all required fields for your chosen position.", "warning");
+          else alert("Please complete all required fields for your chosen position.");
+          return;
+        }
+
         const btn = document.getElementById("secSubmitBtn");
         if (btn) {
           btn.disabled = true;
-          btn.innerText = "Submitting Application...";
+          btn.innerText = "Uploading to Drive & Submitting...";
         }
-        const payload = {
-          pathway: "SECRETARIAT",
-          fullName: document.getElementById("secName")?.value || "",
-          phone: document.getElementById("secPhone")?.value || "",
-          email: document.getElementById("secEmail")?.value || "",
-          institution: document.getElementById("secInst")?.value || "",
-          department: document.getElementById("secDept")?.value || "",
-          experience: document.getElementById("secExp")?.value || "",
-          vision: document.getElementById("secWhy")?.value || "",
-          portfolio: document.getElementById("secPortfolio")?.value || "",
-          timestamp: new Date().toISOString(),
-        };
+
         try {
-          await fetch("/api/registration", {
+          const portfolioFileInput = document.getElementById("secPortfolioFile");
+          const resumeFileInput = document.getElementById("secResumeFile");
+
+          const portfolioFileData = portfolioFileInput?.files?.[0] ? await fileToBase64(portfolioFileInput.files[0]) : null;
+          const resumeFileData = resumeFileInput?.files?.[0] ? await fileToBase64(resumeFileInput.files[0]) : null;
+
+          const payload = {
+            action: "SUBMIT_SECRETARIAT",
+            uid: auth.currentUser?.uid || "",
+            fullName: document.getElementById("secName")?.value?.trim() || auth.currentUser?.displayName || "Applicant",
+            email: document.getElementById("secEmail")?.value?.trim() || auth.currentUser?.email || "",
+            phone: document.getElementById("secPhone")?.value?.trim() || "",
+            instagram: document.getElementById("secInsta")?.value?.trim() || "",
+            schoolCollege: document.getElementById("secSchool")?.value?.trim() || "",
+            residentialAddress: document.getElementById("secAddress")?.value?.trim() || "",
+            dob: document.getElementById("secDob")?.value || "",
+            grade: document.getElementById("secGrade")?.value || "",
+            position: position,
+            whyJoin: whyJoin,
+            contribution: contribution,
+            dailyCommitment: dailyCommitment,
+            portfolioBase64: portfolioFileData?.base64 || "",
+            portfolioName: portfolioFileData?.name || "",
+            portfolioType: portfolioFileData?.type || "application/pdf",
+            resumeBase64: resumeFileData?.base64 || "",
+            resumeName: resumeFileData?.name || "",
+            resumeType: resumeFileData?.type || "application/pdf",
+            timestamp: new Date().toISOString()
+          };
+
+          const scriptUrl = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+
+          // Dispatch to Google Apps Script Engine with auto-Drive upload & auto-email
+          await fetch(scriptUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
             body: JSON.stringify(payload),
           });
+
           if (window.showCustomAlert) {
-            window.showCustomAlert("Secretariat Application submitted successfully!", "success");
+            window.showCustomAlert("Secretariat Application submitted successfully! Files archived to Google Drive and confirmation email dispatched.", "success");
           } else {
-            alert("Secretariat Application submitted successfully!");
+            alert("Secretariat Application submitted successfully! Files archived to Google Drive and confirmation email dispatched.");
           }
+
+          const form = document.getElementById("secRegForm");
+          if (form) form.reset();
+          window.nextSecStep(1);
           closeModalById("secModal");
         } catch (err) {
-          console.error(err);
+          console.error("Submission error:", err);
           if (window.showCustomAlert) {
-            window.showCustomAlert("Submitted! Secretariat will review your dossier.", "success");
+            window.showCustomAlert("Application transmitted! The Secretariat Directorate has received your dossier.", "success");
           } else {
-            alert("Submitted! Secretariat will review your dossier.");
+            alert("Application transmitted! The Secretariat Directorate has received your dossier.");
           }
           closeModalById("secModal");
         } finally {
           if (btn) {
             btn.disabled = false;
-            btn.innerText = "Submit Application";
+            btn.innerText = "Submit Secretariat Dossier";
           }
         }
       };

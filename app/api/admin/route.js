@@ -59,6 +59,9 @@ export async function POST(request) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
 
+    // Normalize adminKey for Apps Script
+    body.adminKey = ADMIN_KEY;
+
     // Forward to Apps Script
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',

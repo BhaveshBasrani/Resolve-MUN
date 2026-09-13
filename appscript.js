@@ -33,7 +33,8 @@ const CONFIG = {
     DELEGATION_PAYMENTS: "Resolve_MUN_Delegation_Payments",
     EB_CVS: "Resolve_MUN_EB_CVs",
     OC_CVS: "Resolve_MUN_OC_CVs",
-    SEC_CVS: "Resolve_MUN_Secretariat_CVs"
+    SEC_CVS: "Resolve_MUN_Secretariat_CVs",
+    SEC_PORTFOLIOS: "Resolve_MUN_Secretariat_Portfolios"
   }
 };
 
@@ -61,8 +62,9 @@ const SCHEMAS = {
     "Department2", "StatementOfPurpose", "CV_URL", "Status"
   ],
   "Secretariat_Applications": [
-    "Timestamp", "AppID", "UID", "FullName", "Email", "Phone", "Department", 
-    "Experience", "StatementOfPurpose", "CV_URL", "Status"
+    "Timestamp", "AppID", "UID", "FullName", "Email", "Phone", "Instagram", 
+    "SchoolCollege", "ResidentialAddress", "DOB", "Grade", "Position", 
+    "WhyJoin", "Contribution", "DailyCommitment", "PortfolioURL", "ResumeURL", "Status"
   ],
   "Waitlist": [
     "Timestamp", "WaitlistID", "FullName", "Email", "Phone", "Status", "PriorityScore"
@@ -283,7 +285,14 @@ function doPost(e) {
         break;
 
       case "CHECK_IN_QR":
+      case "RECORD_CHECK_IN":
         result = recordCheckIn(payload);
+        break;
+
+      case "ADMIN_UPDATE_STATUS":
+      case "ADMIN_UPDATE_DELEGATE_STATUS":
+        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        result = adminUpdateDelegateStatus(payload);
         break;
 
       case "ADMIN_CONFIRM_ALLOTMENT":
@@ -608,7 +617,7 @@ function applyOCWithDrive(data) {
 }
 
 /**
- * 5. Secretariat Submission
+ * 5. Secretariat Submission (Matching Official Google Form 1:1)
  */
 function applySecretariatWithDrive(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -618,10 +627,27 @@ function applySecretariatWithDrive(data) {
     sheet = ss.getSheetByName("Secretariat_Applications");
   }
 
-  const appId = "RM26-SEC-" + Math.floor(100 + Math.random() * 900);
-  const cvData = data.cvBase64 || data.cv_base64 || "";
-  const cvName = data.cvName || ("SEC_CV_" + appId + ".pdf");
-  const driveUrl = cvData ? saveFileToDriveFolder(cvData, cvName, "application/pdf", CONFIG.FOLDERS.SEC_CVS) : (data.portfolio || "");
+  const appId = "RM26-SEC-" + Math.floor(1000 + Math.random() * 9000);
+
+  // 1. Resume / CV Upload to Drive
+  let resumeUrl = "";
+  const resumeData = data.resumeBase64 || data.cvBase64 || data.cv_base64 || "";
+  if (resumeData) {
+    const resumeName = data.resumeName || data.cvName || ("SEC_RESUME_" + appId + ".pdf");
+    resumeUrl = saveFileToDriveFolder(resumeData, resumeName, data.resumeType || "application/pdf", CONFIG.FOLDERS.SEC_CVS);
+  } else if (data.resumeUrl) {
+    resumeUrl = data.resumeUrl;
+  }
+
+  // 2. Portfolio / Work Upload to Drive
+  let portfolioUrl = "";
+  const portfolioData = data.portfolioBase64 || data.workBase64 || "";
+  if (portfolioData) {
+    const portfolioName = data.portfolioName || ("SEC_PORTFOLIO_" + appId);
+    portfolioUrl = saveFileToDriveFolder(portfolioData, portfolioName, data.portfolioType || "application/pdf", CONFIG.FOLDERS.SEC_PORTFOLIOS);
+  } else if (data.portfolioUrl) {
+    portfolioUrl = data.portfolioUrl;
+  }
 
   sheet.appendRow([
     new Date().toISOString(),
@@ -629,19 +655,32 @@ function applySecretariatWithDrive(data) {
     data.uid || "",
     data.fullName || data.name || "",
     data.email || "",
-    data.phone || "",
-    data.department || data.portfolio1 || "",
-    data.experience || data.portfolio2 || "",
-    data.vision || data.statementOfPurpose || "",
-    driveUrl,
+    data.phone || data.contactNumber || "",
+    data.instagram || data.instaHandle || "",
+    data.schoolCollege || data.institution || "",
+    data.residentialAddress || data.address || "",
+    data.dob || "",
+    data.grade || "",
+    data.position || data.department || "",
+    data.whyJoin || data.vision || "",
+    data.contribution || "",
+    data.dailyCommitment || data.hours || "",
+    portfolioUrl,
+    resumeUrl,
     "Under_Review"
   ]);
 
   if (data.email) {
-    sendApplicationReceivedEmail(data.email, data.fullName || "Applicant", "Secretariat Directorate", appId);
+    sendSecretariatApplicationReceivedEmail(data.email, data.fullName || "Applicant", data.position || "Executive Secretariat", appId);
   }
 
-  return { status: "success", appId: appId, cvUrl: driveUrl, message: "Secretariat application enrolled." };
+  return { 
+    status: "success", 
+    appId: appId, 
+    resumeUrl: resumeUrl, 
+    portfolioUrl: portfolioUrl, 
+    message: "Secretariat application enrolled successfully." 
+  };
 }
 
 /**
@@ -845,29 +884,32 @@ function allotCommitteeAndSendEmail(data) {
   const sheet = ss.getSheetByName("Registrations");
   if (!sheet) return { status: "error", message: "Registrations sheet not found" };
 
-  const regId = data.regId;
-  const committee = data.committee;
-  const country = data.country;
+  const regId = String(data.regId || data.id || "").trim();
+  const committee = data.committee || data.allocatedCommittee || "";
+  const country = data.country || data.allocatedCountry || "";
   let targetEmail = data.email || "";
-  let targetName = data.fullName || "Delegate";
+  let targetName = data.fullName || data.name || "Delegate";
 
   const rows = sheet.getDataRange().getValues();
   let found = false;
 
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][1] === regId) {
+    const rowRegId = String(rows[i][1] || "").trim();
+    const rowEmail = String(rows[i][4] || "").trim().toLowerCase();
+
+    if ((regId && rowRegId === regId) || (targetEmail && rowEmail === targetEmail.toLowerCase())) {
       sheet.getRange(i + 1, 14).setValue("Confirmed");
       sheet.getRange(i + 1, 15).setValue(committee);
       sheet.getRange(i + 1, 16).setValue(country);
       sheet.getRange(i + 1, 18).setValue("Yes");
       targetEmail = targetEmail || rows[i][4];
-      targetName = targetName === "Delegate" ? rows[i][3] : targetName;
+      targetName = (targetName === "Delegate" && rows[i][3]) ? rows[i][3] : targetName;
       found = true;
       break;
     }
   }
 
-  if (targetEmail) {
+  if (targetEmail && committee && country) {
     sendAllocationEmail(targetEmail, targetName, regId, committee, country);
   }
 
@@ -1205,6 +1247,71 @@ function buildApplicationReceivedHtml(fullName, formType, refId) {
   return wrapInEmbassyLayout("Resolve MUN 2026", "Registration Received", body);
 }
 
+/**
+ * 5. Secretariat Application Received Email (Zero Fee Intake)
+ */
+function sendSecretariatApplicationReceivedEmail(email, fullName, position, appId) {
+  const reference = appId || ("RM26-SEC-" + Math.floor(1000 + Math.random() * 9000));
+  const subject = `Secretariat Application Received: ${position} — Resolve MUN 2.0 [${reference}]`;
+  const htmlBody = buildSecretariatReceivedHtml(fullName, position, reference);
+  const plainText = `Hi ${fullName},\n\nWe have successfully received your Secretariat application for Resolve MUN 2.0.\n\nPosition Applied: ${position}\nApplication ID: ${reference}\n\nPlease note: Secretariat applications are strictly free of charge — no payment or registration fee is required.\n\nShortlisted applicants will be contacted directly for a personal interview. Selections and allocations will be made on the basis of merit and availability.\n\nVenue: ${CONFIG.VENUE}\nDates: ${CONFIG.CONFERENCE_DATES}\nContact: @mun.resolve | resolve.mun@gmail.com\n\nResolve MUN 2.0 Directorate`;
+
+  dispatchMail(email, subject, htmlBody, plainText);
+  tryLogEmailToSheet("SECRETARIAT_APP_RECEIVED", email, fullName, "SENT");
+
+  return { status: "success", recipient: email, appId: reference, message: "Secretariat confirmation email dispatched." };
+}
+
+function buildSecretariatReceivedHtml(fullName, position, appId) {
+  const body = `
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.85); line-height: 1.6; margin: 0 0 20px 0;">
+      Hi <strong style="color: #ffffff;">${fullName}</strong>,
+    </p>
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.6; margin: 0 0 20px 0;">
+      Thank you for stepping forward to shape <strong style="color: #a5b4fc;">Resolve MUN 2.0</strong>. Your application for the Executive Secretariat has been securely registered in our directorate database.
+    </p>
+
+    <!-- DOSSIER DETAILS -->
+    <div style="background-color: #0f1224; border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding-bottom: 12px;">
+            <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Candidate Application ID</div>
+            <div style="font-family: monospace; font-size: 16px; font-weight: 700; color: #38bdf8;">${appId}</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Position Applied</div>
+            <div style="font-size: 16px; font-weight: 700; color: #ffffff;">${position}</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Registration Fee</div>
+            <div style="font-size: 13px; font-weight: 700; color: #34d399;">&#8377;0 (No Fee / Free Application)</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: rgba(129, 140, 248, 0.06); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 8px; padding: 14px 16px; margin-bottom: 22px;">
+      <p style="margin: 0; font-size: 12px; color: rgba(255, 255, 255, 0.75); line-height: 1.6;">
+        <strong>What's Next?</strong><br>
+        Shortlisted applicants will be contacted individually for an interview. Selections and portfolio allocations will be finalized strictly on the basis of merit, past experience, and availability.
+      </p>
+    </div>
+
+    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.45); line-height: 1.5; margin: 0;">
+      <strong style="color: rgba(255,255,255,0.6);">Official Channel:</strong> Instagram: @mun.resolve &bull; Email: resolve.mun@gmail.com<br>
+      <strong style="color: rgba(255,255,255,0.6);">Venue:</strong> ${CONFIG.VENUE}<br>
+      <strong style="color: rgba(255,255,255,0.6);">Dates:</strong> ${CONFIG.CONFERENCE_DATES}
+    </p>
+  `;
+  return wrapInEmbassyLayout("Resolve MUN 2.0", "Secretariat Application", body);
+}
+
+
 /* -------------------------------------------------------------------------- */
 /*             ADMINISTRATIVE & REPAIR UTILITIES                             */
 /* -------------------------------------------------------------------------- */
@@ -1372,17 +1479,51 @@ function adminAddDelegate(data) {
 
 function adminDeleteRecord(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(data.sheetName);
-  if (!sheet) return { status: "error", message: "Sheet not found" };
-  const idCol = data.idColIndex || 2;
+  const sheetName = data.sheetName || "Registrations";
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return { status: "error", message: "Sheet not found: " + sheetName };
+
+  const targetId = String(data.recordId || data.id || data.regId || data.delId || data.appId || "").trim();
+  if (!targetId) return { status: "error", message: "No record ID provided for deletion" };
+
   const rows = sheet.getDataRange().getValues();
+  const idColIndex = Math.max(0, (data.idColIndex || data.idCol || 2) - 1);
+
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][idCol - 1] === data.recordId) {
+    const valCol = String(rows[i][idColIndex] || "").trim();
+    const valCol1 = String(rows[i][1] || "").trim(); // Column B (RegID, DelID, AppID, UID)
+    const valCol2 = String(rows[i][2] || "").trim(); // Column C (UID, DelCode)
+    const valEmail = String(rows[i][4] || "").trim().toLowerCase(); // Column E (Email)
+
+    if (
+      valCol === targetId ||
+      valCol1 === targetId ||
+      valCol2 === targetId ||
+      (targetId.includes("@") && valEmail === targetId.toLowerCase())
+    ) {
       sheet.deleteRow(i + 1);
-      return { status: "success", recordId: data.recordId };
+      return { status: "success", recordId: targetId, deletedRow: i + 1, sheet: sheetName };
     }
   }
-  return { status: "error", message: "Record not found" };
+  return { status: "error", message: "Record " + targetId + " not found in " + sheetName };
+}
+
+function adminUpdateDelegateStatus(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Registrations");
+  if (!sheet) return { status: "error", message: "Registrations sheet not found" };
+
+  const regId = String(data.regId || data.id || "").trim();
+  const newStatus = data.status || "Confirmed";
+  const rows = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][1]).trim() === regId) {
+      sheet.getRange(i + 1, 14).setValue(newStatus);
+      return { status: "success", regId: regId, status: newStatus };
+    }
+  }
+  return { status: "error", message: "Delegate ID not found: " + regId };
 }
 
 function getDelegateByEmail(email) {

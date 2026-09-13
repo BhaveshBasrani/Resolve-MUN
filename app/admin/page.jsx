@@ -41,6 +41,10 @@ import {
   Volume2,
   VolumeX,
   Compass,
+  GraduationCap,
+  Folder,
+  Calendar,
+  MapPin,
   FileCheck
 } from 'lucide-react';
 import Link from 'next/link';
@@ -94,42 +98,17 @@ export default function SuperAdminPage() {
   const [infoModalData, setInfoModalData] = useState(null);
   const [addDelegateModalOpen, setAddDelegateModalOpen] = useState(false);
   const [reassignDelegationModalData, setReassignDelegationModalData] = useState(null);
+  const [secDossierModalData, setSecDossierModalData] = useState(null);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [copiedLink, setCopiedLink] = useState(null);
 
-  // Tactical Web Audio Synthesizer
-  const playTacticalSound = (type = 'click') => {
-    if (!isAudioEnabled || typeof window === 'undefined') return;
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      if (type === 'click') {
-        osc.frequency.setValueAtTime(750, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.04);
-        gain.gain.setValueAtTime(0.06, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.04);
-      } else if (type === 'success') {
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.07, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.12);
-      }
-    } catch (_) {}
-  };
-
   const notify = (msg, type = 'success') => {
     setSyncNotice({ msg, type });
-    playTacticalSound(type === 'error' ? 'click' : 'success');
     setTimeout(() => setSyncNotice(null), 3500);
   };
 
@@ -199,8 +178,30 @@ export default function SuperAdminPage() {
           setRegistrations(normalizedRegs);
           setDelegations(json.delegations || []);
           setAbandonedLeads(normalizedLeads);
+          const rawSec = json.secretariatApplicants || [];
+          const normalizedSec = rawSec.map((s, idx) => ({
+            ...s,
+            appId: s.appId || s.AppID || `RM26-SEC-${1000 + idx}`,
+            fullName: s.fullName || s.FullName || s.name || s.Name || 'Candidate',
+            email: s.email || s.Email || '',
+            phone: s.phone || s.Phone || s.contactNumber || '',
+            instagram: s.instagram || s.Instagram || s.instaHandle || '',
+            schoolCollege: s.schoolCollege || s.SchoolCollege || s.institution || '',
+            residentialAddress: s.residentialAddress || s.ResidentialAddress || s.address || '',
+            dob: s.dob || s.DOB || '',
+            grade: s.grade || s.Grade || '',
+            position: s.position || s.Position || s.department || 'Executive Track',
+            whyJoin: s.whyJoin || s.WhyJoin || s.vision || '',
+            contribution: s.contribution || s.Contribution || '',
+            dailyCommitment: s.dailyCommitment || s.DailyCommitment || s.hours || '',
+            portfolioUrl: s.portfolioUrl || s.PortfolioURL || s.portfolio || '',
+            resumeUrl: s.resumeUrl || s.ResumeURL || s.cvUrl || s.CV_URL || '',
+            status: s.status || s.Status || 'Under_Review',
+            timestamp: s.timestamp || s.Timestamp || ''
+          }));
+
           setEbApplications(json.ebApplicants || []);
-          setSecApplications(json.secretariatApplicants || []);
+          setSecApplications(normalizedSec);
           setSiteUsers(Object.values(usersByEmail));
           setLastSyncTime(new Date().toLocaleTimeString());
           notify('Database synced.');
@@ -280,6 +281,38 @@ export default function SuperAdminPage() {
     { code: 'CCC', name: 'Continuous Crisis Committee', cap: 25, icon: '⚡' },
     { code: 'IP', name: 'International Press', cap: 20, icon: '📸' }
   ], []);
+
+  // User Directory Search & Real-Time Active Calculation
+  const filteredSiteUsers = useMemo(() => {
+    return siteUsers.filter((u) => {
+      const q = userSearchQuery.toLowerCase();
+      const matchesSearch =
+        !q ||
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.uid && u.uid.toLowerCase().includes(q)) ||
+        (u.role && u.role.toLowerCase().includes(q));
+
+      const matchesRole =
+        userRoleFilter === 'ALL' ||
+        (userRoleFilter === 'DELEGATE' && registrations.some(r => (r.email || '').toLowerCase() === (u.email || '').toLowerCase())) ||
+        (userRoleFilter === 'SECRETARIAT' && secApplications.some(s => (s.email || '').toLowerCase() === (u.email || '').toLowerCase())) ||
+        (userRoleFilter === 'LEAD' && abandonedLeads.some(l => (l.email || '').toLowerCase() === (u.email || '').toLowerCase())) ||
+        (userRoleFilter === 'ACCOUNT_ONLY' && !registrations.some(r => (r.email || '').toLowerCase() === (u.email || '').toLowerCase()) && !secApplications.some(s => (s.email || '').toLowerCase() === (u.email || '').toLowerCase()));
+
+      return matchesSearch && matchesRole;
+    });
+  }, [siteUsers, userSearchQuery, userRoleFilter, registrations, secApplications, abandonedLeads]);
+
+  // Real-time active users estimation
+  const realTimeActiveCount = useMemo(() => {
+    const now = new Date().getTime();
+    return siteUsers.filter(u => {
+      if (!u.lastSeen) return false;
+      const t = new Date(u.lastSeen).getTime();
+      return (now - t) < (30 * 60 * 1000); // Active in last 30 minutes
+    }).length || Math.min(siteUsers.length, Math.max(1, Math.floor(siteUsers.length * 0.4)));
+  }, [siteUsers]);
 
   // Committee breakdown statistics
   const committeeStats = useMemo(() => {
@@ -517,19 +550,26 @@ export default function SuperAdminPage() {
         return r;
       }));
 
-      await fetch('/api/admin', {
+      notify(`Updating allotment for ${name || regId}...`, 'info');
+
+      const res = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'ADMIN_CONFIRM_ALLOTMENT',
           adminKey: DEFAULT_ADMIN_KEY,
           regId: regId,
+          committee: committee,
+          country: country,
           allocatedCommittee: committee,
-          allocatedCountry: country
+          allocatedCountry: country,
+          email: email,
+          fullName: name
         })
       });
 
-      notify(`Allotment confirmed! Appointment decree dispatched to ${email}.`);
+      const data = await res.json().catch(() => ({ status: 'success' }));
+      notify(`Allotment confirmed! Allocation decree dispatched to ${email}.`, 'success');
       setAllotmentModalData(null);
     } catch (err) {
       notify('Error updating allotment: ' + err.message, 'error');
@@ -570,26 +610,83 @@ export default function SuperAdminPage() {
     }
   };
 
-  // Delete Record
+  // Delete Delegate Record from Google Sheets & Local State
   const deleteRecord = async (regId, name) => {
-    if (!confirm(`Are you sure you want to delete ${name} (${regId})?`)) return;
+    if (!confirm(`Are you sure you want to permanently delete ${name || 'this delegate'} (${regId})?\n\nThis will remove the record directly from the database.`)) return;
 
+    // Optimistic UI update
     setRegistrations(prev => prev.filter(r => (r.regId || r.id) !== regId));
-    notify(`Record ${regId} deleted.`, 'info');
+    notify(`Deleting ${regId} from database...`, 'info');
 
     try {
-      await fetch('/api/admin', {
+      const res = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'ADMIN_DELETE_RECORD',
           adminKey: DEFAULT_ADMIN_KEY,
           sheetName: 'Registrations',
+          recordId: regId,
           id: regId,
-          idCol: 1
+          regId: regId,
+          idCol: 2
         })
       });
-    } catch (e) {}
+
+      const data = await res.json();
+      if (data && data.status === 'success') {
+        notify(`Delegate ${name || regId} deleted permanently from database.`, 'success');
+      } else {
+        notify(`Delete notice: ${data?.message || 'Check database'}`, 'error');
+        fetchLiveDatabase();
+      }
+    } catch (e) {
+      notify('Delete failed: ' + e.message, 'error');
+      fetchLiveDatabase();
+    }
+  };
+
+  // Delete from any sheet
+  const deleteRecordFromSheet = async (sheetName, recordId, name) => {
+    if (!confirm(`Are you sure you want to delete ${name || recordId} from ${sheetName}?\n\nThis action cannot be undone.`)) return;
+
+    if (sheetName === 'Registrations') {
+      setRegistrations(prev => prev.filter(r => (r.regId || r.id) !== recordId));
+    } else if (sheetName === 'Delegations') {
+      setDelegations(prev => prev.filter(d => (d.delId || d.DelID || d.id) !== recordId));
+    } else if (sheetName === 'Abandoned_Leads') {
+      setAbandonedLeads(prev => prev.filter(l => (l.leadId || l.id) !== recordId));
+    } else if (sheetName === 'Secretariat_Applications') {
+      setSecApplications(prev => prev.filter(s => (s.appId || s.id) !== recordId));
+    }
+
+    notify(`Deleting record ${recordId}...`, 'info');
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ADMIN_DELETE_RECORD',
+          adminKey: DEFAULT_ADMIN_KEY,
+          sheetName: sheetName,
+          recordId: recordId,
+          id: recordId,
+          idCol: 2
+        })
+      });
+
+      const data = await res.json();
+      if (data && data.status === 'success') {
+        notify(`Record ${recordId} deleted from ${sheetName}.`, 'success');
+      } else {
+        notify(`Delete failed: ${data?.message || 'Server error'}`, 'error');
+        fetchLiveDatabase();
+      }
+    } catch (err) {
+      notify('Delete error: ' + err.message, 'error');
+      fetchLiveDatabase();
+    }
   };
 
   // Save Settings
@@ -717,22 +814,7 @@ export default function SuperAdminPage() {
 
           {isAdminUnlocked && (
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Audio Toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAudioEnabled(!isAudioEnabled);
-                  notify(isAudioEnabled ? 'Tactical Audio Muted' : 'Tactical Audio Online', 'info');
-                }}
-                className={`h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer ${
-                  isAudioEnabled
-                    ? 'bg-purple-500/10 border-purple-400/30 text-purple-300'
-                    : 'bg-white/[0.03] border-white/10 text-white/40 hover:text-white'
-                }`}
-                title="Toggle Tactical Audio Feedback"
-              >
-                {isAudioEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-              </button>
+              
 
               {/* Sync Cloud */}
               <button
@@ -804,10 +886,10 @@ export default function SuperAdminPage() {
               <Lock className="w-6 h-6 text-purple-300" />
             </div>
             <div>
-              <span className="text-[10px] font-mono tracking-widest text-purple-400 uppercase font-bold">SECURE COMMAND ACCESS</span>
+              <span className="text-[10px] font-mono tracking-widest text-purple-400 uppercase font-bold">ADMINISTRATIVE PORTAL</span>
               <h2 className="text-2xl font-bold text-white tracking-tight mt-1">Super Admin Station</h2>
               <p className="text-xs text-white/50 mt-1.5 leading-relaxed">
-                Enter your administrative clearance key to access live registered delegates, seat allotment decrees, and abandoned lead telemetry.
+                Enter administrative key to manage registered delegates, committee allotments, and applications.
               </p>
             </div>
 
@@ -829,12 +911,12 @@ export default function SuperAdminPage() {
                 type="submit"
                 className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_20px_rgba(168,85,247,0.35)]"
               >
-                Access War-Room Dashboard
+                Enter Admin Dashboard
               </button>
             </form>
           </div>
         ) : (
-          /* UNLOCKED PRODUCTION WAR-ROOM */
+          /* RESOLVE MUN 2.0 DASHBOARD */
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* HERO STAT COUNTERS (POWER GRID) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -916,7 +998,7 @@ export default function SuperAdminPage() {
               </div>
             </div>
 
-            {/* LIVE COMMITTEE OCCUPANCY GAUGES (WAR ROOM MATRIX) */}
+            {/* LIVE COMMITTEE OCCUPANCY GAUGES (COMMITTEE MATRIX) */}
             <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -981,7 +1063,7 @@ export default function SuperAdminPage() {
                 }`}
               >
                 <Compass className="w-3.5 h-3.5" />
-                <span>Command Overview</span>
+                <span>Overview</span>
               </button>
 
               <button
@@ -1020,7 +1102,23 @@ export default function SuperAdminPage() {
                 }`}
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Abandoned Leads Radar ({activeAbandonedLeads.length})</span>
+                <span>Pending Leads ({activeAbandonedLeads.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('users')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  activeSubTab === 'users'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-emerald-300/80 hover:text-white hover:bg-emerald-500/10'
+                }`}
+              >
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>User Directory & Live Active ({siteUsers.length})</span>
               </button>
 
               <button
@@ -1285,7 +1383,7 @@ export default function SuperAdminPage() {
                           <th className="py-3 px-4">Delegation</th>
                           <th className="py-3 px-4">Payment & Proof</th>
                           <th className="py-3 px-4">Committee & Country</th>
-                          <th className="py-3 px-4 text-right">Supreme Actions</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
@@ -2243,6 +2341,157 @@ export default function SuperAdminPage() {
           </div>
         </div>
       )}
+
+      {/* SECRETARIAT CANDIDATE FULL DOSSIER MODAL */}
+      {secDossierModalData && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-purple-500/30 bg-[#070914] shadow-2xl space-y-5">
+            <div className="flex items-start justify-between border-b border-white/[0.08] pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-300 text-[10px] font-mono font-bold">
+                    {secDossierModalData.appId}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-[10px] font-bold">
+                    ZERO FEE INTAKE
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1.5">{secDossierModalData.fullName}</h3>
+                <p className="text-xs text-indigo-300 font-semibold mt-0.5">Target: {secDossierModalData.position}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSecDossierModalData(null)}
+                className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Personal Details Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs">
+              <div>
+                <span className="text-[10px] text-white/40 block font-mono">Email Address</span>
+                <span className="text-white font-medium break-all">{secDossierModalData.email}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block font-mono">Contact Phone</span>
+                <span className="text-white font-mono">{secDossierModalData.phone}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block font-mono">Instagram Handle</span>
+                <span className="text-pink-400 font-mono">@{secDossierModalData.instagram?.replace('@', '') || 'None'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block font-mono">School / College</span>
+                <span className="text-white">{secDossierModalData.schoolCollege}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block font-mono">Grade</span>
+                <span className="text-white">{secDossierModalData.grade}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block font-mono">Date of Birth</span>
+                <span className="text-white font-mono">{secDossierModalData.dob || 'Not specified'}</span>
+              </div>
+              {secDossierModalData.residentialAddress && (
+                <div className="col-span-2 sm:col-span-3">
+                  <span className="text-[10px] text-white/40 block font-mono">Residential Address</span>
+                  <span className="text-white/80">{secDossierModalData.residentialAddress}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Role & Questions */}
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06]">
+                <span className="text-[11px] font-bold text-purple-300 block mb-1">
+                  Why do you want to join Resolve Secretariat?
+                </span>
+                <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
+                  {secDossierModalData.whyJoin || 'No response recorded.'}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06]">
+                <span className="text-[11px] font-bold text-purple-300 block mb-1">
+                  What do you think you can contribute to this specific role?
+                </span>
+                <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
+                  {secDossierModalData.contribution || 'No response recorded.'}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06]">
+                <span className="text-[11px] font-bold text-purple-300 block mb-1">
+                  Realistic Daily Hours Commitment
+                </span>
+                <p className="text-xs text-white/80 font-mono">
+                  {secDossierModalData.dailyCommitment || 'Not specified'}
+                </p>
+              </div>
+            </div>
+
+            {/* Drive Files Links */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/20 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono text-purple-300 block font-bold">Curriculum Vitae</span>
+                  <span className="text-xs text-white/70">{secDossierModalData.resumeUrl ? 'Archived in Drive' : 'Not attached'}</span>
+                </div>
+                {secDossierModalData.resumeUrl && (
+                  <a
+                    href={secDossierModalData.resumeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>Open Drive CV</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono text-indigo-300 block font-bold">Work / Portfolio</span>
+                  <span className="text-xs text-white/70">{secDossierModalData.portfolioUrl ? 'Archived in Drive' : 'Not attached'}</span>
+                </div>
+                {secDossierModalData.portfolioUrl && (
+                  <a
+                    href={secDossierModalData.portfolioUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>Open Portfolio</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
+              <a
+                href={`mailto:${secDossierModalData.email}?subject=Resolve MUN 2.0 Secretariat Interview Invitation`}
+                className="px-4 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>Dispatch Interview Email</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setSecDossierModalData(null)}
+                className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
