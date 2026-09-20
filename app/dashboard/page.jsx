@@ -283,16 +283,25 @@ export default function DelegateDashboard() {
           fullName,
           email: record.email || email,
           phone: record.phone || "",
+          grade: record.grade || record['Grade'] || "",
           paymentUTR,
           paymentStatus: isPaymentOk ? "VERIFIED" : "PENDING_VERIFICATION",
           status,
-          allocatedCommittee: record.allocatedCommittee || record.allocated_committee || "",
-          allocatedCountry: record.allocatedCountry || record.allocated_country || "",
-          institution: record.institution || record.institute || "Individual Delegate",
-          pref1: record.pref1 || (record.pref1_committee ? `${record.pref1_committee} · ${record.pref1_country || 'General'}` : null),
-          pref2: record.pref2 || (record.pref2_committee ? `${record.pref2_committee} · ${record.pref2_country || 'General'}` : null),
-          pref3: record.pref3 || (record.pref3_committee ? `${record.pref3_committee} · ${record.pref3_country || 'General'}` : null),
+          allocatedCommittee: record.allocatedCommittee || record.allocated_committee || record['Allocated Committee'] || "",
+          allocatedCountry: record.allocatedCountry || record.allocated_country || record['Allocated Country'] || "",
+          institution: record.institution || record.institute || record['School / Institution'] || "Individual Delegate",
+          // Always prefer computed pref strings over raw stored value (which may be blank)
+          pref1: (record.pref1_committee
+            ? `${record.pref1_committee} · ${record.pref1_country || 'General'}`
+            : record.pref1 || null),
+          pref2: (record.pref2_committee
+            ? `${record.pref2_committee} · ${record.pref2_country || 'General'}`
+            : record.pref2 || null),
+          pref3: (record.pref3_committee
+            ? `${record.pref3_committee} · ${record.pref3_country || 'General'}`
+            : record.pref3 || null),
         });
+
       } else {
         // Fallback: Check local registration persistence
         const isLocallyRegistered = typeof window !== 'undefined' && localStorage.getItem('resolve_user_registered') === 'true';

@@ -31,26 +31,36 @@ export async function GET(request) {
           const docSnap = snap.docs[0];
           const data = docSnap.data();
           const delegate = {
+            ...data,                                                           // raw Firestore fields first
             id: docSnap.id,
             _id: docSnap.id,
             regId: data.delegateId || data.regId || docSnap.id,
             delegateId: data.delegateId || data.regId || docSnap.id,
-            fullName: data.name || data.fullName,
-            name: data.name || data.fullName,
-            email: data.email,
-            phone: data.phone,
-            institution: data.institution || data.institute || "Individual Delegate",
-            status: data.status || "Confirmed",
-            paymentStatus: data.payment_status || data.paymentStatus || "VERIFIED",
-            paymentUTR: data.payment_utr || data.paymentUTR || "VERIFIED",
-            allocatedCommittee: data.allocated_committee || data.allocatedCommittee || "",
-            allocatedCountry: data.allocated_country || data.allocatedCountry || "",
-            pref1: data.pref1 || (data.pref1_committee ? `${data.pref1_committee} · ${data.pref1_country || 'General'}` : null),
-            pref2: data.pref2 || (data.pref2_committee ? `${data.pref2_committee} · ${data.pref2_country || 'General'}` : null),
-            pref3: data.pref3 || (data.pref3_committee ? `${data.pref3_committee} · ${data.pref3_country || 'General'}` : null),
-            created_at: data.created_at,
-            ...data,
+            fullName: data.fullName || data.name || data['Full Name'] || '',
+            name: data.name || data.fullName || data['Full Name'] || '',
+            email: data.email || data['Email Address'] || '',
+            phone: data.phone || data['Phone Number'] || '',
+            grade: data.grade || data['Grade'] || '',
+            institution: data.institution || data.institute || data['School / Institution'] || 'Individual Delegate',
+            institute: data.institute || data.institution || data['School / Institution'] || '',
+            status: data.status || 'Confirmed',
+            paymentStatus: data.payment_status || data.paymentStatus || 'VERIFIED',
+            paymentUTR: data.payment_utr || data.paymentUTR || 'VERIFIED',
+            allocatedCommittee: data.allocated_committee || data.allocatedCommittee || data['Allocated Committee'] || '',
+            allocatedCountry: data.allocated_country || data.allocatedCountry || data['Allocated Country'] || '',
+            // Committee preferences — always compute from raw fields so dashes never show
+            pref1: (data.pref1_committee
+              ? `${data.pref1_committee} · ${data.pref1_country || 'General'}`
+              : data.pref1 || data['Pref 1'] || null),
+            pref2: (data.pref2_committee
+              ? `${data.pref2_committee} · ${data.pref2_country || 'General'}`
+              : data.pref2 || data['Pref 2'] || null),
+            pref3: (data.pref3_committee
+              ? `${data.pref3_committee} · ${data.pref3_country || 'General'}`
+              : data.pref3 || data['Pref 3'] || null),
+            created_at: data.created_at || data.createdAt || '',
           };
+
           return NextResponse.json({ found: true, delegate });
         }
       }
