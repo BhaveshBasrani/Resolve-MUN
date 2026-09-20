@@ -1,6 +1,15 @@
 "use client";
 
-import { auth, submitDelegateApplication, onAuthStateChanged } from "@/lib/firebase";
+import {
+  auth,
+  submitDelegateApplication,
+  submitDelegationApplication,
+  submitOcApplication,
+  submitEbApplication,
+  submitSecretariatApplication,
+  submitWaitlistEntry,
+  onAuthStateChanged,
+} from "@/lib/firebase";
 import Link from "next/link";
 import { MetalButton } from "@/components/ui/metal-button";
 import { Sparkles, ArrowUpRight, FileText, X } from "lucide-react";
@@ -136,11 +145,25 @@ export default function Home() {
         if (!isVerified) {
           setAuthInitialMode("code");
           setAuthOpen(true);
-          throw new Error("Email verification required. Please verify your email before submitting your application.");
+          throw new Error("Please verify your email before submitting your application.");
         }
         return await submitDelegateApplication(formData, currentUserRef.current);
       };
-      window.submitDelegateToSupabase = window.submitDelegateToFirebase;
+      window.submitDelegationToFirebase = async (data) => {
+        return await submitDelegationApplication(data);
+      };
+      window.submitOcToFirebase = async (data) => {
+        return await submitOcApplication(data);
+      };
+      window.submitEbToFirebase = async (data) => {
+        return await submitEbApplication(data);
+      };
+      window.submitWaitlistToFirebase = async (data) => {
+        return await submitWaitlistEntry(data);
+      };
+      window.submitSecretariatToFirebase = async (data) => {
+        return await submitSecretariatApplication(data);
+      };
     }
 
     return () => unsubscribe();
@@ -896,20 +919,12 @@ export default function Home() {
             timestamp: new Date().toISOString()
           };
 
-          const scriptUrl = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
-
-          // Dispatch to Google Apps Script Engine with auto-Drive upload & auto-email
-          await fetch(scriptUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(payload),
-          });
+          await submitSecretariatApplication(payload);
 
           if (window.showCustomAlert) {
-            window.showCustomAlert("Secretariat Application submitted successfully! Files archived to Google Drive and confirmation email dispatched.", "success");
+            window.showCustomAlert("Application submitted! We've sent a confirmation to your email.", "success");
           } else {
-            alert("Secretariat Application submitted successfully! Files archived to Google Drive and confirmation email dispatched.");
+            alert("Application submitted! We've sent a confirmation to your email.");
           }
 
           const form = document.getElementById("secRegForm");
@@ -919,15 +934,15 @@ export default function Home() {
         } catch (err) {
           console.error("Submission error:", err);
           if (window.showCustomAlert) {
-            window.showCustomAlert("Application transmitted! The Secretariat Directorate has received your dossier.", "success");
+            window.showCustomAlert("Application received. We'll be in touch soon!", "success");
           } else {
-            alert("Application transmitted! The Secretariat Directorate has received your dossier.");
+            alert("Application received. We'll be in touch soon!");
           }
           closeModalById("secModal");
         } finally {
           if (btn) {
             btn.disabled = false;
-            btn.innerText = "Submit Secretariat Dossier";
+            btn.innerText = "Submit Application";
           }
         }
       };
@@ -1300,7 +1315,7 @@ export default function Home() {
 
             {/* Eyebrow & Title */}
             <span className="font-mono text-[9px] tracking-[0.2em] text-indigo-300 uppercase block mb-1 font-semibold">
-              CREDENTIALS VERIFIED · RESOLVE 2026
+              ACCOUNT VERIFIED · RESOLVE 2026
             </span>
             <h3
               className="text-lg sm:text-xl font-extrabold uppercase tracking-wide text-white mb-1.5"
@@ -1309,18 +1324,18 @@ export default function Home() {
               WELCOME, {currentUser.displayName ? currentUser.displayName.split(" ")[0] : "DELEGATE"}
             </h3>
 
-            {/* Diplomatic Copy */}
+            {/* Natural Copy */}
             <p className="text-[11px] text-white/60 leading-relaxed max-w-xs mx-auto mb-4 font-normal">
-              Your delegate session is active. Access your official committee allotment matrix, encrypted digital QR pass, and conference dossier from the Command Dashboard.
+              You're signed in. View your committee assignment, digital access pass, and conference details in your dashboard.
             </p>
 
             {/* Micro Credential Strip */}
             <div className="flex items-center justify-center gap-2 py-1.5 px-2.5 rounded-lg bg-white/[0.02] border border-white/5 text-[9px] font-mono text-white/50 mb-4">
-              <span>STATUS: <strong className="text-emerald-400 font-semibold">VERIFIED</strong></span>
+              <span>STATUS: <strong className="text-emerald-400 font-semibold">ACTIVE</strong></span>
               <span className="text-white/20">|</span>
               <span>ROLE: <strong className="text-white/80 font-semibold">DELEGATE</strong></span>
               <span className="text-white/20">|</span>
-              <span>SUMMIT: <strong className="text-purple-300 font-semibold">RESOLVE 2.0</strong></span>
+              <span>CONFERENCE: <strong className="text-purple-300 font-semibold">RESOLVE 2.0</strong></span>
             </div>
 
             {/* Action Buttons */}
@@ -1333,7 +1348,7 @@ export default function Home() {
                 }}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 h-9.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-xs tracking-wider uppercase shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.45)] active:scale-[0.98] transition-all cursor-pointer"
               >
-                <span>ACCESS DASHBOARD</span>
+                <span>GO TO DASHBOARD</span>
                 <ArrowUpRight className="w-3 h-3" />
               </Link>
               <button

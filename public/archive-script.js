@@ -741,8 +741,11 @@
           recaptcha_token: token
         };
 
-        // Re-using your existing Google Sheet fetch function with retries
-        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 10000 });
+        if (typeof window.submitWaitlistToFirebase === 'function') {
+          await window.submitWaitlistToFirebase(data);
+        } else {
+          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 10000 });
+        }
         // Hide form and show success message smoothly
         waitlistForm.style.display = 'none';
         success.style.display = 'block';
@@ -1399,11 +1402,11 @@
       };
 
       let submitRes = null;
-      if (typeof window.submitDelegateToSupabase === 'function') {
+      if (typeof window.submitDelegateToFirebase === 'function') {
         try {
-          submitRes = await window.submitDelegateToSupabase(data);
-        } catch (supaErr) {
-          console.warn('Submission notice, falling back to Sheets:', supaErr);
+          submitRes = await window.submitDelegateToFirebase(data);
+        } catch (fbErr) {
+          console.warn('Submission notice, falling back to Sheets:', fbErr);
           submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
         }
       } else {
@@ -1419,7 +1422,7 @@
         }
       }
 
-      showCustomAlert('Registration Dossier Logged Successfully! Official confirmation email dispatched. Redirecting to your Delegate Dashboard...', 'success', 5000);
+      showCustomAlert('Registration successful! Confirmation email sent. Redirecting to your dashboard...', 'success', 5000);
       clearFormData();
       closeRegistration();
       setTimeout(() => {
@@ -1878,14 +1881,17 @@
         totalAmount: size * 2199
       };
 
-      console.log('Sending Delegation Data:', data);
-      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 20000 });
+      if (typeof window.submitDelegationToFirebase === 'function') {
+        await window.submitDelegationToFirebase(data);
+      } else {
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 20000 });
+      }
       if (typeof window !== 'undefined') {
         localStorage.setItem('resolve_user_registered', 'true');
         localStorage.setItem('resolve_user_email', data.adviserEmail);
         localStorage.setItem('resolve_user_name', data.adviserName);
       }
-      showCustomAlert('Delegation Registered Successfully! All ' + size + ' delegates have been enrolled. Redirecting to your Dashboard...', 'success', 5000);
+      showCustomAlert('Delegation registered successfully! All ' + size + ' delegates added. Redirecting to your dashboard...', 'success', 5000);
       delRegForm.reset();
       clearDelFormData();
       closeDelRegistration();
@@ -2100,9 +2106,12 @@
         payment_screenshot_link: fileBase64
       };
 
-      console.log('OC Data:', data);
-      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
-      showCustomAlert('Application Submitted Successfully! The Secretariat will review your OC application soon.', 'success', 6000);
+      if (typeof window.submitOcToFirebase === 'function') {
+        await window.submitOcToFirebase(data);
+      } else {
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+      }
+      showCustomAlert('Application submitted successfully! We will review your application soon.', 'success', 6000);
       ocRegForm.reset();
       clearOcFormData();
       closeOcRegistration();
@@ -2606,8 +2615,12 @@
         munCount: document.getElementById("ebMunCount") ? document.getElementById("ebMunCount").value : ""
       };
 
-      await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 }); 
-      showCustomAlert('EB Application Submitted Successfully! The Secretariat will review your profile and contact you for an interview.', 'success', 6000);
+      if (typeof window.submitEbToFirebase === 'function') {
+        await window.submitEbToFirebase(data);
+      } else {
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+      }
+      showCustomAlert('Application submitted successfully! We will review your profile and contact you soon.', 'success', 6000);
       ebRegForm.reset();
       clearEbFormData();
       closeEbRegistration();

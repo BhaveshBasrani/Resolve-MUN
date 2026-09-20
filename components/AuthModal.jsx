@@ -867,7 +867,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                 <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white/60 leading-relaxed text-left space-y-1.5 font-sans">
                   <p className="font-semibold text-white/90">Active Delegate Session</p>
                   <p>
-                    Your delegate credentials are verified. Proceed to submit your conference application or access your real-time dashboard.
+                    Your account is verified! You can now submit your application or go to your dashboard.
                   </p>
                 </div>
 
@@ -1081,7 +1081,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                         checked={receiveUpdates}
                         onChange={(e) => setReceiveUpdates(e.target.checked)}
                       >
-                        Receive matrix releases &amp; dossier notifications
+                        Receive committee updates &amp; conference announcements
                       </CheckboxLine>
                     </div>
                   )}

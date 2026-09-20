@@ -481,7 +481,7 @@ export default function DelegateDashboard() {
                 </div>
               ) : (
                 <span className="text-[11px] font-mono text-white/40">
-                  STATUS: <strong className="text-amber-400">PENDING INTAKE</strong>
+                  STATUS: <strong className="text-amber-400">PENDING VERIFICATION</strong>
                 </span>
               )}
 
@@ -528,15 +528,15 @@ export default function DelegateDashboard() {
         {/* STATE B: REGISTERED STATE */}
         {isReg && (
           <div className="space-y-5">
-            {/* DOSSIER & ALLOTMENT */}
+            {/* REGISTRATION RECORD & ALLOTMENT */}
             <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-7 shadow-sm">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <p className="text-[9px] font-mono uppercase tracking-[0.25em] text-white/40 mb-0.5 font-bold">
-                    OFFICIAL DOSSIER
+                    REGISTRATION RECORD
                   </p>
                   <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-white font-sans">
-                    Conference Registration Record
+                    Conference Registration
                   </h3>
                 </div>
                 <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg ${delegateRecord.delegationCode ? "text-indigo-300 bg-indigo-500/10 border border-indigo-500/25" : "text-white/50 bg-white/[0.04] border border-white/10"}`}>
@@ -680,15 +680,15 @@ export default function DelegateDashboard() {
                   </div>
                   <div className="space-y-1.5 max-w-sm">
                     <h4 className="text-sm font-bold uppercase tracking-wider text-white">
-                      Pass Awaiting Clearance
+                      Pass Pending Verification
                     </h4>
                     <p className="text-xs text-white/50 leading-relaxed font-sans">
-                      Your payment (UTR: <span className="font-mono text-white/80">{delegateRecord.paymentUTR || delegateRecord.txnId || "Submitted"}</span>) is currently being verified. Your QR conference pass activates automatically upon Secretariat clearance.
+                      Your payment (UTR: <span className="font-mono text-white/80">{delegateRecord.paymentUTR || delegateRecord.txnId || "Submitted"}</span>) is being verified. Your digital conference pass will activate automatically once verified.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] font-mono text-amber-300">
                     <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
-                    <span>Awaiting confirmation from Directorate</span>
+                    <span>Waiting for payment verification</span>
                   </div>
                 </div>
               )}

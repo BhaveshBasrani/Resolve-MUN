@@ -98,7 +98,7 @@ export default function SuperAdminPage() {
   const [infoModalData, setInfoModalData] = useState(null);
   const [addDelegateModalOpen, setAddDelegateModalOpen] = useState(false);
   const [reassignDelegationModalData, setReassignDelegationModalData] = useState(null);
-  const [secDossierModalData, setSecDossierModalData] = useState(null);
+  const [secCandidateModalData, setSecCandidateModalData] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
 
@@ -456,7 +456,7 @@ export default function SuperAdminPage() {
       return r;
     }));
 
-    notify(`Payment verified for ${name}! Financial Certificate dispatched.`);
+    notify(`Payment verified for ${name}! Confirmation email sent.`);
 
     try {
       await fetch('/api/admin', {
@@ -482,11 +482,11 @@ export default function SuperAdminPage() {
     const cleanPhone = (lead.phone || '').replace(/[^0-9]/g, '');
     const greetingName = lead.name || 'Distinguished Delegate';
     const text = encodeURIComponent(
-      `Greetings ${greetingName}! This is the Resolve MUN 2026 Executive Secretariat regarding your pending registration for the conference at Delhi World Public School, Kompally, Hyderabad (Nov 20-22, 2026).\n\nWe noticed your reservation is temporarily held at ${lead.step || 'Payment'}. Would you like our team to assist you in finalizing your committee allotment before Round 1 closes?`
+      `Hi ${greetingName}! This is Resolve MUN 2026 regarding your registration for the conference at Delhi World Public School, Kompally, Hyderabad (Nov 20-22, 2026).\n\nWe noticed you haven't finished your registration at ${lead.step || 'Payment'}. Would you like any help completing it?`
     );
     const url = `https://wa.me/91${cleanPhone}?text=${text}`;
     window.open(url, '_blank');
-    notify(`WhatsApp channel initialized for ${greetingName}`);
+    notify(`Opened WhatsApp chat for ${greetingName}`);
   };
 
   // 1-Click Lead Reminder Dispatch
@@ -509,10 +509,10 @@ export default function SuperAdminPage() {
 
       if (res.ok) {
         setLeadSendingState(prev => ({ ...prev, [leadKey]: 'sent' }));
-        notify(`Official reminder email dispatched to ${lead.email}`);
+        notify(`Reminder email sent to ${lead.email}`);
       } else {
         setLeadSendingState(prev => ({ ...prev, [leadKey]: 'error' }));
-        notify('Failed to dispatch reminder.', 'error');
+        notify('Failed to send reminder.', 'error');
       }
     } catch (err) {
       setLeadSendingState(prev => ({ ...prev, [leadKey]: 'error' }));
@@ -569,7 +569,7 @@ export default function SuperAdminPage() {
       });
 
       const data = await res.json().catch(() => ({ status: 'success' }));
-      notify(`Allotment confirmed! Allocation decree dispatched to ${email}.`, 'success');
+      notify(`Assignment confirmed! Email sent to ${email}.`, 'success');
       setAllotmentModalData(null);
     } catch (err) {
       notify('Error updating allotment: ' + err.message, 'error');
@@ -1168,7 +1168,7 @@ export default function SuperAdminPage() {
                   {/* Quick Action Station */}
                   <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300 font-mono">
-                      Fast Command Dispatches
+                      Quick Actions
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <button
@@ -1190,8 +1190,8 @@ export default function SuperAdminPage() {
                         className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] hover:bg-amber-500/[0.07] hover:border-amber-400/40 text-left transition-all cursor-pointer"
                       >
                         <Send className="w-4 h-4 text-amber-400 mb-2" />
-                        <span className="font-bold text-xs text-white block">Recover Cart Dropouts</span>
-                        <span className="text-[10px] text-amber-300/70 mt-1 block">Inspect leads stuck at QR payment</span>
+                        <span className="font-bold text-xs text-white block">Follow Up on Incomplete</span>
+                        <span className="text-[10px] text-amber-300/70 mt-1 block">See users who paused at payment</span>
                       </button>
 
                       <button
@@ -1200,8 +1200,8 @@ export default function SuperAdminPage() {
                         className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/[0.03] hover:bg-blue-500/[0.07] hover:border-blue-400/40 text-left transition-all cursor-pointer"
                       >
                         <Download className="w-4 h-4 text-blue-400 mb-2" />
-                        <span className="font-bold text-xs text-white block">Export Full Dossier</span>
-                        <span className="text-[10px] text-blue-300/70 mt-1 block">Download master CSV of all delegates</span>
+                        <span className="font-bold text-xs text-white block">Export All Delegates (CSV)</span>
+                        <span className="text-[10px] text-blue-300/70 mt-1 block">Download CSV file of all delegates</span>
                       </button>
                     </div>
                   </div>
@@ -1210,7 +1210,7 @@ export default function SuperAdminPage() {
                   <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-white font-mono">
-                        Latest Intake Stream
+                        Recent Registrations
                       </h4>
                       <button
                         type="button"
@@ -1223,7 +1223,7 @@ export default function SuperAdminPage() {
                     </div>
 
                     {registrations.length === 0 ? (
-                      <p className="text-xs text-white/40 italic py-4">No live intake recorded yet.</p>
+                      <p className="text-xs text-white/40 italic py-4">No registrations yet.</p>
                     ) : (
                       <div className="divide-y divide-white/[0.04]">
                         {registrations.slice(0, 5).map((r, idx) => (
@@ -1292,7 +1292,7 @@ export default function SuperAdminPage() {
 
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-white/70">Completed & Verified Intake</span>
+                          <span className="text-white/70">Completed & Verified Registrations</span>
                           <span className="font-mono text-emerald-400 font-bold">{funnelStats.conversionPct}% ({funnelStats.completedCount})</span>
                         </div>
                         <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
@@ -1302,7 +1302,7 @@ export default function SuperAdminPage() {
                     </div>
 
                     <div className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/20 text-[11px] text-amber-200/80">
-                      💡 <b>Funnel Telemetry:</b> {funnelStats.step3Drops} lead{funnelStats.step3Drops === 1 ? '' : 's'} paused at Step 3 (Payment), and {funnelStats.step2Drops} at Step 2. Use 1-Click WhatsApp Direct to recover delegates with prefilled registration links!
+                      💡 <b>Helpful Tip:</b> {funnelStats.step3Drops} person{funnelStats.step3Drops === 1 ? '' : 's'} paused at payment, and {funnelStats.step2Drops} at committee selection. You can reach out via WhatsApp to help them complete registration!
                     </div>
                   </div>
 
@@ -1465,7 +1465,7 @@ export default function SuperAdminPage() {
                                         type="button"
                                         onClick={() => verifyPaymentDirect(regId, r.email, name, r.paymentUTR)}
                                         className="px-2 py-1 rounded-md bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-400/30 text-[10px] font-bold text-emerald-300 flex items-center gap-1 cursor-pointer"
-                                        title="Verify payment and dispatch confirmation email"
+                                        title="Verify payment and send confirmation email"
                                       >
                                         <Check className="w-2.5 h-2.5" />
                                         <span>Verify</span>
@@ -1490,7 +1490,7 @@ export default function SuperAdminPage() {
                                 ) : (
                                   <span className="text-[11px] text-amber-300/70 italic flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
-                                    <span>Pending Allotment</span>
+                                    <span>Pending Assignment</span>
                                   </span>
                                 )}
                               </td>
@@ -1507,7 +1507,7 @@ export default function SuperAdminPage() {
                                     })}
                                     className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold cursor-pointer transition-colors shadow-sm"
                                   >
-                                    {isAllocated ? 'Reallot' : 'Allot & Decree'}
+                                    {isAllocated ? 'Edit Assignment' : 'Assign & Send Pass'}
                                   </button>
                                   <button
                                     type="button"
@@ -1606,11 +1606,11 @@ export default function SuperAdminPage() {
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-400" />
                       <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                        Abandoned Leads Command Radar
+                        Incomplete Registrations
                       </h3>
                     </div>
                     <p className="text-xs text-white/60 mt-1">
-                      Targeted prospective delegates who initiated registration but paused before final submission.
+                      People who started registering but haven't submitted yet.
                     </p>
                   </div>
 
@@ -1637,7 +1637,7 @@ export default function SuperAdminPage() {
                         : 'text-white/60 hover:text-white bg-white/[0.03]'
                     }`}
                   >
-                    All Incomplete Leads ({activeAbandonedLeads.length})
+                    All Incomplete ({activeAbandonedLeads.length})
                   </button>
                   <button
                     type="button"
@@ -1648,7 +1648,7 @@ export default function SuperAdminPage() {
                         : 'text-red-300 hover:text-white bg-red-950/20 border border-red-500/20'
                     }`}
                   >
-                    <span>🔥 Step 3 Payment Drops (High Value)</span>
+                    <span>🔥 Paused at Payment</span>
                   </button>
                   <button
                     type="button"
@@ -1659,7 +1659,7 @@ export default function SuperAdminPage() {
                         : 'text-purple-300 hover:text-white bg-white/[0.03]'
                     }`}
                   >
-                    Step 2 Preference Drops
+                    Paused at Committee Selection
                   </button>
                   <button
                     type="button"
@@ -1670,15 +1670,15 @@ export default function SuperAdminPage() {
                         : 'text-blue-300 hover:text-white bg-white/[0.03]'
                     }`}
                   >
-                    Step 1 Contact Only
+                    Started Step 1 Only
                   </button>
                 </div>
 
                 {filteredLeads.length === 0 ? (
                   <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
                     <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-400 opacity-60" />
-                    <p className="text-xs font-semibold text-emerald-300">No abandoned leads matching this step!</p>
-                    <p className="text-[11px]">All prospective applicants completed their dossiers smoothly.</p>
+                    <p className="text-xs font-semibold text-emerald-300">No incomplete registrations in this category!</p>
+                    <p className="text-[11px]">All applicants completed their registrations.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
@@ -1763,12 +1763,12 @@ export default function SuperAdminPage() {
                                     </button>
                                   )}
 
-                                  {/* Copy Dossier */}
+                                  {/* Copy Contact Info */}
                                   <button
                                     type="button"
                                     onClick={() => {
                                       navigator.clipboard.writeText(`${lead.name || ''}, ${lead.email || ''}, ${lead.phone || ''}`);
-                                      notify('Lead contact dossier copied');
+                                      notify('Contact info copied');
                                     }}
                                     className="p-1 rounded-lg bg-white/[0.04] hover:bg-white/10 text-white/50 hover:text-white cursor-pointer"
                                     title="Copy Contact Details"
@@ -1793,7 +1793,7 @@ export default function SuperAdminPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-bold text-white">Executive Board & Secretariat Candidates</h3>
-                    <p className="text-xs text-white/50">Direct dossier links and curriculum vitae inspection.</p>
+                    <p className="text-xs text-white/50">View applicant profiles, resumes, and portfolios.</p>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 text-xs font-mono font-bold">
                     {ebApplications.length + secApplications.length} Total Applicants
@@ -2157,7 +2157,7 @@ export default function SuperAdminPage() {
               </div>
 
               <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-[11px] text-purple-200/80 leading-relaxed">
-                Saving will instantly dispatch the official Appointment Decree email with official diplomatic seal directly to <b>{allotmentModalData.email}</b>.
+                Saving will email the assignment confirmation directly to <b>{allotmentModalData.email}</b>.
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -2166,7 +2166,7 @@ export default function SuperAdminPage() {
                   className="flex-1 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Confirm & Send Decree</span>
+                  <span>Save & Send Pass</span>
                 </button>
                 <button
                   type="button"
@@ -2342,26 +2342,26 @@ export default function SuperAdminPage() {
         </div>
       )}
 
-      {/* SECRETARIAT CANDIDATE FULL DOSSIER MODAL */}
-      {secDossierModalData && (
+      {/* SECRETARIAT CANDIDATE APPLICATION MODAL */}
+      {secCandidateModalData && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-purple-500/30 bg-[#070914] shadow-2xl space-y-5">
             <div className="flex items-start justify-between border-b border-white/[0.08] pb-4">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-300 text-[10px] font-mono font-bold">
-                    {secDossierModalData.appId}
+                    {secCandidateModalData.appId}
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-[10px] font-bold">
-                    ZERO FEE INTAKE
+                    FREE APPLICATION
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-white mt-1.5">{secDossierModalData.fullName}</h3>
-                <p className="text-xs text-indigo-300 font-semibold mt-0.5">Target: {secDossierModalData.position}</p>
+                <h3 className="text-xl font-bold text-white mt-1.5">{secCandidateModalData.fullName}</h3>
+                <p className="text-xs text-indigo-300 font-semibold mt-0.5">Target: {secCandidateModalData.position}</p>
               </div>
               <button
                 type="button"
-                onClick={() => setSecDossierModalData(null)}
+                onClick={() => setSecCandidateModalData(null)}
                 className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
               >
                 <XCircle className="w-5 h-5" />
@@ -2372,32 +2372,32 @@ export default function SuperAdminPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs">
               <div>
                 <span className="text-[10px] text-white/40 block font-mono">Email Address</span>
-                <span className="text-white font-medium break-all">{secDossierModalData.email}</span>
+                <span className="text-white font-medium break-all">{secCandidateModalData.email}</span>
               </div>
               <div>
                 <span className="text-[10px] text-white/40 block font-mono">Contact Phone</span>
-                <span className="text-white font-mono">{secDossierModalData.phone}</span>
+                <span className="text-white font-mono">{secCandidateModalData.phone}</span>
               </div>
               <div>
                 <span className="text-[10px] text-white/40 block font-mono">Instagram Handle</span>
-                <span className="text-pink-400 font-mono">@{secDossierModalData.instagram?.replace('@', '') || 'None'}</span>
+                <span className="text-pink-400 font-mono">@{secCandidateModalData.instagram?.replace('@', '') || 'None'}</span>
               </div>
               <div>
                 <span className="text-[10px] text-white/40 block font-mono">School / College</span>
-                <span className="text-white">{secDossierModalData.schoolCollege}</span>
+                <span className="text-white">{secCandidateModalData.schoolCollege}</span>
               </div>
               <div>
                 <span className="text-[10px] text-white/40 block font-mono">Grade</span>
-                <span className="text-white">{secDossierModalData.grade}</span>
+                <span className="text-white">{secCandidateModalData.grade}</span>
               </div>
               <div>
                 <span className="text-[10px] text-white/40 block font-mono">Date of Birth</span>
-                <span className="text-white font-mono">{secDossierModalData.dob || 'Not specified'}</span>
+                <span className="text-white font-mono">{secCandidateModalData.dob || 'Not specified'}</span>
               </div>
-              {secDossierModalData.residentialAddress && (
+              {secCandidateModalData.residentialAddress && (
                 <div className="col-span-2 sm:col-span-3">
                   <span className="text-[10px] text-white/40 block font-mono">Residential Address</span>
-                  <span className="text-white/80">{secDossierModalData.residentialAddress}</span>
+                  <span className="text-white/80">{secCandidateModalData.residentialAddress}</span>
                 </div>
               )}
             </div>
@@ -2409,7 +2409,7 @@ export default function SuperAdminPage() {
                   Why do you want to join Resolve Secretariat?
                 </span>
                 <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
-                  {secDossierModalData.whyJoin || 'No response recorded.'}
+                  {secCandidateModalData.whyJoin || 'No response recorded.'}
                 </p>
               </div>
 
@@ -2418,7 +2418,7 @@ export default function SuperAdminPage() {
                   What do you think you can contribute to this specific role?
                 </span>
                 <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
-                  {secDossierModalData.contribution || 'No response recorded.'}
+                  {secCandidateModalData.contribution || 'No response recorded.'}
                 </p>
               </div>
 
@@ -2427,7 +2427,7 @@ export default function SuperAdminPage() {
                   Realistic Daily Hours Commitment
                 </span>
                 <p className="text-xs text-white/80 font-mono">
-                  {secDossierModalData.dailyCommitment || 'Not specified'}
+                  {secCandidateModalData.dailyCommitment || 'Not specified'}
                 </p>
               </div>
             </div>
@@ -2437,16 +2437,16 @@ export default function SuperAdminPage() {
               <div className="p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/20 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-purple-300 block font-bold">Curriculum Vitae</span>
-                  <span className="text-xs text-white/70">{secDossierModalData.resumeUrl ? 'Archived in Drive' : 'Not attached'}</span>
+                  <span className="text-xs text-white/70">{secCandidateModalData.resumeUrl ? 'Uploaded' : 'Not attached'}</span>
                 </div>
-                {secDossierModalData.resumeUrl && (
+                {secCandidateModalData.resumeUrl && (
                   <a
-                    href={secDossierModalData.resumeUrl}
+                    href={secCandidateModalData.resumeUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
                   >
-                    <span>Open Drive CV</span>
+                    <span>Open CV</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
@@ -2455,11 +2455,11 @@ export default function SuperAdminPage() {
               <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-indigo-300 block font-bold">Work / Portfolio</span>
-                  <span className="text-xs text-white/70">{secDossierModalData.portfolioUrl ? 'Archived in Drive' : 'Not attached'}</span>
+                  <span className="text-xs text-white/70">{secCandidateModalData.portfolioUrl ? 'Uploaded' : 'Not attached'}</span>
                 </div>
-                {secDossierModalData.portfolioUrl && (
+                {secCandidateModalData.portfolioUrl && (
                   <a
-                    href={secDossierModalData.portfolioUrl}
+                    href={secCandidateModalData.portfolioUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
@@ -2474,15 +2474,15 @@ export default function SuperAdminPage() {
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
               <a
-                href={`mailto:${secDossierModalData.email}?subject=Resolve MUN 2.0 Secretariat Interview Invitation`}
+                href={`mailto:${secCandidateModalData.email}?subject=Resolve MUN 2.0 Secretariat Interview Invitation`}
                 className="px-4 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Mail className="w-3.5 h-3.5" />
-                <span>Dispatch Interview Email</span>
+                <span>Send Interview Email</span>
               </a>
               <button
                 type="button"
-                onClick={() => setSecDossierModalData(null)}
+                onClick={() => setSecCandidateModalData(null)}
                 className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
               >
                 Close

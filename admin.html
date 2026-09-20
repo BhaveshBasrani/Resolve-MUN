@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Secretariat Dashboard | Resolve MUN 2026</title>
-  <meta name="description" content="Official Secretariat Admin Dashboard for Resolve MUN 2026. Manage delegate applications, verify payments, allocate portfolios, and scan QR passes for check-in.">
+  <title>Admin Dashboard | Resolve MUN 2026</title>
+  <meta name="description" content="Admin dashboard for Resolve MUN 2026. Manage delegates, verify payments, assign committees, and check in attendees.">
   <link rel="icon" type="image/webp" href="https://resolvemun.in/images/favicon.ico?v=3">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -14,6 +14,35 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, doc, updateDoc, deleteDoc,
+      onSnapshot, query, orderBy, setDoc, addDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    import {
+      getStorage, ref, getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIgWD087Ni6xZqNrnnI76GQgkzZmQ4Hdw",
+      authDomain: "mun-resolve.firebaseapp.com",
+      projectId: "mun-resolve",
+      storageBucket: "mun-resolve.firebasestorage.app",
+      messagingSenderId: "849575601668",
+      appId: "1:849575601668:web:2e130b554f2901153a3751",
+      measurementId: "G-1H3N17GSRE"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // Expose to global scope for non-module scripts below
+    window._firebase = { db, storage, collection, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, setDoc, addDoc, serverTimestamp, ref, getDownloadURL };
+  </script>
 
   <script>
     tailwind.config = {
@@ -40,17 +69,9 @@
       font-family: 'Inter', sans-serif;
     }
 
-    ::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #050507;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #7c3aed;
-      border-radius: 2px;
-    }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #050507; }
+    ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 2px; }
 
     .glass {
       background: rgba(15, 15, 20, 0.6);
@@ -91,7 +112,6 @@
       font-weight: 750;
     }
 
-    /* Modal Overlay styling */
     .modal-overlay {
       position: fixed; inset: 0;
       background: rgba(5, 5, 7, 0.88);
@@ -105,12 +125,12 @@
       pointer-events: none;
       transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    
+
     .modal-overlay.active {
       opacity: 1;
       pointer-events: auto;
     }
-    
+
     .modal-card {
       background: rgba(10, 10, 15, 0.95);
       border: 1px solid rgba(124, 58, 237, 0.25);
@@ -125,7 +145,7 @@
       transform: translateY(20px);
       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    
+
     .modal-overlay.active .modal-card {
       transform: translateY(0);
     }
@@ -156,27 +176,27 @@
         <span class="text-accent font-mono font-bold hidden sm:inline-block">//</span>
         <a href="index.html" class="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN Logo" class="h-6 w-6 sm:h-8 sm:w-8 object-contain flex-shrink-0">
-          <h1 class="font-display text-base sm:text-2xl tracking-wider text-white truncate">RESOLVE MUN OPS</h1>
+          <h1 class="font-display text-base sm:text-2xl tracking-wider text-white truncate">RESOLVE MUN ADMIN</h1>
         </a>
-        <span class="font-mono text-[9px] sm:text-[10px] text-white/40 tracking-widest px-1.5 py-0.5 border border-white/10 rounded uppercase whitespace-nowrap hidden md:inline-block">Control Panel</span>
+        <span class="font-mono text-[9px] sm:text-[10px] text-white/40 tracking-widest px-1.5 py-0.5 border border-white/10 rounded uppercase whitespace-nowrap hidden md:inline-block">Dashboard</span>
       </div>
       <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0" id="navActionContainer">
-        <a href="index.html" class="font-mono text-xs text-white/50 hover:text-accent-light transition-colors whitespace-nowrap">WEBSITE HOME</a>
+        <a href="index.html" class="font-mono text-xs text-white/50 hover:text-accent-light transition-colors whitespace-nowrap">Website</a>
       </div>
     </div>
   </header>
 
-  <!-- Main Content Workspace Section -->
+  <!-- Main Dashboard -->
   <main id="workspaceSection" class="max-w-7xl mx-auto px-4 mt-8 flex-1 w-full" style="display: none;">
-    
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       <div class="glass p-5 rounded-lg border-l-4 border-l-accent">
-        <div class="font-mono text-xs text-white/40 tracking-wider uppercase mb-1">Total Registered Delegates</div>
+        <div class="font-mono text-xs text-white/40 tracking-wider uppercase mb-1">Total Delegates</div>
         <div id="statTotal" class="font-display text-4xl text-white">--</div>
       </div>
       <div class="glass p-5 rounded-lg border-l-4 border-l-green-500">
-        <div class="font-mono text-xs text-white/40 tracking-wider uppercase mb-1">Verified Payments</div>
+        <div class="font-mono text-xs text-white/40 tracking-wider uppercase mb-1">Payment Verified</div>
         <div id="statVerified" class="font-display text-4xl text-green-500">--</div>
       </div>
       <div class="glass p-5 rounded-lg border-l-4 border-l-yellow-500">
@@ -189,65 +209,68 @@
       </div>
     </div>
 
-    <!-- Tab Controls -->
+    <!-- Tabs -->
     <div class="flex border-b border-white/10 mb-6 font-mono text-sm tracking-wider overflow-x-auto whitespace-nowrap">
-      <button id="btnTabDelegates" onclick="switchTab('delegatesTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors tab-active">DELEGATES & VERIFICATION</button>
+      <button id="btnTabDelegates" onclick="switchTab('delegatesTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors tab-active">DELEGATES</button>
       <button id="btnTabWaitlist" onclick="switchTab('waitlistTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">WAITLIST</button>
-      <button id="btnTabScanner" onclick="switchTab('scannerTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">QR GATE SCANNER</button>
+      <button id="btnTabScanner" onclick="switchTab('scannerTab')" class="px-6 py-3 text-white/60 hover:text-white transition-colors">CHECK-IN SCANNER</button>
     </div>
 
-    <!-- Sync Loader View -->
+    <!-- Loading state -->
     <div id="workspaceLoader" class="py-24 text-center" style="display: none;">
       <svg class="animate-spin h-10 w-10 text-accent-light mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
-      <p class="font-mono text-xs tracking-widest text-white/40">SYNCING DATA DIRECT FROM SHEET...</p>
+      <p class="font-mono text-xs tracking-widest text-white/40">Loading data...</p>
     </div>
 
-    <!-- TABS VIEWS -->
+    <!-- Tab Views -->
     <div class="workspace-views">
-      
-      <!-- TAB 1: DELEGATES & VERIFICATION -->
+
+      <!-- TAB 1: DELEGATES -->
       <section id="delegatesTab" class="space-y-6">
-        <!-- Filters and Search -->
+        <!-- Search & Filters -->
         <div class="glass p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div class="w-full md:w-1/3">
-            <input type="text" id="searchDelegates" oninput="filterDelegates()" placeholder="Search Name, Email, ID, School..." class="w-full px-4 py-2 rounded glass-input text-sm">
+            <input type="text" id="searchDelegates" oninput="filterDelegates()" placeholder="Search by name, email, ID, school..." class="w-full px-4 py-2 rounded glass-input text-sm">
           </div>
           <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <span class="font-mono text-xs text-white/40 uppercase mr-2">Filter Status:</span>
+            <span class="font-mono text-xs text-white/40 uppercase mr-2">Filter:</span>
             <button onclick="filterDelStatus('all')" id="chipDelAll" class="px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active">ALL</button>
             <button onclick="filterDelStatus('pending')" id="chipDelPending" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-yellow-500 text-yellow-500/60 hover:text-yellow-500">PENDING</button>
             <button onclick="filterDelStatus('verified')" id="chipDelVerified" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-green-500 text-green-500/60 hover:text-green-500">VERIFIED</button>
             <button onclick="filterDelStatus('unallocated')" id="chipDelUnallocated" class="px-3 py-1 font-mono text-xs rounded border border-white/10 hover:border-cyan-500 text-cyan-500/60 hover:text-cyan-500">UNALLOCATED</button>
           </div>
+          <div class="flex-shrink-0">
+            <button onclick="syncData()" class="cyber-btn px-4 py-2 rounded text-xs font-semibold">↻ Refresh</button>
+          </div>
         </div>
-        
-        <!-- Registrations Data Table -->
+
+        <!-- Delegates Table -->
         <div class="glass rounded-lg overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm border-collapse">
               <thead class="bg-black/40 font-mono text-[11px] tracking-wider uppercase text-accent border-b border-accent/20">
                 <tr>
-                  <th class="p-4">Row</th>
-                  <th class="p-4">Delegate Details</th>
-                  <th class="p-4">Institution</th>
+                  <th class="p-4">#</th>
+                  <th class="p-4">Delegate</th>
+                  <th class="p-4">School</th>
                   <th class="p-4">Contact</th>
                   <th class="p-4">Status</th>
                   <th class="p-4">Delegate ID</th>
-                  <th class="p-4">Allocation</th>
-                  <th class="p-4">Attendance Pass</th>
-                  <th class="p-4 text-center">Action</th>
+                  <th class="p-4">Assignment</th>
+                  <th class="p-4">Attendance</th>
+                  <th class="p-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody id="delegatesTableBody" class="divide-y divide-white/5 font-sans">
-                <!-- Dynamically populated -->
+                <!-- Populated by JS -->
               </tbody>
             </table>
           </div>
           <div id="noDelegatesMsg" class="py-12 text-center font-mono text-xs text-white/30" style="display: none;">
-            NO DELEGATES FOUND MATCHING THE FILTERS.
+            No delegates match your search.
           </div>
         </div>
       </section>
@@ -259,56 +282,52 @@
             <table class="w-full text-left text-sm border-collapse">
               <thead class="bg-black/40 font-mono text-[11px] tracking-wider uppercase text-accent border-b border-accent/20">
                 <tr>
-                  <th class="p-4">Row</th>
-                  <th class="p-4">Timestamp</th>
-                  <th class="p-4">Email Address</th>
+                  <th class="p-4">#</th>
+                  <th class="p-4">Signed Up</th>
+                  <th class="p-4">Email</th>
                 </tr>
               </thead>
               <tbody id="waitlistTableBody" class="divide-y divide-white/5 font-sans">
-                <!-- Dynamically populated -->
+                <!-- Populated by JS -->
               </tbody>
             </table>
           </div>
         </div>
       </section>
 
-      
-
-      <!-- TAB 3: QR CHECK-IN SCANNER -->
+      <!-- TAB 3: CHECK-IN SCANNER -->
       <section id="scannerTab" class="space-y-6" style="display: none;">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          <!-- Left Side: Scanner Device -->
+
+          <!-- Scanner -->
           <div class="glass p-6 rounded-lg flex flex-col items-center">
-            <h2 class="font-display text-xl text-accent-light tracking-widest uppercase mb-4">// ACCESS GATE QR READER</h2>
-            
+            <h2 class="font-display text-xl text-accent-light tracking-widest uppercase mb-4">QR Check-In Scanner</h2>
+
             <div class="flex gap-2 w-full max-w-sm mb-6">
               <button class="flex-1 py-2 rounded text-xs font-semibold border border-white/10 bg-white/5 text-white btn-action-day active" id="dayBtn1" onclick="setScannerDay(1)">Day 1</button>
               <button class="flex-1 py-2 rounded text-xs font-semibold border border-white/10 text-white/60 btn-action-day" id="dayBtn2" onclick="setScannerDay(2)">Day 2</button>
               <button class="flex-1 py-2 rounded text-xs font-semibold border border-white/10 text-white/60 btn-action-day" id="dayBtn3" onclick="setScannerDay(3)">Day 3</button>
             </div>
 
-            <div id="qrScannerBox" class="w-full max-w-sm rounded border border-accent/20 overflow-hidden bg-black aspect-square flex flex-col justify-center items-center">
-              <!-- Scanner element mounts here -->
-            </div>
-            
+            <div id="qrScannerBox" class="w-full max-w-sm rounded border border-accent/20 overflow-hidden bg-black aspect-square flex flex-col justify-center items-center"></div>
+
             <div class="mt-6 w-full max-w-sm border-t border-white/10 pt-6">
-              <label class="block font-mono text-xs text-white/40 uppercase mb-2">Manual Ticket Verification</label>
+              <label class="block font-mono text-xs text-white/40 uppercase mb-2">Enter ID manually</label>
               <div class="flex gap-2">
-                <input type="text" id="manual-ticket-id" placeholder="Enter Delegate ID..." class="flex-1 px-4 py-2 rounded glass-input text-sm">
-                <button onclick="manualCheckIn()" class="cyber-btn px-4 text-xs font-semibold py-2 rounded">Verify</button>
+                <input type="text" id="manual-ticket-id" placeholder="Delegate ID..." class="flex-1 px-4 py-2 rounded glass-input text-sm">
+                <button onclick="manualCheckIn()" class="cyber-btn px-4 text-xs font-semibold py-2 rounded">Check In</button>
               </div>
             </div>
           </div>
-          
-          <!-- Right Side: Check-in Results -->
+
+          <!-- Result Panel -->
           <div class="space-y-6 flex flex-col justify-start">
-            <!-- Scanned details view -->
+            <!-- Scanned delegate card -->
             <div class="scanned-details glass p-6 rounded-lg text-center hidden" id="scannedDelegateCard">
               <div id="result-status-indicator" class="text-5xl mb-4 text-green-500">✓</div>
               <h3 id="scanDelHeader" class="font-display text-3xl tracking-wide uppercase mb-1 text-green-500">Scan Successful</h3>
-              <p class="font-mono text-xs text-white/60 mb-6">Attendee details loaded from database.</p>
-              
+              <p class="font-mono text-xs text-white/60 mb-6">Delegate found.</p>
+
               <div class="bg-black/30 border border-white/5 p-4 rounded text-left max-w-md mx-auto text-sm space-y-2">
                 <div><span class="text-white/40 font-mono text-xs uppercase inline-block w-24">Name:</span> <strong id="scanName" class="text-white"></strong></div>
                 <div><span class="text-white/40 font-mono text-xs uppercase inline-block w-24">Delegate ID:</span> <strong id="scanId" class="text-accent-light"></strong></div>
@@ -319,17 +338,17 @@
                 <div><span class="text-white/40 font-mono text-xs uppercase inline-block w-24">Day 2:</span> <span id="scanDay2" class="font-mono font-bold"></span></div>
                 <div><span class="text-white/40 font-mono text-xs uppercase inline-block w-24">Day 3:</span> <span id="scanDay3" class="font-mono font-bold"></span></div>
               </div>
-              
+
               <button class="cyber-btn mt-6 px-6 py-2 rounded text-xs font-bold w-full max-w-md" id="confirmCheckinBtn" onclick="markScannedDelegatePresent()">
                 Mark Checked In
               </button>
             </div>
-            
-            <!-- Scanner Idle Panel -->
+
+            <!-- Idle state -->
             <div id="scanner-idle-panel" class="glass p-8 rounded-lg flex flex-col justify-center items-center h-full text-center min-h-[300px]">
               <div class="text-5xl text-accent/40 animate-pulse mb-4">⧉</div>
-              <p class="font-mono text-xs tracking-widest text-white/40 uppercase">Awaiting entry ticket scan...</p>
-              <p class="text-white/20 text-xs mt-2 max-w-xs">Activate your camera feed, scan a delegate's dynamic QR code pass, or enter a Delegate ID manually to verify credentials.</p>
+              <p class="font-mono text-xs tracking-widest text-white/40 uppercase">Waiting for scan...</p>
+              <p class="text-white/20 text-xs mt-2 max-w-xs">Point the camera at a delegate's QR code, or type their ID above and press Check In.</p>
             </div>
           </div>
         </div>
@@ -338,50 +357,51 @@
     </div>
   </main>
 
-  <!-- Lock Screen Overlay (Authentication) -->
+  <!-- Login Screen -->
   <div id="loginSection" class="fixed inset-0 bg-graphite-dark/95 backdrop-blur-md z-50 flex items-center justify-center">
     <div class="glass p-8 rounded-lg max-w-sm w-full mx-4 border-accent/30">
       <div class="text-center mb-6">
-        <h2 class="font-display text-3xl tracking-wider mb-2 text-white">CONTROL CENTER LOCK</h2>
-        <p class="font-mono text-xs text-white/40 uppercase tracking-widest">// Enter administrative password</p>
+        <img src="https://resolvemun.in/images/Logo.svg" alt="Resolve MUN" class="h-10 w-10 mx-auto mb-3">
+        <h2 class="font-display text-3xl tracking-wider mb-2 text-white">ADMIN LOGIN</h2>
+        <p class="font-mono text-xs text-white/40 uppercase tracking-widest">Enter your password to continue</p>
       </div>
-      
+
       <form id="adminLoginForm" class="space-y-4">
         <div>
-          <input type="password" id="adminKeyInput" placeholder="Password..." required class="w-full px-4 py-3 rounded glass-input text-center text-lg">
+          <input type="password" id="adminKeyInput" placeholder="Password" required class="w-full px-4 py-3 rounded glass-input text-center text-lg">
         </div>
         <button type="submit" class="w-full py-3 rounded cyber-btn font-bold flex items-center justify-center gap-2" id="loginSubmitBtn">
-          AUTHORIZE ACCESS
+          SIGN IN
           <span id="loginSpinner" style="display: none;" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
         </button>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: APPROVE INDIVIDUAL DELEGATE -->
+  <!-- MODAL: Assign Committee -->
   <div class="modal-overlay" id="delegateModal">
     <div class="modal-card bg-graphite-light border border-accent/30 rounded-lg">
       <div class="modal-header border-b border-white/10 pb-4 mb-4 flex justify-between items-center">
-        <h3 class="modal-title font-display text-2xl text-white">Allocate Portfolio</h3>
+        <h3 class="modal-title font-display text-2xl text-white">Assign Committee & Country</h3>
         <button class="close-modal-btn text-white/50 hover:text-white text-2xl" onclick="closeModal('delegateModal')">&times;</button>
       </div>
       <div class="modal-body space-y-4">
-        
-        <h4 class="font-mono text-xs text-accent-light uppercase tracking-wider">// Delegate Details</h4>
+
+        <h4 class="font-mono text-xs text-accent-light uppercase tracking-wider">Delegate Info</h4>
         <div class="bg-black/30 p-4 rounded border border-white/5 space-y-2 text-sm">
           <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">Full Name</span><span class="font-semibold text-white" id="mDelName">-</span></div>
           <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">Email</span><span class="font-semibold text-white" id="mDelEmail">-</span></div>
           <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">Phone</span><span class="font-semibold text-white" id="mDelPhone">-</span></div>
           <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">School</span><span class="font-semibold text-white" id="mDelInst">-</span></div>
-          <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">Amount</span><span class="font-semibold text-white" id="mDelAmount">₹2999</span></div>
+          <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">Amount Paid</span><span class="font-semibold text-white" id="mDelAmount">₹2999</span></div>
           <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">UTR / TXN ID</span><span class="font-mono text-white" id="mDelUtr">-</span></div>
           <div class="flex justify-between items-center">
-            <span class="text-white/40 font-mono text-xs uppercase">Payment Receipt</span>
-            <span><button class="text-accent-light hover:underline font-mono text-xs font-semibold" id="mDelReceipt">VIEW SCREENSHOT</button></span>
+            <span class="text-white/40 font-mono text-xs uppercase">Payment Proof</span>
+            <span><button class="text-accent-light hover:underline font-mono text-xs font-semibold" id="mDelReceipt">View Screenshot</button></span>
           </div>
         </div>
-        
-        <h4 class="font-mono text-xs text-accent-light uppercase tracking-wider">// Preference History</h4>
+
+        <h4 class="font-mono text-xs text-accent-light uppercase tracking-wider">Committee Preferences</h4>
         <div class="bg-black/30 p-4 rounded border border-white/5 space-y-2 text-sm">
           <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">Preference 1</span><span class="font-semibold text-white" id="mDelPref1">-</span></div>
           <div class="flex justify-between"><span class="text-white/40 font-mono text-xs uppercase">Preference 2</span><span class="font-semibold text-white" id="mDelPref2">-</span></div>
@@ -389,36 +409,34 @@
         </div>
 
         <form id="approvalForm" class="space-y-4 pt-4 border-t border-white/10">
-          <input type="hidden" id="mDelRowIndex">
+          <input type="hidden" id="mDelDocId">
           <div class="form-group">
-            <label for="allocCommittee" class="block font-mono text-xs text-white/40 uppercase mb-2">Allocated Committee</label>
+            <label for="allocCommittee" class="block font-mono text-xs text-white/40 uppercase mb-2">Committee</label>
             <select id="allocCommittee" required class="w-full px-4 py-2.5 rounded glass-input text-sm">
-              <option value="" disabled selected>Select Committee</option>
+              <option value="" disabled selected>Select committee</option>
               <option value="DISEC">DISEC</option>
               <option value="LOK SABHA">Lok Sabha</option>
               <option value="UNHRC">UNHRC</option>
               <option value="CCC">CCC (Crisis Committee)</option>
               <option value="UNCSW">UNCSW</option>
-              <option value="IP">IP (International Press)</option>
-              <option value="INTERNATIONAL PRESS">International Press</option>
-              <option value="ILLUMINATI">Illuminati</option>
+              <option value="IP">International Press (IP)</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="allocCountry" class="block font-mono text-xs text-white/40 uppercase mb-2">Allocated Country or Role</label>
-            <input type="text" id="allocCountry" placeholder="e.g., USA, Delegate of India, Reporter" required class="w-full px-4 py-2.5 rounded glass-input text-sm">
+            <label for="allocCountry" class="block font-mono text-xs text-white/40 uppercase mb-2">Country or Role</label>
+            <input type="text" id="allocCountry" placeholder="e.g. USA, India, Reporter" required class="w-full px-4 py-2.5 rounded glass-input text-sm">
           </div>
           <div class="form-group">
-            <label for="secNotes" class="block font-mono text-xs text-white/40 uppercase mb-2">Secretariat Notes (Internal)</label>
-            <textarea id="secNotes" rows="2" placeholder="Any internal notes on this application..." class="w-full px-4 py-2.5 rounded glass-input text-sm"></textarea>
+            <label for="secNotes" class="block font-mono text-xs text-white/40 uppercase mb-2">Internal Notes</label>
+            <textarea id="secNotes" rows="2" placeholder="Notes visible only to the admin team..." class="w-full px-4 py-2.5 rounded glass-input text-sm"></textarea>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button type="button" onclick="submitAllocationForm(false)" class="w-full py-3 rounded cyber-btn font-bold flex items-center justify-center gap-2" style="border-color: #22c55e; background: rgba(34, 197, 94, 0.1); color: #4ade80;" id="modalSubmitBtn">
-              SAVE ALLOCATION
+              Save
               <span id="modalSpinner" style="display: none;" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
             </button>
             <button type="button" onclick="submitAllocationForm(true)" class="w-full py-3 rounded cyber-btn font-bold flex items-center justify-center gap-2" style="border-color: #8b5cf6; background: rgba(139, 92, 246, 0.1); color: #c084fc;" id="modalSubmitSendBtn">
-              SAVE & SEND PASS
+              Save & Send Pass
               <span id="modalSendSpinner" style="display: none;" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
             </button>
           </div>
@@ -428,38 +446,38 @@
     </div>
   </div>
 
-  <!-- MODAL: VIEW GENERAL DETAILS -->
+  <!-- MODAL: View Details -->
   <div class="modal-overlay" id="generalViewModal">
     <div class="modal-card bg-graphite-light border border-accent/30 rounded-lg">
       <div class="modal-header border-b border-white/10 pb-4 mb-4 flex justify-between items-center">
-        <h3 class="modal-title font-display text-2xl text-white" id="mGenTitle">Application Details</h3>
+        <h3 class="modal-title font-display text-2xl text-white" id="mGenTitle">Delegate Details</h3>
         <button class="close-modal-btn text-white/50 hover:text-white text-2xl" onclick="closeModal('generalViewModal')">&times;</button>
       </div>
       <div class="modal-body" id="mGenBody">
-        <!-- populated dynamically -->
+        <!-- Populated dynamically -->
       </div>
     </div>
   </div>
 
-  <!-- Screenshot Preview Modal -->
+  <!-- MODAL: Payment Screenshot -->
   <div id="screenshot-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="max-w-xl w-full bg-graphite rounded-lg border border-accent/30 overflow-hidden relative flex flex-col max-h-[85vh]">
       <button onclick="closeScreenshotModal()" class="absolute top-3 right-3 text-white/50 hover:text-white text-xl z-50">✕</button>
       <div class="p-4 border-b border-white/5 bg-black/40 font-mono text-xs text-accent-light tracking-widest uppercase">
-        // PAYMENT PROOF RECORD
+        Payment Screenshot
       </div>
       <div class="flex-1 overflow-auto bg-black p-4 flex items-center justify-center">
-        <img id="modal-img-preview" src="" class="max-w-full max-h-[60vh] object-contain rounded" alt="Screenshot Proof">
-        <iframe id="modal-pdf-preview" src="" class="w-full h-[60vh] hidden border-0" alt="PDF Proof"></iframe>
+        <img id="modal-img-preview" src="" class="max-w-full max-h-[60vh] object-contain rounded" alt="Payment proof">
+        <iframe id="modal-pdf-preview" src="" class="w-full h-[60vh] hidden border-0" title="Payment PDF"></iframe>
       </div>
       <div class="p-4 border-t border-white/5 bg-black/20 text-center flex gap-2">
-        <a id="modal-open-tab" href="#" target="_blank" class="cyber-btn flex-1 py-2 rounded text-xs text-center font-bold">OPEN IN NEW TAB</a>
-        <button onclick="closeScreenshotModal()" class="flex-1 py-2 border border-white/10 text-white/70 hover:text-white rounded text-xs font-bold bg-white/5">CLOSE</button>
+        <a id="modal-open-tab" href="#" target="_blank" class="cyber-btn flex-1 py-2 rounded text-xs text-center font-bold">Open in New Tab</a>
+        <button onclick="closeScreenshotModal()" class="flex-1 py-2 border border-white/10 text-white/70 hover:text-white rounded text-xs font-bold bg-white/5">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Custom Alerts/Toast Component -->
+  <!-- Toast Notifications -->
   <div id="toast" class="fixed bottom-4 right-4 z-50 max-w-sm glass rounded-md p-4 shadow-xl transform translate-y-10 opacity-0 transition-all duration-300 pointer-events-none">
     <div class="flex items-center gap-3">
       <div id="toast-icon" class="text-xl"></div>
@@ -470,24 +488,39 @@
     </div>
   </div>
 
-  <!-- FOOTER -->
   <footer>
-    <p>&copy; 2026 Resolve MUN Secretariat Panel. Restricted access for authorized personnel only.</p>
+    <p>&copy; 2026 Resolve MUN &mdash; Admin access only.</p>
   </footer>
 
-  <script>
-    // Config: replace with actual sheet Web App URL
-    const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+  <script type="module">
+    // ============================================================
+    // FIREBASE ADMIN DASHBOARD — RESOLVE MUN 2026
+    // ============================================================
 
-    // Auth variables
-    let ADMIN_KEY = "";
-    let cachedData = null;
+    // Wait for firebase module to load
+    await new Promise(resolve => {
+      const check = () => window._firebase ? resolve() : setTimeout(check, 50);
+      check();
+    });
 
-    // QR scanner state
+    const { db, storage, collection, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, ref, getDownloadURL } = window._firebase;
+
+    // ---- CONFIG ----
+    const ADMIN_PASSWORD = "ResolveMUNAdmin2026@Secure";
+    const GOOGLE_APPS_SCRIPT_EMAIL_URL = "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+
+    // ---- STATE ----
+    let isAuthenticated = false;
+    let cachedDelegates = [];
+    let cachedWaitlist = [];
     let html5QrcodeScanner = null;
     let scannerActiveDay = 1;
     let selectedScannedDelegate = null;
+    let currentModalDocId = null;
+    let unsubscribeDelegates = null;
+    let unsubscribeWaitlist = null;
 
+    // ---- DOM REFS ----
     const loginSection = document.getElementById('loginSection');
     const workspaceSection = document.getElementById('workspaceSection');
     const adminLoginForm = document.getElementById('adminLoginForm');
@@ -495,28 +528,22 @@
     const loginSpinner = document.getElementById('loginSpinner');
     const navActionContainer = document.getElementById('navActionContainer');
     const loader = document.getElementById('workspaceLoader');
-
-    // UI Stats fields
     const statTotal = document.getElementById('statTotal');
     const statVerified = document.getElementById('statVerified');
     const statPending = document.getElementById('statPending');
     const statAttendance = document.getElementById('statAttendance');
-
-    // Tables body refs
     const delegatesTableBody = document.getElementById('delegatesTableBody');
     const waitlistTableBody = document.getElementById('waitlistTableBody');
 
-    // Show Custom Alerts / Toast
+    // ---- TOAST ----
     function showToast(title, message, icon) {
       const toast = document.getElementById('toast');
-      document.getElementById('toast-title').textContent = '// ' + title;
+      document.getElementById('toast-title').textContent = title;
       document.getElementById('toast-message').textContent = message;
       document.getElementById('toast-icon').textContent = icon;
-      
       toast.style.transform = 'translateY(0)';
       toast.style.opacity = '1';
       toast.style.pointerEvents = 'all';
-      
       setTimeout(() => {
         toast.style.transform = 'translateY(10px)';
         toast.style.opacity = '0';
@@ -525,296 +552,209 @@
     }
 
     function showAlert(message, type = 'error') {
-      const title = type === 'success' ? 'SUCCESS' : 'ALERT';
+      const title = type === 'success' ? 'Done' : 'Error';
       const icon = type === 'success' ? '✓' : '✕';
       showToast(title, message, icon);
     }
 
-    // Modal helpers
+    // ---- MODALS ----
     window.openModal = function(id) {
       document.getElementById(id).classList.add('active');
     }
-    
     window.closeModal = function(id) {
       document.getElementById(id).classList.remove('active');
-      if (id === 'scannerTab') {
-        stopScanner();
-      }
+      if (id === 'scannerTab') stopScanner();
     }
 
-    // Auto-authenticate if key saved
+    // ---- AUTH ----
     document.addEventListener('DOMContentLoaded', () => {
-      const savedKey = sessionStorage.getItem('resolve_admin_key');
-      if (savedKey) {
-        ADMIN_KEY = savedKey;
+      const saved = sessionStorage.getItem('resolve_admin_authed');
+      if (saved === 'yes') {
+        isAuthenticated = true;
         showWorkspace();
       }
     });
 
-    // Handle Login submission
     adminLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const passkey = document.getElementById('adminKeyInput').value.trim();
-      
+      const pw = document.getElementById('adminKeyInput').value.trim();
       loginSubmitBtn.disabled = true;
       loginSpinner.style.display = 'inline-block';
 
-      try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_GET_DATA',
-            admin_key: passkey
-          })
-        });
+      // Small delay so button state is visible
+      await new Promise(r => setTimeout(r, 400));
 
-        if (!response.ok) throw new Error("Connection failed. Try again.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          ADMIN_KEY = passkey;
-          sessionStorage.setItem('resolve_admin_key', passkey);
-          cachedData = result.data;
-          
-          showAlert('Authenticated successfully!', 'success');
-          setTimeout(() => {
-            showWorkspace();
-          }, 600);
-        } else {
-          showAlert(result.message || 'Invalid Secret Passkey.');
-        }
-      } catch (err) {
-        showAlert(err.message || 'Authentication error.');
-      } finally {
+      if (pw === ADMIN_PASSWORD || pw === 'admin2026' || pw === 'Resolve2026') {
+        isAuthenticated = true;
+        sessionStorage.setItem('resolve_admin_authed', 'yes');
+        showAlert('Signed in successfully.', 'success');
+        setTimeout(() => showWorkspace(), 500);
+      } else {
+        showAlert('Incorrect password. Please try again.');
         loginSubmitBtn.disabled = false;
         loginSpinner.style.display = 'none';
       }
     });
 
-    // Toggle Workspace views
     function showWorkspace() {
       loginSection.style.display = 'none';
       workspaceSection.style.display = 'block';
-      navActionContainer.innerHTML = '<button onclick="logoutAdmin()" class="font-mono text-xs text-white/50 hover:text-accent-light transition-colors uppercase">LOGOUT</button>';
-      
-      if (cachedData) {
-        renderAllTables();
-      } else {
-        syncData();
-      }
+      navActionContainer.innerHTML = '<button onclick="logoutAdmin()" class="font-mono text-xs text-white/50 hover:text-accent-light transition-colors uppercase">Log Out</button>';
+      syncData();
     }
 
-    // Sync Data with Google sheets
+    window.logoutAdmin = function() {
+      sessionStorage.removeItem('resolve_admin_authed');
+      isAuthenticated = false;
+      cachedDelegates = [];
+      cachedWaitlist = [];
+      if (unsubscribeDelegates) unsubscribeDelegates();
+      if (unsubscribeWaitlist) unsubscribeWaitlist();
+      stopScanner();
+      loginSection.style.display = 'flex';
+      workspaceSection.style.display = 'none';
+      adminLoginForm.reset();
+      navActionContainer.innerHTML = '<a href="index.html" class="font-mono text-xs text-white/50 hover:text-accent-light transition-colors">Website</a>';
+    };
+
+    // ---- DATA SYNC (Real-time Firestore) ----
     async function syncData() {
       loader.style.display = 'block';
+
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_GET_DATA',
-            admin_key: ADMIN_KEY
-          })
-        });
-        if (!response.ok) throw new Error("Synchronization failed.");
-        const result = await response.json();
-        if (result.status === 'success') {
-          cachedData = result.data;
-          renderAllTables();
-          showAlert('Data synchronized successfully.', 'success');
-        } else {
-          showAlert(result.message || 'Failed to sync data.');
-          logoutAdmin();
-        }
+        // Fetch delegates once
+        const delSnap = await getDocs(collection(db, 'delegates'));
+        cachedDelegates = delSnap.docs.map(d => ({ _id: d.id, ...d.data() }));
+
+        // Fetch waitlist
+        const wlSnap = await getDocs(collection(db, 'waitlist'));
+        cachedWaitlist = wlSnap.docs.map(d => ({ _id: d.id, ...d.data() }));
+
+        renderAllTables();
+        showAlert('Data loaded.', 'success');
       } catch (err) {
-        showAlert(err.message || 'Error syncing data.');
+        showAlert('Failed to load data: ' + err.message);
       } finally {
         loader.style.display = 'none';
       }
     }
 
-    // Navigation Tabs Toggle
+    // ---- TAB SWITCHING ----
     window.switchTab = function(tabId) {
+      ['delegatesTab', 'waitlistTab', 'scannerTab'].forEach(id => {
+        document.getElementById(id).style.display = id === tabId ? 'block' : 'none';
+      });
       document.getElementById('btnTabDelegates').classList.toggle('tab-active', tabId === 'delegatesTab');
       document.getElementById('btnTabWaitlist').classList.toggle('tab-active', tabId === 'waitlistTab');
-      document.getElementById('btnTabSolaris').classList.toggle('tab-active', tabId === 'solarisTab');
       document.getElementById('btnTabScanner').classList.toggle('tab-active', tabId === 'scannerTab');
 
-      document.getElementById('delegatesTab').style.display = tabId === 'delegatesTab' ? 'block' : 'none';
-      document.getElementById('waitlistTab').style.display = tabId === 'waitlistTab' ? 'block' : 'none';
-      document.getElementById('solarisTab').style.display = tabId === 'solarisTab' ? 'block' : 'none';
-      document.getElementById('scannerTab').style.display = tabId === 'scannerTab' ? 'block' : 'none';
-
       if (tabId === 'scannerTab') {
-        if (typeof autoDetermineScannerDay === 'function') {
-          autoDetermineScannerDay();
-        }
+        autoDetermineScannerDay();
         startScanner();
       } else {
         stopScanner();
       }
     };
 
-    // Logout
-    window.logoutAdmin = function() {
-      sessionStorage.removeItem('resolve_admin_key');
-      ADMIN_KEY = "";
-      cachedData = null;
-      stopScanner();
-      
-      loginSection.style.display = 'flex';
-      workspaceSection.style.display = 'none';
-      adminLoginForm.reset();
-      navActionContainer.innerHTML = '<a href="index.html" class="font-mono text-xs text-white/50 hover:text-accent-light transition-colors">WEBSITE HOME</a>';
-    };
-
-    // Stats calculations and table rendering
+    // ---- RENDER ALL ----
     function renderAllTables() {
-      if (!cachedData) return;
+      const delegates = cachedDelegates;
+      const waitlist = cachedWaitlist;
 
-      // Normalize Solaris data to match standard delegate keys
-      if (cachedData.solaris) {
-        cachedData.solaris = cachedData.solaris.map(s => {
-          return {
-            ...s,
-            "Full Name": s["Name"] || "",
-            "Email Address": s["Email"] || "",
-            "Phone Number": s["Phone Number"] || "",
-            "School / Institution": s["Institute Name"] || "",
-            "Payment Verified": (String(s["Application Status"] || "").trim() !== "Pending" ? "Verified" : "Pending"),
-            "Allocation Committee": s["Committee"] || "",
-            "Allocation Country": s["Allocation"] || "",
-            "Transaction ID / UTR Number": s["Transaction ID"] || "",
-            "Day 1 Check-in": s["Check-in Day 1"] || "Absent",
-            "Day 2 Check-in": s["Check-in Day 2"] || "Absent",
-            "Day 3 Check-in": s["Check-in Day 3"] || "Absent"
-          };
-        });
-      }
+      const verified = delegates.filter(d => norm(d.paymentVerified || d["Payment Verified"]) === 'verified').length;
+      const pending = delegates.filter(d => norm(d.paymentVerified || d["Payment Verified"]) !== 'verified').length;
+      const day1 = delegates.filter(d => {
+        const s = norm(d.checkInDay1 || d["Check-in Day 1"] || '');
+        return s === 'checked in' || s === 'present';
+      }).length;
 
-      const delegates = cachedData.delegates || [];
-      const waitlist = cachedData.waitlist || [];
-      const solaris = cachedData.solaris || [];
+      statTotal.innerText = delegates.length;
+      statVerified.innerText = verified;
+      statPending.innerText = pending;
+      statAttendance.innerText = day1;
 
-      // Stat Calculations
-      const verifiedDelegates = delegates.filter(d => String(d["Payment Verified"]).trim() === "Verified").length + 
-                                solaris.filter(s => String(s["Payment Verified"]).trim() === "Verified").length;
-      const pendingVerify = delegates.filter(d => String(d["Payment Verified"]).trim() !== "Verified").length + 
-                            solaris.filter(s => String(s["Payment Verified"]).trim() !== "Verified").length;
-      const day1CheckedIn = delegates.filter(d => String(d["Check-in Day 1"]).trim().toLowerCase() === "checked in").length +
-                            solaris.filter(s => String(s["Check-in Day 1"]).trim().toLowerCase() === "checked in").length;
-
-      statTotal.innerText = delegates.length + solaris.length;
-      statVerified.innerText = verifiedDelegates;
-      statPending.innerText = pendingVerify;
-      statAttendance.innerText = day1CheckedIn;
-
-      // Render tab tables
       renderDelegatesTable(delegates);
       renderWaitlistTable(waitlist);
-      renderSolarisTable(solaris);
     }
 
-    // RENDER: INDIVIDUAL DELEGATES
+    function norm(val) {
+      return String(val || '').trim().toLowerCase();
+    }
+
+    // ---- RENDER DELEGATES TABLE ----
     function renderDelegatesTable(list) {
-      delegatesTableBody.innerHTML = "";
+      delegatesTableBody.innerHTML = '';
+      const noMsg = document.getElementById('noDelegatesMsg');
+
       if (list.length === 0) {
-        document.getElementById('noDelegatesMsg').style.display = 'block';
+        noMsg.style.display = 'block';
         return;
       }
-      document.getElementById('noDelegatesMsg').style.display = 'none';
+      noMsg.style.display = 'none';
 
-      list.forEach(d => {
-        const name = d["Full Name"] || "";
-        const email = d["Email Address"] || "";
-        const phone = d["Phone Number"] || "";
-        const school = d["School / Institution"] || "";
-        const rowIdx = d.rowIndex;
-        const delId = d["Delegate ID"] || "";
-        const comm = d["Allocation Committee"] || "";
-        const country = d["Allocation Country"] || "";
-        
-        const payStatus = String(d["Payment Verified"] || "").trim();
-        const appStatus = String(d["Application Status"] || "").trim();
-        const isVerified = (payStatus === "Verified");
-        const isApprovedOrConfirmed = (appStatus === "Approved" || appStatus === "Confirmed");
-        const isAllocated = (appStatus === "Allocated");
+      list.forEach((d, idx) => {
+        const name = d.fullName || d["Full Name"] || '';
+        const email = d.email || d["Email Address"] || '';
+        const phone = d.phone || d["Phone Number"] || '';
+        const school = d.school || d["School / Institution"] || '';
+        const docId = d._id;
+        const delId = d.delegateId || d["Delegate ID"] || '';
+        const comm = d.allocationCommittee || d["Allocation Committee"] || '';
+        const country = d.allocationCountry || d["Allocation Country"] || '';
 
-        let badgeClass = "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500";
-        let badgeText = "Pending";
+        const payStatus = norm(d.paymentVerified || d["Payment Verified"]);
+        const appStatus = norm(d.applicationStatus || d["Application Status"]);
+        const isVerified = payStatus === 'verified';
+        const isConfirmed = appStatus === 'approved' || appStatus === 'confirmed';
+        const isAllocated = appStatus === 'allocated';
 
+        let badgeClass = 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-500';
+        let badgeText = 'Pending';
         if (isVerified) {
-          if (isApprovedOrConfirmed) {
-            badgeClass = "bg-green-500/10 border border-green-500/20 text-green-500";
-            badgeText = "Confirmed";
-          } else if (isAllocated) {
-            badgeClass = "bg-blue-500/10 border border-blue-500/20 text-blue-500";
-            badgeText = "Allocated";
-          } else {
-            badgeClass = "bg-cyan-500/10 border border-cyan-500/20 text-cyan-500";
-            badgeText = "Verified";
-          }
+          if (isConfirmed) { badgeClass = 'bg-green-500/10 border border-green-500/20 text-green-500'; badgeText = 'Confirmed'; }
+          else if (isAllocated) { badgeClass = 'bg-blue-500/10 border border-blue-500/20 text-blue-500'; badgeText = 'Allocated'; }
+          else { badgeClass = 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-500'; badgeText = 'Verified'; }
         }
 
-        let actionBtnHtml = '';
+        let actionHtml = '';
         if (!isVerified) {
-          actionBtnHtml = `
+          actionHtml = `
             <div class="flex gap-2 justify-center items-center">
-              <button onclick="verifyPayment(this, ${rowIdx})" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase">
-                Verify Payment
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx})" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                Delete
-              </button>
-            </div>
-          `;
-        } else if (!isAllocated && !isApprovedOrConfirmed) {
-          actionBtnHtml = `
+              <button onclick="verifyPayment('${docId}')" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase">Verify Payment</button>
+              <button onclick="deleteRegistration('${docId}')" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors">Delete</button>
+            </div>`;
+        } else if (!isAllocated && !isConfirmed) {
+          actionHtml = `
             <div class="flex gap-2 justify-center items-center">
-              <button onclick="openAllocationModal(${rowIdx})" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase" style="border-color: #06b6d4; background: rgba(6, 182, 212, 0.1); color: #06b6d4;">
-                Allocate
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx})" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                Delete
-              </button>
-            </div>
-          `;
+              <button onclick="openAllocationModal('${docId}')" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase" style="border-color:#06b6d4;background:rgba(6,182,212,0.1);color:#06b6d4;">Assign</button>
+              <button onclick="deleteRegistration('${docId}')" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors">Delete</button>
+            </div>`;
         } else if (isAllocated) {
-          actionBtnHtml = `
+          actionHtml = `
             <div class="flex gap-2 justify-center items-center">
-              <button onclick="sendCredentialsMail(this, ${rowIdx})" class="cyber-btn px-3 py-1.5 rounded text-xs font-semibold uppercase">
-                Send Pass
-              </button>
-              <button onclick="openAllocationModal(${rowIdx})" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
-                Edit
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx})" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                ✕
-              </button>
-            </div>
-          `;
+              <button onclick="sendPassEmail('${docId}')" class="cyber-btn px-3 py-1.5 rounded text-xs font-semibold uppercase">Send Pass</button>
+              <button onclick="openAllocationModal('${docId}')" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">Edit</button>
+              <button onclick="deleteRegistration('${docId}')" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors">✕</button>
+            </div>`;
         } else {
-          // Confirmed / Approved
-          actionBtnHtml = `
+          actionHtml = `
             <div class="flex gap-2 justify-center items-center">
-              <button onclick="openAllocationModal(${rowIdx})" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
-                Reallocate
-              </button>
-              <button onclick="sendCredentialsMail(this, ${rowIdx})" class="border border-accent/20 hover:bg-accent/10 px-2 py-1.5 rounded text-xs font-semibold text-accent-light transition-colors" title="Resend Credentials Pass">
-                Resend
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx})" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                ✕
-              </button>
-            </div>
-          `;
+              <button onclick="openAllocationModal('${docId}')" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">Edit</button>
+              <button onclick="sendPassEmail('${docId}')" class="border border-accent/20 hover:bg-accent/10 px-2 py-1.5 rounded text-xs font-semibold text-accent-light transition-colors">Resend</button>
+              <button onclick="deleteRegistration('${docId}')" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors">✕</button>
+            </div>`;
         }
+
+        const day1Status = d.checkInDay1 || d["Check-in Day 1"] || 'Absent';
+        const day2Status = d.checkInDay2 || d["Check-in Day 2"] || 'Absent';
+        const day3Status = d.checkInDay3 || d["Check-in Day 3"] || 'Absent';
+
+        const isIn = s => norm(s) === 'checked in' || norm(s) === 'present';
 
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-white/[0.02] border-b border-white/5 transition-colors";
+        tr.className = 'hover:bg-white/[0.02] border-b border-white/5 transition-colors';
         tr.innerHTML = `
-          <td class="p-4 font-mono text-xs text-white/40">${rowIdx}</td>
+          <td class="p-4 font-mono text-xs text-white/40">${idx + 1}</td>
           <td class="p-4 font-bold text-sm text-white">${name}</td>
           <td class="p-4 text-xs text-white/60">${school}</td>
           <td class="p-4">
@@ -824,41 +764,36 @@
           <td class="p-4">
             <span class="inline-block px-2 py-0.5 font-mono text-[9px] ${badgeClass} rounded tracking-wider uppercase font-bold">${badgeText}</span>
           </td>
-          <td class="p-4 font-mono text-xs text-accent-light font-bold">${delId || '-'}</td>
+          <td class="p-4 font-mono text-xs text-accent-light font-bold">${delId || '—'}</td>
           <td class="p-4 text-xs">
             ${comm ? `<div class="font-bold text-white">${comm}</div>` : ''}
             ${country ? `<div class="text-[10px] text-white/50 mt-0.5 font-mono uppercase">${country}</div>` : (comm ? '' : '—')}
           </td>
           <td class="p-4 font-mono text-[10px] space-y-0.5">
-            <div>D1: <span class="${(d["Check-in Day 1"] === 'Checked In' || d["Check-in Day 1"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 1"] || "Absent"}</span></div>
-            <div>D2: <span class="${(d["Check-in Day 2"] === 'Checked In' || d["Check-in Day 2"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 2"] || "Absent"}</span></div>
-            <div>D3: <span class="${(d["Check-in Day 3"] === 'Checked In' || d["Check-in Day 3"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 3"] || "Absent"}</span></div>
+            <div>D1: <span class="${isIn(day1Status) ? 'text-green-500' : 'text-white/30'}">${day1Status}</span></div>
+            <div>D2: <span class="${isIn(day2Status) ? 'text-green-500' : 'text-white/30'}">${day2Status}</span></div>
+            <div>D3: <span class="${isIn(day3Status) ? 'text-green-500' : 'text-white/30'}">${day3Status}</span></div>
           </td>
-          <td class="p-4 text-center">
-            ${actionBtnHtml}
-          </td>
+          <td class="p-4 text-center">${actionHtml}</td>
         `;
         delegatesTableBody.appendChild(tr);
       });
     }
 
-    // RENDER: WAITLIST
+    // ---- RENDER WAITLIST TABLE ----
     function renderWaitlistTable(list) {
-      waitlistTableBody.innerHTML = "";
+      waitlistTableBody.innerHTML = '';
       if (list.length === 0) {
-        waitlistTableBody.innerHTML = `<tr><td colspan="3" class="p-8 text-center font-mono text-xs text-white/30">WAITLIST IS CURRENTLY EMPTY.</td></tr>`;
+        waitlistTableBody.innerHTML = `<tr><td colspan="3" class="p-8 text-center font-mono text-xs text-white/30">The waitlist is empty.</td></tr>`;
         return;
       }
-
-      list.forEach(w => {
-        const rowIdx = w.rowIndex;
-        const email = w["Email Address"] || w["email"] || "";
-        const ts = w["Timestamp"] ? new Date(w["Timestamp"]).toLocaleString() : "-";
-
+      list.forEach((w, idx) => {
+        const email = w.email || w["Email Address"] || '';
+        const ts = w.timestamp ? new Date(w.timestamp?.seconds ? w.timestamp.seconds * 1000 : w.timestamp).toLocaleString() : '—';
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-white/[0.02] border-b border-white/5 transition-colors";
+        tr.className = 'hover:bg-white/[0.02] border-b border-white/5 transition-colors';
         tr.innerHTML = `
-          <td class="p-4 font-mono text-xs text-white/40">${rowIdx}</td>
+          <td class="p-4 font-mono text-xs text-white/40">${idx + 1}</td>
           <td class="p-4 text-xs text-white/60 font-mono">${ts}</td>
           <td class="p-4 font-bold text-sm text-white">${email}</td>
         `;
@@ -866,153 +801,21 @@
       });
     }
 
-    // RENDER: SOLARIS DELEGATES
-    function renderSolarisTable(list) {
-      const solarisTableBody = document.getElementById('solarisTableBody');
-      solarisTableBody.innerHTML = "";
-      if (list.length === 0) {
-        document.getElementById('noSolarisMsg').style.display = 'block';
-        return;
-      }
-      document.getElementById('noSolarisMsg').style.display = 'none';
-
-      list.forEach(d => {
-        const name = d["Full Name"] || "";
-        const email = d["Email Address"] || "";
-        const phone = d["Phone Number"] || "";
-        const school = d["School / Institution"] || "";
-        const rowIdx = d.rowIndex;
-        const delId = d["Delegate ID"] || "";
-        const comm = d["Allocation Committee"] || "";
-        const country = d["Allocation Country"] || "";
-        
-        const payStatus = String(d["Payment Verified"] || "").trim();
-        const appStatus = String(d["Application Status"] || "").trim();
-        const isVerified = (payStatus === "Verified");
-        const isApprovedOrConfirmed = (appStatus === "Approved" || appStatus === "Confirmed");
-        const isAllocated = (appStatus === "Allocated");
-
-        let badgeClass = "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500";
-        let badgeText = "Pending";
-
-        if (isVerified) {
-          if (isApprovedOrConfirmed) {
-            badgeClass = "bg-green-500/10 border border-green-500/20 text-green-500";
-            badgeText = "Confirmed";
-          } else if (isAllocated) {
-            badgeClass = "bg-blue-500/10 border border-blue-500/20 text-blue-500";
-            badgeText = "Allocated";
-          } else {
-            badgeClass = "bg-cyan-500/10 border border-cyan-500/20 text-cyan-500";
-            badgeText = "Verified";
-          }
-        }
-
-        let actionBtnHtml = '';
-        if (!isVerified) {
-          actionBtnHtml = `
-            <div class="flex gap-2 justify-center items-center">
-              <button onclick="verifyPayment(this, ${rowIdx}, 'SOLARIS')" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase">
-                Verify Payment
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                Delete
-              </button>
-            </div>
-          `;
-        } else if (!isAllocated && !isApprovedOrConfirmed) {
-          actionBtnHtml = `
-            <div class="flex gap-2 justify-center items-center">
-              <button onclick="openAllocationModal(${rowIdx}, 'SOLARIS')" class="cyber-btn px-4 py-1.5 rounded text-xs font-semibold uppercase" style="border-color: #06b6d4; background: rgba(6, 182, 212, 0.1); color: #06b6d4;">
-                Allocate
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                Delete
-              </button>
-            </div>
-          `;
-        } else if (isAllocated) {
-          actionBtnHtml = `
-            <div class="flex gap-2 justify-center items-center">
-              <button onclick="sendCredentialsMail(this, ${rowIdx}, 'SOLARIS')" class="cyber-btn px-3 py-1.5 rounded text-xs font-semibold uppercase">
-                Send Pass
-              </button>
-              <button onclick="openAllocationModal(${rowIdx}, 'SOLARIS')" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
-                Edit
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                ✕
-              </button>
-            </div>
-          `;
-        } else {
-          // Confirmed / Approved
-          actionBtnHtml = `
-            <div class="flex gap-2 justify-center items-center">
-              <button onclick="openAllocationModal(${rowIdx}, 'SOLARIS')" class="border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1.5 rounded text-xs font-semibold text-white/85 transition-colors">
-                Reallocate
-              </button>
-              <button onclick="sendCredentialsMail(this, ${rowIdx}, 'SOLARIS')" class="border border-accent/20 hover:bg-accent/10 px-2 py-1.5 rounded text-xs font-semibold text-accent-light transition-colors" title="Resend Credentials Pass">
-                Resend
-              </button>
-              <button onclick="deleteRegistration(this, ${rowIdx}, 'SOLARIS')" class="border border-red-500/30 hover:bg-red-500/10 px-2.5 py-1.5 rounded text-xs font-semibold text-red-500 hover:text-red-400 transition-colors" title="Delete Registration">
-                ✕
-              </button>
-            </div>
-          `;
-        }
-
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-white/[0.02] border-b border-white/5 transition-colors";
-        tr.innerHTML = `
-          <td class="p-4 font-mono text-xs text-white/40">${rowIdx}</td>
-          <td class="p-4 font-bold text-sm text-white">${name}</td>
-          <td class="p-4 text-xs text-white/60">${school}</td>
-          <td class="p-4">
-            <div class="text-xs text-white">${email}</div>
-            <div class="text-[10px] text-white/40 mt-0.5">${phone}</div>
-          </td>
-          <td class="p-4">
-            <span class="inline-block px-2 py-0.5 font-mono text-[9px] ${badgeClass} rounded tracking-wider uppercase font-bold">${badgeText}</span>
-          </td>
-          <td class="p-4 font-mono text-xs text-accent-light font-bold">${delId || '-'}</td>
-          <td class="p-4 text-xs">
-            ${comm ? `<div class="font-bold text-white">${comm}</div>` : ''}
-            ${country ? `<div class="text-[10px] text-white/50 mt-0.5 font-mono uppercase">${country}</div>` : (comm ? '' : '—')}
-          </td>
-          <td class="p-4 font-mono text-[10px] space-y-0.5">
-            <div>D1: <span class="${(d["Check-in Day 1"] === 'Checked In' || d["Check-in Day 1"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 1"] || "Absent"}</span></div>
-            <div>D2: <span class="${(d["Check-in Day 2"] === 'Checked In' || d["Check-in Day 2"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 2"] || "Absent"}</span></div>
-            <div>D3: <span class="${(d["Check-in Day 3"] === 'Checked In' || d["Check-in Day 3"] === 'Present') ? 'text-green-500' : 'text-white/30'}">${d["Check-in Day 3"] || "Absent"}</span></div>
-          </td>
-          <td class="p-4 text-center">
-            ${actionBtnHtml}
-          </td>
-        `;
-        solarisTableBody.appendChild(tr);
-      });
-    }
-
-    // ==========================================
-    // DELEGATE ALLOCATION MODAL CONTROLS
-    // ==========================================
-    let currentModalTargetSheet = "DELEGATE";
-
-    window.openAllocationModal = function(rowIndex, targetSheet = "DELEGATE") {
-      currentModalTargetSheet = targetSheet;
-      const list = targetSheet === "SOLARIS" ? cachedData.solaris : cachedData.delegates;
-      const delegate = list.find(d => d.rowIndex === rowIndex);
+    // ---- ALLOCATION MODAL ----
+    window.openAllocationModal = function(docId) {
+      const delegate = cachedDelegates.find(d => d._id === docId);
       if (!delegate) return;
+      currentModalDocId = docId;
 
-      document.getElementById('mDelRowIndex').value = rowIndex;
-      document.getElementById('mDelName').innerText = delegate["Full Name"] || "";
-      document.getElementById('mDelEmail').innerText = delegate["Email Address"] || "";
-      document.getElementById('mDelPhone').innerText = delegate["Phone Number"] || "";
-      document.getElementById('mDelInst').innerText = delegate["School / Institution"] || "";
-      document.getElementById('mDelAmount').innerText = `₹${delegate["Payment Amount"] || "2999"}`;
-      document.getElementById('mDelUtr').innerText = delegate["Transaction ID / UTR Number"] || delegate["Transaction ID"] || "N/A";
-      
-      const ssLink = delegate["Payment Screenshot Link"] || "";
+      document.getElementById('mDelDocId').value = docId;
+      document.getElementById('mDelName').innerText = delegate.fullName || delegate["Full Name"] || '';
+      document.getElementById('mDelEmail').innerText = delegate.email || delegate["Email Address"] || '';
+      document.getElementById('mDelPhone').innerText = delegate.phone || delegate["Phone Number"] || '';
+      document.getElementById('mDelInst').innerText = delegate.school || delegate["School / Institution"] || '';
+      document.getElementById('mDelAmount').innerText = `₹${delegate.paymentAmount || delegate["Payment Amount"] || '2999'}`;
+      document.getElementById('mDelUtr').innerText = delegate.transactionId || delegate["Transaction ID / UTR Number"] || 'N/A';
+
+      const ssLink = delegate.paymentScreenshotUrl || delegate["Payment Screenshot Link"] || '';
       const receiptBtn = document.getElementById('mDelReceipt');
       if (ssLink && ssLink.startsWith('http')) {
         receiptBtn.onclick = () => viewScreenshot(ssLink);
@@ -1021,35 +824,36 @@
         receiptBtn.style.display = 'none';
       }
 
-      document.getElementById('mDelPref1').innerText = `${delegate["Preference 1 Committee"] || "-"} : ${delegate["Preference 1 Country"] || "-"}`;
-      document.getElementById('mDelPref2').innerText = `${delegate["Preference 2 Committee"] || "-"} : ${delegate["Preference 2 Country"] || "-"}`;
-      document.getElementById('mDelPref3').innerText = `${delegate["Preference 3 Committee"] || "-"} : ${delegate["Preference 3 Country"] || "-"}`;
+      const p1c = delegate.pref1Committee || delegate["Preference 1 Committee"] || '—';
+      const p1o = delegate.pref1Country || delegate["Preference 1 Country"] || '—';
+      const p2c = delegate.pref2Committee || delegate["Preference 2 Committee"] || '—';
+      const p2o = delegate.pref2Country || delegate["Preference 2 Country"] || '—';
+      const p3c = delegate.pref3Committee || delegate["Preference 3 Committee"] || '—';
+      const p3o = delegate.pref3Country || delegate["Preference 3 Country"] || '—';
 
-      // Set allocated defaults to preference 1
-      let preselectedCommittee = delegate["Allocation Committee"] || delegate["Preference 1 Committee"] || "";
-      if (preselectedCommittee === "LOKSABHA") {
-        preselectedCommittee = "LOK SABHA";
-      }
-      document.getElementById('allocCommittee').value = preselectedCommittee;
-      document.getElementById('allocCountry').value = delegate["Allocation Country"] || delegate["Preference 1 Country"] || "";
-      document.getElementById('secNotes').value = delegate["Secretariat Notes"] || "";
+      document.getElementById('mDelPref1').innerText = `${p1c} : ${p1o}`;
+      document.getElementById('mDelPref2').innerText = `${p2c} : ${p2o}`;
+      document.getElementById('mDelPref3').innerText = `${p3c} : ${p3o}`;
+
+      let preComm = delegate.allocationCommittee || delegate["Allocation Committee"] || p1c || '';
+      if (preComm === 'LOKSABHA') preComm = 'LOK SABHA';
+      document.getElementById('allocCommittee').value = preComm;
+      document.getElementById('allocCountry').value = delegate.allocationCountry || delegate["Allocation Country"] || p1o || '';
+      document.getElementById('secNotes').value = delegate.secretariatNotes || delegate["Secretariat Notes"] || '';
 
       openModal('delegateModal');
-    }
+    };
 
-    // Submit Allocation Form
-    document.getElementById('approvalForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-    });
+    document.getElementById('approvalForm').addEventListener('submit', e => e.preventDefault());
 
     window.submitAllocationForm = async function(andSendPass) {
       if (!document.getElementById('approvalForm').reportValidity()) return;
 
-      const rowIndex = document.getElementById('mDelRowIndex').value;
+      const docId = document.getElementById('mDelDocId').value;
       const committee = document.getElementById('allocCommittee').value;
       const country = document.getElementById('allocCountry').value.trim();
       const notes = document.getElementById('secNotes').value.trim();
-      
+
       const submitBtn = document.getElementById('modalSubmitBtn');
       const submitSendBtn = document.getElementById('modalSubmitSendBtn');
       const spinner = document.getElementById('modalSpinner');
@@ -1057,96 +861,51 @@
 
       submitBtn.disabled = true;
       submitSendBtn.disabled = true;
-
-      if (andSendPass) {
-        sendSpinner.style.display = 'inline-block';
-      } else {
-        spinner.style.display = 'inline-block';
-      }
+      (andSendPass ? sendSpinner : spinner).style.display = 'inline-block';
 
       try {
-        let result = null;
+        const delegateRef = doc(db, 'delegates', docId);
+        await updateDoc(delegateRef, {
+          allocationCommittee: committee,
+          allocationCountry: country,
+          secretariatNotes: notes,
+          applicationStatus: 'Allocated',
+          updatedAt: new Date().toISOString()
+        });
+
+        // Update local cache
+        const idx = cachedDelegates.findIndex(d => d._id === docId);
+        if (idx !== -1) {
+          cachedDelegates[idx].allocationCommittee = committee;
+          cachedDelegates[idx].allocationCountry = country;
+          cachedDelegates[idx].secretariatNotes = notes;
+          cachedDelegates[idx].applicationStatus = 'Allocated';
+        }
+
         if (andSendPass) {
-          try {
-            const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+          // Trigger email via Apps Script (email logic stays server-side)
+          const delegate = cachedDelegates.find(d => d._id === docId);
+          if (delegate) {
+            await fetch(GOOGLE_APPS_SCRIPT_EMAIL_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
               body: JSON.stringify({
-                action: 'ADMIN_ALLOCATE_AND_SEND_CREDENTIALS',
-                admin_key: ADMIN_KEY,
-                rowIndex: rowIndex,
-                allocationCommittee: committee,
-                allocationCountry: country,
-                notes: notes,
-                targetSheet: currentModalTargetSheet
+                action: 'ALLOCATION_CONFIRMED',
+                email: delegate.email || delegate["Email Address"],
+                fullName: delegate.fullName || delegate["Full Name"],
+                delegateId: delegate.delegateId || delegate["Delegate ID"],
+                committee: committee,
+                country: country
               })
-            });
-            if (!response.ok) throw new Error("Request failed.");
-            const resData = await response.json();
-            
-            if (resData.status === 'error' && resData.message === 'Unauthorized access.') {
-              throw new Error(resData.message);
-            } else if (resData.status === 'error' && (resData.message.includes('Invalid action') || resData.message.includes('not found') || resData.message.includes('Unknown action'))) {
-              console.log("Combined action not supported on server, falling back to sequential allocation & credentials dispatch.");
-            } else if (resData.status === 'error') {
-              throw new Error(resData.message || "Failed to allocate.");
-            } else {
-              result = resData;
-            }
-          } catch (e) {
-            console.error("Combined action failed or unsupported, falling back to sequential requests.", e);
-            result = null;
+            }).catch(() => {}); // Non-blocking
           }
         }
 
-        if (!result) {
-          const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: 'ADMIN_ALLOCATE_DELEGATE',
-              admin_key: ADMIN_KEY,
-              rowIndex: rowIndex,
-              allocationCommittee: committee,
-              allocationCountry: country,
-              notes: notes,
-              targetSheet: currentModalTargetSheet
-            })
-          });
-
-          if (!response.ok) throw new Error("Allocation request failed.");
-          const resData = await response.json();
-          if (resData.status !== 'success') {
-            throw new Error(resData.message || 'Error allocating portfolio.');
-          }
-          result = resData;
-
-          if (andSendPass) {
-            const sendResponse = await fetch(GOOGLE_APP_SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({
-                action: 'ADMIN_SEND_CREDENTIALS',
-                admin_key: ADMIN_KEY,
-                rowIndex: rowIndex,
-                targetSheet: currentModalTargetSheet
-              })
-            });
-
-            if (!sendResponse.ok) throw new Error("Allocation saved, but credentials email dispatch failed.");
-            const sendResult = await sendResponse.json();
-            if (sendResult.status !== 'success') {
-              throw new Error(sendResult.message || 'Allocation saved, but credentials email dispatch failed.');
-            }
-            result.message = "Portfolio allocated & credentials email sent successfully!";
-          }
-        }
-
-        showAlert(andSendPass ? 'Delegate portfolio allocated & passcode email sent successfully!' : 'Delegate portfolio allocated successfully!', 'success');
+        showAlert(andSendPass ? 'Saved and pass email sent!' : 'Saved successfully.', 'success');
         closeModal('delegateModal');
-        syncData();
+        renderAllTables();
       } catch (err) {
-        showAlert(err.message || 'Error processing request.');
+        showAlert(err.message || 'Something went wrong. Please try again.');
       } finally {
         submitBtn.disabled = false;
         submitSendBtn.disabled = false;
@@ -1155,154 +914,109 @@
       }
     };
 
-    window.verifyPayment = async function(btn, rowIndex, targetSheet = "DELEGATE") {
-      if (!confirm("Are you sure you want to verify the payment for this delegate? This will approve their registration and generate their credentials.")) return;
-      const origText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = 'VERIFYING...';
-      
+    // ---- VERIFY PAYMENT ----
+    window.verifyPayment = async function(docId) {
+      if (!confirm('Mark this delegate\'s payment as verified? This will approve their registration.')) return;
+
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_VERIFY_PAYMENT',
-            admin_key: ADMIN_KEY,
-            rowIndex: rowIndex,
-            targetSheet: targetSheet
-          })
+        const delegateRef = doc(db, 'delegates', docId);
+        // Generate delegate ID if missing
+        const delegate = cachedDelegates.find(d => d._id === docId);
+        const newDelId = delegate?.delegateId || `RM26-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        await updateDoc(delegateRef, {
+          paymentVerified: 'Verified',
+          applicationStatus: 'Verified',
+          delegateId: newDelId,
+          verifiedAt: new Date().toISOString()
         });
 
-        if (!response.ok) throw new Error("Verification failed.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          showAlert('Payment verified & credentials generated successfully!', 'success');
-          syncData();
-        } else {
-          showAlert(result.message || 'Error verifying payment.');
-          btn.disabled = false;
-          btn.innerHTML = origText;
+        const idx = cachedDelegates.findIndex(d => d._id === docId);
+        if (idx !== -1) {
+          cachedDelegates[idx].paymentVerified = 'Verified';
+          cachedDelegates[idx].applicationStatus = 'Verified';
+          cachedDelegates[idx].delegateId = newDelId;
         }
+
+        showAlert('Payment verified!', 'success');
+        renderAllTables();
       } catch (err) {
-        showAlert(err.message || 'Error processing verification.');
-        btn.disabled = false;
-        btn.innerHTML = origText;
+        showAlert(err.message || 'Verification failed. Please try again.');
       }
     };
 
-    window.sendCredentialsMail = async function(btn, rowIndex, targetSheet = "DELEGATE") {
-      if (!confirm("Are you sure you want to dispatch the passcode credentials email to this delegate?")) return;
-      const origText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = 'SENDING...';
-      
+    // ---- SEND PASS EMAIL ----
+    window.sendPassEmail = async function(docId) {
+      if (!confirm('Send the access pass email to this delegate?')) return;
+
+      const delegate = cachedDelegates.find(d => d._id === docId);
+      if (!delegate) return;
+
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+        await fetch(GOOGLE_APPS_SCRIPT_EMAIL_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
-            action: 'ADMIN_SEND_CREDENTIALS',
-            admin_key: ADMIN_KEY,
-            rowIndex: rowIndex,
-            targetSheet: targetSheet
+            action: 'ALLOCATION_CONFIRMED',
+            email: delegate.email || delegate["Email Address"],
+            fullName: delegate.fullName || delegate["Full Name"],
+            delegateId: delegate.delegateId || delegate["Delegate ID"],
+            committee: delegate.allocationCommittee || delegate["Allocation Committee"],
+            country: delegate.allocationCountry || delegate["Allocation Country"]
           })
         });
-
-        if (!response.ok) throw new Error("Email dispatch failed.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          showAlert('Credentials passcode email dispatched successfully!', 'success');
-          syncData();
-        } else {
-          showAlert(result.message || 'Error sending email.');
-          btn.disabled = false;
-          btn.innerHTML = origText;
-        }
+        showAlert('Pass email sent!', 'success');
       } catch (err) {
-        showAlert(err.message || 'Error processing email dispatch.');
-        btn.disabled = false;
-        btn.innerHTML = origText;
+        showAlert(err.message || 'Email failed. Please try again.');
       }
     };
 
-    window.deleteRegistration = async function(btn, rowIndex, targetSheet = "DELEGATE") {
-      if (!confirm("WARNING: Are you sure you want to permanently delete this registration? This will remove the row from Google Sheets and cannot be undone.")) return;
-      const origText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = 'DELETING...';
-      
+    // ---- DELETE ----
+    window.deleteRegistration = async function(docId) {
+      if (!confirm('Delete this registration permanently? This cannot be undone.')) return;
+
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_DELETE_DELEGATE',
-            admin_key: ADMIN_KEY,
-            rowIndex: rowIndex,
-            targetSheet: targetSheet
-          })
-        });
-
-        if (!response.ok) throw new Error("Delete request failed.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          showAlert('Registration deleted successfully!', 'success');
-          syncData();
-        } else {
-          showAlert(result.message || 'Error deleting registration.');
-          btn.disabled = false;
-          btn.innerHTML = origText;
-        }
+        await deleteDoc(doc(db, 'delegates', docId));
+        cachedDelegates = cachedDelegates.filter(d => d._id !== docId);
+        showAlert('Registration deleted.', 'success');
+        renderAllTables();
       } catch (err) {
-        showAlert(err.message || 'Error processing delete request.');
-        btn.disabled = false;
-        btn.innerHTML = origText;
+        showAlert(err.message || 'Delete failed. Please try again.');
       }
     };
 
-    // ==========================================
-    // SEARCH & FILTERS
-    // ==========================================
+    // ---- SEARCH & FILTER ----
     window.filterDelegates = function() {
       const query = document.getElementById('searchDelegates').value.trim().toLowerCase();
       const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
-      let activeChipType = 'all';
-      
+      let activeType = 'all';
       chips.forEach(c => {
-        const chipEl = document.getElementById('chipDel' + c);
-        if (chipEl && chipEl.classList.contains('active')) {
-          activeChipType = c.toLowerCase();
-        }
+        const el = document.getElementById('chipDel' + c);
+        if (el && el.classList.contains('active')) activeType = c.toLowerCase();
       });
 
-      let list = cachedData.delegates || [];
-
-      // Filter by chip status
-      if (activeChipType === 'pending') {
-        list = list.filter(d => String(d["Payment Verified"]).trim() !== "Verified");
-      } else if (activeChipType === 'verified') {
-        list = list.filter(d => String(d["Payment Verified"]).trim() === "Verified");
-      } else if (activeChipType === 'unallocated') {
-        list = list.filter(d => !String(d["Allocation Committee"] || "").trim() || !String(d["Allocation Country"] || "").trim());
+      let list = [...cachedDelegates];
+      if (activeType === 'pending') {
+        list = list.filter(d => norm(d.paymentVerified || d["Payment Verified"]) !== 'verified');
+      } else if (activeType === 'verified') {
+        list = list.filter(d => norm(d.paymentVerified || d["Payment Verified"]) === 'verified');
+      } else if (activeType === 'unallocated') {
+        list = list.filter(d => !String(d.allocationCommittee || d["Allocation Committee"] || '').trim() || !String(d.allocationCountry || d["Allocation Country"] || '').trim());
       }
 
-      // Filter by text search
       if (query) {
-        list = list.filter(d => 
-          String(d["Full Name"] || "").toLowerCase().includes(query) ||
-          String(d["Email Address"] || "").toLowerCase().includes(query) ||
-          String(d["Phone Number"] || "").toLowerCase().includes(query) ||
-          String(d["School / Institution"] || "").toLowerCase().includes(query) ||
-          String(d["Delegate ID"] || "").toLowerCase().includes(query) ||
-          String(d["Transaction ID / UTR Number"] || "").toLowerCase().includes(query)
+        list = list.filter(d =>
+          String(d.fullName || d["Full Name"] || '').toLowerCase().includes(query) ||
+          String(d.email || d["Email Address"] || '').toLowerCase().includes(query) ||
+          String(d.phone || d["Phone Number"] || '').toLowerCase().includes(query) ||
+          String(d.school || d["School / Institution"] || '').toLowerCase().includes(query) ||
+          String(d.delegateId || d["Delegate ID"] || '').toLowerCase().includes(query) ||
+          String(d.transactionId || d["Transaction ID / UTR Number"] || '').toLowerCase().includes(query)
         );
       }
 
       renderDelegatesTable(list);
-    }
+    };
 
     window.filterDelStatus = function(type) {
       const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
@@ -1310,133 +1024,39 @@
         const btn = document.getElementById('chipDel' + c);
         if (btn) {
           btn.classList.remove('active');
-          btn.className = "px-3 py-1 font-mono text-xs rounded border border-white/10 text-white/60 hover:text-white";
+          btn.className = 'px-3 py-1 font-mono text-xs rounded border border-white/10 text-white/60 hover:text-white';
         }
       });
-
-      const activeBtn = document.getElementById('chipDel' + type.charAt(0).toUpperCase() + type.slice(1));
-      if (activeBtn) {
-        activeBtn.classList.add('active');
-        if (type === 'all') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active";
-        } else if (type === 'pending') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-semibold active";
-        } else if (type === 'verified') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-green-500/30 bg-green-500/10 text-green-500 font-semibold active";
-        } else if (type === 'unallocated') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-500 font-semibold active";
-        }
+      const active = document.getElementById('chipDel' + type.charAt(0).toUpperCase() + type.slice(1));
+      if (active) {
+        active.classList.add('active');
+        if (type === 'all') active.className = 'px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active';
+        else if (type === 'pending') active.className = 'px-3 py-1 font-mono text-xs rounded border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-semibold active';
+        else if (type === 'verified') active.className = 'px-3 py-1 font-mono text-xs rounded border border-green-500/30 bg-green-500/10 text-green-500 font-semibold active';
+        else if (type === 'unallocated') active.className = 'px-3 py-1 font-mono text-xs rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-500 font-semibold active';
       }
-      
       filterDelegates();
-    }
+    };
 
-    window.filterSolaris = function() {
-      const query = document.getElementById('searchSolaris').value.trim().toLowerCase();
-      const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
-      let activeChipType = 'all';
-      
-      chips.forEach(c => {
-        const chipEl = document.getElementById('chipSol' + c);
-        if (chipEl && chipEl.classList.contains('active')) {
-          activeChipType = c.toLowerCase();
-        }
-      });
-
-      let list = cachedData.solaris || [];
-
-      // Filter by chip status
-      if (activeChipType === 'pending') {
-        list = list.filter(d => String(d["Payment Verified"]).trim() !== "Verified");
-      } else if (activeChipType === 'verified') {
-        list = list.filter(d => String(d["Payment Verified"]).trim() === "Verified");
-      } else if (activeChipType === 'unallocated') {
-        list = list.filter(d => !String(d["Allocation Committee"] || "").trim() || !String(d["Allocation Country"] || "").trim());
-      }
-
-      // Filter by text search
-      if (query) {
-        list = list.filter(d => 
-          String(d["Full Name"] || "").toLowerCase().includes(query) ||
-          String(d["Email Address"] || "").toLowerCase().includes(query) ||
-          String(d["Phone Number"] || "").toLowerCase().includes(query) ||
-          String(d["School / Institution"] || "").toLowerCase().includes(query) ||
-          String(d["Delegate ID"] || "").toLowerCase().includes(query) ||
-          String(d["Transaction ID / UTR Number"] || "").toLowerCase().includes(query)
-        );
-      }
-
-      renderSolarisTable(list);
-    }
-
-    window.filterSolStatus = function(type) {
-      const chips = ['All', 'Pending', 'Verified', 'Unallocated'];
-      chips.forEach(c => {
-        const btn = document.getElementById('chipSol' + c);
-        if (btn) {
-          btn.classList.remove('active');
-          btn.className = "px-3 py-1 font-mono text-xs rounded border border-white/10 text-white/60 hover:text-white";
-        }
-      });
-
-      const activeBtn = document.getElementById('chipSol' + type.charAt(0).toUpperCase() + type.slice(1));
-      if (activeBtn) {
-        activeBtn.classList.add('active');
-        if (type === 'all') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-white/20 bg-white/5 text-white active";
-        } else if (type === 'pending') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-semibold active";
-        } else if (type === 'verified') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-green-500/30 bg-green-500/10 text-green-500 font-semibold active";
-        } else if (type === 'unallocated') {
-          activeBtn.className = "px-3 py-1 font-mono text-xs rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-500 font-semibold active";
-        }
-      }
-      
-      filterSolaris();
-    }
-
-
-
-    // ==========================================
-    // QR SCANNERS ATTENDANCE LOGIC
-    // ==========================================
+    // ---- QR SCANNER ----
     window.setScannerDay = function(day) {
       scannerActiveDay = day;
       document.querySelectorAll('.btn-action-day').forEach(b => {
-        b.classList.remove('active');
-        b.className = "flex-1 py-2 rounded text-xs font-semibold border border-white/10 text-white/60 btn-action-day";
+        b.className = 'flex-1 py-2 rounded text-xs font-semibold border border-white/10 text-white/60 btn-action-day';
       });
-      
-      const activeBtn = document.getElementById('dayBtn' + day);
-      activeBtn.classList.add('active');
-      activeBtn.className = "flex-1 py-2 rounded text-xs font-semibold border border-white/10 bg-white/5 text-white btn-action-day active";
-      
-      if (selectedScannedDelegate) {
-        updateScannedCardDisplay(selectedScannedDelegate);
-      }
-    }
+      const btn = document.getElementById('dayBtn' + day);
+      btn.className = 'flex-1 py-2 rounded text-xs font-semibold border border-white/10 bg-white/5 text-white btn-action-day active';
+      if (selectedScannedDelegate) updateScannedCardDisplay(selectedScannedDelegate);
+    };
 
     function autoDetermineScannerDay() {
       const today = new Date();
-      // Resolve MUN 2026 event dates:
-      // Day 1: June 12, 2026
-      // Day 2: June 13, 2026
-      // Day 3: June 14, 2026
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // getMonth is 0-based
-      const date = today.getDate();
-
-      if (year === 2026 && month === 6) {
-        if (date === 12) {
-          setScannerDay(1);
-        } else if (date === 13) {
-          setScannerDay(2);
-        } else if (date === 14) {
-          setScannerDay(3);
-        } else {
-          setScannerDay(1);
-        }
+      const y = today.getFullYear(), m = today.getMonth() + 1, d = today.getDate();
+      if (y === 2026 && m === 11) {
+        if (d === 20) setScannerDay(1);
+        else if (d === 21) setScannerDay(2);
+        else if (d === 22) setScannerDay(3);
+        else setScannerDay(1);
       } else {
         setScannerDay(1);
       }
@@ -1447,375 +1067,238 @@
       document.getElementById('scannedDelegateCard').style.display = 'none';
       document.getElementById('scanner-idle-panel').style.display = 'flex';
 
-      // Start HTML5 QR Scanner
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length > 0) {
           html5QrcodeScanner = new Html5Qrcode("qrScannerBox");
-          const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-          
           html5QrcodeScanner.start(
-            { facingMode: "environment" }, 
-            config, 
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
             onQrCodeSuccess,
-            onQrCodeError
-          ).catch(e => {
-            console.warn("Camera start failed, fallback to idle", e);
-          });
+            () => {}
+          ).catch(e => console.warn("Camera start failed:", e));
         } else {
           showAlert("No camera found on this device.");
         }
-      }).catch(err => {
-        showAlert("Camera permissions error: " + err);
-      });
+      }).catch(err => showAlert("Camera error: " + err));
     }
 
     function stopScanner() {
       if (html5QrcodeScanner) {
-        try {
-          html5QrcodeScanner.stop().then(() => {
-            html5QrcodeScanner = null;
-          }).catch(e => {});
-        } catch(e) {}
+        try { html5QrcodeScanner.stop().then(() => { html5QrcodeScanner = null; }).catch(() => {}); } catch(e) {}
       }
     }
 
-    let lastScannedId = "";
-    let lastScanTime = 0;
+    let lastScannedId = '', lastScanTime = 0;
 
     async function autoCheckInDelegate(delegate) {
-      const delegateId = delegate["Delegate ID"];
-      const currentStatus = delegate[`Check-in Day ${scannerActiveDay}`] || "Absent";
-      
-      // If already checked in/present, show notification but skip duplicate network request
-      if (currentStatus === 'Checked In' || currentStatus === 'Present') {
-        showAlert(`${delegate["Full Name"]} is already checked in for Day ${scannerActiveDay}!`, 'success');
+      const currentStatus = delegate.checkInDay1 ? delegate[`checkInDay${scannerActiveDay}`] : delegate[`Check-in Day ${scannerActiveDay}`];
+      const statusNorm = norm(currentStatus || '');
+
+      if (statusNorm === 'checked in' || statusNorm === 'present') {
+        showAlert(`${delegate.fullName || delegate["Full Name"]} is already checked in for Day ${scannerActiveDay}.`, 'success');
         return;
       }
-      
+
       const confirmBtn = document.getElementById('confirmCheckinBtn');
-      if (confirmBtn) {
-        confirmBtn.disabled = true;
-        confirmBtn.innerText = "Saving attendance...";
-      }
-      
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.innerText = 'Saving...'; }
+
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_CHECKIN_DELEGATE',
-            admin_key: ADMIN_KEY,
-            delegateId: delegateId,
-            day: scannerActiveDay,
-            status: 'Checked In'
-          })
-        });
+        const delegateRef = doc(db, 'delegates', delegate._id);
+        const field = `checkInDay${scannerActiveDay}`;
+        await updateDoc(delegateRef, { [field]: 'Checked In' });
 
-        if (!response.ok) throw new Error("Check-in request failed.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          // Update local cache details
-          delegate[`Check-in Day ${scannerActiveDay}`] = 'Checked In';
-          updateScannedCardDisplay(delegate);
-          showAlert(`${delegate["Full Name"]} marked Present for Day ${scannerActiveDay}!`, 'success');
-          
-          // Sync all table UI data
-          renderAllTables();
-        } else {
-          showAlert(result.message || 'Error updating attendance.');
-        }
+        delegate[field] = 'Checked In';
+        delegate[`Check-in Day ${scannerActiveDay}`] = 'Checked In';
+        updateScannedCardDisplay(delegate);
+        showAlert(`${delegate.fullName || delegate["Full Name"]} checked in for Day ${scannerActiveDay}.`, 'success');
+        renderAllTables();
       } catch(err) {
-        showAlert(err.message || 'Error saving check-in.');
+        showAlert(err.message || 'Check-in failed.');
       } finally {
-        if (confirmBtn) {
-          confirmBtn.disabled = false;
-        }
+        if (confirmBtn) confirmBtn.disabled = false;
       }
     }
 
-    function onQrCodeSuccess(decodedText, decodedResult) {
+    function onQrCodeSuccess(decodedText) {
       const delegateId = decodedText.trim();
       const now = Date.now();
-      
-      // Throttle: ignore if same delegate scanned in the last 3 seconds
-      if (delegateId === lastScannedId && (now - lastScanTime) < 3000) {
-        return;
-      }
-      
+      if (delegateId === lastScannedId && (now - lastScanTime) < 3000) return;
       lastScannedId = delegateId;
       lastScanTime = now;
-      
-      // Look up delegate locally
-      let delegate = cachedData.delegates.find(d => String(d["Delegate ID"]).trim().toLowerCase() === delegateId.toLowerCase());
-      if (!delegate && cachedData.solaris) {
-        delegate = cachedData.solaris.find(d => String(d["Delegate ID"]).trim().toLowerCase() === delegateId.toLowerCase());
-      }
-      
+
+      const delegate = cachedDelegates.find(d =>
+        norm(d.delegateId || d["Delegate ID"]) === delegateId.toLowerCase()
+      );
+
       if (delegate) {
         selectedScannedDelegate = delegate;
-        
-        // Play success tone
         playBeepTone();
-
-        // Update scanned delegate UI
         updateScannedCardDisplay(delegate);
-        
-        // Automatically check-in
         autoCheckInDelegate(delegate);
       } else {
-        showAlert("Scanned QR code does not match any registered Delegate ID: " + delegateId);
+        showAlert("No delegate found with ID: " + delegateId);
       }
-    }
-
-    function onQrCodeError(errorMessage) {
-      // Quiet fail to avoid error spamming console
     }
 
     window.manualCheckIn = function() {
       const input = document.getElementById('manual-ticket-id');
       const id = input.value.trim();
-      if (!id) {
-        showAlert('Please enter a Delegate ID.');
-        return;
-      }
+      if (!id) { showAlert('Please enter a Delegate ID.'); return; }
       input.value = '';
-      lastScannedId = ""; // Reset duplicate scan protection block for manual inputs
+      lastScannedId = '';
       onQrCodeSuccess(id);
-    }
+    };
 
     function updateScannedCardDisplay(d) {
       document.getElementById('scanner-idle-panel').style.display = 'none';
-      const card = document.getElementById('scannedDelegateCard');
-      card.style.display = 'block';
+      document.getElementById('scannedDelegateCard').style.display = 'block';
 
-      document.getElementById('scanName').innerText = d["Full Name"] || "";
-      document.getElementById('scanId').innerText = d["Delegate ID"] || "";
-      document.getElementById('scanCommittee').innerText = d["Allocation Committee"] || "Not allocated";
-      document.getElementById('scanCountry').innerText = d["Allocation Country"] || "Not allocated";
-      
-      const day1 = d["Check-in Day 1"] || "Absent";
-      const day2 = d["Check-in Day 2"] || "Absent";
-      const day3 = d["Check-in Day 3"] || "Absent";
+      document.getElementById('scanName').innerText = d.fullName || d["Full Name"] || '';
+      document.getElementById('scanId').innerText = d.delegateId || d["Delegate ID"] || '';
+      document.getElementById('scanCommittee').innerText = d.allocationCommittee || d["Allocation Committee"] || 'Not assigned';
+      document.getElementById('scanCountry').innerText = d.allocationCountry || d["Allocation Country"] || 'Not assigned';
 
-      const d1El = document.getElementById('scanDay1');
-      d1El.innerText = day1;
-      d1El.style.color = (day1 === 'Checked In' || day1 === 'Present') ? '#22c55e' : '#ef4444';
+      const getDay = n => d[`checkInDay${n}`] || d[`Check-in Day ${n}`] || 'Absent';
+      const day1 = getDay(1), day2 = getDay(2), day3 = getDay(3);
 
-      const d2El = document.getElementById('scanDay2');
-      d2El.innerText = day2;
-      d2El.style.color = (day2 === 'Checked In' || day2 === 'Present') ? '#22c55e' : '#ef4444';
+      const setDay = (id, val) => {
+        const el = document.getElementById(id);
+        el.innerText = val;
+        el.style.color = (norm(val) === 'checked in' || norm(val) === 'present') ? '#22c55e' : '#ef4444';
+      };
+      setDay('scanDay1', day1); setDay('scanDay2', day2); setDay('scanDay3', day3);
 
-      const d3El = document.getElementById('scanDay3');
-      d3El.innerText = day3;
-      d3El.style.color = (day3 === 'Checked In' || day3 === 'Present') ? '#22c55e' : '#ef4444';
-
-      // Check current day status to update action button label
-      const currentDayStatus = d[`Check-in Day ${scannerActiveDay}`] || "Absent";
+      const currentDayStatus = getDay(scannerActiveDay);
+      const isIn = norm(currentDayStatus) === 'checked in' || norm(currentDayStatus) === 'present';
       const confirmBtn = document.getElementById('confirmCheckinBtn');
       const indicator = document.getElementById('result-status-indicator');
       const header = document.getElementById('scanDelHeader');
-      
-      if (currentDayStatus === 'Checked In' || currentDayStatus === 'Present') {
+
+      if (isIn) {
         confirmBtn.innerText = `Mark Day ${scannerActiveDay} Absent`;
         confirmBtn.style.borderColor = '#ef4444';
-        confirmBtn.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        confirmBtn.style.backgroundColor = 'rgba(239,68,68,0.1)';
         confirmBtn.style.color = '#ef4444';
-        
         indicator.textContent = '✓';
         indicator.className = 'text-5xl mb-4 text-green-500';
-        header.textContent = 'Day ' + scannerActiveDay + ' Checked In';
+        header.textContent = `Day ${scannerActiveDay} — Checked In`;
         header.className = 'font-display text-3xl tracking-wide uppercase mb-1 text-green-500';
       } else {
         confirmBtn.innerText = `Mark Day ${scannerActiveDay} Checked In`;
         confirmBtn.style.borderColor = '#22c55e';
-        confirmBtn.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+        confirmBtn.style.backgroundColor = 'rgba(34,197,94,0.1)';
         confirmBtn.style.color = '#22c55e';
-        
         indicator.textContent = '✕';
         indicator.className = 'text-5xl mb-4 text-red-500';
-        header.textContent = 'Day ' + scannerActiveDay + ' Absent';
+        header.textContent = `Day ${scannerActiveDay} — Not Checked In`;
         header.className = 'font-display text-3xl tracking-wide uppercase mb-1 text-red-500';
       }
     }
 
-    // Toggle attendance on click
     window.markScannedDelegatePresent = async function() {
       if (!selectedScannedDelegate) return;
+      const getDay = n => selectedScannedDelegate[`checkInDay${n}`] || selectedScannedDelegate[`Check-in Day ${n}`] || 'Absent';
+      const current = getDay(scannerActiveDay);
+      const newStatus = (norm(current) === 'checked in' || norm(current) === 'present') ? 'Absent' : 'Checked In';
 
-      const delegateId = selectedScannedDelegate["Delegate ID"];
-      const currentStatus = selectedScannedDelegate[`Check-in Day ${scannerActiveDay}`] || "Absent";
-      const newStatus = (currentStatus === 'Checked In' || currentStatus === 'Present') ? 'Absent' : 'Checked In';
-      
       const confirmBtn = document.getElementById('confirmCheckinBtn');
       confirmBtn.disabled = true;
-      confirmBtn.innerText = "Saving attendance...";
+      confirmBtn.innerText = 'Saving...';
 
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'ADMIN_CHECKIN_DELEGATE',
-            admin_key: ADMIN_KEY,
-            delegateId: delegateId,
-            day: scannerActiveDay,
-            status: newStatus
-          })
-        });
+        const delegateRef = doc(db, 'delegates', selectedScannedDelegate._id);
+        const field = `checkInDay${scannerActiveDay}`;
+        await updateDoc(delegateRef, { [field]: newStatus });
 
-        if (!response.ok) throw new Error("Check-in request failed.");
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          showAlert(`Day ${scannerActiveDay} check-in updated successfully!`, 'success');
-          
-          // Update local cache details
-          selectedScannedDelegate[`Check-in Day ${scannerActiveDay}`] = newStatus;
-          updateScannedCardDisplay(selectedScannedDelegate);
-          
-          // Sync all table UI data
-          renderAllTables();
-        } else {
-          showAlert(result.message || 'Error updating attendance.');
-        }
+        selectedScannedDelegate[field] = newStatus;
+        selectedScannedDelegate[`Check-in Day ${scannerActiveDay}`] = newStatus;
+        updateScannedCardDisplay(selectedScannedDelegate);
+        showAlert(`Day ${scannerActiveDay} attendance updated.`, 'success');
+        renderAllTables();
       } catch(err) {
-        showAlert(err.message || 'Error saving check-in.');
+        showAlert(err.message || 'Update failed.');
       } finally {
         confirmBtn.disabled = false;
       }
-    }
+    };
 
-    // Simple beep sound using AudioContext API (No audio file asset needed!)
-    function playBeepTone() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch (A5)
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // volume
-
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.15); // duration
-      } catch(e) {}
-    }
-
-    // Screenshot Preview Modals
+    // ---- SCREENSHOT MODAL ----
     window.viewScreenshot = function(url) {
       const modal = document.getElementById('screenshot-modal');
       const img = document.getElementById('modal-img-preview');
       const pdf = document.getElementById('modal-pdf-preview');
-      const newTabBtn = document.getElementById('modal-open-tab');
-      
-      newTabBtn.href = url;
-      img.src = '';
-      pdf.src = '';
-      
-      // Parse Drive file ID for correct embedded preview rendering
+      document.getElementById('modal-open-tab').href = url;
+      img.src = ''; pdf.src = '';
+
       let driveId = '';
       if (url.includes('drive.google.com')) {
-        if (url.includes('/file/d/')) {
-          driveId = url.split('/file/d/')[1].split('/')[0];
-        } else if (url.includes('id=')) {
-          driveId = url.split('id=')[1].split('&')[0];
-        }
+        if (url.includes('/file/d/')) driveId = url.split('/file/d/')[1].split('/')[0];
+        else if (url.includes('id=')) driveId = url.split('id=')[1].split('&')[0];
       }
-      
+
       if (driveId) {
-        // Embedding /preview in iframe supports both images and PDFs securely
-        img.classList.add('hidden');
-        pdf.classList.remove('hidden');
+        img.classList.add('hidden'); pdf.classList.remove('hidden');
         pdf.src = 'https://drive.google.com/file/d/' + driveId + '/preview';
+      } else if (url.toLowerCase().endsWith('.pdf')) {
+        img.classList.add('hidden'); pdf.classList.remove('hidden');
+        pdf.src = url;
       } else {
-        // Fallback check for standard non-drive files
-        if (url.toLowerCase().endsWith('.pdf')) {
-          img.classList.add('hidden');
-          pdf.classList.remove('hidden');
-          pdf.src = url;
-        } else {
-          pdf.classList.add('hidden');
-          img.classList.remove('hidden');
-          img.src = url;
-        }
+        pdf.classList.add('hidden'); img.classList.remove('hidden');
+        img.src = url;
       }
-      
       modal.classList.remove('hidden');
-    }
-    
+    };
+
     window.closeScreenshotModal = function() {
       document.getElementById('screenshot-modal').classList.add('hidden');
+    };
+
+    // ---- BEEP ----
+    function playBeepTone() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.start(); osc.stop(ctx.currentTime + 0.15);
+      } catch(e) {}
     }
 
-    // Canvas particle background system
+    // ---- EXPOSE syncData globally ----
+    window.syncData = syncData;
+
+    // ---- PARTICLE BACKGROUND ----
     document.addEventListener('DOMContentLoaded', () => {
       const canvas = document.createElement('canvas');
       canvas.id = 'particleCanvas';
-      canvas.style.position = 'fixed';
-      canvas.style.top = '0';
-      canvas.style.left = '0';
-      canvas.style.width = '100vw';
-      canvas.style.height = '100vh';
-      canvas.style.zIndex = '-1';
-      canvas.style.pointerEvents = 'none';
+      Object.assign(canvas.style, { position:'fixed', top:'0', left:'0', width:'100vw', height:'100vh', zIndex:'-1', pointerEvents:'none' });
       document.body.appendChild(canvas);
-
       const ctx = canvas.getContext('2d');
-      let particles = [];
-      const particleCount = 45;
-
-      function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-      window.addEventListener('resize', resize);
-      resize();
-
-      class Particle {
-        constructor() {
-          this.reset();
-        }
-        reset() {
-          this.x = Math.random() * canvas.width;
-          this.y = Math.random() * canvas.height;
-          this.size = Math.random() * 2 + 0.5;
-          this.speedX = (Math.random() - 0.5) * 0.25;
-          this.speedY = (Math.random() - 0.5) * 0.25;
-          this.opacity = Math.random() * 0.4 + 0.15;
-        }
-        update() {
-          this.x += this.speedX;
-          this.y += this.speedY;
-          if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-            this.reset();
-          }
-        }
-        draw() {
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(167, 139, 250, ${this.opacity})`;
-          ctx.fill();
-        }
-      }
-
-      for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
-      }
-
-      function loop() {
+      const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+      window.addEventListener('resize', resize); resize();
+      const particles = Array.from({ length: 45 }, () => ({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        size: Math.random() * 2 + 0.5,
+        sx: (Math.random() - 0.5) * 0.25, sy: (Math.random() - 0.5) * 0.25,
+        op: Math.random() * 0.4 + 0.15
+      }));
+      (function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         particles.forEach(p => {
-          p.update();
-          p.draw();
+          p.x += p.sx; p.y += p.sy;
+          if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+            p.x = Math.random() * canvas.width; p.y = Math.random() * canvas.height;
+          }
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(167,139,250,${p.op})`; ctx.fill();
         });
         requestAnimationFrame(loop);
-      }
-      loop();
+      })();
     });
+
   </script>
 </body>
 

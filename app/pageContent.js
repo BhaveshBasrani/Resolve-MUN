@@ -15,7 +15,7 @@ export const homeHtml = `
   <div class="loader-bar-container">
     <div class="loader-bar-fill"></div>
   </div>
-  <span class="loader-text">Initializing Diplomacy</span>
+  <span class="loader-text">Loading...</span>
 </div>
 
 <!-- SELECTION MODAL -->
@@ -29,9 +29,9 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header text-center">
-      <div class="modal-pretitle">RESOLVE MUN 2.0 · INTAKE</div>
-      <h2 class="modal-title">CHOOSE YOUR PATHWAY</h2>
-      <p class="modal-subtitle">Select your participation track for Hyderabad 2026</p>
+      <div class="modal-pretitle">RESOLVE MUN 2.0</div>
+      <h2 class="modal-title">HOW DO YOU WANT TO JOIN?</h2>
+      <p class="modal-subtitle">Choose your role for Hyderabad 2026</p>
     </div>
 
     <div class="selection-top-grid" style="grid-template-columns: 1fr;">
@@ -124,9 +124,9 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">INDIVIDUAL INTAKE · RESOLVE 2.0</div>
+      <div class="modal-pretitle">RESOLVE MUN 2.0</div>
       <h2 class="modal-title">DELEGATE REGISTRATION</h2>
-      <span class="modal-subtitle">Join Resolve MUN 2026</span>
+      <span class="modal-subtitle">Register as a delegate for Hyderabad 2026</span>
     </div>
     
     <form id="regForm" novalidate>
@@ -297,7 +297,7 @@ export const homeHtml = `
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
-          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Priority Pass Allocation</span>
+          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Delegate Registration</span>
           <h3 id="regFeeDisplay" style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Registration Fee: ₹2199</h3>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
@@ -359,7 +359,7 @@ export const homeHtml = `
         </div>
 
         <div class="payment-footer">
-          <p class="payment-contact">For Any Assistance, Secretariat Hotline: <span>+91 92121 07797</span></p>
+          <p class="payment-contact">Need help? Call us: <span>+91 92121 07797</span></p>
         </div>
 
         <div class="form-actions">
@@ -390,7 +390,7 @@ export const homeHtml = `
       <h2 class="comm-modal-title" id="commModalTitle">RESOLVE 2026</h2>
       <span class="comm-modal-agenda" id="commModalAgenda">Registrations opening soon.</span>
       <p class="comm-modal-text" id="commModalText">
-        The premier diplomatic summit is meticulously preparing its corridors. Join the waitlist for priority access to delegate allocations and early-bird benefits.
+        We're getting things ready. Join the waitlist to be the first to know when registrations open.
       </p>
 
       <div style="margin-top:12px;">
@@ -523,8 +523,8 @@ export const homeHtml = `
     <h2 class="section-title">WHERE DIPLOMACY<br>MEETS <span class="title-accent">AMBITION</span></h2>
     <div class="title-line-divider"></div>
     
-    <p class="section-body">Resolve MUN is not just a conference — it is an arena where the next generation of Hyderabad's leaders converge to debate, deliberate, and drive change. Built on the pillars of intellectual rigor and diplomatic excellence, Resolve MUN challenges delegates to engage with the city's and the world's most pressing issues.</p>
-    <p class="section-body">From crisis committees that demand split-second decisions to general assemblies that require sweeping coalition-building, every moment at Resolve MUN is designed to forge leaders of consequence.</p>
+    <p class="section-body">Resolve MUN is where the next generation of Hyderabad's leaders come to debate, make decisions, and drive real change. We challenge delegates to engage seriously with the city's and the world's most pressing issues.</p>
+    <p class="section-body">From crisis committees that move fast to general assemblies that require broad consensus, every moment at Resolve MUN is designed to push you.</p>
   </div>
 </div>
 </section>
@@ -565,13 +565,13 @@ export const homeHtml = `
 <!-- COMMITTEES -->
 <section id="committees" class="reveal" style="background: linear-gradient(0deg, rgba(7,6,22,0.7), rgba(7,6,22,0.3)), url('/images/committees-bg.svg'); background-size: cover; background-position: center;">
   <div class="section-label reveal">Committees</div>
-  <h2 class="section-title reveal">THE ARENA OF<br>HIGH-LEVEL DEBATE</h2>
-  <p class="section-body reveal" style="max-width: 620px; margin: 0 auto 30px;">Seven specialized diplomatic chambers are currently being finalized by the academic secretariat. Agendas, background guides, and portfolio matrices will be unveiled shortly.</p>
+  <h2 class="section-title reveal">WHERE THE<br>DEBATE HAPPENS</h2>
+  <p class="section-body reveal" style="max-width: 620px; margin: 0 auto 30px;">Seven committees are being finalized. Agendas and background guides will be out soon.</p>
   
   <div class="releasing-soon-card reveal">
     <div class="releasing-badge-pill">ANNOUNCEMENT</div>
-    <h3>COMMITTEES RELEASING SOON</h3>
-    <p>Prepare for unprecedented crisis simulations, bilateral negotiations, and multilateral draft resolutions.</p>
+    <h3>COMMITTEES COMING SOON</h3>
+    <p>Crisis simulations, bilateral negotiations, and full committee debates — details releasing shortly.</p>
   </div>
 </section>
 
@@ -580,13 +580,13 @@ export const homeHtml = `
 <!-- VENUE -->
 <section id="venue" class="reveal">
   <div class="section-label reveal">Venue</div>
-  <h2 class="section-title reveal">A STAGE WORTHY<br>OF THE DEBATE</h2>
-  <p class="section-body reveal" style="max-width: 600px; margin: 0 auto 30px;">A state-of-the-art diplomatic arena in Hyderabad, designed to foster collaboration and intense discourse.</p>
+  <h2 class="section-title reveal">THE VENUE</h2>
+  <p class="section-body reveal" style="max-width: 600px; margin: 0 auto 30px;">A great venue in Hyderabad — details coming soon.</p>
   
   <div class="releasing-soon-card reveal">
     <div class="releasing-badge-pill">LOCATION</div>
-    <h3>VENUE RELEASING SOON</h3>
-    <p>Official venue announcement and campus walkthrough will be released soon.</p>
+    <h3>VENUE COMING SOON</h3>
+    <p>We'll share the full venue details — including directions and a walkthrough — soon.</p>
   </div>
 </section>
 
@@ -597,7 +597,7 @@ export const homeHtml = `
   <div class="sec-header reveal">
     <div class="section-label">Secretariat</div>
     <h2 class="section-title">MEET THE TEAM</h2>
-    <p class="section-body" style="max-width: 600px;">The official Executive Secretariat of Resolve MUN 2.0 is currently being finalized. Full leadership roster releasing soon.</p>
+    <p class="section-body" style="max-width: 600px;">The full Secretariat team for Resolve MUN 2.0 is being finalized. Announcements coming soon.</p>
   </div>
   
   <div class="sec-carousel-container" style="position: relative; overflow: hidden; min-height: 380px;">
@@ -611,7 +611,7 @@ export const homeHtml = `
         RELEASING SOON
       </div>
       <p style="font-size: 14px; color: rgba(255, 255, 255, 0.72); max-width: 480px; line-height: 1.6; margin: 0 0 18px 0;">
-        The official appointments for the Resolve MUN 2.0 Secretariat will be revealed shortly. Stay tuned for the official release.
+        The Resolve MUN 2.0 Secretariat team will be announced soon. Stay tuned.
       </p>
       <div style="display: inline-flex; align-items: center; gap: 10px; font-size: 12px; font-family: monospace; color: rgba(255, 255, 255, 0.45); letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 14px; background: rgba(255, 255, 255, 0.04); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
         <span>✦ 25 Executive Appointments</span>
@@ -783,14 +783,14 @@ export const homeHtml = `
       <!-- Left: Narrative -->
       <div class="oc-text-content reveal">
         <div class="section-label">Organizing Committee</div>
-        <h2 class="section-title">JOIN THE<br>ARCHITECTS</h2>
-        <p class="section-body">Help build one of Hyderabad's most ambitious Model United Nations conferences from the ground up.</p>
+        <h2 class="section-title">JOIN THE<br>TEAM</h2>
+        <p class="section-body">Help build one of Hyderabad's biggest Model United Nations conferences from the ground up.</p>
         
         <div class="oc-perks">
-          <div class="oc-perk">Elite Leadership Roles</div>
-          <div class="oc-perk">Strategic Logistics & Planning</div>
-          <div class="oc-perk">Prime Networking Context</div>
-          <div class="oc-perk">Exclusive Certification</div>
+          <div class="oc-perk">Real Leadership Roles</div>
+          <div class="oc-perk">Event Planning &amp; Logistics</div>
+          <div class="oc-perk">Great Networking</div>
+          <div class="oc-perk">Official Certification</div>
         </div>
       </div>
 
@@ -804,7 +804,7 @@ export const homeHtml = `
           </svg>
         </div>
         <h3 class="oc-card-title">OC</h3>
-        <p class="oc-card-body">Build one of Hyderabad's most ambitious Model United Nations conferences from the ground up.</p>
+        <p class="oc-card-body">Help build the conference from the ground up — logistics, planning, and everything in between.</p>
         <button class="btn-primary oc-btn" disabled><span style="opacity: 0.6;">APPLICATIONS CLOSED</span></button>
       </div>
     </div>
@@ -820,14 +820,14 @@ export const homeHtml = `
       <!-- Left: Narrative -->
       <div class="eb-text-content reveal">
         <div class="section-label">Executive Board</div>
-        <h2 class="section-title">LEAD THE<br>DIALOGUE</h2>
-        <p class="section-body">Shape the academic landscape of Resolve MUN. We are inviting seasoned debaters to chair our prestigious committees.</p>
+        <h2 class="section-title">CHAIR A<br>COMMITTEE</h2>
+        <p class="section-body">Looking for experienced MUNers to chair committees at Resolve MUN 2026.</p>
         
         <div class="eb-perks">
-          <div class="eb-perk">Academic Authority</div>
-          <div class="eb-perk">Strategic Committee Management</div>
-          <div class="eb-perk">Mentorship & Evaluation</div>
-          <div class="eb-perk">Honorarium & Benefits</div>
+          <div class="eb-perk">Full Committee Authority</div>
+          <div class="eb-perk">Committee Management</div>
+          <div class="eb-perk">Mentorship &amp; Evaluation</div>
+          <div class="eb-perk">Honorarium &amp; Benefits</div>
         </div>
       </div>
 
@@ -840,7 +840,7 @@ export const homeHtml = `
           </svg>
         </div>
         <h3 class="eb-card-title">Apply for EB</h3>
-        <p class="eb-card-body">Join us as a Chairperson, Vice-Chairperson, or Rapporteur. Applications are now open for experienced MUNers.</p>
+        <p class="eb-card-body">Join as a Chairperson, Vice-Chairperson, or Rapporteur. Open to experienced MUNers.</p>
         <button class="btn-primary eb-btn" disabled><span>EB Applications Closed</span></button>
       </div>
     </div>
@@ -858,7 +858,7 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">STAFF CORPS · RESOLVE 2.0</div>
+      <div class="modal-pretitle">RESOLVE MUN 2.0</div>
       <h2 class="modal-title">OC APPLICATIONS</h2>
       <span class="modal-subtitle">Join the Organizing Committee</span>
     </div>
@@ -941,7 +941,7 @@ export const homeHtml = `
       <!-- STEP 3: PAYMENT -->
       <div class="form-step" id="ocStep3">
         <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
-          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Organizing Committee Induction</span>
+          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Organizing Committee</span>
           <h3 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Registration Fee: ₹1699</h3>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
         </div>
@@ -1023,11 +1023,11 @@ export const homeHtml = `
     
     <div class="modal-header" style="text-align: left; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-        <span class="selection-badge" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.3); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;">RESOLVE MUN 2.0 · HIGH COMMAND</span>
-        <span style="font-size: 10px; color: #34d399; font-weight: 700; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.25);">ZERO REGISTRATION FEE</span>
+        <span class="selection-badge" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.3); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;">RESOLVE MUN 2.0 · SECRETARIAT</span>
+        <span style="font-size: 10px; color: #34d399; font-weight: 700; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.25);">FREE TO APPLY</span>
       </div>
-      <h2 class="modal-title" style="font-size: 1.5rem; letter-spacing: 0.02em; margin: 4px 0;">Secretariat Applications &mdash; Resolve MUN 2.0</h2>
-      <span class="modal-subtitle" style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Hyderabad &bull; 20th &ndash; 22nd November 2026</span>
+      <h2 class="modal-title" style="font-size: 1.5rem; letter-spacing: 0.02em; margin: 4px 0;">Secretariat Applications — Resolve MUN 2.0</h2>
+      <span class="modal-subtitle" style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Hyderabad · 20th – 22nd November 2026</span>
     </div>
 
     <!-- 3-STEP PROGRESS INDICATOR -->
@@ -1066,15 +1066,15 @@ export const homeHtml = `
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
           </div>
           <div>
-            <p style="margin: 0; font-size: 0.78rem; font-weight: 600; color: #ffffff;">Cloud Synchronized Application</p>
+            <p style="margin: 0; font-size: 0.78rem; font-weight: 600; color: #ffffff;">Your data is saved securely</p>
             <p style="margin: 2px 0 0 0; font-size: 0.72rem; color: rgba(255,255,255,0.55);">
-              Your contact information, resume, and portfolio will be securely recorded in the official Resolve Directorate Google Drive repository.
+              Your application details are stored in our secure records.
             </p>
           </div>
         </div>
 
         <button type="button" class="btn-next btn-full-width" style="padding: 13px 20px; font-weight: 700; letter-spacing: 0.04em;" onclick="nextSecStep(2)">
-          <span>Next: Secretariat Application Details</span>
+          <span>Next: Your Details</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
@@ -1149,8 +1149,8 @@ export const homeHtml = `
       <!-- STEP 3: EXPERIENCE, POSITION & DRIVE UPLOADS (FROM GOOGLE FORM PAGE 3) -->
       <div class="form-step" id="secStep3">
         <div style="margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
-          <h3 style="font-size: 1.1rem; color: #ffffff; margin: 0;">Previous experiences (any, if qualifying)</h3>
-          <p style="font-size: 0.75rem; color: rgba(255,255,255,0.6); margin: 4px 0 0 0;">Position selection &amp; portfolio uploads</p>
+          <h3 style="font-size: 1.1rem; color: #ffffff; margin: 0;">Role & Experience</h3>
+          <p style="font-size: 0.75rem; color: rgba(255,255,255,0.6); margin: 4px 0 0 0;">Choose a position and upload your portfolio</p>
         </div>
 
         <div class="form-group">
@@ -1221,7 +1221,7 @@ export const homeHtml = `
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextSecStep(2)">Back</button>
-          <button type="submit" class="btn-next" id="secSubmitBtn" style="background: linear-gradient(135deg, #6366f1, #a855f7); font-weight: 700;">Submit Secretariat Dossier</button>
+          <button type="submit" class="btn-next" id="secSubmitBtn" style="background: linear-gradient(135deg, #6366f1, #a855f7); font-weight: 700;">Submit Application</button>
         </div>
       </div>
     </form>
@@ -1240,9 +1240,9 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">ACADEMIC BOARD · RESOLVE 2.0</div>
+      <div class="modal-pretitle">RESOLVE MUN 2.0</div>
       <h2 class="modal-title">EB APPLICATIONS</h2>
-      <span class="modal-subtitle">Executive Board Recruitment</span>
+      <span class="modal-subtitle">Apply to chair a committee</span>
     </div>
     
     <form id="ebRegForm">
@@ -1384,9 +1384,9 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">INSTITUTIONAL INTAKE · RESOLVE 2.0</div>
-      <h2 class="modal-title">DELEGATION APPLICATIONS</h2>
-      <span class="modal-subtitle">Register as a Delegation</span>
+      <div class="modal-pretitle">RESOLVE MUN 2.0</div>
+      <h2 class="modal-title">DELEGATION REGISTRATION</h2>
+      <span class="modal-subtitle">Register your school or institution as a delegation</span>
     </div>
     
     <form id="delRegForm" novalidate>
@@ -1443,7 +1443,7 @@ export const homeHtml = `
       <!-- STEP 3: PAYMENT & CONFIRMATION -->
       <div class="form-step" id="delStep3">
         <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
-          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Institutional Delegation Roster</span>
+          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Delegation Registration</span>
           <h3 id="delTotalPriceDisplay" style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Total Amount: ₹17,592</h3>
           <p style="font-size: 0.68rem; opacity: 0.7; margin-top: 4px;">(₹2199 per enrolled delegate)</p>
           <p class="non-refundable-notice" style="font-size: 0.65rem; color: #f87171; opacity: 0.9; margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">⚠️ Payment is non-refundable once submitted</p>
@@ -1506,7 +1506,7 @@ export const homeHtml = `
         </div>
 
         <div class="payment-footer">
-          <p class="payment-contact">For Any Queries, contact: <span>+91 92121 07797</span></p>
+          <p class="payment-contact">Need help? Call us: <span>+91 92121 07797</span></p>
         </div>
 
         <div class="form-actions">
@@ -1521,14 +1521,14 @@ export const homeHtml = `
 <!-- CTA -->
 <section id="register">
   <div class="cta-inner">
-    <p class="cta-eyebrow reveal visible" style="color: #34d399; font-weight: 700;">Executive Directorate Intake Now Active</p>
-    <h2 class="cta-title reveal">TAKE YOUR<br>SEAT AT<br>THE TABLE</h2>
+    <p class="cta-eyebrow reveal visible" style="color: #34d399; font-weight: 700;">Secretariat Applications Now Open</p>
+    <h2 class="cta-title reveal">BE PART OF<br>RESOLVE<br>MUN 2026</h2>
     <p class="cta-body reveal">
-      Delegate and Delegation registrations are currently closed. Secretariat Applications for Resolve MUN 2.0 are officially open &mdash; apply now to shape the premier diplomatic conference of Hyderabad.
+      Delegate and Delegation registrations are currently closed. Secretariat Applications are open — apply now and help build Resolve MUN 2.0.
     </p>
     <div class="cta-actions reveal" style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
       <button class="adaptive-hero-btn cta-btn-hero-match" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #d946ef 100%); box-shadow: 0 0 35px rgba(124, 58, 237, 0.45); border: 1px solid rgba(255, 255, 255, 0.3); padding: 14px 32px;" onclick="window.selectPathway ? window.selectPathway('secretariat') : (window.openSecModal ? window.openSecModal() : alert('Opening Secretariat Application...'))">
-        <span>APPLY FOR SECRETARIAT 2.0 &rarr;</span>
+        <span>APPLY FOR SECRETARIAT &rarr;</span>
       </button>
       <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
         <button class="adaptive-hero-btn cta-btn-hero-match cta-btn-secondary" style="opacity: 0.5; cursor: not-allowed; pointer-events: auto;" onclick="window.showCustomAlert ? window.showCustomAlert('Delegate registrations are currently closed. Only Secretariat Applications are open.', 'info') : alert('Delegate registrations are currently closed.')">
