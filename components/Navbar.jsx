@@ -267,57 +267,80 @@ export function Navbar() {
                   <ChevronDown size={12} className="text-white/60 shrink-0" />
                 </button>
 
-                {/* User Dropdown Menu - Spaced, Solid High-Contrast & Sleek */}
+                {/* User Dropdown Menu - Sleek, Glassmorphic & Modern */}
                 {userMenuOpen && (
                   <div
-                    className="absolute right-0 mt-3 sm:mt-4 w-60 p-2 rounded-2xl border border-white/20 bg-[#0c0d18] shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_30px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-100 z-[100000] select-none"
+                    className="absolute right-0 mt-3 sm:mt-4 w-72 p-2 rounded-2xl border border-white/15 bg-[#0a0d18]/95 backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_30px_rgba(99,102,241,0.2)] animate-in fade-in zoom-in-95 duration-150 z-[100000] select-none"
                   >
-                    <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-white/[0.06] border border-white/[0.1] mb-1.5">
-                      {user.photoURL ? (
-                        <img
-                          src={user.photoURL}
-                          alt={user.displayName || "User"}
-                          className="w-7 h-7 rounded-full object-cover shrink-0 border border-white/30"
-                          style={{ width: '28px', height: '28px', minWidth: '28px', minHeight: '28px' }}
-                        />
-                      ) : (
-                        <div
-                          className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0 border border-white/30"
-                          style={{ width: '28px', height: '28px', minWidth: '28px', minHeight: '28px' }}
-                        >
-                          {getUserInitials()}
+                    {/* User Profile Card */}
+                    <div className="p-3 rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 mb-1.5">
+                      <div className="flex items-center gap-3">
+                        {user.photoURL ? (
+                          <img
+                            src={user.photoURL}
+                            alt={user.displayName || "User"}
+                            className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/30 ring-2 ring-indigo-500/30 shadow-md"
+                            style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}
+                          />
+                        ) : (
+                          <div
+                            className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-white/30 ring-2 ring-indigo-500/30 shadow-md"
+                            style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}
+                          >
+                            {getUserInitials()}
+                          </div>
+                        )}
+                        <div className="overflow-hidden min-w-0 flex-1">
+                          <p className="text-[13px] font-bold text-white truncate leading-tight tracking-tight">
+                            {user.displayName || "Delegate"}
+                          </p>
+                          <p className="text-[11px] text-white/55 truncate font-sans leading-tight mt-1" title={user.email}>
+                            {user.email}
+                          </p>
                         </div>
-                      )}
-                      <div className="overflow-hidden min-w-0 flex-1">
-                        <p className="text-xs font-bold text-white truncate leading-tight">
-                          {user.displayName || "Delegate"}
-                        </p>
-                        <p className="text-[11px] text-white/85 truncate font-mono mt-0.5">
-                          {user.email}
-                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-white/[0.08]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-300 font-semibold">
+                          Delegate Account Active
+                        </span>
                       </div>
                     </div>
 
-                    <div className="space-y-0.5">
+                    {/* Menu Actions */}
+                    <div className="space-y-1">
                       <Link
                         href="/dashboard"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold text-white/90 hover:text-white hover:bg-white/[0.09] transition-colors"
+                        style={{ textDecoration: 'none' }}
+                        className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-white/90 hover:text-white hover:bg-white/[0.08] active:bg-white/[0.12] transition-all duration-150 group !no-underline cursor-pointer"
                       >
-                        <div className="flex items-center gap-2">
-                          <LayoutDashboard size={14} className="text-blue-400 shrink-0" />
-                          <span>Dashboard</span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 group-hover:bg-indigo-500/30 group-hover:scale-105 transition-all">
+                            <LayoutDashboard size={14} />
+                          </div>
+                          <div>
+                            <span className="block font-semibold text-white group-hover:text-indigo-200">Delegate Dashboard</span>
+                            <span className="block text-[10px] text-white/45 font-normal">View pass &amp; committee details</span>
+                          </div>
                         </div>
-                        <ArrowUpRight size={12} className="text-white/40" />
+                        <ArrowUpRight size={13} className="text-white/30 group-hover:text-white/90 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                       </Link>
+
+                      <div className="h-px bg-white/[0.08] my-1 mx-1" />
 
                       <button
                         type="button"
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 transition-colors text-left cursor-pointer"
+                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 active:bg-rose-500/15 transition-all duration-150 text-left cursor-pointer group"
                       >
-                        <LogOut size={14} className="shrink-0" />
-                        <span>Sign Out</span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 group-hover:bg-rose-500/20 group-hover:scale-105 transition-all">
+                            <LogOut size={13} />
+                          </div>
+                          <span>Sign Out</span>
+                        </div>
                       </button>
                     </div>
                   </div>
