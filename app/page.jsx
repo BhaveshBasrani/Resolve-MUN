@@ -12,7 +12,7 @@ import {
 } from "@/lib/firebase";
 import Link from "next/link";
 import { MetalButton } from "@/components/ui/metal-button";
-import { Sparkles, ArrowUpRight, FileText, X } from "lucide-react";
+import { Sparkles, ArrowUpRight, FileText, X, Check } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { homeHtml } from "./pageContent";
@@ -1354,8 +1354,8 @@ export default function Home() {
             {/* Eyebrow & Title */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/25 mb-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              <span className="font-mono text-[10px] tracking-[0.2em] text-indigo-300 uppercase font-bold">
-                ACCOUNT VERIFIED · RESOLVE 2026
+              <span className="font-mono text-[10px] tracking-wider text-indigo-300 uppercase font-semibold">
+                RESOLVE MUN 2026
               </span>
             </div>
 
@@ -1368,18 +1368,17 @@ export default function Home() {
 
             {/* Natural Copy */}
             <p className="text-xs text-white/70 leading-relaxed max-w-sm mx-auto mb-5 font-normal">
-              You're signed in. View your committee assignment, digital access pass, and conference details in your dashboard.
+              You're signed in. View your committee assignment, digital entry pass, and event schedule in your dashboard.
             </p>
 
-            {/* Micro Credential Strip */}
-            <div className="flex items-center justify-center gap-2.5 py-2 px-3 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-mono text-white/60 mb-6">
-              <span className="flex items-center gap-1.5">
-                STATUS: <strong className="text-emerald-400 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>ACTIVE</strong>
+            {/* Status Strip */}
+            <div className="flex items-center justify-center gap-2.5 py-2 px-3 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-white/60 mb-6">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Signed In
               </span>
               <span className="text-white/20">|</span>
-              <span>ROLE: <strong className="text-white font-bold">DELEGATE</strong></span>
-              <span className="text-white/20">|</span>
-              <span>CONFERENCE: <strong className="text-indigo-300 font-bold">RESOLVE 2.0</strong></span>
+              <span className="text-white/70">20–22 November 2026</span>
             </div>
 
             {/* Action Buttons */}

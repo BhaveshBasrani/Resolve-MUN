@@ -9,57 +9,230 @@ import {
   fetchDelegateApplicationCached,
   fetchSystemSettingsCached,
 } from "@/lib/firebase";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import {
-  Home,
-  MessageSquare,
-  Activity,
-  Settings,
-  Lock,
-  LogOut,
-  Search,
-  Bell,
-  Calendar,
-  ChevronRight,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
-  QrCode,
-  ShieldCheck,
-  Printer,
-  Download,
-  ExternalLink,
-  MapPin,
-  RefreshCw,
-  X,
-  Menu,
-  Phone,
-  Mail,
-  FileText,
-  Users,
-  Award,
-  Sparkles,
-  Check
+  CheckCircle2, Clock, QrCode, Lock, ArrowRight,
+  RefreshCw, User, Users, ShieldCheck, FileCheck, ChevronRight, X,
+  Sparkles, Globe, Award, Star, Briefcase, Zap, ExternalLink, ArrowLeft
 } from "lucide-react";
+
+function FloatingOrbs() {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40 select-none" aria-hidden="true">
+      <div className="absolute top-[-15%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-indigo-600/15 blur-[130px] animate-pulse" style={{ animationDuration: "9s" }} />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] max-w-[500px] max-h-[500px] rounded-full bg-purple-600/15 blur-[120px] animate-pulse" style={{ animationDuration: "12s", animationDelay: "3s" }} />
+    </div>
+  );
+}
+
+function StatusPill({ ok, okLabel, pendingLabel, lockedLabel, locked }) {
+  if (locked) return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-white/[0.04] text-white/40 border border-white/10">
+      <span className="w-1.5 h-1.5 rounded-full bg-white/40 inline-block" />{lockedLabel}
+    </span>
+  );
+  if (ok) return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />{okLabel}
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-widest uppercase bg-amber-500/15 text-amber-300 border border-amber-500/25">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse" />{pendingLabel}
+    </span>
+  );
+}
+
+function DataTile({ label, value, accent, sub }) {
+  return (
+    <div className="p-3.5 rounded-xl bg-[#090b14] border border-white/10 space-y-1 hover:border-white/25 transition-all">
+      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-white/40 block font-semibold">{label}</span>
+      <span className={`text-xs sm:text-sm font-bold block leading-tight truncate ${accent ? "text-indigo-300" : "text-white"}`}>
+        {value || "—"}
+      </span>
+      {sub && <span className="text-[10px] text-white/40 block">{sub}</span>}
+    </div>
+  );
+}
+
+/**
+ * EXACT CHOOSE PATHWAY COMPONENT MATCHING THE AUTH MODAL
+ */
+function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
+  const handleSelect = (pathway) => {
+    if (onSelect) {
+      onSelect(pathway);
+    } else {
+      window.location.href = `/?open=${pathway}`;
+    }
+  };
+
+  return (
+    <section className="space-y-3.5 text-left font-sans" aria-labelledby="dashboard-pathway-title">
+      {/* Top Nav Eyebrow */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-mono tracking-[0.2em] text-indigo-400/90 uppercase font-semibold">
+          HYDERABAD 2026
+        </span>
+        <span className="text-[10px] font-mono tracking-[0.15em] text-white/40 uppercase font-semibold truncate max-w-[240px]">
+          DWPS KOMPALLY
+        </span>
+      </div>
+
+      {/* Header */}
+      <div>
+        <span className="block mb-1 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">
+          Select your role
+        </span>
+        <h2 id="dashboard-pathway-title" className="font-sans text-2xl sm:text-[26px] font-bold tracking-tight text-white leading-tight">
+          How would you like to participate?
+        </h2>
+        <p className="mt-1 text-xs text-white/50 leading-relaxed font-sans max-w-[42ch]">
+          Choose an option below to register for Resolve MUN 2026.
+        </p>
+      </div>
+
+      {/* 3 Pathway Cards with Thin Borders */}
+      <div className="space-y-2.5 pt-1" aria-label="Participation pathways">
+        
+        {/* 1. Delegate */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSelect("delegate")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegate"); } }}
+          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+        >
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                Delegate
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-400/20 text-violet-300 font-medium">
+                Individual
+              </span>
+            </div>
+            <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+              Participate as an individual delegate in one committee.
+            </span>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+
+        {/* 2. Delegation */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSelect("delegation")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegation"); } }}
+          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+        >
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                Delegation
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-300 font-medium">
+                School Team
+              </span>
+            </div>
+            <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+              Register a group of delegates from your school or college.
+            </span>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+
+        {/* 3. Secretariat */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSelect("secretariat")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("secretariat"); } }}
+          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+        >
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                Secretariat
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 font-medium">
+                Staff & Board
+              </span>
+            </div>
+            <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+              Apply to join the organizing team and leadership.
+            </span>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+
+      </div>
+
+      {/* Subdued Footer for Closed Tracks */}
+      <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-sans">
+        <span>Looking for OC or EB?</span>
+        <span className="font-mono uppercase tracking-wider text-[10px] text-white/30">
+          Applications Closed
+        </span>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * EXACT CHOOSE PATHWAY MODAL (Matching Auth Modal Chassis)
+ */
+function ChoiceModal({ user, onClose }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="relative z-10 w-full max-w-[480px] rounded-2xl border border-white/20 bg-[#07080e] shadow-[0_25px_65px_rgba(0,0,0,0.85),0_0_35px_rgba(99,102,241,0.15)] overflow-hidden p-6 sm:p-7 animate-in zoom-in-95 duration-200">
+        
+        {/* High-Visibility Rounded Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close modal"
+          className="absolute top-4 right-4 z-40 w-9 h-9 rounded-xl bg-black/80 hover:bg-black border border-white/30 hover:border-white/60 text-white flex items-center justify-center transition-all cursor-pointer shadow-lg active:scale-95"
+        >
+          <X className="w-4 h-4 text-white/90" strokeWidth={2.2} />
+        </button>
+
+        <ChoosePathwayBlock onClose={onClose} isModal={true} />
+
+        <div className="pt-4 text-center">
+          <span className="text-[10px] font-mono text-white/35">
+            Signed in as <strong className="text-white/70">{user?.email}</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DelegateDashboard() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [delegateRecord, setDelegateRecord] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
-  const [systemSettings, setSystemSettings] = useState({
-    registrationsOpen: true,
-    roundName: "Round 1 Applications",
-    delegateBaseFee: 2799,
-  });
-  const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, pass, committee, schedule, settings, support
-  const [searchQuery, setSearchQuery] = useState("");
-  const [notification, setNotification] = useState("");
-  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
-
-  const showToast = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(""), 3500);
-  };
+  const [systemSettings, setSystemSettings] = useState({ registrationsOpen: true, roundName: "Round 2 Applications" });
+  const [choiceModalOpen, setChoiceModalOpen] = useState(false);
+  const [synced, setSynced] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -92,19 +265,17 @@ export default function DelegateDashboard() {
       ]);
 
       if (record && record.found !== false) {
-        const delegateId =
-          record.regId ||
-          record.delegateId ||
-          (record.id ? `RM26-DEL-${String(record.id).slice(0, 4).toUpperCase()}` : "RM26-DEL-CONFIRMED");
+        const delegateId = record.regId || record.delegateId || (record.id ? `RM26-DEL-${String(record.id).slice(0, 4).toUpperCase()}` : "RM26-DEL-CONFIRMED");
         const fullName = record.fullName || record.name || (user?.displayName || "Delegate");
-        const paymentUTR = record.paymentUTR || record.payment_utr || record.txnID || "VERIFIED";
+        const paymentUTR = record.paymentUTR || record.payment_utr || "BANK-CONFIRMED";
         const status = record.status || "Confirmed";
-        const isPaymentOk =
+        const isPaymentOk = (
           status === "Confirmed" ||
           status === "Payment_Verified" ||
           status === "Manual_Approved" ||
           status === "APPROVED" ||
-          (paymentUTR && String(paymentUTR).trim().length > 3);
+          (paymentUTR && String(paymentUTR).trim().length > 3)
+        );
 
         setDelegateRecord({
           ...record,
@@ -122,14 +293,13 @@ export default function DelegateDashboard() {
           pref2: record.pref2 || (record.pref2_committee ? `${record.pref2_committee} · ${record.pref2_country || 'General'}` : null),
           pref3: record.pref3 || (record.pref3_committee ? `${record.pref3_committee} · ${record.pref3_country || 'General'}` : null),
         });
-        if (force) showToast("Live data synced with Cloud Firestore!");
       } else {
-        const isLocallyRegistered =
-          typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true";
+        // Fallback: Check local registration persistence
+        const isLocallyRegistered = typeof window !== 'undefined' && localStorage.getItem('resolve_user_registered') === 'true';
         if (isLocallyRegistered) {
-          const storedEmail = localStorage.getItem("resolve_user_email") || email;
-          const storedName = localStorage.getItem("resolve_user_name") || user?.displayName || "Delegate";
-          const storedId = localStorage.getItem("resolve_delegate_id") || "RM26-DEL-CONFIRMED";
+          const storedEmail = localStorage.getItem('resolve_user_email') || email;
+          const storedName = localStorage.getItem('resolve_user_name') || user?.displayName || "Delegate";
+          const storedId = localStorage.getItem('resolve_delegate_id') || "RM26-DEL-CONFIRMED";
           setDelegateRecord({
             regId: storedId,
             delegateId: storedId,
@@ -137,25 +307,22 @@ export default function DelegateDashboard() {
             email: storedEmail,
             status: "Confirmed",
             paymentStatus: "VERIFIED",
-            institution: "Individual Delegate",
+            institution: "Individual Delegate"
           });
-          if (force) showToast("Loaded profile from cache!");
         } else {
           setDelegateRecord(null);
-          if (force) showToast("No registration found yet.");
         }
       }
 
       if (settings) {
         setSystemSettings({
           registrationsOpen: settings.registrations_open !== false,
-          roundName: settings.round_name || "Round 1 Applications",
-          delegateBaseFee: settings.delegate_base_fee || 2799,
+          roundName: settings.round_name || "Round 1 Priority Applications",
         });
       }
+      setSynced(true);
     } catch (e) {
       console.error("[Dashboard] Error fetching profile:", e);
-      showToast("Sync error. Please retry.");
     } finally {
       setDataLoading(false);
     }
@@ -170,37 +337,40 @@ export default function DelegateDashboard() {
     }
   };
 
-  const isReg = Boolean(
-    delegateRecord &&
-      (delegateRecord.regId || delegateRecord.delegateId || delegateRecord.fullName || delegateRecord.found)
+  const isReg = Boolean(delegateRecord && (delegateRecord.regId || delegateRecord.delegateId || delegateRecord.fullName || delegateRecord.found));
+  const isPaid = isReg && (
+    delegateRecord.paymentStatus === "VERIFIED" ||
+    delegateRecord.status === "Confirmed" ||
+    delegateRecord.status === "Manual_Approved" ||
+    delegateRecord.status === "Payment_Verified" ||
+    delegateRecord.status === "ALLOTTED" ||
+    delegateRecord.status === "APPROVED" ||
+    Boolean(delegateRecord.paymentUTR && String(delegateRecord.paymentUTR).trim().length > 3)
   );
-  const isPaid =
-    isReg &&
-    (delegateRecord.paymentStatus === "VERIFIED" ||
-      delegateRecord.status === "Confirmed" ||
-      delegateRecord.status === "Manual_Approved" ||
-      delegateRecord.status === "Payment_Verified" ||
-      delegateRecord.status === "ALLOTTED" ||
-      delegateRecord.status === "APPROVED" ||
-      Boolean(delegateRecord.paymentUTR && String(delegateRecord.paymentUTR).trim().length > 3));
   const isAllotted = isReg && Boolean(delegateRecord.allocatedCommittee);
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Delegate";
-  const initials = (user?.displayName || user?.email || "YN")
+  const initials = (user?.displayName || user?.email || "D")
     .split(" ")
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Delegate";
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#cce5dc] flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#1d6f54] text-white flex items-center justify-center font-bold text-xl shadow-lg animate-bounce">
-            R
+      <div className="min-h-screen bg-[#05060c] text-white flex flex-col items-center justify-center gap-5">
+        <FloatingOrbs />
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl border border-white/20 bg-[#090b14] flex items-center justify-center shadow-[0_0_25px_rgba(99,102,241,0.25)]">
+            <span className="font-extrabold text-white font-mono text-lg">R</span>
           </div>
-          <p className="font-mono text-xs font-bold text-[#1d6f54] tracking-wider uppercase">Loading Resolve MUN Portal...</p>
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
+          <p className="text-xs text-white/50">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -208,747 +378,374 @@ export default function DelegateDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#cce5dc] flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-[32px] p-8 text-center shadow-2xl space-y-6">
-          <div className="w-16 h-16 rounded-full bg-[#1d6f54]/10 text-[#1d6f54] flex items-center justify-center mx-auto">
-            <Lock className="w-7 h-7" />
+      <div className="min-h-screen bg-[#05060c] text-white flex flex-col justify-between selection:bg-indigo-500/30">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-4 pt-28">
+          <FloatingOrbs />
+          <div className="relative z-10 w-full max-w-md p-8 rounded-2xl border border-white/15 bg-[#07080e] backdrop-blur-2xl text-center space-y-6 shadow-[0_25px_65px_rgba(0,0,0,0.85)]">
+            <div className="w-14 h-14 rounded-2xl border border-white/20 bg-white/[0.04] flex items-center justify-center mx-auto text-white shadow-inner">
+              <Lock className="w-6 h-6 text-white/80" />
+            </div>
+            <div>
+              <p className="text-xs text-indigo-400 font-semibold mb-1">
+                Resolve MUN 2026
+              </p>
+              <h1 className="text-2xl font-extrabold text-white tracking-tight font-sans">
+                Sign In to Your Dashboard
+              </h1>
+              <p className="text-xs text-white/60 mt-2.5 leading-relaxed font-sans">
+                Sign in to view your committee assignment, event schedule, and digital entry pass.
+              </p>
+            </div>
+            <Link
+              href="/?open=auth"
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-white/90 active:scale-[0.99] shadow-[0_0_24px_rgba(255,255,255,0.22)]"
+            >
+              Sign In <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Link>
           </div>
-          <div>
-            <span className="text-[10px] font-mono font-bold tracking-widest text-[#1d6f54] uppercase block mb-1">
-              RESOLVE MUN 2026
-            </span>
-            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Authentication Required</h2>
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Sign in with your verified credentials to access committee allocations, digital pass, and conference details.
-            </p>
-          </div>
-          <Link
-            href="/?open=auth"
-            className="flex h-12 w-full items-center justify-center rounded-full bg-[#1d6f54] text-white text-xs font-bold uppercase tracking-wider shadow-lg hover:bg-[#165a44] transition-all"
-          >
-            Sign In to Dashboard
-          </Link>
-          <Link href="/" className="text-xs text-slate-400 hover:text-slate-600 block">
-            Return to Resolve MUN Homepage
-          </Link>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#cbe5dc] py-6 px-3 sm:px-6 md:py-10 flex items-center justify-center font-sans antialiased text-slate-800 selection:bg-[#1d6f54]/20">
-      
-      {/* Toast alert */}
-      {notification && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1d6f54] text-white text-xs font-semibold shadow-xl animate-in fade-in slide-in-from-top-3">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{notification}</span>
-        </div>
-      )}
+    <div className="min-h-screen bg-[#05060c] text-white font-sans selection:bg-indigo-500/30 flex flex-col justify-between">
+      <Navbar />
+      <FloatingOrbs />
 
-      {/* ============================================================ */}
-      {/* MAIN ENCLOSED DASHBOARD CARD (Matches Image Exactly)        */}
-      {/* ============================================================ */}
-      <div className="w-full max-w-[1240px] bg-white rounded-[32px] sm:rounded-[36px] shadow-[0_20px_60px_rgba(18,56,43,0.18)] overflow-hidden flex flex-col md:flex-row min-h-[760px] border border-[#1d6f54]/10">
-        
-        {/* ============================================================ */}
-        {/* LEFT SIDEBAR (PINE GREEN #1d6f54)                           */}
-        {/* ============================================================ */}
-        <aside
-          className={`w-full md:w-[240px] lg:w-[260px] bg-[#1e6f54] text-white p-6 sm:p-7 flex flex-col justify-between shrink-0 transition-all ${
-            sidebarMobileOpen ? "block" : "hidden md:flex"
-          }`}
-        >
-          <div className="space-y-8">
-            {/* Logo */}
-            <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-2.5 group">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                </div>
-                <span className="font-bold text-base tracking-tight text-white group-hover:text-emerald-200 transition-colors">
-                  Resolve MUN
-                </span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setSidebarMobileOpen(false)}
-                className="md:hidden text-white/70 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <main className="relative z-10 max-w-4xl w-full mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-5 flex-1">
 
-            {/* Navigation List */}
-            <nav className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab("dashboard")}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === "dashboard"
-                    ? "text-white font-semibold"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Home className="w-5 h-5" />
-                  <span>Dashboard</span>
-                </div>
-                {activeTab === "dashboard" && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("pass")}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === "pass"
-                    ? "text-white font-semibold"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <QrCode className="w-5 h-5" />
-                  <span>Digital Pass</span>
-                </div>
-                {activeTab === "pass" && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("committee")}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === "committee"
-                    ? "text-white font-semibold"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Activity className="w-5 h-5" />
-                  <span>Committee</span>
-                </div>
-                {activeTab === "committee" && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("schedule")}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === "schedule"
-                    ? "text-white font-semibold"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Calendar className="w-5 h-5" />
-                  <span>Schedule</span>
-                </div>
-                {activeTab === "schedule" && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("settings")}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === "settings"
-                    ? "text-white font-semibold"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Settings className="w-5 h-5" />
-                  <span>Setting</span>
-                </div>
-                {activeTab === "settings" && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("support")}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === "support"
-                    ? "text-white font-semibold"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Lock className="w-5 h-5" />
-                  <span>Privacy</span>
-                </div>
-                {activeTab === "support" && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
-              </button>
-            </nav>
-          </div>
-
-          {/* Bottom Logout Pill (Matches Image) */}
-          <div className="pt-6">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="w-full h-11 px-5 rounded-full bg-white text-[#1e6f54] text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:bg-emerald-50 active:scale-[0.98] transition-all cursor-pointer"
-            >
-              <LogOut className="w-4 h-4 rotate-180" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* ============================================================ */}
-        {/* RIGHT MAIN WORKSPACE (LIGHT SLATE #f4f7f6)                  */}
-        {/* ============================================================ */}
-        <div className="flex-1 bg-[#f4f7f6] p-5 sm:p-8 flex flex-col justify-between overflow-y-auto">
+        {/* IDENTITY CARD */}
+        <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] backdrop-blur-2xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-500" />
           
-          <div className="space-y-6">
-            {/* Top Bar (Matches Image: Search Pill on Left, Action Pill on Right) */}
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              
-              {/* Mobile hamburger */}
-              <div className="flex items-center justify-between sm:hidden">
-                <button
-                  type="button"
-                  onClick={() => setSidebarMobileOpen(true)}
-                  className="p-2 rounded-xl bg-white text-[#1e6f54] shadow-sm"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-                <span className="font-bold text-sm text-[#1e6f54]">RESOLVE MUN 2026</span>
-              </div>
-
-              {/* Search Pill */}
-              <div className="relative w-full sm:w-72">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-5 pr-10 rounded-full bg-white text-xs text-slate-700 placeholder:text-slate-400 shadow-sm border-0 focus:ring-2 focus:ring-[#1e6f54]/30 outline-none"
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-
-              {/* Right Action Capsule Cluster (Matches Image) */}
-              <div className="flex items-center gap-3 self-end sm:self-auto">
-                <div className="h-10 pl-3 pr-1 py-1 rounded-full bg-[#1e6f54] flex items-center gap-3 shadow-md">
-                  
-                  {/* Dashed Upload / Action Pill */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!isReg) {
-                        window.location.href = "/?open=delegate";
-                      } else {
-                        fetchDelegateProfile(user?.id, user?.email, true);
-                      }
-                    }}
-                    className="h-7 px-3 rounded-full border border-dashed border-white/60 text-white text-[11px] font-medium hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>{isReg ? "+ Sync" : "+ Register"}</span>
-                  </button>
-
-                  {/* Notification Bell */}
-                  <button
-                    type="button"
-                    onClick={() => showToast("All notifications up to date.")}
-                    className="text-white/80 hover:text-white relative p-1"
-                    title="Notifications"
-                  >
-                    <Bell className="w-4 h-4" />
-                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-300" />
-                  </button>
-
-                  {/* Circular User Avatar Pill */}
-                  <div className="w-8 h-8 rounded-full bg-white text-[#1e6f54] font-bold text-xs flex items-center justify-center shadow-inner">
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <div className="relative shrink-0">
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={displayName}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#100726] via-[#090b1c] to-[#04050a] flex items-center justify-center text-white font-extrabold text-xl sm:text-2xl shadow-md border border-white/20">
                     {initials}
                   </div>
-                </div>
-              </div>
-            </header>
-
-            {/* ============================================================ */}
-            {/* TAB: DASHBOARD (EXACT GRID AS THE IMAGE)                    */}
-            {/* ============================================================ */}
-            {activeTab === "dashboard" && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                
-                {/* ROW 1: TOP 2 CARDS */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                  
-                  {/* Card 1: Analytics Bar Chart (lg:col-span-7) */}
-                  <div className="lg:col-span-7 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="font-bold text-sm text-slate-800">Conference Analytics</span>
-                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1e6f54] text-white text-[11px] font-medium shadow-sm">
-                        <Calendar className="w-3 h-3" />
-                        <span>Nov 2026</span>
-                      </div>
-                    </div>
-
-                    {/* Chart Container with Benchmark Line */}
-                    <div className="relative pt-6 pb-2">
-                      {/* Dashed orange benchmark line */}
-                      <div className="absolute top-10 inset-x-0 border-b-2 border-dashed border-amber-400 z-10 opacity-75" />
-
-                      {/* Bar Visualization */}
-                      <div className="h-40 flex items-end justify-around gap-2 px-2">
-                        {/* October Group */}
-                        <div className="flex flex-col items-center gap-2 flex-1">
-                          <div className="w-full flex items-end justify-center gap-1.5 h-32">
-                            <div className="w-3 sm:w-4 h-16 rounded-t-sm bg-slate-100" />
-                            <div className="w-3 sm:w-4 h-24 rounded-t-sm bg-[#8dcbb8]" />
-                          </div>
-                          <span className="text-[11px] font-medium text-slate-400">Day 1 (20th)</span>
-                        </div>
-
-                        {/* November Group (Peak) */}
-                        <div className="flex flex-col items-center gap-2 flex-1">
-                          <div className="w-full flex items-end justify-center gap-1.5 h-32">
-                            <div className="w-3 sm:w-4 h-20 rounded-t-sm bg-slate-100" />
-                            <div className="w-3 sm:w-4 h-32 rounded-t-sm bg-[#52aa91]" />
-                            <div className="w-3 sm:w-4 h-28 rounded-t-sm bg-[#8dcbb8]" />
-                          </div>
-                          <span className="text-[11px] font-medium text-slate-700 font-bold">Day 2 (21st)</span>
-                        </div>
-
-                        {/* December Group */}
-                        <div className="flex flex-col items-center gap-2 flex-1">
-                          <div className="w-full flex items-end justify-center gap-1.5 h-32">
-                            <div className="w-3 sm:w-4 h-12 rounded-t-sm bg-slate-100" />
-                            <div className="w-3 sm:w-4 h-22 rounded-t-sm bg-[#8dcbb8]" />
-                            <div className="w-3 sm:w-4 h-14 rounded-t-sm bg-slate-100" />
-                          </div>
-                          <span className="text-[11px] font-medium text-slate-400">Day 3 (22nd)</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Spline Graph & Stats (lg:col-span-5) */}
-                  <div className="lg:col-span-5 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-bold text-sm text-slate-800">Delegate Status</span>
-                      <div className="flex rounded-full bg-slate-100 p-0.5 text-[10px] font-medium">
-                        <span className="px-2.5 py-0.5 rounded-full text-slate-500">Seat</span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#1e6f54] text-white font-semibold">Cleared</span>
-                      </div>
-                    </div>
-
-                    <p className="text-[10px] text-slate-400 uppercase font-mono">20TH – 22ND NOV 2026</p>
-
-                    {/* 3 Metric Numbers (230, 2, 1500) */}
-                    <div className="grid grid-cols-3 gap-2 my-2 text-center">
-                      <div>
-                        <span className="text-lg font-bold text-slate-800 block leading-tight">
-                          ₹{systemSettings.delegateBaseFee}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block">Base Fee</span>
-                      </div>
-                      <div>
-                        <span className="text-lg font-bold text-[#1e6f54] block leading-tight">
-                          {isPaid ? "1" : "0"}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block">Seat Booked</span>
-                      </div>
-                      <div>
-                        <span className="text-lg font-bold text-slate-800 block leading-tight">
-                          250+
-                        </span>
-                        <span className="text-[10px] text-slate-400 block">Delegates</span>
-                      </div>
-                    </div>
-
-                    {/* Spline Wave Graph */}
-                    <div className="my-2">
-                      <svg viewBox="0 0 300 70" className="w-full h-14 overflow-visible">
-                        <path
-                          d="M 0 45 Q 40 25 75 40 T 150 55 T 225 30 T 300 40"
-                          fill="none"
-                          stroke="#1e6f54"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="flex justify-between text-[8px] text-slate-300 font-mono">
-                        <span>09:00</span>
-                        <span>11:00</span>
-                        <span>13:00</span>
-                        <span>15:00</span>
-                        <span>17:00</span>
-                      </div>
-                    </div>
-
-                    {/* Bottom Pill Toggles */}
-                    <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-slate-100 text-[10px]">
-                      <button type="button" onClick={() => setActiveTab("pass")} className="flex-1 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 text-center font-medium">Digital Pass</button>
-                      <button type="button" onClick={() => setActiveTab("committee")} className="flex-1 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 text-center font-medium">Committee</button>
-                      <button type="button" onClick={() => setActiveTab("schedule")} className="flex-1 py-1 rounded-full bg-[#1e6f54]/15 text-[#1e6f54] text-center font-bold">Venue</button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ROW 2: MIDDLE VISITOR / MATRIX STATS */}
-                <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-sm text-slate-800">Registration &amp; Conference Vitals</span>
-                    <span className="text-[10px] font-mono text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                      ACTIVE ROUND
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-center">
-                    {/* Stat 1 */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#f4f7f6]">
-                      <div>
-                        <span className="text-xl font-extrabold text-slate-800 block leading-tight">250+</span>
-                        <span className="text-[10px] text-slate-400">Total Delegates</span>
-                      </div>
-                      <svg width="40" height="20" className="stroke-[#22c55e] fill-none stroke-2">
-                        <path d="M0 15 L12 8 L24 14 L36 4" />
-                      </svg>
-                    </div>
-
-                    {/* Stat 2 */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#f4f7f6]">
-                      <div>
-                        <span className="text-xl font-extrabold text-slate-800 block leading-tight">
-                          {isPaid ? "100%" : "85%"}
-                        </span>
-                        <span className="text-[10px] text-slate-400">Seat Clearance</span>
-                      </div>
-                      <span className="px-2 py-1 rounded-full bg-[#1e6f54] text-white text-[9px] font-bold">
-                        UP ▲
-                      </span>
-                    </div>
-
-                    {/* Stat 3 */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#f4f7f6]">
-                      <div>
-                        <span className="text-xl font-extrabold text-slate-800 block leading-tight">6</span>
-                        <span className="text-[10px] text-slate-400">Committees</span>
-                      </div>
-                      <svg width="40" height="20" className="stroke-[#38bdf8] fill-none stroke-2">
-                        <path d="M0 14 L12 8 L24 12 L36 2" />
-                      </svg>
-                    </div>
-
-                    {/* Stat 4 */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#f4f7f6]">
-                      <div>
-                        <span className="text-xl font-extrabold text-slate-800 block leading-tight">3 Days</span>
-                        <span className="text-[10px] text-slate-400">DWPS Kompally</span>
-                      </div>
-                      <span className="px-2 py-1 rounded-full bg-[#1e6f54] text-white text-[9px] font-bold">
-                        TIME ▲
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ROW 3: BOTTOM 2 CARDS (3 CIRCLE GAUGES + RANKED LIST) */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                  
-                  {/* Bottom Left: 3 Donut Percentage Gauges (lg:col-span-7) */}
-                  <div className="lg:col-span-7 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100">
-                    <span className="font-bold text-sm text-slate-800 block mb-4">Allocation &amp; Seat Progress</span>
-                    
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      {/* Donut 1: 85% (Orange / Gold) */}
-                      <div className="flex flex-col items-center">
-                        <div className="relative w-18 h-18 flex items-center justify-center">
-                          <svg className="w-18 h-18 -rotate-90" viewBox="0 0 36 36">
-                            <path className="text-slate-100" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path className="text-[#f59e0b]" strokeDasharray="85, 100" strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                          </svg>
-                          <span className="absolute font-extrabold text-xs text-slate-800">85%</span>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-700 mt-2">Seat Quota</span>
-                        <span className="text-[9px] font-mono text-slate-400">223 Filled</span>
-                      </div>
-
-                      {/* Donut 2: 100% or 40% (Magenta / Purple) */}
-                      <div className="flex flex-col items-center">
-                        <div className="relative w-18 h-18 flex items-center justify-center">
-                          <svg className="w-18 h-18 -rotate-90" viewBox="0 0 36 36">
-                            <path className="text-slate-100" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path className="text-[#8b5cf6]" strokeDasharray={isPaid ? "100, 100" : "40, 100"} strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                          </svg>
-                          <span className="absolute font-extrabold text-xs text-slate-800">{isPaid ? "100%" : "40%"}</span>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-700 mt-2">Verification</span>
-                        <span className="text-[9px] font-mono text-slate-400">{isPaid ? "Cleared" : "Pending UTR"}</span>
-                      </div>
-
-                      {/* Donut 3: 65% (Indigo / Slate) */}
-                      <div className="flex flex-col items-center">
-                        <div className="relative w-18 h-18 flex items-center justify-center">
-                          <svg className="w-18 h-18 -rotate-90" viewBox="0 0 36 36">
-                            <path className="text-slate-100" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path className="text-[#6366f1]" strokeDasharray={isAllotted ? "100, 100" : "65, 100"} strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                          </svg>
-                          <span className="absolute font-extrabold text-xs text-slate-800">{isAllotted ? "100%" : "65%"}</span>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-700 mt-2">Matrix Matrix</span>
-                        <span className="text-[9px] font-mono text-slate-400">{isAllotted ? "Assigned" : "Processing"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom Right: Ranked Info Lists (lg:col-span-5) */}
-                  <div className="lg:col-span-5 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Left Column: Top Committees */}
-                      <div>
-                        <span className="font-bold text-xs text-slate-800 block mb-2">Committees</span>
-                        <ol className="space-y-1.5 text-xs text-slate-600">
-                          <li className="truncate">1. UNSC (Security)</li>
-                          <li className="truncate">2. UNHRC (Rights)</li>
-                          <li className="truncate">3. AIPPM (Indian)</li>
-                        </ol>
-                      </div>
-
-                      {/* Right Column: Delegate Meta */}
-                      <div>
-                        <span className="font-bold text-xs text-slate-800 block mb-2">Delegate Info</span>
-                        <div className="space-y-1 text-xs text-slate-600">
-                          <p className="font-semibold text-slate-800 truncate">{displayName}</p>
-                          <p className="font-mono text-[10px] text-[#1e6f54] font-bold">{delegateRecord?.delegateId || "RM26-DEL"}</p>
-                          <p className="text-[10px] text-slate-400 truncate">{delegateRecord?.institution || "Delegate"}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                      <span>Host Venue:</span>
-                      <strong className="text-[#1e6f54]">DWPS Kompally</strong>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* ============================================================ */}
-            {/* TAB: DIGITAL PASS                                            */}
-            {/* ============================================================ */}
-            {activeTab === "pass" && (
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 max-w-lg mx-auto text-center space-y-6 animate-in fade-in">
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-[#1e6f54] tracking-widest uppercase">
-                    OFFICIAL ACCREDITATION
-                  </span>
-                  <h3 className="text-xl font-bold text-slate-800 mt-1">Digital Conference Pass</h3>
-                  <p className="text-xs text-slate-500 mt-1">Present this QR pass at the entrance terminal at DWPS Kompally.</p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-[#f4f7f6] border border-slate-200 inline-block shadow-inner">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent("https://resolvemun.in/scan?id=" + (delegateRecord?.delegateId || user.email))}&bgcolor=ffffff&color=1e6f54&margin=1`}
-                    alt="Delegate QR Pass"
-                    className="w-48 h-48 rounded-xl shadow-md block mx-auto"
-                  />
-                  <div className="mt-4 text-center">
-                    <p className="font-bold text-sm text-slate-800 uppercase">{delegateRecord?.fullName || displayName}</p>
-                    <p className="font-mono text-xs font-bold text-[#1e6f54] tracking-wider mt-0.5">{delegateRecord?.delegateId || "RM26-DEL-CONFIRMED"}</p>
-                    <p className="text-[11px] text-slate-500 mt-1">{delegateRecord?.institution || "Individual Delegate"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="h-10 px-5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 flex items-center gap-2 cursor-pointer transition-all"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print PDF</span>
-                  </button>
-                  <a
-                    href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent("https://resolvemun.in/scan?id=" + (delegateRecord?.delegateId || user.email))}`}
-                    download="resolve-mun-pass.png"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="h-10 px-5 rounded-full bg-[#1e6f54] hover:bg-[#165a44] text-xs font-bold text-white flex items-center gap-2 shadow-md cursor-pointer transition-all"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Save QR</span>
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* ============================================================ */}
-            {/* TAB: COMMITTEE ALLOTMENT                                     */}
-            {/* ============================================================ */}
-            {activeTab === "committee" && (
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-5 animate-in fade-in">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-800">Committee Matrix Allocation</h3>
-                    <p className="text-xs text-slate-400">Assigned country portfolio and committee preferences.</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-[#1e6f54]/10 text-[#1e6f54] text-xs font-bold font-mono">
-                    {isAllotted ? "ALLOTTED" : "PROCESSING"}
-                  </span>
-                </div>
-
-                {isAllotted ? (
-                  <div className="p-4 rounded-xl bg-[#f4f7f6] flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-mono uppercase text-slate-400">ASSIGNED COMMITTEE</span>
-                      <p className="text-lg font-bold text-[#1e6f54]">{delegateRecord.allocatedCommittee}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono uppercase text-slate-400">PORTFOLIO</span>
-                      <p className="text-lg font-bold text-slate-800">{delegateRecord.allocatedCountry || "Delegate"}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 text-xs text-amber-800 flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-amber-600 shrink-0" />
-                    <span>Your committee preferences are under review. Round 1 portfolio allocations will update here directly.</span>
+                )}
+                {isReg && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#07080e] flex items-center justify-center text-black shadow-sm">
+                    <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={3} />
                   </div>
                 )}
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-indigo-400 font-semibold">
+                    {systemSettings.roundName}
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className="text-xs text-white/40">
+                    Hyderabad 2026
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans">
+                  {displayName}
+                </h1>
+                <p className="text-xs text-white/50 truncate mt-0.5">
+                  {user.email}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <StatusPill ok={isReg} okLabel="Registered" pendingLabel="Not Registered" />
+                  <StatusPill locked={!isReg} ok={isPaid} okLabel="Payment Verified" pendingLabel="Payment Under Review" lockedLabel="Payment Needed" />
+                  {isAllotted && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/25">
+                      <Globe className="w-3 h-3" />Assigned
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Refresh & Delegate ID */}
+            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/10">
+              {isReg && delegateRecord?.delegateId ? (
+                <div className="p-3 rounded-xl bg-[#090b14] border border-white/15 text-left sm:text-right shadow-sm">
+                  <span className="text-[10px] text-white/40 uppercase font-semibold block">DELEGATE ID</span>
+                  <span className="text-base font-mono font-bold text-indigo-300 tracking-wider block mt-0.5">
+                    {delegateRecord.delegateId}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs text-white/50">
+                  Status: <strong className="text-amber-400">Incomplete</strong>
+                </span>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
+                  disabled={dataLoading}
+                  className="h-8 px-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${dataLoading ? "animate-spin text-indigo-400" : ""}`} />
+                  <span>{dataLoading ? "Refreshing..." : "Refresh"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="h-8 px-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-red-500/20 hover:border-red-500/30 text-xs text-white/50 hover:text-red-300 transition-colors cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Venue & Dates Banner */}
+          <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-white/50 font-sans">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+              <span>Venue: <strong className="text-white/80">Delhi World Public School, Kompally</strong></span>
+            </div>
+            <div>
+              <span>Dates: <strong className="text-white/80">20th – 22nd November 2026</strong></span>
+            </div>
+          </div>
+        </section>
+
+        {/* UNREGISTERED STATE */}
+        {!isReg && (
+          <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+            <ChoosePathwayBlock onSelect={(track) => { window.location.href = `/?open=${track}`; }} />
+          </section>
+        )}
+
+        {/* REGISTERED STATE */}
+        {isReg && (
+          <div className="space-y-5">
+            {/* REGISTRATION DETAILS */}
+            <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-7 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-[10px] uppercase font-semibold text-white/40 mb-0.5">
+                    YOUR REGISTRATION
+                  </p>
+                  <h3 className="text-base font-bold text-white font-sans">
+                    Delegate Details
+                  </h3>
+                </div>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${delegateRecord.delegationCode ? "text-indigo-300 bg-indigo-500/10 border border-indigo-500/25" : "text-white/60 bg-white/[0.04] border border-white/10"}`}>
+                  {delegateRecord.delegationCode ? `Team: ${delegateRecord.delegationCode}` : "Individual Delegate"}
+                </span>
+              </div>
+
+              {/* Committee Preferences */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-white/50 mb-2">
+                  Preferred Committees
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {[1, 2, 3].map((n) => (
-                    <div key={n} className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                      <span className="text-[10px] font-mono text-[#1e6f54] font-bold block">PREFERENCE {n}</span>
-                      <p className="text-xs font-bold text-slate-700 truncate mt-1">{delegateRecord?.[`pref${n}`] || "—"}</p>
+                    <div key={n} className="p-3.5 rounded-xl bg-[#090b14] border border-white/10 hover:border-white/25 transition-colors">
+                      <span className="text-[10px] text-white/40 block font-semibold">Choice {n}</span>
+                      <span className="text-xs sm:text-sm font-bold text-white mt-1 block leading-snug truncate">
+                        {delegateRecord[`pref${n}`] || "—"}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* ============================================================ */}
-            {/* TAB: SCHEDULE & VENUE                                        */}
-            {/* ============================================================ */}
-            {activeTab === "schedule" && (
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-6 animate-in fade-in">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-800">Delhi World Public School, Kompally</h3>
-                    <p className="text-xs text-slate-500">Host Venue · Hyderabad, Telangana 500043</p>
-                  </div>
-                  <a
-                    href="https://maps.google.com/?q=Delhi+World+Public+School+Kompally+Hyderabad"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="h-9 px-4 rounded-full bg-[#1e6f54] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#165a44] transition-all self-start sm:self-auto"
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Open in Maps</span>
-                  </a>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  <div className="p-4 rounded-xl bg-[#f4f7f6] space-y-2">
-                    <span className="font-bold text-[#1e6f54] block">Day 1 · 20 Nov</span>
-                    <ul className="space-y-1 text-slate-600">
-                      <li>• 08:30: Registration</li>
-                      <li>• 10:00: Opening Ceremony</li>
-                      <li>• 11:45: Session I</li>
-                    </ul>
-                  </div>
-                  <div className="p-4 rounded-xl bg-[#f4f7f6] space-y-2">
-                    <span className="font-bold text-[#1e6f54] block">Day 2 · 21 Nov</span>
-                    <ul className="space-y-1 text-slate-600">
-                      <li>• 09:00: Session II &amp; III</li>
-                      <li>• 14:30: Crisis Session</li>
-                      <li>• 18:00: Socials</li>
-                    </ul>
-                  </div>
-                  <div className="p-4 rounded-xl bg-[#f4f7f6] space-y-2">
-                    <span className="font-bold text-[#1e6f54] block">Day 3 · 22 Nov</span>
-                    <ul className="space-y-1 text-slate-600">
-                      <li>• 09:30: Voting Procedures</li>
-                      <li>• 14:00: Valedictory</li>
-                      <li>• 16:30: Awards</li>
-                    </ul>
-                  </div>
-                </div>
+              {/* Data Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <DataTile label="Institution" value={delegateRecord.institution || "Individual"} />
+                <DataTile label="Grade / Year" value={delegateRecord.grade || "—"} />
+                <DataTile label="Assigned Committee" value={isAllotted ? delegateRecord.allocatedCommittee : "Not assigned yet"} accent={isAllotted} />
+                <DataTile label="Country / Portfolio" value={isAllotted ? (delegateRecord.allocatedCountry || "Delegate") : "Not assigned yet"} accent={isAllotted} />
               </div>
-            )}
 
-            {/* ============================================================ */}
-            {/* TAB: SETTINGS / DOSSIER                                      */}
-            {/* ============================================================ */}
-            {activeTab === "settings" && (
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-5 animate-in fade-in">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-base font-bold text-slate-800">Delegate Dossier Details</h3>
-                  <span className="font-mono text-xs font-bold text-[#1e6f54]">{delegateRecord?.delegateId || "RM26-DEL"}</span>
+              {/* Payment Status Box */}
+              <div className="mt-4 p-4 rounded-xl bg-[#090b14] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-white/40 mb-1 font-semibold">
+                    Payment Status
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {isPaid ? (
+                      <>
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs sm:text-sm font-bold text-emerald-300">Payment Verified</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                        <span className="text-xs sm:text-sm font-bold text-amber-300">Reviewing Payment</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/50 mt-0.5 font-mono">
+                    UTR: <span className="font-semibold text-white/80">{delegateRecord.paymentUTR || delegateRecord.txnId || "Submitted"}</span>
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
-                  <div className="p-3 rounded-xl bg-[#f4f7f6]">
-                    <span className="text-slate-400 block text-[10px]">NAME</span>
-                    <strong className="text-slate-700">{delegateRecord?.fullName || displayName}</strong>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#f4f7f6]">
-                    <span className="text-slate-400 block text-[10px]">EMAIL</span>
-                    <strong className="text-slate-700 truncate block">{delegateRecord?.email || user.email}</strong>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#f4f7f6]">
-                    <span className="text-slate-400 block text-[10px]">PHONE</span>
-                    <strong className="text-slate-700">{delegateRecord?.phone || "—"}</strong>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#f4f7f6]">
-                    <span className="text-slate-400 block text-[10px]">INSTITUTION</span>
-                    <strong className="text-slate-700">{delegateRecord?.institution || "—"}</strong>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#f4f7f6]">
-                    <span className="text-slate-400 block text-[10px]">PAYMENT UTR</span>
-                    <strong className="text-[#1e6f54]">{delegateRecord?.paymentUTR || "VERIFIED"}</strong>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#f4f7f6]">
-                    <span className="text-slate-400 block text-[10px]">FEE STATUS</span>
-                    <strong className="text-[#1e6f54]">{isPaid ? "CLEARED (₹2799)" : "PENDING"}</strong>
-                  </div>
-                </div>
+                {isPaid && (
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300 font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                    Seat Confirmed
+                  </span>
+                )}
               </div>
-            )}
+            </section>
 
-            {/* ============================================================ */}
-            {/* TAB: PRIVACY / SUPPORT                                       */}
-            {activeTab === "support" && (
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-5 animate-in fade-in">
-                <h3 className="text-base font-bold text-slate-800">Support &amp; Delegate Assistance</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <a href="tel:+919212107797" className="p-4 rounded-xl bg-[#f4f7f6] hover:bg-emerald-50 transition-colors flex items-center gap-3">
-                    <Phone className="w-5 h-5 text-[#1e6f54]" />
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">PHONE HELPLINE</span>
-                      <strong className="text-slate-800">+91 92121 07797</strong>
+            {/* DIGITAL ENTRY PASS */}
+            <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-7 shadow-sm">
+              <div className="mb-5">
+                <p className="text-[10px] uppercase font-semibold text-white/40 mb-0.5">
+                  YOUR PASS
+                </p>
+                <h3 className="text-base font-bold text-white font-sans">
+                  Digital Entry Pass
+                </h3>
+                <p className="text-xs text-white/50 mt-0.5">
+                  Show this QR code at the registration desk when you arrive at Delhi World Public School, Kompally.
+                </p>
+              </div>
+
+              {isPaid ? (
+                <div className="flex flex-col items-center">
+                  <div className="relative w-full max-w-xs mx-auto">
+                    <div className="relative rounded-2xl overflow-hidden border border-white/20 bg-[#090b14] shadow-2xl">
+                      <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 px-5 py-3 flex items-center justify-between text-white">
+                        <div>
+                          <p className="text-[9px] text-white/80 font-bold uppercase">Resolve MUN 2026</p>
+                          <p className="text-xs font-bold uppercase tracking-wider">Entry Pass</p>
+                        </div>
+                        <ShieldCheck className="w-5 h-5 text-white" />
+                      </div>
+
+                      <div className="p-5 flex flex-col items-center gap-4">
+                        <div className="p-3 rounded-xl bg-white border border-neutral-200 shadow-inner">
+                          <img
+                            src={`https://quickchart.io/qr?size=220&text=${encodeURIComponent("RESOLVE_PASS:" + delegateRecord.delegateId + ":" + delegateRecord.email)}`}
+                            alt="QR Pass"
+                            className="w-40 h-40 block"
+                          />
+                        </div>
+
+                        <div className="text-center space-y-1 w-full">
+                          <p className="text-sm font-bold text-white">
+                            {delegateRecord.fullName || user.displayName}
+                          </p>
+                          <p className="text-xs font-mono font-bold text-indigo-300">
+                            {delegateRecord.delegateId}
+                          </p>
+                          {isAllotted && (
+                            <div className="flex items-center justify-center gap-2 mt-1">
+                              <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/25 text-xs font-bold text-emerald-300 font-mono">
+                                {delegateRecord.allocatedCommittee}
+                              </span>
+                              <span className="text-xs text-white/70 truncate max-w-[120px]">
+                                {delegateRecord.allocatedCountry}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="w-full flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+                          <span className="text-white/40">DWPS Kompally</span>
+                          <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />Verified
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </a>
-                  <a href="mailto:resolvemun2026@gmail.com" className="p-4 rounded-xl bg-[#f4f7f6] hover:bg-emerald-50 transition-colors flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-[#1e6f54]" />
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">EMAIL SUPPORT</span>
-                      <strong className="text-slate-800">resolvemun2026@gmail.com</strong>
-                    </div>
-                  </a>
+                  </div>
+                  <p className="text-xs text-white/40 mt-4 text-center max-w-xs leading-relaxed">
+                    Scanned at the door when you arrive.
+                  </p>
                 </div>
-              </div>
-            )}
-
+              ) : (
+                <div className="flex flex-col items-center py-8 text-center space-y-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto text-white/30">
+                      <Lock className="w-8 h-8" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <Clock className="w-3 h-3" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 max-w-sm">
+                    <h4 className="text-sm font-bold text-white">
+                      Pass Pending Approval
+                    </h4>
+                    <p className="text-xs text-white/50 leading-relaxed font-sans">
+                      We're verifying your payment receipt (UTR: <span className="font-mono text-white/80">{delegateRecord.paymentUTR || delegateRecord.txnId || "Submitted"}</span>). Your digital entry pass will activate as soon as it's approved.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-mono text-amber-300">
+                    <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
+                    <span>Checking payment status...</span>
+                  </div>
+                </div>
+              )}
+            </section>
           </div>
+        )}
 
-          {/* Footer note */}
-          <footer className="pt-6 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-medium">
-            <span>© 2026 Resolve MUN · Hyderabad</span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="hover:text-[#1e6f54]">Homepage</Link>
-              <span>•</span>
-              <button type="button" onClick={() => fetchDelegateProfile(user?.id, user?.email, true)} className="hover:text-[#1e6f54] cursor-pointer">
-                Sync Live
+        {/* QUICK LINKS */}
+        <section className="p-5 sm:p-6 rounded-2xl border border-white/15 bg-[#07080e] space-y-3 shadow-sm">
+          <p className="text-[10px] uppercase font-semibold text-white/40">
+            QUICK LINKS
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <Link
+              href="/"
+              className="group flex items-center gap-3 p-3.5 rounded-xl bg-[#090b14] hover:bg-[#0f111e] border border-white/10 hover:border-white/30 transition-all"
+            >
+              <Globe className="w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors shrink-0" />
+              <span className="text-xs font-semibold text-white/70 group-hover:text-white transition-colors">
+                Go to Home Page
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 text-white/20 ml-auto group-hover:text-white/60 transition-colors" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
+              className="group flex items-center gap-3 p-3.5 rounded-xl bg-[#090b14] hover:bg-[#0f111e] border border-white/10 hover:border-white/30 transition-all cursor-pointer w-full text-left"
+            >
+              <RefreshCw className={`w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors shrink-0 ${dataLoading ? "animate-spin" : ""}`} />
+              <span className="text-xs font-semibold text-white/70 group-hover:text-white transition-colors">
+                Refresh Status
+              </span>
+              {dataLoading && <span className="text-xs text-indigo-400 ml-auto">Refreshing...</span>}
+            </button>
+
+            {!isReg && systemSettings.registrationsOpen && (
+              <button
+                type="button"
+                onClick={() => setChoiceModalOpen(true)}
+                className="group flex items-center justify-between p-3.5 rounded-xl bg-white text-black font-bold hover:bg-white/90 transition-all cursor-pointer col-span-full shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-black" />
+                  <span className="text-xs uppercase tracking-wider">
+                    Start Your Registration
+                  </span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-black" />
               </button>
-            </div>
-          </footer>
+            )}
+          </div>
+        </section>
+      </main>
 
-        </div>
-      </div>
-
+      {choiceModalOpen && <ChoiceModal user={user} onClose={() => setChoiceModalOpen(false)} />}
+      <Footer />
     </div>
   );
 }

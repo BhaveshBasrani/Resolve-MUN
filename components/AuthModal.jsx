@@ -716,7 +716,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   onClick={() => setMode("pathway")}
                   className="w-full rounded-full bg-white text-black font-bold py-3.5 hover:bg-white/90 active:scale-[0.98] transition-all shadow-[0_0_35px_rgba(255,255,255,0.35)] cursor-pointer text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2"
                 >
-                  <span>Select Registration Pathway</span>
+                  <span>Choose How to Register</span>
                   <ChevronRight className="w-4 h-4 text-black" />
                 </button>
               </section>
@@ -744,10 +744,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                 <div>
                   <span className="block mb-1 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">Select your role</span>
                   <h1 id="pathway-title" className="font-sans text-2xl sm:text-[26px] font-bold tracking-tight text-white leading-tight">
-                    Choose Pathway
+                    How would you like to participate?
                   </h1>
                   <p className="mt-1 text-xs text-white/50 leading-relaxed font-sans max-w-[40ch]">
-                    Select your participation track for Resolve MUN 2.0.
+                    Choose an option below to register for Resolve MUN 2026.
                   </p>
                 </div>
 
@@ -770,7 +770,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                         </span>
                       </div>
                       <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
-                        Single delegate representation in one specialized committee.
+                        Participate as an individual delegate in one committee.
                       </span>
                     </div>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
@@ -792,11 +792,11 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                           Delegation
                         </span>
                         <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-300 font-medium">
-                          Institution
+                          School Team
                         </span>
                       </div>
                       <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
-                        School or university delegations with 8+ student delegates.
+                        Register a group of delegates from your school or college.
                       </span>
                     </div>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
@@ -818,11 +818,11 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                           Secretariat
                         </span>
                         <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 font-medium">
-                          Executive
+                          Staff & Board
                         </span>
                       </div>
                       <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
-                        High-command leadership, USG positions, and directors.
+                        Apply to join the organizing team and leadership.
                       </span>
                     </div>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
@@ -835,7 +835,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                 <div className="pt-3.5 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-sans">
                   <span>Looking for OC or EB?</span>
                   <span className="font-mono uppercase tracking-wider text-[10px] text-white/30">
-                    Round 1 Closed
+                    Applications Closed
                   </span>
                 </div>
               </section>
