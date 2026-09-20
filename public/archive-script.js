@@ -744,7 +744,7 @@
         if (typeof window.submitWaitlistToFirebase === 'function') {
           await window.submitWaitlistToFirebase(data);
         } else {
-          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 10000 });
+          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
         }
         // Hide form and show success message smoothly
         waitlistForm.style.display = 'none';
@@ -872,21 +872,29 @@
   }
 
   // Robust submit with timeout and retries
+  // NOTE: noTimeout:true disables AbortController — required for GAS cold starts (20-30s)
   async function submitToGoogleSheetWithRetry(data, options = {}) {
     const retries = options.retries ?? 2;
-    const timeoutMs = options.timeoutMs ?? 15000;
+    const timeoutMs = options.timeoutMs ?? 45000;
+    const noTimeout = options.noTimeout ?? false;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), timeoutMs);
+      let controller = null;
+      let id = null;
+      if (!noTimeout) {
+        controller = new AbortController();
+        id = setTimeout(() => controller.abort(), timeoutMs);
+      }
       try {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+        const fetchOptions = {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(data),
-          signal: controller.signal
-        });
-        clearTimeout(id);
+        };
+        if (controller) fetchOptions.signal = controller.signal;
+
+        const response = await fetch(GOOGLE_APP_SCRIPT_URL, fetchOptions);
+        if (id) clearTimeout(id);
 
         const result = await response.json().catch(() => null);
         if (response.ok && result && result.status === 'success') {
@@ -896,10 +904,10 @@
         const msg = (result && result.message) ? result.message : 'Server rejected the submission';
         throw new Error(msg);
       } catch (err) {
-        clearTimeout(id);
+        if (id) clearTimeout(id);
         const isLast = attempt === retries;
         if (err.name === 'AbortError') {
-          if (isLast) throw new Error('Request timed out. Please try again.');
+          if (isLast) throw new Error('Request timed out after ' + (timeoutMs / 1000) + 's. Please try again.');
         } else if (isLast) {
           throw err;
         }
@@ -1406,11 +1414,21 @@
         try {
           submitRes = await window.submitDelegateToFirebase(data);
         } catch (fbErr) {
-          console.warn('Submission notice, falling back to Sheets:', fbErr);
-          submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+          // Re-throw auth / verification errors — do NOT fall back to GAS
+          const msg = fbErr && fbErr.message ? fbErr.message : '';
+          const isAuthError = msg.toLowerCase().includes('verify') ||
+            msg.toLowerCase().includes('email') ||
+            msg.toLowerCase().includes('sign') ||
+            msg.toLowerCase().includes('login') ||
+            msg.toLowerCase().includes('auth') ||
+            msg.toLowerCase().includes('credential');
+          if (isAuthError) throw fbErr;
+          // Non-auth Firebase error — fall back to GAS with generous timeout
+          console.warn('Firebase submit failed, falling back to Sheets:', fbErr);
+          submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
         }
       } else {
-        submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+        submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
       }
 
       if (typeof window !== 'undefined') {
@@ -1882,9 +1900,16 @@
       };
 
       if (typeof window.submitDelegationToFirebase === 'function') {
-        await window.submitDelegationToFirebase(data);
+        try {
+          await window.submitDelegationToFirebase(data);
+        } catch (fbErr) {
+          const msg = fbErr && fbErr.message ? fbErr.message : '';
+          const isAuthError = msg.toLowerCase().includes('verify') || msg.toLowerCase().includes('auth');
+          if (isAuthError) throw fbErr;
+          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
+        }
       } else {
-        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 20000 });
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
       }
       if (typeof window !== 'undefined') {
         localStorage.setItem('resolve_user_registered', 'true');
@@ -2107,9 +2132,16 @@
       };
 
       if (typeof window.submitOcToFirebase === 'function') {
-        await window.submitOcToFirebase(data);
+        try {
+          await window.submitOcToFirebase(data);
+        } catch (fbErr) {
+          const msg = fbErr && fbErr.message ? fbErr.message : '';
+          const isAuthError = msg.toLowerCase().includes('verify') || msg.toLowerCase().includes('auth');
+          if (isAuthError) throw fbErr;
+          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
+        }
       } else {
-        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
       }
       showCustomAlert('Application submitted successfully! We will review your application soon.', 'success', 6000);
       ocRegForm.reset();
@@ -2616,9 +2648,16 @@
       };
 
       if (typeof window.submitEbToFirebase === 'function') {
-        await window.submitEbToFirebase(data);
+        try {
+          await window.submitEbToFirebase(data);
+        } catch (fbErr) {
+          const msg = fbErr && fbErr.message ? fbErr.message : '';
+          const isAuthError = msg.toLowerCase().includes('verify') || msg.toLowerCase().includes('auth');
+          if (isAuthError) throw fbErr;
+          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
+        }
       } else {
-        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 15000 });
+        await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
       }
       showCustomAlert('Application submitted successfully! We will review your profile and contact you soon.', 'success', 6000);
       ebRegForm.reset();
