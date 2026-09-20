@@ -688,6 +688,20 @@ export default function Home() {
           document.getElementById("upiID")?.innerText ||
           "bhoomianilbasrani@okhdfcbank";
         navigator.clipboard?.writeText(upi);
+        const copyBtn = document.getElementById("copyUpiBtn");
+        if (copyBtn) {
+          const originalHtml = copyBtn.innerHTML;
+          copyBtn.innerHTML = `<span>COPIED! ✓</span>`;
+          copyBtn.style.background = "rgba(34,197,94,0.3)";
+          copyBtn.style.borderColor = "rgba(34,197,94,0.6)";
+          copyBtn.style.color = "#4ade80";
+          setTimeout(() => {
+            copyBtn.innerHTML = originalHtml;
+            copyBtn.style.background = "";
+            copyBtn.style.borderColor = "";
+            copyBtn.style.color = "";
+          }, 2000);
+        }
         if (window.showCustomAlert)
           window.showCustomAlert("UPI ID copied: " + upi, "success");
       };
@@ -711,9 +725,9 @@ export default function Home() {
       };
 
       window.generateDynamicQR = function (amountStr, imgElementId, upiTextElementId) {
-        let cleanAmount = "2199";
+        let cleanAmount = "2799";
         if (amountStr) {
-          cleanAmount = String(amountStr).replace(/[^0-9.]/g, "") || "2199";
+          cleanAmount = String(amountStr).replace(/[^0-9.]/g, "") || "2799";
         }
         const currentPayee = {
           pa: "bhoomianilbasrani@okhdfcbank",
@@ -722,11 +736,29 @@ export default function Home() {
         const upiText = document.getElementById(upiTextElementId);
         if (upiText) upiText.innerText = currentPayee.pa;
 
+        const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&tn=${encodeURIComponent("Resolve MUN 2026 Delegate Fee")}`;
+        
+        // Update direct mobile link if element exists
+        const mobileLink = document.getElementById("payUpiMobileLink");
+        if (mobileLink) {
+          mobileLink.href = upiString;
+        }
+
         const qrImage = document.getElementById(imgElementId);
         if (!qrImage) return;
 
-        const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
-        qrImage.src = `https://quickchart.io/qr?size=320&text=${encodeURIComponent(upiString)}`;
+        // Try primary QR service with high resolution
+        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(upiString)}&bgcolor=ffffff&color=05060c&margin=1`;
+        qrImage.onerror = () => {
+          qrImage.src = `https://quickchart.io/qr?size=320&text=${encodeURIComponent(upiString)}`;
+        };
+      };
+
+      window.refreshDelegatePaymentQR = function () {
+        window.generateDynamicQR("2799", "paymentQRImage", "upiID");
+        if (window.showCustomAlert) {
+          window.showCustomAlert("UPI QR code refreshed for ₹2799", "info");
+        }
       };
 
       // Live Screenshot preview handler
@@ -1286,10 +1318,11 @@ export default function Home() {
       
       {/* POST-AUTH WELCOME DIALOG (Diplomatic Luxury Identity) */}
       {showWelcomeBox && currentUser && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
-          <div className="relative w-full max-w-sm p-5 sm:p-6 rounded-2xl border border-white/15 bg-[#060814]/98 backdrop-blur-3xl shadow-[0_24px_70px_rgba(0,0,0,0.95),0_0_30px_rgba(99,102,241,0.12)] text-center overflow-hidden">
-            {/* Top Hairline Accent */}
-            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md p-6 sm:p-7 rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-[#0b0f24] to-[#05060f] shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(99,102,241,0.2)] text-center overflow-hidden">
+            {/* Top Glowing Beam */}
+            <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent" />
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-indigo-500/20 blur-2xl pointer-events-none rounded-full" />
 
             {/* Minimalist Close Icon */}
             <button
@@ -1298,58 +1331,69 @@ export default function Home() {
                 sessionStorage.setItem("resolve_welcome_dismissed_" + currentUser.uid, "true");
                 setShowWelcomeBox(false);
               }}
-              className="absolute top-3.5 right-3.5 w-6.5 h-6.5 rounded-xl text-white/40 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors cursor-pointer"
+              className="absolute top-4 right-4 w-8 h-8 rounded-xl text-white/50 hover:text-white bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 flex items-center justify-center transition-all cursor-pointer active:scale-95"
               aria-label="Close dialog"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
 
-            {/* Official Resolve MUN Emblem */}
-            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-white/[0.03] border border-white/10 p-1.5 flex items-center justify-center shadow-inner">
-              <img
-                src="https://resolvemun.in/images/Logo.svg"
-                alt="Resolve MUN Emblem"
-                className="w-full h-full object-contain filter brightness-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]"
-              />
+            {/* Official Resolve MUN Emblem with Verified Ring */}
+            <div className="relative w-14 h-14 mx-auto mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-[#0e132e] border border-indigo-400/30 p-2.5 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+                <img
+                  src="https://resolvemun.in/images/Logo.svg"
+                  alt="Resolve MUN Emblem"
+                  className="w-full h-full object-contain filter brightness-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+                />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#0b0f24] flex items-center justify-center text-black shadow-sm">
+                <Check className="w-3 h-3 stroke-[3]" />
+              </div>
             </div>
 
             {/* Eyebrow & Title */}
-            <span className="font-mono text-[9px] tracking-[0.2em] text-indigo-300 uppercase block mb-1 font-semibold">
-              ACCOUNT VERIFIED · RESOLVE 2026
-            </span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/25 mb-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+              <span className="font-mono text-[10px] tracking-[0.2em] text-indigo-300 uppercase font-bold">
+                ACCOUNT VERIFIED · RESOLVE 2026
+              </span>
+            </div>
+
             <h3
-              className="text-lg sm:text-xl font-extrabold uppercase tracking-wide text-white mb-1.5"
+              className="text-2xl sm:text-[26px] font-extrabold uppercase tracking-wide text-white mb-2"
               style={{ fontFamily: "'Oswald', sans-serif" }}
             >
               WELCOME, {currentUser.displayName ? currentUser.displayName.split(" ")[0] : "DELEGATE"}
             </h3>
 
             {/* Natural Copy */}
-            <p className="text-[11px] text-white/60 leading-relaxed max-w-xs mx-auto mb-4 font-normal">
+            <p className="text-xs text-white/70 leading-relaxed max-w-sm mx-auto mb-5 font-normal">
               You're signed in. View your committee assignment, digital access pass, and conference details in your dashboard.
             </p>
 
             {/* Micro Credential Strip */}
-            <div className="flex items-center justify-center gap-2 py-1.5 px-2.5 rounded-lg bg-white/[0.02] border border-white/5 text-[9px] font-mono text-white/50 mb-4">
-              <span>STATUS: <strong className="text-emerald-400 font-semibold">ACTIVE</strong></span>
+            <div className="flex items-center justify-center gap-2.5 py-2 px-3 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-mono text-white/60 mb-6">
+              <span className="flex items-center gap-1.5">
+                STATUS: <strong className="text-emerald-400 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>ACTIVE</strong>
+              </span>
               <span className="text-white/20">|</span>
-              <span>ROLE: <strong className="text-white/80 font-semibold">DELEGATE</strong></span>
+              <span>ROLE: <strong className="text-white font-bold">DELEGATE</strong></span>
               <span className="text-white/20">|</span>
-              <span>CONFERENCE: <strong className="text-purple-300 font-semibold">RESOLVE 2.0</strong></span>
+              <span>CONFERENCE: <strong className="text-indigo-300 font-bold">RESOLVE 2.0</strong></span>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <Link
                 href="/dashboard"
                 onClick={() => {
                   sessionStorage.setItem("resolve_welcome_dismissed_" + currentUser.uid, "true");
                   setShowWelcomeBox(false);
                 }}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 h-9.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-xs tracking-wider uppercase shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.45)] active:scale-[0.98] transition-all cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-xs tracking-wider uppercase shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>GO TO DASHBOARD</span>
-                <ArrowUpRight className="w-3 h-3" />
+                <ArrowUpRight className="w-4 h-4" />
               </Link>
               <button
                 type="button"
@@ -1357,7 +1401,7 @@ export default function Home() {
                   sessionStorage.setItem("resolve_welcome_dismissed_" + currentUser.uid, "true");
                   setShowWelcomeBox(false);
                 }}
-                className="h-9.5 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/70 hover:text-white text-xs font-semibold tracking-wide transition-colors cursor-pointer"
+                className="h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/70 hover:text-white text-xs font-semibold tracking-wide transition-colors cursor-pointer active:scale-[0.98]"
               >
                 CONTINUE BROWSING
               </button>
