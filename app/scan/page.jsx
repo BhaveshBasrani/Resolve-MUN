@@ -68,7 +68,7 @@ export default function AttendanceScanner() {
   const fetchRoster = useCallback(async () => {
     setIsLoadingRoster(true);
     try {
-      const res = await fetch(`/api/admin?adminKey=${encodeURIComponent(ADMIN_KEY)}`);
+      const res = await fetch(`/api/admin/?adminKey=${encodeURIComponent(ADMIN_KEY)}`);
       if (res.ok) {
         const data = await res.json();
         const regs = data.registrations || [];
@@ -102,7 +102,7 @@ export default function AttendanceScanner() {
       setAuthError("");
       sessionStorage.setItem("resolve_scan_auth", "true");
     } else {
-      setAuthError("Invalid Secretariat passkey. Access denied.");
+      setAuthError("Incorrect passcode. Please check and try again.");
     }
   };
 
@@ -284,7 +284,7 @@ export default function AttendanceScanner() {
     const delegateId = selectedDelegate.regId || selectedDelegate.email;
 
     try {
-      const res = await fetch("/api/admin", {
+      const res = await fetch("/api/admin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -332,20 +332,20 @@ export default function AttendanceScanner() {
 
           <div className="text-center space-y-1.5">
             <span className="text-[10px] font-mono tracking-[0.25em] text-indigo-400 uppercase font-bold">
-              Secretariat Desk Station
+              Check-In Desk
             </span>
             <h1 className="text-xl font-bold uppercase tracking-wide text-white">
               Delegate Check-In & Scanner
             </h1>
             <p className="text-xs text-white/50 leading-relaxed">
-              Enter official Secretariat passkey to initialize delegate accreditation and checkpoint scanning.
+              Enter the Secretariat passcode to start scanning delegate entry passes.
             </p>
           </div>
 
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-mono uppercase tracking-wider text-white/40 mb-1.5">
-                Secretariat Passkey
+                Secretariat Passcode
               </label>
               <input
                 type="password"
@@ -353,7 +353,7 @@ export default function AttendanceScanner() {
                 autoFocus
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
-                placeholder="Enter passkey..."
+                placeholder="Enter passcode..."
                 className="w-full h-12 px-4 rounded-xl bg-black/40 border border-white/15 text-white font-mono text-sm focus:outline-none focus:border-indigo-400 transition-all"
               />
             </div>
@@ -369,7 +369,7 @@ export default function AttendanceScanner() {
               type="submit"
               className="w-full h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-opacity shadow-lg cursor-pointer"
             >
-              Unlock Scanner Station
+              Unlock Scanner
             </button>
           </form>
 
@@ -393,7 +393,7 @@ export default function AttendanceScanner() {
           </div>
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-white">
-              Secretariat Checkpoint & Attendance
+              Secretariat Door Check-In
             </h2>
             <div className="flex items-center gap-2 text-[10px] font-mono text-white/40">
               <span>Resolve MUN 2.0</span>
@@ -413,7 +413,7 @@ export default function AttendanceScanner() {
             title="Reload delegates list"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoadingRoster ? "animate-spin text-indigo-400" : ""}`} />
-            <span className="hidden sm:inline">Sync Roster</span>
+            <span className="hidden sm:inline">Refresh List</span>
           </button>
 
           <button
@@ -436,7 +436,7 @@ export default function AttendanceScanner() {
         <section className="p-5 rounded-2xl border border-white/[0.08] bg-[#0b0e17] space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono uppercase tracking-widest text-indigo-400 font-bold">
-              Live Camera QR Scanner & Barcode Gun
+              Camera Scanner & Search
             </span>
             <button
               type="button"
@@ -467,7 +467,7 @@ export default function AttendanceScanner() {
                 </div>
               </div>
               <span className="absolute bottom-3 text-[11px] font-mono text-white/90 bg-black/70 px-3 py-1 rounded-full border border-white/10 backdrop-blur-md">
-                Align QR Code within the frame &bull; Real-time detection active
+                Point camera at delegate QR code &bull; Automatic detection active
               </span>
             </div>
           )}
@@ -507,7 +507,7 @@ export default function AttendanceScanner() {
               type="submit"
               className="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
             >
-              Lookup
+              Search
             </button>
           </form>
 
@@ -583,7 +583,7 @@ export default function AttendanceScanner() {
                 className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
               >
                 <BadgeCheck className="w-4 h-4" />
-                <span>Admit &bull; Check-In (Entry)</span>
+                <span>Check In (Entry)</span>
               </button>
 
               <button
@@ -593,7 +593,7 @@ export default function AttendanceScanner() {
                 className="h-12 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
               >
                 <Clock className="w-4 h-4 text-amber-300" />
-                <span>Log Departure (Exit)</span>
+                <span>Check Out (Exit)</span>
               </button>
             </div>
           </section>
@@ -603,9 +603,9 @@ export default function AttendanceScanner() {
         <section className="p-5 rounded-2xl border border-white/[0.08] bg-[#0b0e17] space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono uppercase tracking-widest text-white/40 font-bold">
-              Terminal Scan Log (This Session)
+              Recent Scans (This Session)
             </span>
-            <span className="text-[10px] font-mono text-white/40">{sessionLogs.length} Records</span>
+            <span className="text-[10px] font-mono text-white/40">{sessionLogs.length} Scanned</span>
           </div>
 
           {sessionLogs.length === 0 ? (

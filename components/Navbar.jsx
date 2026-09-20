@@ -413,7 +413,7 @@ export function Navbar() {
                 <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_#34d399] animate-pulse"></span>
                 <div>
                   <div className="text-[11px] font-bold font-mono tracking-wider text-emerald-300 uppercase">
-                    REGISTRATIONS ACTIVE
+                    REGISTRATIONS OPEN
                   </div>
                   <div className="text-[10px] text-white/50 tracking-wide">
                     Resolve MUN 2.0 • Hyderabad
@@ -496,7 +496,7 @@ export function Navbar() {
                 className="w-full flex items-center justify-center gap-2 min-h-[42px] rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 active:scale-98 transition-all cursor-pointer"
               >
                 <LogOut size={14} />
-                <span>SIGN OUT OF DELEGATE ACCOUNT</span>
+                <span>SIGN OUT</span>
               </button>
             ) : (
               <MetalButton
@@ -514,7 +514,7 @@ export function Navbar() {
             {/* Secretariat Support Quick Note */}
             <div className="flex items-center justify-center gap-2 text-[10px] text-white/45 font-mono pt-1">
               <Headphones size={11} className="text-blue-400/70" />
-              <span>Direct Admissions Hotline: <a href="tel:+919212107797" className="text-blue-300/80 hover:underline">+91 92121 07797</a></span>
+              <span>Questions? Call <a href="tel:+919212107797" className="text-blue-300/80 hover:underline">+91 92121 07797</a></span>
             </div>
           </div>
         </div>

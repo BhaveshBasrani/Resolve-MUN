@@ -125,7 +125,7 @@ export default function SuperAdminPage() {
   const fetchLiveDatabase = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/admin?adminKey=${encodeURIComponent(DEFAULT_ADMIN_KEY)}`);
+      const res = await fetch(`/api/admin/?adminKey=${encodeURIComponent(DEFAULT_ADMIN_KEY)}`);
       if (res.ok) {
         const json = await res.json();
         if (json.status === 'success') {
@@ -467,7 +467,7 @@ export default function SuperAdminPage() {
     notify(`Payment verified for ${name}. Confirmation email sent.`);
 
     try {
-      await fetch('/api/admin', {
+      await fetch('/api/admin/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -504,7 +504,7 @@ export default function SuperAdminPage() {
     setLeadSendingState(prev => ({ ...prev, [leadKey]: 'sending' }));
 
     try {
-      const res = await fetch('/api/admin', {
+      const res = await fetch('/api/admin/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -561,7 +561,7 @@ export default function SuperAdminPage() {
 
       notify(`Updating assignment for ${name || regId}...`, 'info');
 
-      const res = await fetch('/api/admin', {
+      const res = await fetch('/api/admin/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -602,7 +602,7 @@ export default function SuperAdminPage() {
     }));
 
     try {
-      await fetch('/api/admin', {
+      await fetch('/api/admin/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -627,7 +627,7 @@ export default function SuperAdminPage() {
     notify(`Deleting ${regId}...`, 'info');
 
     try {
-      const res = await fetch('/api/admin', {
+      const res = await fetch('/api/admin/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -671,7 +671,7 @@ export default function SuperAdminPage() {
     notify(`Deleting record ${recordId}...`, 'info');
 
     try {
-      const res = await fetch('/api/admin', {
+      const res = await fetch('/api/admin/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -702,7 +702,7 @@ export default function SuperAdminPage() {
     e.preventDefault();
     setSettingsSaving(true);
     try {
-      await fetch('/api/admin', {
+      await fetch('/api/admin/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2384,7 +2384,7 @@ export default function SuperAdminPage() {
                 notify(`Delegate ${newDel.fullName} added successfully!`);
                 setAddDelegateModalOpen(false);
 
-                fetch('/api/admin', {
+                fetch('/api/admin/', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({

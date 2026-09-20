@@ -122,7 +122,7 @@ export default function Home() {
       syncUser(rawUser || null);
       if (rawUser && rawUser.email) {
         // Fast background check: If already registered, set local storage flag
-        fetch(`/api/delegate?email=${encodeURIComponent(rawUser.email)}`)
+        fetch(`/api/delegate/?email=${encodeURIComponent(rawUser.email)}`)
           .then((res) => res.json())
           .then((data) => {
             if (data && data.found) {

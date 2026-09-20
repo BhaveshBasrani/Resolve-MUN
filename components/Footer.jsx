@@ -135,7 +135,7 @@ export default function Footer() {
 
       {/* SEO Hidden Geographic Signals */}
       <div style={{ display: "none" }}>
-        <p>Upcoming Model United Nations (MUN) in Hyderabad November 2026. Top MUN conferences in Telangana including Resolve MUN at Laurus The Universal School.</p>
+        <p>Upcoming Model United Nations (MUN) in Hyderabad November 2026. Top MUN conferences in Telangana including Resolve MUN at Delhi World Public School, Kompally.</p>
         <p>Best school and college MUN in Hyderabad. International relations and diplomacy events in Hyderabad.</p>
       </div>
 
