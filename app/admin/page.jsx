@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { signInWithGoogle } from '@/lib/firebase';
 import {
   Shield,
   User,
@@ -59,11 +60,20 @@ import {
 
 const DEFAULT_ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY || "ResolveMUNAdmin2026@Secure";
 
+// Admin emails that are allowed to access the panel via Google Sign-In
+const ADMIN_EMAILS = [
+  'munresolve@gmail.com',
+  'ruthwikreddy@gmail.com',
+  'resolvemun@gmail.com',
+  'ruthwik.reddy@gmail.com',
+];
+
 export default function SuperAdminPage() {
   // Pin & Authentication
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [adminPinInput, setAdminPinInput] = useState('');
   const [adminPinError, setAdminPinError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Sidebar navigation tabs: 'overview' | 'delegates' | 'delegations' | 'leads' | 'users' | 'applications' | 'logins' | 'settings'
   const [activeSubTab, setActiveSubTab] = useState('overview');
@@ -222,7 +232,7 @@ export default function SuperAdminPage() {
     }
   };
 
-  // Unlock Admin
+  // Unlock Admin via Password
   const handleUnlock = (e) => {
     e.preventDefault();
     if (adminPinInput.trim() === DEFAULT_ADMIN_KEY || adminPinInput.trim() === 'admin2026' || adminPinInput.trim() === 'Resolve2026') {
@@ -231,6 +241,26 @@ export default function SuperAdminPage() {
       fetchLiveDatabase();
     } else {
       setAdminPinError('Incorrect password. Please try again.');
+    }
+  };
+
+  // Unlock Admin via Google Sign-In
+  const handleGoogleAdminLogin = async () => {
+    setGoogleLoading(true);
+    setAdminPinError('');
+    try {
+      const user = await signInWithGoogle();
+      const email = (user?.email || '').toLowerCase().trim();
+      if (ADMIN_EMAILS.includes(email)) {
+        setIsAdminUnlocked(true);
+        fetchLiveDatabase();
+      } else {
+        setAdminPinError(`Access denied. ${email || 'This account'} is not authorized as an admin.`);
+      }
+    } catch (err) {
+      setAdminPinError(err.message || 'Google sign-in failed. Please try again.');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -903,28 +933,64 @@ export default function SuperAdminPage() {
         /* PASSWORD SCREEN */
         <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
           <div className="w-full max-w-md p-8 rounded-3xl border border-white/[0.12] bg-[#070914]/95 backdrop-blur-2xl text-center space-y-6 shadow-[0_25px_60px_rgba(0,0,0,0.8)] relative overflow-hidden">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 border border-purple-400/30 flex items-center justify-center shadow-lg shadow-purple-500/15">
+            {/* Ambient glow */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-950/20 via-transparent to-indigo-950/20 pointer-events-none" />
+
+            <div className="relative z-10 w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 border border-purple-400/30 flex items-center justify-center shadow-lg shadow-purple-500/15">
               <Lock className="w-6 h-6 text-purple-300" />
             </div>
 
-            <div>
+            <div className="relative z-10">
               <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider block mb-1">
                 Admin Panel
               </span>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Sign In</h2>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Admin Sign In</h2>
               <p className="text-xs text-white/50 mt-1.5 leading-relaxed">
-                Enter your password to manage delegate registrations, assignments, and applications.
+                Sign in to manage delegate registrations, assignments, and applications.
               </p>
             </div>
 
-            <form onSubmit={handleUnlock} className="space-y-4">
+            {/* Google Sign-In Button */}
+            <div className="relative z-10">
+              <button
+                type="button"
+                onClick={handleGoogleAdminLogin}
+                disabled={googleLoading}
+                className="w-full h-12 flex items-center justify-center gap-3 rounded-xl bg-white hover:bg-white/95 active:scale-[0.99] text-sm font-semibold text-gray-800 transition-all cursor-pointer shadow-[0_4px_20px_rgba(255,255,255,0.15)] disabled:opacity-70 border border-white/20"
+              >
+                {googleLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-gray-600" />
+                    <span className="text-gray-700">Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                      <path fill="#EA4335" d="M12 5c1.56 0 2.96.54 4.07 1.43l3.05-3.05C17.27 1.7 14.81 1 12 1 7.58 1 3.77 3.52 1.95 7.19l3.66 2.84C6.49 7.37 8.98 5 12 5z" />
+                      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58l3.71 2.88c2.16-2 3.71-4.95 3.71-8.7z" />
+                      <path fill="#FBBC05" d="M5.61 14.71a7.48 7.48 0 0 1 0-5.42L1.95 6.45A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.35l3.7-2.88.66-.76z" />
+                      <path fill="#34A853" d="M12 23c3.24 0 5.95-1.08 7.93-2.91l-3.71-2.88c-1.07.73-2.44 1.16-4.22 1.16-3.02 0-5.51-2.37-6.39-5.03L1.95 16.18C3.77 19.85 7.58 22.37 12 23z" />
+                    </svg>
+                    <span>Continue with Google</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="flex-1 h-px bg-white/[0.08]" />
+              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">or use password</span>
+              <div className="flex-1 h-px bg-white/[0.08]" />
+            </div>
+
+            <form onSubmit={handleUnlock} className="relative z-10 space-y-4">
               <input
                 type="password"
                 placeholder="Enter admin password"
                 value={adminPinInput}
                 onChange={(e) => setAdminPinInput(e.target.value)}
                 className="w-full h-12 px-4 rounded-xl bg-black/60 border border-white/20 text-white text-xs placeholder:text-white/30 text-center font-mono focus:outline-none focus:border-purple-400 transition-all shadow-inner"
-                autoFocus
               />
 
               {adminPinError && (
@@ -938,11 +1004,11 @@ export default function SuperAdminPage() {
                 type="submit"
                 className="w-full h-12 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_25px_rgba(168,85,247,0.35)] active:scale-[0.99]"
               >
-                Sign In
+                Sign In with Password
               </button>
             </form>
 
-            <div className="pt-2 border-t border-white/[0.06] text-xs text-white/40 flex items-center justify-between">
+            <div className="relative z-10 pt-2 border-t border-white/[0.06] text-xs text-white/40 flex items-center justify-between">
               <span>Resolve MUN 2026</span>
               <span>DWPS Kompally</span>
             </div>

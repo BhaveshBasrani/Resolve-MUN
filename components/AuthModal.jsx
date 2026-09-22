@@ -450,6 +450,17 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
       }
       setSuccess("Signed in with Google successfully!");
+
+      // For sign-up mode, go to pathway selection so new users can register
+      if (mode === "signup") {
+        setTimeout(() => {
+          setSuccess("");
+          setMode("pathway");
+        }, 600);
+        return;
+      }
+
+      // For sign-in mode, close and redirect if pending pathway
       setTimeout(() => {
         if (onClose) onClose();
         if (typeof window !== "undefined" && window.pendingPathway) {
@@ -459,7 +470,13 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         }
       }, 500);
     } catch (err) {
-      setError(err.message || "Google sign-in failed.");
+      let msg = err.message || "Google sign-in failed.";
+      if (msg.includes("popup-closed") || msg.includes("cancelled")) {
+        msg = "Google sign-in was cancelled. Please try again.";
+      } else if (msg.includes("popup-blocked")) {
+        msg = "Popup was blocked. Please allow popups for this site and try again.";
+      }
+      setError(msg);
     } finally {
       setSocialLoading(false);
     }
@@ -937,15 +954,25 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   <button
                     type="button"
                     onClick={handleSocialAuth}
-                    disabled={socialLoading || loading}
-                    className="w-full h-11 flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-[#0d0f1a] hover:bg-[#131626] hover:border-white/35 active:scale-[0.99] text-xs sm:text-sm font-semibold text-white transition-all cursor-pointer shadow-sm disabled:opacity-60"
+                    disabled={socialLoading || loading || (mode === "signup" && (!agreeTerms || !agreePrivacy))}
+                    className={`w-full h-11 flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-[#0d0f1a] hover:bg-[#131626] hover:border-white/35 active:scale-[0.99] text-xs sm:text-sm font-semibold text-white transition-all shadow-sm ${
+                      mode === "signup" && (!agreeTerms || !agreePrivacy)
+                        ? "opacity-40 cursor-not-allowed"
+                        : "cursor-pointer disabled:opacity-60"
+                    }`}
                   >
                     <GoogleIcon />
-                    <span>{socialLoading ? "Connecting to Google..." : "Continue with Google"}</span>
+                    <span>
+                      {socialLoading
+                        ? "Connecting to Google..."
+                        : mode === "signup"
+                        ? "Register with Google"
+                        : "Sign in with Google"}
+                    </span>
                   </button>
                   {mode === "signup" && (!agreeTerms || !agreePrivacy) && (
                     <p className="text-[10px] text-white/40 text-center mt-1.5 font-sans">
-                      * Check both agreements below to enable registration
+                      * Check both agreements below to enable Google registration
                     </p>
                   )}
                 </div>
