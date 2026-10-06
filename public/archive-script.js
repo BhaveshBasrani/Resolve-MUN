@@ -1988,16 +1988,12 @@
   document.addEventListener('DOMContentLoaded', restoreOcFormData);
 
   function openOcRegistration() {
-    alert("OC Applications are now closed.");
-    return;
-    /*
     restoreOcFormData();
     const ocModal = document.getElementById('ocModal');
     if (ocModal) {
       ocModal.classList.add('active');
       document.body.style.overflow = 'hidden';
     }
-    */
   }
 
   if (openOcBtn && ocModal) {

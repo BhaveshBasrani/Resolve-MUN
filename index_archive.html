@@ -4546,13 +4546,13 @@
           </div>
           <div>
             <label for="regPhone">Phone Number</label>
-            <input type="tel" id="regPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" id="regPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
         </div>
         
         <div class="form-group">
           <label for="regEmail">Email Address</label>
-          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
+          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[^@]+@[^@]+.[^@]+">
         </div>
 
         <div class="form-group">
@@ -4593,7 +4593,7 @@
           </div>
           <div>
             <label for="regEmergencyPhone">Emergency Contact Phone</label>
-            <input type="tel" id="regEmergencyPhone" name="emergency-phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" id="regEmergencyPhone" name="emergency-phone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
         </div>
 
@@ -5112,7 +5112,7 @@
       <p class="committee-topic">Human rights protection & humanitarian law</p>
       <span class="committee-coming">Human Rights</span>
     </div>
-    <div class="committee-card reveal reveal-delay-3" onclick="openCommModal('UNCSW', '🏛️', 'documents/UNCSW-BG.pdf')">
+    <div class="committee-card reveal reveal-delay-3" onclick="openCommModal('UNCSW', '', 'documents/UNCSW-BG.pdf')">
       <span class="committee-tag">UN Body</span>
       <div class="committee-name">UNCSW</div>
       <p class="committee-topic">Commission on the Status of Women</p>
@@ -5445,11 +5445,11 @@
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <label for="ocPhone">Contact No (WhatsApp)</label>
-              <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+              <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
             </div>
             <div>
               <label for="ocEmail">Email ID</label>
-              <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@ [a-z0-9.-]+\.[a-z]{2,}$">
+              <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[^@]+@[^@]+.[^@]+">
             </div>
           </div>
 
@@ -5584,11 +5584,11 @@
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <label for="ebPhone">Phone (WhatsApp)</label>
-              <input type="tel" id="ebPhone" placeholder="10-digit number" required autocomplete="tel" pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+              <input type="tel" id="ebPhone" placeholder="10-digit number" required autocomplete="tel" pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
             </div>
             <div>
               <label for="ebEmail">Email Address</label>
-              <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
+              <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email" pattern="[^@]+@[^@]+.[^@]+">
             </div>
           </div>
 
@@ -5733,11 +5733,11 @@
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <label for="delAdviserPhone">Adviser Phone</label>
-              <input type="tel" id="delAdviserPhone" name="adviserPhone" autocomplete="tel" placeholder="10-digit number" required pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+              <input type="tel" id="delAdviserPhone" name="adviserPhone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
             </div>
             <div>
               <label for="delAdviserEmail">Adviser Email</label>
-              <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
+              <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required pattern="[^@]+@[^@]+.[^@]+">
             </div>
           </div>
 
@@ -7074,7 +7074,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
       transport: document.getElementById("regTransport").value,
       experience: document.getElementById("regExp").value,
       payment_utr: document.getElementById("regUTR")?.value || "",
-      payment_screenshot_link: fileBase64,
+      payment_screenshot_link: "UPLOAD_URL_PLACEHOLDER",
 
       pref1_committee: document.getElementById("pref1_committee").value,
       pref1_country: document.getElementById("pref1_role")?.value || 
@@ -7089,7 +7089,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
                      (document.getElementById("pref3_port1")?.value + " / " + document.getElementById("pref3_port2")?.value) || "",
 
       payment_utr: document.getElementById("regTxnID")?.value || document.getElementById("regUTR")?.value || "",
-      payment_screenshot_link: fileBase64,
+      payment_screenshot_link: "UPLOAD_URL_PLACEHOLDER",
       registration_fee: getDelegateFeeFromReferral(),
       emergency_name: document.getElementById("regEmergencyName")?.value || "",
       emergency_phone: document.getElementById("regEmergencyPhone")?.value || "",
@@ -7268,11 +7268,11 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
            <div>
             <label>Contact Number</label>
-            <input type="tel" name="del_phone_${i}" placeholder="Phone number" required autocomplete="tel" value="${savedValues[`del_phone_${i}`] || ''}" pattern="[0-9]{10}" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" name="del_phone_${i}" placeholder="Phone number" required autocomplete="tel" value="${savedValues[`del_phone_${i}`] || ''}" pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
            </div>
            <div>
             <label>Email ID</label>
-            <input type="email" name="del_email_${i}" placeholder="Email" required autocomplete="email" value="${savedValues[`del_email_${i}`] || ''}" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
+            <input type="email" name="del_email_${i}" placeholder="Email" required autocomplete="email" value="${savedValues[`del_email_${i}`] || ''}" pattern="[^@]+@[^@]+.[^@]+">
            </div>
         </div>
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -7534,7 +7534,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
         delegates: delegates,
         txnID: document.getElementById("delTxnID")?.value || "",
         utr: document.getElementById("delUTR")?.value || "",
-        payment_screenshot_link: fileBase64,
+        payment_screenshot_link: "UPLOAD_URL_PLACEHOLDER",
         totalAmount: size * 2199
       };
 
@@ -7733,7 +7733,7 @@ async function submitToGoogleSheetWithRetry(data, options = {}) {
         why: document.getElementById("ocWhy").value,
         attributes: document.getElementById("ocAttributes").value,
         payment_utr: document.getElementById("ocTxnID")?.value || document.getElementById("ocUTR")?.value || "",
-        payment_screenshot_link: fileBase64
+        payment_screenshot_link: "UPLOAD_URL_PLACEHOLDER"
       };
 
       console.log('OC Data:', data);

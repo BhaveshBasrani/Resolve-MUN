@@ -85,7 +85,7 @@ export const homeHtml = `
       <!-- 4. OC (Open) -->
       <div class="selection-card selection-card--oc" onclick="selectPathway('oc')" style="cursor: pointer;">
         <div class="selection-card-header">
-          <span class="selection-badge" style="background: rgba(30, 64, 175, 0.2); color: #93c5fd; border: 1px solid rgba(30, 64, 175, 0.3);">NOW OPEN · ZERO FEE</span>
+          <span class="selection-badge" style="background: rgba(30, 64, 175, 0.2); color: #93c5fd; border: 1px solid rgba(30, 64, 175, 0.3);">OPEN · ₹1699</span>
         </div>
         <div class="selection-card-body">
           <h3 style="font-size: 1rem;">OC</h3>
@@ -134,38 +134,38 @@ export const homeHtml = `
       <div class="form-step active" id="step1">
         <div class="form-group">
           <label for="regName">Full Name</label>
-          <input data-required="true">
+          <input type="text" id="regName" name="name" autocomplete="name" placeholder="Enter your full name" required>
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="regGrade">Grade / Class</label>
-            <input data-required="true">
+            <input type="text" id="regGrade" name="grade" autocomplete="off" placeholder="e.g. 10th, 1st Year" required>
           </div>
           <div>
             <label for="regPhone">Phone Number</label>
-            <input data-required="true" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" id="regPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
         </div>
         
         <div class="form-group">
           <label for="regEmail">Email Address</label>
-          <input data-required="true">
+          <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}">
         </div>
 
         <div class="form-group">
           <label for="regInstitute">Institute name</label>
-          <input data-required="true">
+          <input type="text" id="regInstitute" name="institute" autocomplete="organization" placeholder="School or University name" required>
         </div>
 
         <div class="form-group">
           <label for="regAddress">Full Residential Address</label>
-          <textarea data-required="true" style="resize: vertical; min-height: 64px;"></textarea>
+          <textarea id="regAddress" name="address" autocomplete="address-line1" rows="2" placeholder="Street, Area, City, Pincode" required style="resize: vertical; min-height: 64px;"></textarea>
         </div>
 
         <div class="form-group">
           <label>Do you require transportation?</label>
-          <select data-required="true">
+          <select id="regTransport" required>
             <option value="" disabled selected>Select an option</option>
             <option value="yes">Yes</option>
             <option value="no">No</option>
@@ -175,7 +175,7 @@ export const homeHtml = `
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="regDob">Date of Birth</label>
-            <input data-required="true" autocomplete="bday">
+            <input type="date" id="regDob" required autocomplete="bday">
           </div>
           <div>
             <label for="regReferral">Referral Code (Optional)</label>
@@ -187,17 +187,17 @@ export const homeHtml = `
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="regEmergencyName">Emergency Contact Name</label>
-            <input data-required="true">
+            <input type="text" id="regEmergencyName" name="emergency-name" autocomplete="name" placeholder="Parent / Guardian name" required>
           </div>
           <div>
             <label for="regEmergencyPhone">Emergency Contact Phone</label>
-            <input data-required="true" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" id="regEmergencyPhone" name="emergency-phone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
         </div>
 
         <div class="form-group">
           <label>MUN Experience (Conference - Committee - Portfolio - Award/NA)</label>
-          <textarea data-required="true" style="resize: vertical; min-height: 70px;"></textarea>
+          <textarea id="regExp" rows="3" placeholder="List your experiences here..." required style="resize: vertical; min-height: 70px;"></textarea>
         </div>
 
         <button type="button" class="btn-next btn-full-width" onclick="nextStep(2)">
@@ -216,7 +216,7 @@ export const homeHtml = `
         <!-- Preference 1 -->
         <div class="form-group">
           <label>Preference 1</label>
-          <select data-required="true" onchange="updatePortfolioOptions(1)">
+          <select id="pref1_committee" required onchange="updatePortfolioOptions(1)">
             <option value="" disabled selected>Select Committee Preference 1</option>
             <option value="DISEC">DISEC</option>
             <option value="LOK SABHA">Lok Sabha</option>
@@ -227,8 +227,8 @@ export const homeHtml = `
           </select>
           <div id="pref1_container" style="display: none; margin-top: 10px;">
             <div id="pref1_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <input data-required="true">
-              <input data-required="true">
+              <input type="text" id="pref1_port1" placeholder="portfolio / country - 1" required>
+              <input type="text" id="pref1_port2" placeholder="portfolio / country - 2" required>
             </div>
             <select id="pref1_role" style="display: none;">
               <option value="" disabled selected>Select Role</option>
@@ -241,7 +241,7 @@ export const homeHtml = `
         <!-- Preference 2 -->
         <div class="form-group">
           <label>Preference 2</label>
-          <select data-required="true" onchange="updatePortfolioOptions(2)">
+          <select id="pref2_committee" required onchange="updatePortfolioOptions(2)">
             <option value="" disabled selected>Select Committee Preference 2</option>
             <option value="DISEC">DISEC</option>
             <option value="LOK SABHA">Lok Sabha</option>
@@ -252,8 +252,8 @@ export const homeHtml = `
           </select>
           <div id="pref2_container" style="display: none; margin-top: 10px;">
             <div id="pref2_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <input data-required="true">
-              <input data-required="true">
+              <input type="text" id="pref2_port1" placeholder="portfolio / country - 1" required>
+              <input type="text" id="pref2_port2" placeholder="portfolio / country - 2" required>
             </div>
             <select id="pref2_role" style="display: none;">
               <option value="" disabled selected>Select Role</option>
@@ -266,7 +266,7 @@ export const homeHtml = `
         <!-- Preference 3 -->
         <div class="form-group">
           <label>Preference 3</label>
-          <select data-required="true" onchange="updatePortfolioOptions(3)">
+          <select id="pref3_committee" required onchange="updatePortfolioOptions(3)">
             <option value="" disabled selected>Select Committee Preference 3</option>
             <option value="DISEC">DISEC</option>
             <option value="LOK SABHA">Lok Sabha</option>
@@ -277,8 +277,8 @@ export const homeHtml = `
           </select>
           <div id="pref3_container" style="display: none; margin-top: 10px;">
             <div id="pref3_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <input data-required="true">
-              <input data-required="true">
+              <input type="text" id="pref3_port1" placeholder="portfolio / country - 1" required>
+              <input type="text" id="pref3_port2" placeholder="portfolio / country - 2" required>
             </div>
             <select id="pref3_role" style="display: none;">
               <option value="" disabled selected>Select Role</option>
@@ -290,7 +290,7 @@ export const homeHtml = `
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextStep(1)">Back</button>
-          <button type="button" class="btn-next" onclick="nextStep(3)">Submit Application</button>
+          <button type="button" class="btn-next" onclick="nextStep(3)">Review & Pay</button>
         </div>
       </div>
 
@@ -355,7 +355,7 @@ export const homeHtml = `
 
           <div class="form-group" style="margin-top: 18px;">
             <label style="font-size: 0.72rem; font-weight: 700; color: #e2e8f0; letter-spacing: 0.08em;">2. TRANSACTION / REFERENCE ID*</label>
-            <input data-required="true" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 0.82rem; font-family: ui-monospace, monospace;">
+            <input type="text" id="regTxnID" placeholder="e.g. 423985729104 or UPI Ref No." required style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 0.82rem; font-family: ui-monospace, monospace;">
           </div>
 
           <div class="form-group" style="margin-top: 14px;">
@@ -363,7 +363,7 @@ export const homeHtml = `
             <label class="file-upload-wrapper" for="regDriveLink" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.25); border-radius: 10px;">
               <span class="file-upload-btn" style="padding: 4px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.72rem; font-weight: 700; color: #ffffff;">Choose File</span>
               <span class="file-name" id="regDriveFileName" style="font-size: 0.72rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No file chosen</span>
-              <input data-required="true" style="display: none;">
+              <input type="file" id="regDriveLink" class="file-upload-input" accept="image/*" required style="display: none;">
             </label>
             <div id="regScreenshotPreview" style="display: none; margin-top: 8px; padding: 8px; border-radius: 8px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25);" class="payment-screenshot-preview"></div>
           </div>
@@ -421,7 +421,7 @@ export const homeHtml = `
       <div id="waitlistContainer">
         <form id="waitlistForm">
           <div class="waitlist-form">
-            <input data-required="true">
+            <input type="email" id="waitlistEmail" placeholder="Enter your email address" required>
             <button type="submit" class="waitlist-btn" id="waitlistSubmitBtn">Notify Me</button>
           </div>
         </form>
@@ -939,34 +939,34 @@ export const homeHtml = `
       <div class="form-step active" id="ocStep1">
         <div class="form-group">
           <label for="ocName">Full Name</label>
-          <input data-required="true">
+          <input type="text" id="ocName" name="name" autocomplete="name" placeholder="Enter your full name" required>
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="ocDob">Date of Birth</label>
-            <input data-required="true">
+            <input type="date" id="ocDob" name="dob" autocomplete="bday" required>
           </div>
           <div>
             <label for="ocGrade">Grade / Class</label>
-            <input data-required="true">
+            <input type="text" id="ocGrade" name="grade" placeholder="e.g. 10th, 1st Year" required>
           </div>
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="ocPhone">Contact No (WhatsApp)</label>
-            <input data-required="true" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" id="ocPhone" name="phone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
           <div>
             <label for="ocEmail">Email ID</label>
-            <input data-required="true">
+            <input type="email" id="ocEmail" name="email" autocomplete="email" placeholder="yourname@example.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$">
           </div>
         </div>
 
         <div class="form-group">
           <label for="ocInst">Institution (School/College/University)</label>
-          <input data-required="true">
+          <input type="text" id="ocInst" name="institute" autocomplete="organization" placeholder="Enter your institution" required>
         </div>
 
         <div class="form-group">
@@ -976,7 +976,7 @@ export const homeHtml = `
 
         <div class="form-group">
           <label>Number of MUNs attended</label>
-          <select data-required="true">
+          <select id="ocMunCount" required>
             <option value="" disabled selected>Select an option</option>
             <option value="N/A">N/A</option>
             <option value="1-5">1-5</option>
@@ -995,22 +995,89 @@ export const homeHtml = `
       <div class="form-step" id="ocStep2">
         <div class="form-group">
           <label>Why do you want to be part of the Organizing Committee for Resolve MUN?</label>
-          <textarea data-required="true" style="resize: vertical; min-height: 80px;"></textarea>
+          <textarea id="ocWhy" name="why" rows="3" placeholder="What do you hope to contribute?" required style="resize: vertical; min-height: 80px;"></textarea>
         </div>
 
         <div class="form-group">
           <label>What attributes do you possess that make you well-suited for an OC position?</label>
-          <textarea data-required="true" style="resize: vertical; min-height: 80px;"></textarea>
+          <textarea id="ocAttributes" name="attributes" rows="3" placeholder="Mention your skills and qualities..." required style="resize: vertical; min-height: 80px;"></textarea>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextOcStep(1)">Back</button>
-          <button type="button" class="btn-next" onclick="document.getElementById('ocRegForm').requestSubmit()">Submit Application</button>
+          <button type="button" class="btn-next" onclick="nextOcStep(3)">Review & Pay</button>
         </div>
       </div>
 
       <!-- STEP 3: PAYMENT -->
-      <!-- Payment Step Removed -->
+      <div class="form-step" id="ocStep3">
+        <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
+          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; font-mono: true; text-transform: uppercase; letter-spacing: 0.12em; color: #60a5fa; background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Organizing Committee</span>
+          <h3 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Registration Fee: ₹1699</h3>
+          <p class="non-refundable-notice" style="font-size: 0.65rem; color: #60a5fa; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">Payment is non-refundable once submitted</p>
+        </div>
+
+        <div class="payment-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="text-align: center; margin-bottom: 10px; font-size: 0.65rem; letter-spacing: 0.16em; opacity: 0.7; font-weight: 700;">1. SCAN QR CODE VIA ANY UPI APP</label>
+            <div style="text-align: center;">
+              <div class="qr-container">
+                <img id="ocPaymentQRImage" src="https://quickchart.io/qr?size=320&text=upi%3A%2F%2Fpay%3Fpa%3Dbhoomianilbasrani%40okhdfcbank%26pn%3DBhoomi%2520Basrani%26am%3D1699%26cu%3DINR" alt="OC Payment QR Code">
+              </div>
+
+              <div class="upi-supported-apps">
+                <span class="upi-app-pill">GPay</span>
+                <span class="upi-app-pill">PhonePe</span>
+                <span class="upi-app-pill">Paytm</span>
+                <span class="upi-app-pill">CRED</span>
+                <span class="upi-app-pill">BHIM</span>
+                <span class="upi-app-pill">Any UPI</span>
+              </div>
+
+              <div class="upi-box">
+                <span id="ocUpiID">bhoomianilbasrani@okhdfcbank</span>
+                <button type="button" class="refresh-qr-btn" onclick="generateDynamicQR('1699', 'ocPaymentQRImage', 'ocUpiID')" title="Regenerate QR">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                </button>
+                <button type="button" class="copy-btn" onclick="copyOcUPI()" title="Copy UPI ID">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+              <span style="display: block; font-size: 0.68rem; color: #a1a1aa; margin-top: 2px;">Verified Payee: <strong style="color: #fff;">Bhoomi Basrani</strong></span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
+            <label>2. TRANSACTION / REFERENCE ID*</label>
+            <input type="text" id="ocTxnID" name="txnID" placeholder="Enter Transaction / Reference ID" required>
+          </div>
+
+          <div class="form-group">
+            <label>3. 12-DIGIT UTR ID (OPTIONAL)</label>
+            <input type="text" id="ocUTR" name="utr" placeholder="Enter 12-digit UTR ID from banking app">
+          </div>
+
+          <div class="form-group">
+            <label>4. UPLOAD PAYMENT SCREENSHOT*</label>
+            <label class="file-upload-wrapper" for="ocDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name" id="ocDriveFileName">No file chosen</span>
+              <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*" required>
+            </label>
+            <div id="ocScreenshotPreview" style="display: none;" class="payment-screenshot-preview"></div>
+          </div>
+          
+          <div style="margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+            <p style="font-size: 0.66rem; color: #94a3b8; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;"> Delhi World Public School, Kompally, Hyderabad</p>
+            <p style="font-size: 0.62rem; color: #64748b; margin: 3px 0 0 0;">Conference Dates: 20th – 22nd November 2026</p>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextOcStep(2)">Back</button>
+          <button type="submit" class="btn-next">Submit Application</button>
+        </div>
+      </div>
     </form>
   </div>
 </div>
@@ -1087,22 +1154,22 @@ export const homeHtml = `
       <div class="form-step" id="secStep2">
         <div style="margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
           <h3 style="font-size: 1.1rem; color: #ffffff; margin: 0;">Secretariat Application</h3>
-          <p style="font-size: 0.75rem; color: #60a5fa; margin: 4px 0 0 0;">* Indicates data-required="true" question</p>
+          <p style="font-size: 0.75rem; color: #60a5fa; margin: 4px 0 0 0;">* Indicates required question</p>
         </div>
 
         <div class="form-group">
           <label for="secName">Full Name <span style="color:#f87171;">*</span></label>
-          <input data-required="true">
+          <input type="text" id="secName" name="name" autocomplete="name" placeholder="Your answer" required>
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="secEmail">Email ID <span style="color:#f87171;">*</span></label>
-            <input data-required="true">
+            <input type="email" id="secEmail" name="email" autocomplete="email" placeholder="Your answer" required>
           </div>
           <div>
             <label for="secPhone">Contact Number <span style="color:#f87171;">*</span></label>
-            <input data-required="true" minlength="10" maxlength="10">
+            <input type="tel" id="secPhone" name="phone" autocomplete="tel" placeholder="10-digit mobile number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10">
           </div>
         </div>
 
@@ -1113,7 +1180,7 @@ export const homeHtml = `
           </div>
           <div>
             <label for="secSchool">School/College <span style="color:#f87171;">*</span></label>
-            <input data-required="true">
+            <input type="text" id="secSchool" name="schoolCollege" autocomplete="organization" placeholder="Your answer" required>
           </div>
         </div>
 
@@ -1125,11 +1192,11 @@ export const homeHtml = `
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="secDob">Date of Birth <span style="color:#f87171;">*</span></label>
-            <input data-required="true" style="color-scheme: dark;">
+            <input type="date" id="secDob" name="dob" required style="color-scheme: dark;">
           </div>
           <div>
             <label>Grade <span style="color:#f87171;">*</span></label>
-            <select data-required="true">
+            <select id="secGrade" name="grade" required>
               <option value="" disabled selected>Select Grade</option>
               <option value="9th">9th</option>
               <option value="10th">10th</option>
@@ -1159,7 +1226,7 @@ export const homeHtml = `
 
         <div class="form-group">
           <label for="secPosition">Which position are you applying for? <span style="color:#f87171;">*</span></label>
-          <select data-required="true" style="font-size: 0.88rem; padding: 11px 14px;">
+          <select id="secPosition" name="position" required style="font-size: 0.88rem; padding: 11px 14px;">
             <option value="" disabled selected>Choose a position...</option>
             <option value="Secretary-General">Secretary-General</option>
             <option value="Deputy Secretary-General">Deputy Secretary-General</option>
@@ -1178,17 +1245,17 @@ export const homeHtml = `
 
         <div class="form-group">
           <label for="secWhy">Why do you want to join Resolve Secretariat? <span style="color:#f87171;">*</span></label>
-          <textarea data-required="true" style="resize: vertical; min-height: 80px;"></textarea>
+          <textarea id="secWhy" name="whyJoin" rows="3" placeholder="Your answer" required style="resize: vertical; min-height: 80px;"></textarea>
         </div>
 
         <div class="form-group">
           <label for="secContribution">What do you think you can contribute to this specific role? <span style="color:#f87171;">*</span></label>
-          <textarea data-required="true" style="resize: vertical; min-height: 80px;"></textarea>
+          <textarea id="secContribution" name="contribution" rows="3" placeholder="Your answer" required style="resize: vertical; min-height: 80px;"></textarea>
         </div>
 
         <div class="form-group">
           <label for="secHours">How many hours per day can realistically commit? <span style="color:#f87171;">*</span></label>
-          <input data-required="true">
+          <input type="text" id="secHours" name="dailyCommitment" placeholder="e.g. 2-3 hours / day" required>
         </div>
 
         <!-- DRIVE UPLOAD 1: PORTFOLIO / WORK (UP TO 5 FILES / LINK) -->
@@ -1220,7 +1287,7 @@ export const homeHtml = `
           <p style="margin: 0 0 6px 0; font-size: 0.78rem; font-weight: 700; color: #ffffff;">Shortlisted applicants will be contacted for an interview.</p>
           <p style="margin: 0 0 8px 0; font-size: 0.75rem; color: rgba(255,255,255,0.85); font-weight: 600;">Selections and allocations will be made on the basis of merit and availability.</p>
           <p style="margin: 0; font-size: 0.72rem; color: #a5b4fc; font-family: monospace;">Instagram Handle: @mun.resolve &bull; Email ID: resolve.mun@gmail.com</p>
-          <p style="margin: 6px 0 0 0; font-size: 0.72rem; color: #34d399; font-weight: 700;">&bull; No registration or application fee data-required="true".</p>
+          <p style="margin: 6px 0 0 0; font-size: 0.72rem; color: #34d399; font-weight: 700;">&bull; No registration or application fee required.</p>
         </div>
 
         <div class="form-actions">
@@ -1254,24 +1321,24 @@ export const homeHtml = `
       <div class="form-step active" id="ebStep1">
         <div class="form-group">
           <label for="ebName">Full Name</label>
-          <input data-required="true" autocomplete="name">
+          <input type="text" id="ebName" placeholder="Enter your full name" required autocomplete="name">
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="ebPhone">Phone (WhatsApp)</label>
-            <input data-required="true" autocomplete="tel" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" id="ebPhone" placeholder="10-digit number" required autocomplete="tel" pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
           <div>
             <label for="ebEmail">Email Address</label>
-            <input data-required="true" autocomplete="email">
+            <input type="email" id="ebEmail" placeholder="you@example.com" required autocomplete="email" pattern="[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}">
           </div>
         </div>
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="ebDob">Date of Birth</label>
-            <input data-required="true" autocomplete="bday">
+            <input type="date" id="ebDob" required autocomplete="bday">
           </div>
           <div>
             <label for="ebReferral">Referral Code (Optional)</label>
@@ -1281,7 +1348,7 @@ export const homeHtml = `
 
         <div class="form-group">
           <label for="ebInst">Institution / School / College</label>
-          <input data-required="true">
+          <input type="text" id="ebInst" placeholder="Name of your current school/college" required>
         </div>
 
         <button type="button" class="btn-next btn-full-width" onclick="nextEbStep(2)">
@@ -1294,7 +1361,7 @@ export const homeHtml = `
       <div class="form-step" id="ebStep2">
         <div class="form-group">
           <label for="ebRole">Preferred Role</label>
-          <select data-required="true">
+          <select id="ebRole" required>
             <option value="" disabled selected>Select a role</option>
             <option value="Chairperson">Chairperson</option>
             <option value="Vice-Chairperson">Vice-Chairperson</option>
@@ -1304,7 +1371,7 @@ export const homeHtml = `
 
         <div class="form-group">
           <label for="ebMunCount">Number of MUNs attended</label>
-          <select data-required="true">
+          <select id="ebMunCount" required>
             <option value="" disabled selected>Select an option</option>
             <option value="15-20">15-20</option>
             <option value="21-30">21-30</option>
@@ -1315,12 +1382,12 @@ export const homeHtml = `
 
         <div class="form-group">
           <label for="ebExp">MUN Experience (Detailed Summary)</label>
-          <textarea data-required="true" style="min-height: 80px;"></textarea>
+          <textarea id="ebExp" placeholder="List committees chaired, awards won, and notable MUN experience" required style="min-height: 80px;"></textarea>
         </div>
 
         <div class="form-group">
           <label for="ebWhy">Why should we select you?</label>
-          <textarea data-required="true" style="min-height: 70px;"></textarea>
+          <textarea id="ebWhy" placeholder="Tell us about your moderation style and committee management skills" required style="min-height: 70px;"></textarea>
         </div>
 
         <div class="form-actions">
@@ -1335,7 +1402,7 @@ export const homeHtml = `
         
         <div class="form-group">
           <label>Preference 1</label>
-          <select data-required="true">
+          <select id="ebPref1" required>
             <option value="" disabled selected>Select Committee</option>
             <option value="DISEC">DISEC</option>
             <option value="LOK SABHA">Lok Sabha</option>
@@ -1348,7 +1415,7 @@ export const homeHtml = `
 
         <div class="form-group">
           <label>Preference 2</label>
-          <select data-required="true">
+          <select id="ebPref2" required>
             <option value="" disabled selected>Select Committee</option>
             <option value="DISEC">DISEC</option>
             <option value="LOK SABHA">Lok Sabha</option>
@@ -1364,7 +1431,7 @@ export const homeHtml = `
           <label class="file-upload-wrapper" for="ebCv">
             <span class="file-upload-btn">Choose File</span>
             <span class="file-name">No file chosen</span>
-            <input data-required="true">
+            <input type="file" id="ebCv" class="file-upload-input" accept=".pdf,image/*" required>
           </label>
         </div>
 
@@ -1398,28 +1465,28 @@ export const homeHtml = `
       <div class="form-step active" id="delStep1">
         <div class="form-group">
           <label for="delInstName">Name of Institution</label>
-          <input data-required="true">
+          <input type="text" id="delInstName" name="instName" autocomplete="organization" placeholder="School/College/University Name" required>
         </div>
         
         <div class="form-group">
           <label for="delAdviserName">Faculty Adviser Name</label>
-          <input data-required="true">
+          <input type="text" id="delAdviserName" name="adviserName" autocomplete="name" placeholder="Full name of faculty in-charge" required>
         </div>
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
             <label for="delAdviserPhone">Adviser Phone</label>
-            <input data-required="true" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <input type="tel" id="delAdviserPhone" name="adviserPhone" autocomplete="tel" placeholder="10-digit number" required pattern="[^@]+@[^@]+.[^@]+" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
           <div>
             <label for="delAdviserEmail">Adviser Email</label>
-            <input data-required="true">
+            <input type="email" id="delAdviserEmail" name="adviserEmail" autocomplete="email" placeholder="faculty@example.com" required pattern="[a-z0-9._%+\\-]+@[a-z0-9.\\-]+\\.[a-z]{2,}">
           </div>
         </div>
 
         <div class="form-group">
           <label for="delSize">Number of Delegates</label>
-          <input data-required="true" oninput="updateDelPrice(); updateDelegateFields();">
+          <input type="number" id="delSize" name="delSize" min="8" value="8" placeholder="Minimum 8 delegates" required oninput="updateDelPrice(); updateDelegateFields();">
         </div>
 
         <button type="button" class="btn-next btn-full-width" onclick="nextDelStep(2)">
@@ -1485,7 +1552,7 @@ export const homeHtml = `
 
           <div class="form-group" style="margin-top: 16px;">
             <label>2. TRANSACTION / REFERENCE ID*</label>
-            <input data-required="true">
+            <input type="text" id="delTxnID" placeholder="Enter Transaction / Reference ID" required>
           </div>
 
           <div class="form-group">
@@ -1493,7 +1560,7 @@ export const homeHtml = `
             <label class="file-upload-wrapper" for="delDriveLink">
               <span class="file-upload-btn">Choose File</span>
               <span class="file-name" id="delDriveFileName">No file chosen</span>
-              <input data-required="true">
+              <input type="file" id="delDriveLink" class="file-upload-input" accept="image/*" required>
             </label>
             <div id="delScreenshotPreview" style="display: none;" class="payment-screenshot-preview"></div>
           </div>

@@ -84,6 +84,7 @@ export default function SuperAdminPage() {
   const [delegations, setDelegations] = useState([]);
   const [abandonedLeads, setAbandonedLeads] = useState([]);
   const [ebApplications, setEbApplications] = useState([]);
+  const [ocApplications, setOcApplications] = useState([]);
   const [secApplications, setSecApplications] = useState([]);
   const [siteUsers, setSiteUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -217,6 +218,7 @@ export default function SuperAdminPage() {
           }));
 
           setEbApplications(json.ebApplicants || []);
+            setOcApplications(json.ocApplicants || []);
           setSecApplications(normalizedSec);
           setSiteUsers(Object.values(usersByEmail));
           setLastSyncTime(new Date().toLocaleTimeString());
@@ -312,9 +314,9 @@ export default function SuperAdminPage() {
   const COMMITTEES = useMemo(() => [
     { code: 'UNSC', name: 'UN Security Council', cap: 45, icon: '🛡️' },
     { code: 'DISEC', name: 'UNGA (DISEC)', cap: 45, icon: '🌐' },
-    { code: 'AIPPM', name: 'Lok Sabha / AIPPM', cap: 50, icon: '🏛️' },
+    { code: 'AIPPM', name: 'Lok Sabha / AIPPM', cap: 50, icon: '' },
     { code: 'UNHRC', name: 'UN Human Rights Council', cap: 40, icon: '⚖️' },
-    { code: 'CCC', name: 'Continuous Crisis Committee', cap: 25, icon: '⚡' },
+    { code: 'CCC', name: 'Continuous Crisis Committee', cap: 25, icon: '' },
     { code: 'IP', name: 'International Press', cap: 20, icon: '📸' }
   ], []);
 

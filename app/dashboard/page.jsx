@@ -162,7 +162,10 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
                 Secretariat
               </span>
               <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 font-medium">
-                Staff & Board
+                Staff &amp; Board
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 font-medium">
+                Free
               </span>
             </div>
             <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
@@ -174,13 +177,39 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
           </span>
         </div>
 
+        {/* 4. OC */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSelect("oc")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("oc"); } }}
+          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-purple-500/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+        >
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-semibold text-sm text-white tracking-tight">
+                Organizing Committee
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-400/20 text-purple-300 font-medium">
+                OC · ₹1699
+              </span>
+            </div>
+            <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+              Join the team that makes the conference happen.
+            </span>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-purple-400/40 transition-all" aria-hidden="true">
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+
       </div>
 
       {/* Subdued Footer for Closed Tracks */}
       <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-sans">
-        <span>Looking for OC or EB?</span>
+        <span>Looking for EB?</span>
         <span className="font-mono uppercase tracking-wider text-[10px] text-white/30">
-          Applications Closed
+          EB Applications Closed
         </span>
       </div>
     </section>

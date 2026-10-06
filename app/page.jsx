@@ -166,6 +166,48 @@ export default function Home() {
       };
     }
 
+
+    // Global Form Submission Handler for OC
+    window.handleOcSubmit = async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Add extra fields not in simple FormData if needed
+      data.munCount = document.getElementById('ocMunCount')?.value;
+      
+      try {
+        document.getElementById('submitSpinner').style.display = 'flex';
+        await window.submitOcToFirebase(data);
+        if (window.showCustomAlert) {
+          window.showCustomAlert('OC Application submitted successfully!', 'success');
+        } else {
+          alert('OC Application submitted successfully!');
+        }
+        form.reset();
+        window.closeModalById('ocModal');
+      } catch (err) {
+        console.error('OC Submit Error:', err);
+        alert('Submission failed. Please try again.');
+      } finally {
+        document.getElementById('submitSpinner').style.display = 'none';
+      }
+    };
+
+    // Attach listener to the form after it's injected into DOM
+    const observeOcForm = () => {
+      const observer = new MutationObserver((mutations, obs) => {
+        const form = document.getElementById('ocRegForm');
+        if (form) {
+          form.onsubmit = window.handleOcSubmit;
+          obs.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    };
+    observeOcForm();
+
     return () => unsubscribe();
   }, []);
   const containerRef = useRef(null);
@@ -497,11 +539,25 @@ export default function Home() {
             alert("Delegate and Delegation registrations are currently closed. Only Secretariat Applications are open.");
           }
           return;
-        } else if (type === "oc" || type === "eb") {
+        } else if (type === "oc") {
+          const ocModal = document.getElementById("ocModal");
+          if (ocModal) {
+            ocModal.classList.add("active");
+            document.body.style.overflow = "hidden";
+            // Pre-fill user data if authenticated
+            if (auth.currentUser) {
+              const nameEl = document.getElementById("ocName");
+              const emailEl = document.getElementById("ocEmail");
+              if (nameEl && !nameEl.value) nameEl.value = auth.currentUser.displayName || "";
+              if (emailEl && !emailEl.value) emailEl.value = auth.currentUser.email || "";
+            }
+          }
+          return;
+        } else if (type === "eb") {
           if (window.showCustomAlert) {
-            window.showCustomAlert(`${type.toUpperCase()} applications are closed. Please apply for Secretariat.`, "info");
+            window.showCustomAlert("EB applications are closed. Please apply for OC or Secretariat.", "info");
           } else {
-            alert(`${type.toUpperCase()} applications are closed. Please apply for Secretariat.`);
+            alert("EB applications are closed. Please apply for OC or Secretariat.");
           }
           return;
         } else if (type === "secretariat") {
@@ -522,6 +578,10 @@ export default function Home() {
 
       window.openSecModal = function () {
         window.selectPathway("secretariat");
+      };
+
+      window.openOcModal = function () {
+        window.selectPathway("oc");
       };
 
 
