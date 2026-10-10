@@ -3,8 +3,8 @@
  * RESOLVE MUN 2026 — DIPLOMATIC ENGINE & OFFICIAL MAILING SYSTEM
  * Version: 4.0.0 (Prestige Diplomatic Dispatch & Secure Storage Engine)
  * 
- * Venue: Delhi World Public School, Kompally, Hyderabad
- * Dates: 20th – 22nd November 2026
+ * Venue: Meridian School, Kompally, Hyderabad
+ * Dates: 27th – 29th November 2026
  * 
  * Features:
  *   - Official Security Verification Key (SEND_VERIFICATION_CODE)
@@ -20,8 +20,8 @@
 const CONFIG = {
   SENDER_NAME: "Resolve MUN 2026 Secretariat",
   REPLY_TO: "resolve.mun@gmail.com",
-  CONFERENCE_DATES: "20th – 22nd November 2026",
-  VENUE: "Delhi World Public School, Kompally, Hyderabad",
+  CONFERENCE_DATES: "27th – 29th November 2026",
+  VENUE: "Meridian School, Kompally, Hyderabad",
   PORTAL_URL: "https://resolvemun.com/auth",
   RECAPTCHA_SECRET_KEY: PropertiesService.getScriptProperties().getProperty("RECAPTCHA_SECRET_KEY") || "6LesB7gtAAAAAL5lax4c0NxE6GWWanZrcgjkwISQ",
   ADMIN_KEY: PropertiesService.getScriptProperties().getProperty("ADMIN_KEY") || "ResolveMUNAdmin2026@Secure",
@@ -969,16 +969,16 @@ function adminDispatchLeadReminder(data) {
     <p>The Executive Secretariat of Resolve Model United Nations 2026 noticed that you initiated registration but have not yet finalized your dossier at <strong>${step}</strong>.</p>
     <div style="margin: 20px 0; padding: 16px; background: #0c0e18; border-left: 3px solid #d4af37; border-radius: 4px;">
       <p style="margin: 0 0 8px 0; color: #d4af37; font-weight: 700; font-size: 13px;">OFFICIAL INVITATION NOTICE</p>
-      <p style="margin: 0; font-size: 13px; line-height: 1.6;">Your preferred committee allocation is currently reserved on a provisional basis. Round 1 allocations are filling rapidly across all councils at Delhi World Public School, Kompally.</p>
+      <p style="margin: 0; font-size: 13px; line-height: 1.6;">Your preferred committee allocation is currently reserved on a provisional basis. Round 1 allocations are filling rapidly across all councils at Meridian School, Kompally.</p>
     </div>
     <p>To finalize your delegate credentials and secure your portfolio assignment, please complete your submission on the portal:</p>
     <p style="text-align: center; margin: 24px 0;">
       <a href="https://resolvemun.in/auth" style="display: inline-block; background: #d4af37; color: #080a13; padding: 12px 28px; text-decoration: none; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px;">Complete Registration Now &rarr;</a>
     </p>
-    <p style="font-size: 12px; color: #8a90a4;">Venue: Delhi World Public School, Kompally, Hyderabad<br>Dates: 20th &ndash; 22nd November 2026<br>Assistance Helpline: +91 92121 07797</p>
+    <p style="font-size: 12px; color: #8a90a4;">Venue: Meridian School, Kompally, Hyderabad<br>Dates: 27th &ndash; 29th November 2026<br>Assistance Helpline: +91 92121 07797</p>
   `;
 
-  const plainText = `RESOLVE MUN 2026 · REGISTRATION NOTICE\n\nDear ${name},\n\nYou initiated your registration but have not finalized your submission at ${step}.\n\nYour provisional seat reservation is active. Please complete your registration at https://resolvemun.in/auth\n\nVenue: Delhi World Public School, Kompally, Hyderabad\nDates: 20th - 22nd November 2026\n\nExecutive Secretariat, Resolve MUN 2026`;
+  const plainText = `RESOLVE MUN 2026 · REGISTRATION NOTICE\n\nDear ${name},\n\nYou initiated your registration but have not finalized your submission at ${step}.\n\nYour provisional seat reservation is active. Please complete your registration at https://resolvemun.in/auth\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nExecutive Secretariat, Resolve MUN 2026`;
 
   dispatchMail(email, subject, wrapInEmbassyLayout("COMM-REM-LEAD", "RESERVATION NOTICE", bodyHtml), plainText);
   tryLogEmailToSheet("LEAD_REMINDER_SENT", email, name, "SENT");

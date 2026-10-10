@@ -163,16 +163,16 @@ export function Navbar() {
       <header id="navbar" className="fixed top-0 left-0 right-0 z-[10000] flex justify-center pointer-events-none">
         <div
           style={{
-            willChange: "transform, max-width, padding, border-radius, background-color, box-shadow",
+            willChange: "transform, background-color, border-color, box-shadow",
             transform: "translate3d(0, 0, 0)",
           }}
           className={[
             "pointer-events-auto flex items-center justify-between gap-2 sm:gap-4 select-none",
-            "transition-all duration-300 ease-out",
+            "transition-[background-color,border-color,box-shadow] duration-300 ease-out",
             "mt-2 sm:mt-3 md:mt-4 py-1.5 sm:py-2 px-3 sm:px-6 lg:px-7 rounded-full sm:rounded-2xl border backdrop-blur-2xl w-[95%] sm:w-[92%] lg:w-[88%] max-w-5xl",
             scrolled
-              ? "bg-[#050614]/98 border-white/25 shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_30px_rgba(59,130,246,0.25)]"
-              : "bg-[#060818]/92 border-white/[0.15] shadow-[0_16px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(59,130,246,0.18)]",
+              ? "bg-[#060814]/90 border-white/[0.12] shadow-[0_12px_36px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.06)]"
+              : "bg-[#070918]/75 border-white/[0.08] shadow-[0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04)]",
           ].join(" ")}
         >
           {/* Logo & Brand */}
@@ -187,31 +187,27 @@ export function Navbar() {
                 onError={(e) => {
                   e.currentTarget.src = "https://resolvemun.in/images/Logo.svg";
                 }}
-                alt="Resolve MUN"
-                className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 object-contain block transition-transform duration-300 group-hover:scale-105"
+                alt="Resolve MUN 2.0"
+                className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 object-contain block transition-opacity duration-200 group-hover:opacity-85"
               />
-              <div className="absolute inset-0 rounded-lg bg-blue-500/25 blur-md opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
             </div>
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-baseline gap-1.5 min-w-0">
               <span
-                className="text-[1.15rem] sm:text-[1.25rem] md:text-[1.38rem] tracking-[0.1em] leading-none text-white group-hover:text-blue-300 transition-colors duration-200 truncate"
+                className="text-[1.15rem] sm:text-[1.25rem] md:text-[1.38rem] tracking-[0.08em] leading-none text-white/90 group-hover:text-white transition-colors duration-200 truncate"
                 style={{ fontFamily: "'Bebas Neue', sans-serif" }}
               >
-                RESOLVE MUN
-              </span>
-              <span className="shrink-0 text-[8px] sm:text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/25 text-blue-300 border border-blue-400/35 leading-none">
-                2.0
+                RESOLVE MUN 2.0
               </span>
             </div>
           </Link>
 
-          {/* Desktop Nav Pills (Completely Untouched for Desktop) */}
-          <div role="navigation" aria-label="Main Navigation" className="hidden lg:flex items-center gap-1 bg-white/[0.04] border border-white/[0.1] rounded-xl px-2.5 py-1 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
+          {/* Desktop Nav Pills */}
+          <div role="navigation" aria-label="Main Navigation" className="hidden lg:flex items-center gap-0.5 bg-white/[0.03] border border-white/[0.07] rounded-xl px-2 py-1 backdrop-blur-xl">
             {navLinks.map((l) => (
               <a
                 key={l.label}
                 href={l.href}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-white/75 hover:text-white hover:bg-white/[0.08] transition-all duration-150 inline-block"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors duration-150 inline-block"
               >
                 {l.label}
               </a>
@@ -231,7 +227,7 @@ export function Navbar() {
               className="px-2.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-white/40 inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed select-none pointer-events-auto"
             >
               <span>Brochure</span>
-              <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-400/30 inline-block leading-none">
+              <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-md bg-white/[0.06] text-white/60 border border-white/10 inline-block leading-none">
                 Soon
               </span>
             </button>
@@ -244,7 +240,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="h-8 sm:h-9 pl-1.5 pr-2.5 sm:pr-3 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/20 flex items-center gap-1.5 sm:gap-2 transition-all duration-150 cursor-pointer active:scale-95 shadow-sm overflow-hidden"
+                  className="h-8 sm:h-9 pl-1.5 pr-2.5 sm:pr-3 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-white/20 flex items-center gap-1.5 sm:gap-2 transition-colors duration-150 cursor-pointer active:scale-[0.98] shadow-sm overflow-hidden"
                   aria-label="User menu"
                   aria-expanded={userMenuOpen}
                 >
@@ -270,10 +266,10 @@ export function Navbar() {
                 {/* User Dropdown Menu - Sleek, Glassmorphic & Modern */}
                 {userMenuOpen && (
                   <div
-                    className="absolute right-0 mt-3 sm:mt-4 w-72 p-2 rounded-2xl border border-white/15 bg-[#0a0d18]/95 backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_30px_rgba(99,102,241,0.2)] animate-in fade-in zoom-in-95 duration-150 z-[100000] select-none"
+                    className="absolute right-0 mt-2 sm:mt-3 w-72 p-2 rounded-2xl border border-white/10 bg-[#0a0d18]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150 z-[100000] select-none"
                   >
                     {/* User Profile Card */}
-                    <div className="p-3 rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 mb-1.5">
+                    <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] mb-1.5">
                       <div className="flex items-center gap-3">
                         {user.photoURL ? (
                           <img
@@ -314,18 +310,18 @@ export function Navbar() {
                         href="/dashboard"
                         onClick={() => setUserMenuOpen(false)}
                         style={{ textDecoration: 'none' }}
-                        className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-white/90 hover:text-white hover:bg-white/[0.08] active:bg-white/[0.12] transition-all duration-150 group !no-underline cursor-pointer"
+                        className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-white/90 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors duration-150 group !no-underline cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 group-hover:bg-indigo-500/30 group-hover:scale-105 transition-all">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 transition-colors">
                             <LayoutDashboard size={14} />
                           </div>
                           <div>
-                            <span className="block font-semibold text-white group-hover:text-indigo-200">Delegate Dashboard</span>
+                            <span className="block font-semibold text-white group-hover:text-indigo-200 transition-colors">Delegate Dashboard</span>
                             <span className="block text-[10px] text-white/45 font-normal">View pass &amp; committee details</span>
                           </div>
                         </div>
-                        <ArrowUpRight size={13} className="text-white/30 group-hover:text-white/90 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                        <ArrowUpRight size={13} className="text-white/30 group-hover:text-white/80 transition-colors" />
                       </Link>
 
                       <div className="h-px bg-white/[0.08] my-1 mx-1" />
@@ -333,10 +329,10 @@ export function Navbar() {
                       <button
                         type="button"
                         onClick={handleSignOut}
-                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 active:bg-rose-500/15 transition-all duration-150 text-left cursor-pointer group"
+                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 active:bg-rose-500/15 transition-colors duration-150 text-left cursor-pointer group"
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 group-hover:bg-rose-500/20 group-hover:scale-105 transition-all">
+                          <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 transition-colors">
                             <LogOut size={13} />
                           </div>
                           <span>Sign Out</span>
@@ -363,7 +359,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/20 text-white active:scale-90 transition-all duration-200 cursor-pointer shadow-sm shrink-0"
+              className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/15 text-white active:scale-95 transition-all duration-150 cursor-pointer shadow-sm shrink-0"
               aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileOpen}
             >
@@ -382,16 +378,16 @@ export function Navbar() {
         />
       )}
 
-      {/* Mobile Refined Navigation Drawer — Premium Glassmorphic Cockpit */}
+      {/* Mobile Navigation Drawer */}
       {mobileOpen && (
         <div
-          className="fixed inset-x-3.5 top-[58px] sm:top-[68px] z-[10002] p-4 rounded-2xl flex flex-col gap-2.5 lg:hidden select-none animate-in fade-in slide-in-from-top-3 duration-250 max-h-[calc(100dvh-78px)] overflow-y-auto"
+          className="fixed inset-x-3.5 top-[58px] sm:top-[68px] z-[10002] p-4 rounded-2xl flex flex-col gap-2.5 lg:hidden select-none animate-in fade-in slide-in-from-top-3 duration-200 max-h-[calc(100dvh-78px)] overflow-y-auto"
           style={{
-            background: "radial-gradient(ellipse at top right, rgba(16, 22, 58, 0.97) 0%, rgba(5, 7, 22, 0.99) 100%)",
-            backdropFilter: "blur(32px) saturate(200%)",
-            WebkitBackdropFilter: "blur(32px) saturate(200%)",
-            border: "1px solid rgba(99, 102, 241, 0.28)",
-            boxShadow: "0 25px 60px rgba(0,0,0,0.95), 0 0 35px rgba(56,189,248,0.18), inset 0 1px 1px rgba(255,255,255,0.2)",
+            background: "radial-gradient(ellipse at top right, rgba(14, 18, 42, 0.98) 0%, rgba(5, 7, 20, 0.99) 100%)",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}
           role="dialog"
           aria-label="Mobile Navigation"

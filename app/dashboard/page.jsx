@@ -76,7 +76,7 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
           HYDERABAD 2026
         </span>
         <span className="text-[10px] font-mono tracking-[0.15em] text-white/40 uppercase font-semibold truncate max-w-[240px]">
-          DWPS KOMPALLY
+          MERIDIAN KOMPALLY
         </span>
       </div>
 
@@ -548,10 +548,10 @@ export default function DelegateDashboard() {
           <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-white/50 font-sans">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              <span>Venue: <strong className="text-white/80">Delhi World Public School, Kompally</strong></span>
+              <span>Venue: <strong className="text-white/80">Meridian School, Kompally</strong></span>
             </div>
             <div>
-              <span>Dates: <strong className="text-white/80">20th – 22nd November 2026</strong></span>
+              <span>Dates: <strong className="text-white/80">27th – 29th November 2026</strong></span>
             </div>
           </div>
         </section>
@@ -649,7 +649,7 @@ export default function DelegateDashboard() {
                   Digital Entry Pass
                 </h3>
                 <p className="text-xs text-white/50 mt-0.5">
-                  Show this QR code at the registration desk when you arrive at Delhi World Public School, Kompally.
+                  Show this QR code at the registration desk when you arrive at Meridian School, Kompally.
                 </p>
               </div>
 
@@ -694,7 +694,7 @@ export default function DelegateDashboard() {
                         </div>
 
                         <div className="w-full flex items-center justify-between pt-3 border-t border-white/10 text-xs">
-                          <span className="text-white/40">DWPS Kompally</span>
+                          <span className="text-white/40">Meridian Kompally</span>
                           <span className="flex items-center gap-1 text-emerald-400 font-semibold">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />Verified
                           </span>

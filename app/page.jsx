@@ -240,7 +240,7 @@ export default function Home() {
     // Instant Countdown Initialization (Never shows -- : --)
     let cdInterval = null;
     try {
-      const countdownDate = new Date("2026-11-20T08:00:00");
+      const countdownDate = new Date("2026-11-27T08:00:00");
       const updateCd = () => {
         const cdDays = document.getElementById("cd-days");
         const cdHours = document.getElementById("cd-hours");
@@ -1106,49 +1106,82 @@ export default function Home() {
     }
 
     
-    // GSAP Fast & Silky Smooth Hero Entrance Timeline
+    // GSAP Silky Smooth & Minimal Hero Loading Animation
     try {
+      // 1. Subtle, clean Navbar entrance
+      gsap.fromTo(
+        "#navbar > div",
+        { opacity: 0, y: -16 },
+        { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", delay: 0.05 }
+      );
+
+      // 2. Coordinated hero sequence
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
       tl.fromTo(
         ".hero-eyebrow",
-        { opacity: 0, y: -12 },
-        { opacity: 1, y: 0, duration: 0.45, delay: 0.05 }
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.45, delay: 0.1 }
       )
       .fromTo(
         ".hero-title span:first-child",
-        { opacity: 0, y: 25, filter: "blur(4px)" },
-        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5 },
-        "-=0.35"
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        "-=0.3"
       )
       .fromTo(
         ".hero-title .mun",
-        { opacity: 0, y: 30, filter: "blur(4px)" },
-        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.55 },
-        "-=0.4"
-      )
-      .fromTo(
-        ".hero-tagline",
-        { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.4 },
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
         "-=0.35"
       )
       .fromTo(
-        ".hero-meta-item",
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.4, stagger: 0.05 },
+        ".hero-tagline",
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
         "-=0.3"
+      )
+      .fromTo(
+        ".hero-meta-item",
+        { opacity: 0, y: 12 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.4,
+          stagger: 0.06,
+          ease: "power2.out",
+          onStart: () => {
+            // Subtle, premium counter animation for stats
+            document.querySelectorAll(".hero-meta-item .value[data-target]").forEach((el) => {
+              const target = parseFloat(el.getAttribute("data-target"));
+              if (isNaN(target)) return;
+              const obj = { val: 0 };
+              gsap.to(obj, {
+                val: target,
+                duration: 0.9,
+                ease: "power2.out",
+                onUpdate: () => {
+                  el.textContent = Math.round(obj.val);
+                },
+                onComplete: () => {
+                  el.textContent = target;
+                }
+              });
+            });
+          }
+        },
+        "-=0.25"
       )
       .fromTo(
         ".hero-meta-divider",
         { scaleY: 0, opacity: 0 },
-        { scaleY: 1, opacity: 1, duration: 0.35, stagger: 0.04 },
+        { scaleY: 1, opacity: 1, duration: 0.35, stagger: 0.04, ease: "power2.out" },
         "-=0.35"
       )
       .fromTo(
         ".hero-actions",
-        { opacity: 0, y: 16 },
+        { opacity: 0, y: 12 },
         { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
-        "-=0.25"
+        "-=0.2"
       );
     } catch (e) {
       console.warn("GSAP timeline init:", e);
@@ -1217,12 +1250,13 @@ export default function Home() {
         style={{
           position: "relative",
           minHeight: "100vh",
+          height: "100dvh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          padding: "clamp(85px, 12vh, 110px) 24px clamp(28px, 4vh, 45px)",
+          padding: "clamp(75px, 9vh, 95px) 24px clamp(20px, 3vh, 32px)",
           boxSizing: "border-box",
           overflow: "hidden",
         }}
@@ -1262,7 +1296,7 @@ export default function Home() {
         <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "900px", margin: "0 auto" }}>
           {/* Eyebrow */}
           <div className="hero-eyebrow">
-            20TH - 22ND NOVEMBER 2026
+            27TH – 29TH NOVEMBER 2026
           </div>
 
           {/* Adaptive Hero Title — NEVER overlaps navbar */}
@@ -1276,7 +1310,7 @@ export default function Home() {
             <strong>Resolve.</strong>&nbsp; Reform. &nbsp;<strong>Reconcile.</strong>
           </p>
 
-          {/* Stats: Exact archive design, Committees = Releasing Soon */}
+          {/* Stats: Exact archive design, Committees = 6 */}
           <div className="hero-meta">
             <div className="hero-meta-item">
               <span className="label">Edition</span>
@@ -1293,7 +1327,7 @@ export default function Home() {
             <div className="hero-meta-divider" />
             <div className="hero-meta-item">
               <span className="label">Committees</span>
-              <span className="value text-[1.1rem] tracking-wider text-blue-300">RELEASING SOON</span>
+              <span className="value" data-target="6">6</span>
             </div>
             <div className="hero-meta-divider" />
             <div className="hero-meta-item">
@@ -1329,40 +1363,51 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CRAZY WORD CAROUSEL / MARQUEE STRIP */}
-      <div className="word-carousel-strip">
+      {/* LUXURY EDITORIAL CONFERENCE TICKER STRIP */}
+      <div className="word-carousel-strip" aria-label="Conference Highlights">
         <div className="marquee-track">
-          <span>RESOLVE MUN 2.0</span>
-          <span className="dot">•</span>
-          <span>DIPLOMACY</span>
-          <span className="dot">•</span>
-          <span>REFORM</span>
-          <span className="dot">•</span>
-          <span>RECONCILE</span>
-          <span className="dot">•</span>
-          <span>LEADERSHIP</span>
-          <span className="dot">•</span>
-          <span>HYDERABAD 2026</span>
-          <span className="dot">•</span>
-          <span>GLOBAL CRISES</span>
-          <span className="dot">•</span>
-          <span>DEBATE & CONSENSUS</span>
-          <span className="dot">•</span>
-          <span>RESOLVE MUN 2.0</span>
-          <span className="dot">•</span>
-          <span>DIPLOMACY</span>
-          <span className="dot">•</span>
-          <span>REFORM</span>
-          <span className="dot">•</span>
-          <span>RECONCILE</span>
-          <span className="dot">•</span>
-          <span>LEADERSHIP</span>
-          <span className="dot">•</span>
-          <span>HYDERABAD 2026</span>
-          <span className="dot">•</span>
-          <span>GLOBAL CRISES</span>
-          <span className="dot">•</span>
-          <span>DEBATE & CONSENSUS</span>
+          {/* Track Group 1 */}
+          <div className="marquee-group">
+            <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">27–29 NOVEMBER 2026</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">6 COMMITTEES</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">MERIDIAN SCHOOL, KOMPALLY</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">350+ DELEGATES</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">EXCELLENCE IN DIPLOMACY</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">EDITION 2.0</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">CRISIS &amp; GENERAL ASSEMBLY</span>
+            <span className="ticker-sep">✦</span>
+          </div>
+          {/* Track Group 2 (Exact duplicate for seamless 60fps infinite loop) */}
+          <div className="marquee-group" aria-hidden="true">
+            <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">27–29 NOVEMBER 2026</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">6 COMMITTEES</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">MERIDIAN SCHOOL, KOMPALLY</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">350+ DELEGATES</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">EXCELLENCE IN DIPLOMACY</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">EDITION 2.0</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">CRISIS &amp; GENERAL ASSEMBLY</span>
+            <span className="ticker-sep">✦</span>
+          </div>
         </div>
       </div>
 
@@ -1438,7 +1483,7 @@ export default function Home() {
                 Signed In
               </span>
               <span className="text-white/20">|</span>
-              <span className="text-white/70">20–22 November 2026</span>
+              <span className="text-white/70">27–29 November 2026</span>
             </div>
 
             {/* Action Buttons */}

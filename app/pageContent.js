@@ -374,8 +374,8 @@ export const homeHtml = `
           </div>
 
           <div style="margin-top: 16px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); text-align: center;">
-            <p style="font-size: 0.68rem; color: #cbd5e1; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;"> Delhi World Public School, Kompally, Hyderabad</p>
-            <p style="font-size: 0.64rem; color: #94a3b8; margin: 4px 0 0 0;">Conference Dates: 20th – 22nd November 2026</p>
+            <p style="font-size: 0.68rem; color: #cbd5e1; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;"> Meridian School, Kompally, Hyderabad</p>
+            <p style="font-size: 0.64rem; color: #94a3b8; margin: 4px 0 0 0;">Conference Dates: 27th – 29th November 2026</p>
           </div>
         </div>
 
@@ -501,101 +501,51 @@ export const homeHtml = `
 
 <!-- ABOUT -->
 <section id="about">
-<div class="about-wrapper">
-  <div class="about-inner">
-    <div class="about-visual reveal">
-      <div class="emblem-wrapper">
-        <div class="logo-halo"></div>
-        <img src="/images/Logo.svg" alt="Resolve MUN 2026 Emblem - Symbol of Excellence and Diplomacy" class="emblem-main">
-        <div class="about-particles">
-          <div class="about-particle" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
-          <div class="about-particle" style="top: 80%; left: 30%; animation-delay: 2s;"></div>
-          <div class="about-particle" style="top: 50%; left: 80%; animation-delay: 4s;"></div>
-          <div class="about-particle" style="top: 10%; left: 60%; animation-delay: 6s;"></div>
-          <div class="about-particle" style="top: 90%; left: 70%; animation-delay: 8s;"></div>
-        </div>
-      </div>
-      <div class="about-emblem-badge">
-        <span class="emblem-badge-dot"></span>
-        <span>HYDERABAD 2026 &bull; EDITION 2.0</span>
+<div class="about-inner">
+  <div class="about-visual reveal">
+    <div class="emblem-wrapper">
+      <div class="logo-halo"></div>
+      <img src="/images/Logo.svg" alt="Resolve MUN 2026 Emblem - Symbol of Excellence and Diplomacy" class="emblem-main">
+      <div class="about-particles">
+        <div class="about-particle" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
+        <div class="about-particle" style="top: 80%; left: 30%; animation-delay: 2s;"></div>
+        <div class="about-particle" style="top: 50%; left: 80%; animation-delay: 4s;"></div>
+        <div class="about-particle" style="top: 10%; left: 60%; animation-delay: 6s;"></div>
+        <div class="about-particle" style="top: 90%; left: 70%; animation-delay: 8s;"></div>
       </div>
     </div>
-
-    <div class="reveal reveal-delay-2 about-content">
-      <div class="section-label">About the Conference</div>
-      <h2 class="section-title">WHERE DIPLOMACY<br>MEETS <span class="title-accent">AMBITION</span></h2>
-      <div class="title-line-divider"></div>
-      
-      <p class="section-body">Resolve MUN is where the next generation of Hyderabad's leaders come to debate, make decisions, and drive real change. We challenge delegates to engage seriously with the city's and the world's most pressing issues.</p>
-      <p class="section-body">From crisis committees that move fast to general assemblies that require broad consensus, every moment at Resolve MUN is designed to push you.</p>
-
-      <div class="about-feature-pills">
-        <div class="about-feature-pill">
-          <span class="pill-icon"></span>
-          <div>
-            <span class="pill-title">Elite Executive Board</span>
-            <span class="pill-desc">Chaired by seasoned veterans of the national circuit</span>
-          </div>
-        </div>
-        <div class="about-feature-pill">
-          <span class="pill-icon"></span>
-          <div>
-            <span class="pill-title">High-Stakes Crisis Debates</span>
-            <span class="pill-desc">Dynamic real-time directives and shifting scenarios</span>
-          </div>
-        </div>
-        <div class="about-feature-pill">
-          <span class="pill-icon"></span>
-          <div>
-            <span class="pill-title">World-Class Host Campus</span>
-            <span class="pill-desc">Delhi World Public School, Kompally, Hyderabad</span>
-          </div>
-        </div>
+    
+    <div class="about-stat-grid">
+      <div class="about-stat">
+        <span class="num">300+</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Delegates</span>
+      </div>
+      <div class="about-stat">
+        <span class="num">6</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Committees</span>
+      </div>
+      <div class="about-stat cash-rewards-stat">
+        <span class="num">₹1.30L</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Cash Rewards</span>
+      </div>
+      <div class="about-stat">
+        <span class="num">3</span>
+        <div class="stat-divider"></div>
+        <span class="desc">Days of Diplomacy</span>
       </div>
     </div>
   </div>
 
-  <!-- FULL-WIDTH 4-CARD BENTO STAT ROW -->
-  <div class="about-bento-grid reveal reveal-delay-3">
-    <div class="about-bento-card">
-      <div class="bento-glow-blob" style="background: radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%);"></div>
-      <div class="bento-top">
-        <span class="bento-num">300+</span>
-        <span class="bento-tag">DELEGATES</span>
-      </div>
-      <div class="bento-divider"></div>
-      <p class="bento-desc">Students from premier schools and colleges nationwide</p>
-    </div>
-
-    <div class="about-bento-card">
-      <div class="bento-glow-blob" style="background: radial-gradient(circle, rgba(168,85,247,0.25) 0%, transparent 70%);"></div>
-      <div class="bento-top">
-        <span class="bento-num">7</span>
-        <span class="bento-tag">COMMITTEES</span>
-      </div>
-      <div class="bento-divider"></div>
-      <p class="bento-desc">Specialized councils: UNSC, DISEC, AIPPM, UNHRC, IP &amp; more</p>
-    </div>
-
-    <div class="about-bento-card">
-      <div class="bento-glow-blob" style="background: radial-gradient(circle, rgba(234,179,8,0.25) 0%, transparent 70%);"></div>
-      <div class="bento-top">
-        <span class="bento-num" style="font-size: 2.2rem; letter-spacing: 0.05em; color: #fef08a;">CASH PRIZES</span>
-        <span class="bento-tag" style="color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.1);">AWARDS</span>
-      </div>
-      <div class="bento-divider"></div>
-      <p class="bento-desc">Cash awards &amp; citations for Best Delegate and Outstanding Diplomats</p>
-    </div>
-
-    <div class="about-bento-card">
-      <div class="bento-glow-blob" style="background: radial-gradient(circle, rgba(34,197,94,0.25) 0%, transparent 70%);"></div>
-      <div class="bento-top">
-        <span class="bento-num">3</span>
-        <span class="bento-tag" style="color: #4ade80; border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.1);">DAYS</span>
-      </div>
-      <div class="bento-divider"></div>
-      <p class="bento-desc">20th &ndash; 22nd November 2026 &bull; Unmatched debate experience</p>
-    </div>
+  <div class="reveal reveal-delay-2 about-content">
+    <div class="section-label">About the Conference</div>
+    <h2 class="section-title">WHERE DIPLOMACY<br>MEETS <span class="title-accent">AMBITION</span></h2>
+    <div class="title-line-divider"></div>
+    
+    <p class="section-body">Resolve MUN is not just a conference — it is an arena where the next generation of Hyderabad's leaders converge to debate, deliberate, and drive change. Built on the pillars of intellectual rigor and diplomatic excellence, Resolve MUN challenges delegates to engage with the city's and the world's most pressing issues.</p>
+    <p class="section-body">From crisis committees that demand split-second decisions to general assemblies that require sweeping coalition-building, every moment at Resolve MUN is designed to forge leaders of consequence.</p>
   </div>
 </div>
 </section>
@@ -1031,7 +981,7 @@ export const homeHtml = `
         <span style="font-size: 10px; color: #34d399; font-weight: 700; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.25);">FREE TO APPLY</span>
       </div>
       <h2 class="modal-title" style="font-size: 1.5rem; letter-spacing: 0.02em; margin: 4px 0;">Secretariat Applications — Resolve MUN 2.0</h2>
-      <span class="modal-subtitle" style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Hyderabad · 20th – 22nd November 2026</span>
+      <span class="modal-subtitle" style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Hyderabad · 27th – 29th November 2026</span>
     </div>
 
     <!-- 3-STEP PROGRESS INDICATOR -->
@@ -1504,8 +1454,8 @@ export const homeHtml = `
           </div>
 
           <div style="margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-            <p style="font-size: 0.66rem; color: #94a3b8; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;"> Delhi World Public School, Kompally, Hyderabad</p>
-            <p style="font-size: 0.62rem; color: #64748b; margin: 3px 0 0 0;">Conference Dates: 20th – 22nd November 2026</p>
+            <p style="font-size: 0.66rem; color: #94a3b8; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;"> Meridian School, Kompally, Hyderabad</p>
+            <p style="font-size: 0.62rem; color: #64748b; margin: 3px 0 0 0;">Conference Dates: 27th – 29th November 2026</p>
           </div>
         </div>
 

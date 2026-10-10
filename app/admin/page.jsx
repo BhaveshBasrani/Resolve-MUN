@@ -523,7 +523,7 @@ export default function SuperAdminPage() {
     const cleanPhone = rawPhone.startsWith('91') && rawPhone.length > 10 ? rawPhone : `91${rawPhone}`;
     const greetingName = lead.name || 'Hi';
     const text = encodeURIComponent(
-      `Hi ${greetingName}! This is Resolve MUN 2026 regarding your registration for the conference at Delhi World Public School, Kompally, Hyderabad (20–22 Nov 2026).\n\nWe noticed you didn't finish your registration. Would you like any help with completing it?`
+      `Hi ${greetingName}! This is Resolve MUN 2026 regarding your registration for the conference at Meridian School, Kompally, Hyderabad (27–29 Nov 2026).\n\nWe noticed you didn't finish your registration. Would you like any help with completing it?`
     );
     const url = `https://wa.me/${cleanPhone}?text=${text}`;
     window.open(url, '_blank');
@@ -1012,7 +1012,7 @@ export default function SuperAdminPage() {
 
             <div className="relative z-10 pt-2 border-t border-white/[0.06] text-xs text-white/40 flex items-center justify-between">
               <span>Resolve MUN 2026</span>
-              <span>DWPS Kompally</span>
+              <span>Meridian Kompally</span>
             </div>
           </div>
         </main>
@@ -2101,7 +2101,7 @@ export default function SuperAdminPage() {
 
                             <td className="py-3.5 px-4 text-right">
                               <a
-                                href={`mailto:${u.email}?subject=Complete Your Resolve MUN 2026 Registration&body=Hi ${encodeURIComponent(u.name || 'there')},%0D%0A%0D%0AWe noticed you created an account on Resolve MUN but haven't finished your delegate registration yet.%0D%0A%0D%0ACommittee seats are filling fast for the conference at Delhi World Public School, Kompally, Hyderabad (20–22 Nov 2026).%0D%0A%0D%0AYou can complete your registration here: https://resolvemun.in/?open=delegate`}
+                                href={`mailto:${u.email}?subject=Complete Your Resolve MUN 2026 Registration&body=Hi ${encodeURIComponent(u.name || 'there')},%0D%0A%0D%0AWe noticed you created an account on Resolve MUN but haven't finished your delegate registration yet.%0D%0A%0D%0ACommittee seats are filling fast for the conference at Meridian School, Kompally, Hyderabad (27–29 Nov 2026).%0D%0A%0D%0AYou can complete your registration here: https://resolvemun.in/?open=delegate`}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 text-[11px] font-semibold transition-colors"
                               >
                                 <Mail className="w-3 h-3" />
