@@ -3,6 +3,7 @@ const isExport = process.env.BUILD_TARGET === 'export' || process.env.GITHUB_PAG
 
 const nextConfig = {
   reactStrictMode: true,
+  devIndicators: false,
   output: isExport ? 'export' : undefined,
   trailingSlash: true,
   allowedDevOrigins: ['192.168.88.7'],

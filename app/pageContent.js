@@ -1383,7 +1383,7 @@ export const homeHtml = `
         </p>
       </div>
 
-      <footer class="letter-signature-block">
+      <div class="letter-signature-block">
         <p class="letter-signoff">With regards,</p>
         <div class="letter-sig-script" aria-hidden="true">Niveditt Basrani</div>
         <div class="letter-sig-rule" aria-hidden="true"></div>
@@ -1391,7 +1391,7 @@ export const homeHtml = `
           <div class="founder-sig-name">Niveditt Basrani</div>
           <div class="founder-sig-role">Founder, Resolve Model United Nations</div>
         </div>
-      </footer>
+      </div>
 
       <div class="letter-footnote">
         <span>resolvemun.in</span>
