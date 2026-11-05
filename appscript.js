@@ -489,7 +489,7 @@ function registerDelegateWithDrive(data) {
     "Pending_Verification",
     "",
     "",
-    data.delegationCode || "",
+    data.delegationCode || data.referral || data.referralCode || "",
     "No"
   ]);
 
@@ -1634,7 +1634,7 @@ function adminAddDelegate(data) {
     "Manual_Approved",
     data.committee || "",
     data.country || "",
-    data.delegationCode || "",
+    data.delegationCode || data.referral || data.referralCode || "",
     "No"
   ]);
   return { status: "success", regId: regId };

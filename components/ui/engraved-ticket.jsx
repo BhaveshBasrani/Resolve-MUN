@@ -277,8 +277,8 @@ export default function EngravedTicket({
   institution = "Individual",
   tagline = "RESOLVE MUN 2.0 · HYDERABAD",
   quote = "27TH – 29TH NOVEMBER 2026",
-  rhythm = [4, 2, 6, 1],
-  phases = ["Inhale", "Hold", "Exhale", "Rest"],
+  rhythm = [3, 2, 3, 1],
+  phases = ["VERIFIED", "ACCREDITED", "AUTHENTICATED", "ENCRYPTED"],
   breathe = true,
   seed = 7,
   accent,
@@ -384,7 +384,7 @@ export default function EngravedTicket({
             t0 = now;
             cycle = 0;
             count++;
-            if (countRef.current) countRef.current.textContent = "Nº " + String(count).padStart(3, "0");
+            if (countRef.current) countRef.current.textContent = "ACC · " + String(count).padStart(3, "0");
           }
         }
       } else if (cfg.breathe) {
@@ -392,7 +392,7 @@ export default function EngravedTicket({
         if (b.index > cycle) {
           cycle = b.index;
           count++;
-          if (countRef.current) countRef.current.textContent = "Nº " + String(count).padStart(3, "0");
+          if (countRef.current) countRef.current.textContent = "ACC · " + String(count).padStart(3, "0");
         }
         value = b.value;
         phase = b.phase;
@@ -411,7 +411,7 @@ export default function EngravedTicket({
         }
       }
 
-      const text = cfg.phases[phase] + " · " + Math.max(1, Math.ceil(left - 1e-3));
+      const text = cfg.phases[phase] + " · SECURE";
       if (text !== label && phaseRef.current) {
         label = text;
         phaseRef.current.textContent = text;
@@ -614,8 +614,8 @@ export default function EngravedTicket({
               </div>
               <div className="flex items-center justify-between font-mono text-[9px] tracking-wider uppercase" style={{ color: mutedText }}>
                 <span ref={phaseRef}>{phases[0]}</span>
-                <span>HOLD TO INHALE</span>
-                <span ref={countRef}>Nº 000</span>
+                <span>TAP TO VERIFY CHIP</span>
+                <span ref={countRef}>ACC · 026</span>
               </div>
             </div>
 
@@ -772,8 +772,8 @@ export default function EngravedTicket({
               </svg>
               <div className="flex items-center justify-between font-mono text-[9px] tracking-wider uppercase" style={{ color: mutedText }}>
                 <span ref={phaseRef}>{phases[0]}</span>
-                <span>HOLD TO INHALE</span>
-                <span ref={countRef}>Nº 000</span>
+                <span>TAP TO VERIFY CHIP</span>
+                <span ref={countRef}>ACC · 026</span>
               </div>
             </div>
           </div>

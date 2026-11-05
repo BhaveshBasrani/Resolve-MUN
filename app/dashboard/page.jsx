@@ -803,7 +803,7 @@ export default function DelegateDashboard() {
               {isPaid ? (
                 <div className="flex flex-col items-center space-y-5">
                   {/* Variant Switcher & Print Control */}
-                  <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/10">
+                  <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/10 no-print">
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
@@ -873,7 +873,7 @@ export default function DelegateDashboard() {
                   </div>
 
                   {/* Engraved Ticket Component with Unique QR */}
-                  <div className="w-full flex justify-center py-2">
+                  <div className="w-full flex justify-center py-2" id="printable-pass-container">
                     <EngravedTicket
                       format={ticketFormat}
                       variant={ticketVariant}
@@ -901,7 +901,7 @@ export default function DelegateDashboard() {
                   </div>
 
                   {/* 3-Day Attendance Tracker */}
-                  <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#090909] p-4 space-y-3">
+                  <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#090909] p-4 space-y-3 no-print">
                     <div className="flex items-center justify-between text-xs font-mono text-white/50">
                       <span className="uppercase tracking-wider font-semibold text-[10px]">
                         Conference Check-In Tracker
