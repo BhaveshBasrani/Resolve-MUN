@@ -272,16 +272,12 @@ export default function DelegatePassSection() {
     return () => unsubscribe();
   }, []);
 
-  // Compact responsive ticket sizing to match folder cards
+  // Compact responsive ticket sizing so passes never clip or overflow on mobile screens
   useEffect(() => {
     const updateSize = () => {
       const w = window.innerWidth;
-      if (w < 360) {
-        setTicketWidth(Math.max(260, w - 24));
-      } else if (w < 420) {
-        setTicketWidth(Math.max(280, w - 32));
-      } else if (w < 640) {
-        setTicketWidth(Math.min(320, w - 40));
+      if (w < 640) {
+        setTicketWidth(Math.min(295, Math.max(250, w - 36)));
       } else {
         setTicketWidth(328);
       }
@@ -294,7 +290,7 @@ export default function DelegatePassSection() {
   return (
     <section
       id="delegate-pass"
-      className="reveal relative bg-black text-white py-16 sm:py-24 overflow-hidden border-t border-white/10"
+      className="reveal relative bg-black text-white py-10 sm:py-24 overflow-hidden border-t border-white/10"
       style={{ backgroundColor: "#000000" }}
     >
       {/* Background Halftone Grid & Ambient Glow */}
@@ -311,30 +307,30 @@ export default function DelegatePassSection() {
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[380px] bg-indigo-600/10 blur-[150px] rounded-full"
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-left sm:text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-3.5 sm:px-6 text-left sm:text-center">
         {/* Sleek Modern Sideline Label */}
         <div
           className="section-label"
-          style={{ margin: "0 0 10px 0" }}
+          style={{ margin: "0 0 8px 0" }}
         >
           Resolve MUN 2.0
         </div>
 
         {/* Section Headline */}
         <h2
-          className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase tracking-tight text-white mb-2"
+          className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase tracking-tight text-white mb-1.5"
           style={{ fontFamily: "'Oswald', sans-serif" }}
         >
           Official Passes
         </h2>
 
         {/* Minimal Uncluttered Description */}
-        <p className="text-xs sm:text-sm text-white/60 max-w-xl sm:mx-auto font-light leading-relaxed mb-8 sm:mb-14">
+        <p className="text-xs sm:text-sm text-white/60 max-w-xl sm:mx-auto font-light leading-relaxed mb-6 sm:mb-14">
           Select your pass below.
         </p>
 
         {/* All 5 Passes Laid Out (Grid / Flex-Wrap like the folder cards) */}
-        <div className="flex flex-wrap items-center justify-center gap-7 sm:gap-9 lg:gap-10">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-9 lg:gap-10">
           {PASSES.map((pass) => {
             const open = isPassOpen(pass.id);
             const priceTag = getPassPriceTag(pass.id);

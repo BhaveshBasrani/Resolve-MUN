@@ -130,10 +130,10 @@ export const homeHtml = `
       <div class="modal-pretitle">RESOLVE MUN 2.0 · PRIORITY ROUND</div>
       <h2 class="modal-title">DELEGATE REGISTRATION</h2>
       <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
-      <div style="margin-top: 10px; display: flex; justify-content: center;">
-        <button type="button" onclick="closeModalById('regModal'); selectPathway('delegation');" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.12); color: #ffffff; border-radius: 6px; padding: 5px 12px; font-size: 0.7rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
-          <span style="color: rgba(255,255,255,0.6);">Registering a School Contingent (6+ Delegates)?</span>
-          <span style="font-weight: 700; text-decoration: underline; text-underline-offset: 2px;">Switch to Delegation Form &rarr;</span>
+      <div style="margin-top: 8px; display: flex; justify-content: center;">
+        <button type="button" onclick="closeModalById('regModal'); selectPathway('delegation');" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.12); color: #ffffff; border-radius: 6px; padding: 5px 10px; font-size: 0.68rem; font-weight: 500; cursor: pointer; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; text-align: center; line-height: 1.35; transition: all 0.2s;">
+          <span style="color: rgba(255,255,255,0.6);">School Contingent (6+ Delegates)?</span>
+          <span style="font-weight: 700; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap;">Switch to Delegation Form &rarr;</span>
         </button>
       </div>
     </div>

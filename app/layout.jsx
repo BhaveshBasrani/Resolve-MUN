@@ -94,10 +94,6 @@ export default function RootLayout({ children }) {
             }),
           }}
         />
-        <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
-          strategy="lazyOnload"
-        />
         </head>
       <body className="loaded" suppressHydrationWarning>
         <DynamicIslandAlert />

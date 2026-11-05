@@ -400,26 +400,40 @@
   })();
 
   /**
-   * RECAPTCHA v3 EXECUTION
-   * This function gets a token from Google and should be called before form submission.
+   * RECAPTCHA v3 EXECUTION (On-demand lazy load — zero main-thread overhead on initial page load)
    */
+  let recaptchaLoadPromise = null;
+  function ensureRecaptchaLoaded() {
+    if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+      return Promise.resolve();
+    }
+    if (recaptchaLoadPromise) return recaptchaLoadPromise;
+    recaptchaLoadPromise = new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(window.RECAPTCHA_SITE_KEY);
+      s.async = true;
+      s.defer = true;
+      s.onload = () => resolve();
+      s.onerror = () => resolve();
+      document.head.appendChild(s);
+    });
+    return recaptchaLoadPromise;
+  }
+
   async function getRecaptchaToken(actionName) {
     if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
       return null;
     }
-    return new Promise((resolve, reject) => {
-      if (typeof grecaptcha === 'undefined') {
-        console.error('reCAPTCHA not loaded');
+    await ensureRecaptchaLoaded();
+    return new Promise((resolve) => {
+      if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
         resolve(null);
         return;
       }
       grecaptcha.ready(() => {
         grecaptcha.execute(window.RECAPTCHA_SITE_KEY, { action: actionName })
           .then(token => resolve(token))
-          .catch(err => {
-            console.error('reCAPTCHA execution failed:', err);
-            resolve(null);
-          });
+          .catch(() => resolve(null));
       });
     });
   }
@@ -3337,6 +3351,9 @@
 // ==========================================================================
 (function initLetterWaveShader() {
   function start() {
+    if (typeof window !== 'undefined' && (window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches))) {
+      return;
+    }
     const canvas = document.getElementById('letterShaderCanvas');
     if (!canvas) return;
     const gl = canvas.getContext('webgl', { alpha: true, antialias: true }) || 

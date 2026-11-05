@@ -30,6 +30,8 @@ import { PaymentReceiptModal } from "@/components/ui/animated-ticket";
 import { GradientBackground } from "@/components/ui/paper-design-shader-background";
 
 const [homePart1, homePart2] = homeHtml.split("<!-- COMMITTEES_PLACEHOLDER -->");
+const HOME_PART1_HTML = { __html: homePart1 || homeHtml };
+const HOME_PART2_HTML = homePart2 ? { __html: homePart2 } : null;
 
 export default function Home() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -374,23 +376,26 @@ export default function Home() {
       }
     };
 
-    // Attach listeners to OC and Socials forms
+    // Attach listeners to OC and Socials forms once (no document.body MutationObserver)
     const bindCustomForms = () => {
       const ocForm = document.getElementById("ocRegForm");
-      if (ocForm) ocForm.onsubmit = window.handleOcSubmit;
+      if (ocForm && !ocForm.__bound) {
+        ocForm.__bound = true;
+        ocForm.onsubmit = window.handleOcSubmit;
+      }
       const socForm = document.getElementById("socialsRegForm");
-      if (socForm) socForm.onsubmit = window.handleSocialsSubmit;
+      if (socForm && !socForm.__bound) {
+        socForm.__bound = true;
+        socForm.onsubmit = window.handleSocialsSubmit;
+      }
     };
     bindCustomForms();
-    const observeCustomForms = () => {
-      const observer = new MutationObserver(() => {
-        bindCustomForms();
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    };
-    observeCustomForms();
+    const bindTimer = setTimeout(bindCustomForms, 300);
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(bindTimer);
+      unsubscribe();
+    };
   }, []);
   const containerRef = useRef(null);
 
@@ -425,79 +430,104 @@ export default function Home() {
       document.body.classList.add('loaded');
     }
 
-    // Instant Countdown Initialization (Never shows -- : --)
+    // Instant Countdown Initialization (Zero-reflow cached DOM references & diff-only updates)
     let cdInterval = null;
     try {
-      // Resolve MUN 2.0 Dates: 27th to 29th November 2026
-      const startDate = new Date("2026-11-27T08:00:00");
-      const endDate = new Date("2026-11-29T20:00:00");
+      const startDateMs = new Date("2026-11-27T08:00:00").getTime();
+      const endDateMs = new Date("2026-11-29T20:00:00").getTime();
+
+      let cdLabel = null;
+      let cdDays = null;
+      let cdHours = null;
+      let cdMins = null;
+      let cdSecs = null;
+      let cdUnits = null;
+      let cdLiveBanner = null;
+      let lastMode = "";
+
+      const setTextIfChanged = (el, val) => {
+        if (el && el.textContent !== val) {
+          el.textContent = val;
+        }
+      };
 
       const updateCd = () => {
-        const cdLabel = document.getElementById("cd-label");
-        const cdDays = document.getElementById("cd-days");
-        const cdHours = document.getElementById("cd-hours");
-        const cdMins = document.getElementById("cd-mins");
-        const cdSecs = document.getElementById("cd-secs");
-        const cdUnits = document.getElementById("cd-units");
-        const cdLiveBanner = document.getElementById("cd-live-banner");
-        if (!cdDays || !cdHours || !cdMins || !cdSecs) return;
+        if (!cdSecs) {
+          cdLabel = document.getElementById("cd-label");
+          cdDays = document.getElementById("cd-days");
+          cdHours = document.getElementById("cd-hours");
+          cdMins = document.getElementById("cd-mins");
+          cdSecs = document.getElementById("cd-secs");
+          cdUnits = document.getElementById("cd-units");
+          cdLiveBanner = document.getElementById("cd-live-banner");
+          if (!cdDays || !cdHours || !cdMins || !cdSecs) return;
+        }
 
-        const now = new Date();
+        const nowMs = Date.now();
 
         // 1. Before Conference -> Count down to startDate
-        if (now < startDate) {
-          if (cdLabel) {
-            cdLabel.textContent = "CONFERENCE OPENS IN";
-            cdLabel.style.display = "inline-block";
+        if (nowMs < startDateMs) {
+          if (lastMode !== "pre") {
+            lastMode = "pre";
+            if (cdLabel) {
+              setTextIfChanged(cdLabel, "CONFERENCE OPENS IN");
+              cdLabel.style.display = "inline-block";
+            }
+            if (cdUnits) cdUnits.style.display = "flex";
+            if (cdLiveBanner) cdLiveBanner.style.display = "none";
           }
-          if (cdUnits) cdUnits.style.display = "flex";
-          if (cdLiveBanner) cdLiveBanner.style.display = "none";
 
-          const diff = startDate - now;
-          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-          const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const s = Math.floor((diff % (1000 * 60)) / 1000);
+          const diff = startDateMs - nowMs;
+          const d = String(Math.floor(diff / 86400000)).padStart(2, "0");
+          const h = String(Math.floor((diff % 86400000) / 3600000)).padStart(2, "0");
+          const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
+          const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
 
-          cdDays.textContent = String(d).padStart(2, "0");
-          cdHours.textContent = String(h).padStart(2, "0");
-          cdMins.textContent = String(m).padStart(2, "0");
-          cdSecs.textContent = String(s).padStart(2, "0");
+          setTextIfChanged(cdDays, d);
+          setTextIfChanged(cdHours, h);
+          setTextIfChanged(cdMins, m);
+          setTextIfChanged(cdSecs, s);
           return;
         }
 
         // 2. During the Three Days (Nov 27 to Nov 29) -> RESOLVE IS HAPPENING RIGHT NOW
-        if (now >= startDate && now <= endDate) {
-          if (cdLiveBanner) {
-            cdLiveBanner.style.display = "inline-flex";
-            if (cdLabel) cdLabel.style.display = "none";
-            if (cdUnits) cdUnits.style.display = "none";
-          } else if (cdLabel) {
-            cdLabel.textContent = "RESOLVE IS HAPPENING RIGHT NOW";
-            cdLabel.style.display = "inline-block";
+        if (nowMs >= startDateMs && nowMs <= endDateMs) {
+          if (lastMode !== "live") {
+            lastMode = "live";
+            if (cdLiveBanner) {
+              cdLiveBanner.style.display = "inline-flex";
+              if (cdLabel) cdLabel.style.display = "none";
+              if (cdUnits) cdUnits.style.display = "none";
+            } else if (cdLabel) {
+              setTextIfChanged(cdLabel, "RESOLVE IS HAPPENING RIGHT NOW");
+              cdLabel.style.display = "inline-block";
+            }
           }
           return;
         }
 
         // 3. After the Three Days -> Count up since conclusion
-        if (now > endDate) {
-          if (cdLabel) {
-            cdLabel.textContent = "SINCE RESOLVE 2.0";
-            cdLabel.style.display = "inline-block";
+        if (nowMs > endDateMs) {
+          if (lastMode !== "post") {
+            lastMode = "post";
+            if (cdLabel) {
+              setTextIfChanged(cdLabel, "SINCE RESOLVE 2.0");
+              cdLabel.style.display = "inline-block";
+            }
+            if (cdUnits) cdUnits.style.display = "flex";
+            if (cdLiveBanner) cdLiveBanner.style.display = "none";
           }
-          if (cdUnits) cdUnits.style.display = "flex";
-          if (cdLiveBanner) cdLiveBanner.style.display = "none";
 
-          const diff = now - endDate;
-          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-          const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const s = Math.floor((diff % (1000 * 60)) / 1000);
+          const diff = nowMs - endDateMs;
+          const d = String(Math.floor(diff / 86400000)).padStart(2, "0");
+          const h = String(Math.floor((diff % 86400000) / 3600000)).padStart(2, "0");
+          const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
+          const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
 
-          cdDays.textContent = String(d).padStart(2, "0");
-          cdHours.textContent = String(h).padStart(2, "0");
-          cdMins.textContent = String(m).padStart(2, "0");
-          cdSecs.textContent = String(s).padStart(2, "0");
+          setTextIfChanged(cdDays, d);
+          setTextIfChanged(cdHours, h);
+          setTextIfChanged(cdMins, m);
+          setTextIfChanged(cdSecs, s);
         }
       };
 
@@ -723,24 +753,19 @@ export default function Home() {
             badge.id = badgeId;
             badge.className = 'google-autofill-badge';
             badge.innerHTML = `
-              <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  <div>
-                    <div style="font-size: 11px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.08em;">
-                      Autofilled via Verified Account
-                    </div>
-                    <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 1px;">
-                      ${fullName ? `${fullName} (${email})` : email}
-                    </div>
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px; padding: 9px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; overflow: hidden;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; opacity:0.85;">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <div style="min-width: 0; flex: 1; overflow: hidden;">
+                  <div style="font-size: 10px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.08em; line-height: 1.2;">
+                    Autofilled via Verified Account
+                  </div>
+                  <div style="font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${fullName ? `${fullName} · ${email}` : email}
                   </div>
                 </div>
-                <span style="font-size: 10px; font-family: monospace; color: #000000; background: #ffffff; border: 1px solid #ffffff; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; font-weight: 700; white-space: nowrap;">
-                  Verified
-                </span>
               </div>
             `;
             container.insertBefore(badge, container.firstChild);
@@ -2209,9 +2234,9 @@ export default function Home() {
 
       {/* Main Page HTML Content with Interactive Committees */}
       <div id="main-container" ref={containerRef}>
-        <div dangerouslySetInnerHTML={{ __html: homePart1 || homeHtml }} />
+        <div dangerouslySetInnerHTML={HOME_PART1_HTML} />
         <CommitteesSection />
-        {homePart2 && <div dangerouslySetInnerHTML={{ __html: homePart2 }} />}
+        {HOME_PART2_HTML && <div dangerouslySetInnerHTML={HOME_PART2_HTML} />}
       </div>
       
       {/* Interactive Delegate Pass Section (Above Footer) */}

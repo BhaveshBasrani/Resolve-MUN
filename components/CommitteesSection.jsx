@@ -92,11 +92,20 @@ const COMMITTEES = [
 
 export default function CommitteesSection() {
   const [activeFolder, setActiveFolder] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [folderWidth, setFolderWidth] = useState(310);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const check = () => setIsMobile(window.innerWidth < 640);
+      const check = () => {
+        const w = window.innerWidth;
+        if (w < 640) {
+          // 2-column sleek grid on mobile: fits 2 folders side-by-side with 12px gap and 28px horizontal padding
+          const colW = Math.floor((w - 40) / 2);
+          setFolderWidth(Math.max(142, Math.min(176, colW)));
+        } else {
+          setFolderWidth(310);
+        }
+      };
       check();
       window.addEventListener("resize", check);
       return () => window.removeEventListener("resize", check);
@@ -112,10 +121,8 @@ export default function CommitteesSection() {
     }
   };
 
-  const folderWidth = isMobile ? 255 : 310;
-
   return (
-    <section id="committees" className="reveal relative py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-black overflow-hidden scroll-mt-20">
+    <section id="committees" className="reveal relative py-10 sm:py-20 px-3.5 sm:px-6 lg:px-8 bg-black overflow-hidden scroll-mt-20">
       {/* Background Halftone Screen Pattern */}
       <div
         className="absolute inset-0 pointer-events-none opacity-40 z-0"
@@ -129,22 +136,22 @@ export default function CommitteesSection() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto text-left sm:text-center mb-8 sm:mb-16">
-        <div className="section-label" style={{ margin: "0 0 10px 0" }}>
+      <div className="relative z-10 max-w-7xl mx-auto text-left sm:text-center mb-5 sm:mb-16">
+        <div className="section-label" style={{ margin: "0 0 8px 0" }}>
           Official Committees
         </div>
-        <h2 className="font-['Bebas_Neue'] text-3xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-3 break-words">
+        <h2 className="font-['Bebas_Neue'] text-3xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-2 break-words">
           Where the Debate Happens
         </h2>
-        <p className="font-['Oswald'] text-xs sm:text-sm font-normal text-zinc-400 max-w-2xl sm:mx-auto tracking-wide uppercase">
-          Six elite simulations. Crisis, diplomacy, and parliamentary debate. Click or hover any folder to open the dossier and inspect committee files.
+        <p className="font-['Oswald'] text-[11px] sm:text-sm font-normal text-zinc-400 max-w-2xl sm:mx-auto tracking-wide uppercase leading-relaxed">
+          Six elite simulations. Tap any folder to open the dossier and inspect committee files.
         </p>
       </div>
 
-      {/* Glass Folder Cards Grid */}
-      <div className="relative z-10 max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-5 sm:gap-10 lg:gap-12 pb-8">
+      {/* Glass Folder Cards Grid: 2-column compact grid on mobile, flex-wrap on desktop */}
+      <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-items-center justify-center gap-x-2.5 gap-y-3 sm:gap-10 lg:gap-12 pb-4 sm:pb-8">
         {COMMITTEES.map((comm, idx) => (
-          <div key={comm.id} className="w-full max-w-[260px] sm:max-w-[310px] flex justify-center transition-transform duration-300 sm:hover:scale-[1.02]">
+          <div key={comm.id} className="w-full sm:w-auto sm:max-w-[310px] flex justify-center transition-transform duration-300 sm:hover:scale-[1.02]">
             <GlassFolder
               label={comm.label}
               meta={comm.meta}
@@ -155,7 +162,7 @@ export default function CommitteesSection() {
               action="more"
               width={folderWidth}
               appear={true}
-              appearDelay={idx * 80}
+              appearDelay={idx * 60}
               open={activeFolder === comm.id}
               onOpenChange={(isOpen) => setActiveFolder(isOpen ? comm.id : null)}
               onFileSelect={(file) => handleFileSelect(file, comm.label)}

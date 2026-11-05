@@ -237,6 +237,12 @@ const RDF_CSS = `
   .rdf-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
   .rdf-scene { margin-top: -36px; }
 }
+@media (max-width: 640px) {
+  .rdf-inner { padding: 36px 16px 16px; }
+  .rdf-top { row-gap: 22px; padding-bottom: 22px; }
+  .rdf-bar { padding-top: 14px; font-size: 11px; }
+  .rdf-scene { height: 170px; min-height: 170px; margin-top: -18px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .rdf-r, .rdf-link, .rdf-link::before, .rdf-social a { transition: none; }
   .rdf-r { filter: none; }
@@ -393,9 +399,9 @@ export default function Footer() {
 
     const layout = () => {
       const rect = scene.getBoundingClientRect();
-      p = isMobile ? 3 : Math.max(1, Math.round(pixel));
+      p = Math.max(1, Math.round(pixel));
       const sceneW = rect.width || (typeof window !== "undefined" ? window.innerWidth : 1200);
-      const sceneH = isMobile ? 150 : Math.max(260, rect.height || 340);
+      const sceneH = isMobile ? Math.max(150, rect.height || 170) : Math.max(260, rect.height || 340);
       cols = Math.max(8, Math.ceil(sceneW / p));
       rows = Math.max(8, Math.ceil(sceneH / p));
       canvas.width = cols;

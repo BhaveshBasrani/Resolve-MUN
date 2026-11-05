@@ -809,6 +809,7 @@ body.modal-locked {
 .countdown-unit {
   padding: 10px 18px !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  contain: layout style !important;
 }
 
 /* --- COMPREHENSIVE MOBILE SLEEK REFINEMENT (320px - 640px) --- */
@@ -860,42 +861,57 @@ body.modal-locked {
   #ebModal .modal-close,
   #socialsModal .modal-close,
   #selectionModal .modal-close {
-    width: 32px !important;
-    height: 32px !important;
+    width: 30px !important;
+    height: 30px !important;
     top: 10px !important;
     right: 10px !important;
     border-radius: 8px !important;
   }
 
   .modal-header {
-    margin-bottom: 14px !important;
-    padding-right: 28px !important;
+    margin-bottom: 12px !important;
+    padding-right: 24px !important;
+    padding-left: 24px !important;
+    text-align: center !important;
   }
 
   .modal-pretitle {
-    font-size: 0.65rem !important;
+    font-size: 0.6rem !important;
     letter-spacing: 0.14em !important;
+    color: rgba(255, 255, 255, 0.55) !important;
   }
 
-  .modal-title {
-    font-size: 1.25rem !important;
-    letter-spacing: -0.01em !important;
+  .modal-title,
+  #regModal .modal-title,
+  #ocModal .modal-title,
+  #delModal .modal-title,
+  #secModal .modal-title {
+    font-size: 1.2rem !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.01em !important;
     margin: 2px 0 4px !important;
+    color: #ffffff !important;
   }
 
-  .modal-subtitle {
-    font-size: 0.72rem !important;
+  .modal-subtitle,
+  #regModal .modal-subtitle,
+  #ocModal .modal-subtitle,
+  #delModal .modal-subtitle,
+  #secModal .modal-subtitle {
+    font-size: 0.68rem !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    display: block !important;
   }
 
-  /* Form inputs & controls: Compact 42px touch height, 16px font to prevent iOS auto-zoom */
+  /* Form inputs & controls: Compact 40px touch height, 16px font to prevent iOS auto-zoom */
   .form-group {
-    margin-bottom: 12px !important;
+    margin-bottom: 10px !important;
   }
 
   .form-group label {
-    font-size: 0.68rem !important;
-    letter-spacing: 0.08em !important;
-    margin-bottom: 5px !important;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.07em !important;
+    margin-bottom: 4px !important;
   }
 
   .form-group input,
@@ -904,17 +920,17 @@ body.modal-locked {
   .modal-content input,
   .modal-content select,
   .modal-content textarea {
-    height: 42px !important;
-    min-height: 42px !important;
+    height: 40px !important;
+    min-height: 40px !important;
     font-size: 16px !important;
-    padding: 8px 12px !important;
+    padding: 6px 11px !important;
     border-radius: 8px !important;
   }
 
   .form-group textarea,
   .modal-content textarea {
     height: auto !important;
-    min-height: 72px !important;
+    min-height: 64px !important;
   }
 
   /* Collapse all inline 2-column form grids to single column on mobile */
@@ -924,45 +940,144 @@ body.modal-locked {
   #pref2_portfolios,
   #pref3_portfolios {
     grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-
-  /* Navigation / Actions in forms */
-  .form-actions {
-    margin-top: 14px !important;
     gap: 8px !important;
   }
 
-  .btn-back,
-  .btn-next {
-    height: 42px !important;
-    font-size: 0.75rem !important;
+  /* Navigation / Actions in forms: Crisp single-line buttons */
+  .form-actions,
+  .form-sticky-footer {
+    margin-top: 12px !important;
+    gap: 8px !important;
+  }
+
+  html body .btn-back,
+  html body .btn-next,
+  html body #regModal .btn-next,
+  html body #ocModal .btn-next,
+  html body #secModal .btn-next {
+    height: 40px !important;
+    min-height: 40px !important;
+    font-size: 0.72rem !important;
     padding: 0 14px !important;
     border-radius: 8px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    line-height: 1 !important;
+  }
+
+  /* HERO SECTION MOBILE: Compact 4-column single row stats & sleek 2-column CTA row */
+  html body #hero {
+    min-height: auto !important;
+    height: auto !important;
+    padding: 84px 16px 28px !important;
+  }
+
+  html body #hero .hero-eyebrow {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.2em !important;
+    margin-bottom: 8px !important;
+  }
+
+  html body #hero h1.hero-title {
+    font-size: clamp(2.8rem, 13vw, 3.8rem) !important;
+    line-height: 0.92 !important;
+    margin-bottom: 8px !important;
+  }
+
+  html body #hero .hero-tagline {
+    font-size: 0.78rem !important;
+    margin-bottom: 16px !important;
+  }
+
+  html body #hero .hero-meta {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 340px !important;
+    margin: 0 auto 18px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  html body #hero .hero-meta-divider {
+    display: none !important;
+  }
+
+  html body #hero .hero-meta-item {
+    padding: 8px 4px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  html body #hero .hero-meta-item .label {
+    font-size: 0.46rem !important;
+    letter-spacing: 0.1em !important;
+    margin-bottom: 2px !important;
+    opacity: 0.6 !important;
+  }
+
+  html body #hero .hero-meta-item .value,
+  html body #hero .hero-meta-item .value-suffix {
+    font-size: 1.1rem !important;
+    line-height: 1.1 !important;
+  }
+
+  html body #hero .hero-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 340px !important;
+    margin: 0 auto !important;
+  }
+
+  html body #hero .hero-actions .chrome-btn,
+  html body #hero .hero-actions button {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 8px !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.08em !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
   }
 
   /* Payment Modal Component Tuning */
   .payment-banner {
-    padding: 12px 14px !important;
-    margin-bottom: 12px !important;
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
     border-radius: 10px !important;
   }
 
   .payment-banner h3 {
-    font-size: 1.15rem !important;
+    font-size: 1.1rem !important;
   }
 
   .payment-card {
-    padding: 14px 12px !important;
+    padding: 12px 10px !important;
     border-radius: 12px !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 10px !important;
   }
 
   .qr-container {
-    width: 140px !important;
-    height: 140px !important;
-    margin: 0 auto 10px !important;
-    padding: 8px !important;
+    width: 132px !important;
+    height: 132px !important;
+    margin: 0 auto 8px !important;
+    padding: 6px !important;
     border-radius: 10px !important;
     background: #ffffff !important;
   }
@@ -976,42 +1091,43 @@ body.modal-locked {
   .upi-mobile-pay-btn {
     width: 100% !important;
     max-width: 280px !important;
-    height: 38px !important;
-    font-size: 0.7rem !important;
-    margin: 8px auto !important;
+    height: 36px !important;
+    font-size: 0.65rem !important;
+    margin: 6px auto !important;
     border-radius: 8px !important;
+    white-space: nowrap !important;
   }
 
   .upi-box {
-    font-size: 0.78rem !important;
-    padding: 6px 12px !important;
-    margin: 6px 0 !important;
+    font-size: 0.74rem !important;
+    padding: 5px 10px !important;
+    margin: 4px 0 !important;
     border-radius: 6px !important;
   }
 
   .file-upload-wrapper {
-    height: 42px !important;
+    height: 40px !important;
     padding: 4px 10px !important;
     border-radius: 8px !important;
   }
 
   .file-upload-btn {
     padding: 4px 10px !important;
-    font-size: 0.7rem !important;
+    font-size: 0.68rem !important;
   }
 
   .file-name {
-    font-size: 0.75rem !important;
+    font-size: 0.72rem !important;
   }
 
-  /* Founder's Letter (#letter / .letter-container) on mobile */
-  #letter {
-    padding: 40px 14px !important;
-    scroll-margin-top: 75px !important;
+  /* Founder's Letter (#letter) — High-specificity override of globals.css */
+  html body #letter {
+    padding: 28px 14px !important;
+    scroll-margin-top: 70px !important;
     overflow: hidden !important;
   }
 
-  #letter .letter-inner {
+  html body #letter .letter-inner {
     width: 100% !important;
     max-width: 100% !important;
     padding: 0 !important;
@@ -1019,109 +1135,186 @@ body.modal-locked {
     box-sizing: border-box !important;
   }
 
-  #letter .letter-section-title {
-    font-size: clamp(1.9rem, 7.5vw, 2.6rem) !important;
+  html body #letter .letter-section-title {
+    font-size: 1.75rem !important;
+    line-height: 1.05 !important;
     text-align: left !important;
-    margin: 0 0 14px !important;
-    padding-left: 2px !important;
-    word-break: normal !important;
-    overflow-wrap: break-word !important;
+    margin: 0 0 12px !important;
+    padding-left: 0 !important;
   }
 
-  #letter .letter-container {
+  html body #letter .letter-container {
     width: 100% !important;
     max-width: 100% !important;
-    padding: 20px 14px !important;
+    padding: 16px 14px !important;
+    border-radius: 12px !important;
     box-sizing: border-box !important;
   }
 
-  .letter-paper {
-    padding: 20px 14px !important;
-    border-radius: 12px !important;
+  html body #letter .letter-container .letterhead-top {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 10px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
 
-  .letter-text,
-  .letter-body p {
-    font-size: 0.88rem !important;
-    line-height: 1.65 !important;
+  html body #letter .letter-container .letterhead-seal img {
+    width: 26px !important;
+    height: 26px !important;
   }
 
-  /* Compact Minimal Monochrome Countdown */
-  #countdown {
-    margin: 20px auto 30px !important;
+  html body #letter .letter-container .lh-org {
+    font-size: 0.65rem !important;
+  }
+
+  html body #letter .letter-container .lh-office {
+    font-size: 0.55rem !important;
+  }
+
+  html body #letter .letter-container .letterhead-meta,
+  html body #letter .letter-container .letter-divider-line,
+  html body #letter .letter-container .letter-footnote {
+    display: none !important;
+  }
+
+  html body #letter .letter-container .letter-content p,
+  html body #letter .letter-container .letter-content p.letter-salutation,
+  html body #letter .letter-container .letter-content p.letter-lead,
+  html body #letter .letter-container .letter-content p.letter-first,
+  html body #letter .letter-container .letter-content p.letter-emphasis,
+  html body #letter .letter-container .letter-content p.letter-conclusion {
+    font-size: 0.78rem !important;
+    line-height: 1.48 !important;
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  html body #letter .letter-container .letter-content p.letter-first::first-letter {
+    float: none !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    font-weight: inherit !important;
+    color: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  html body #letter .letter-container .letter-signature-block {
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+  }
+
+  html body #letter .letter-container .letter-sig-script {
+    font-size: 1.35rem !important;
+    margin: 2px 0 !important;
+  }
+
+  html body #letter .letter-container .founder-sig-name {
+    font-size: 0.72rem !important;
+  }
+
+  html body #letter .letter-container .founder-sig-role {
+    font-size: 0.62rem !important;
+  }
+
+  /* Compact Minimal Monochrome Countdown — High-specificity override of globals.css */
+  html body #countdown {
+    margin: 14px auto 20px !important;
     padding: 0 12px !important;
   }
 
-  .countdown-label {
-    font-size: 0.65rem !important;
-    letter-spacing: 0.2em !important;
-    margin-bottom: 8px !important;
+  html body #countdown .countdown-label {
+    font-size: 0.58rem !important;
+    letter-spacing: 0.18em !important;
+    margin-bottom: 6px !important;
     opacity: 0.6 !important;
     text-align: center !important;
   }
 
-  .countdown-units-wrapper {
+  html body #countdown .countdown-units-wrapper,
+  html body #cd-units {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: center !important;
     align-items: center !important;
     gap: 6px !important;
-    max-width: 320px !important;
+    max-width: 280px !important;
     margin: 0 auto !important;
   }
 
-  .countdown-unit {
+  html body #countdown .countdown-unit {
+    width: 56px !important;
     min-width: 56px !important;
-    max-width: 64px !important;
-    padding: 8px 4px !important;
+    max-width: 60px !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    max-height: 56px !important;
+    padding: 6px 4px !important;
     border-radius: 8px !important;
     background: #09090b !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
-  .countdown-num {
-    font-size: 1.6rem !important;
+  html body #countdown .countdown-num {
+    font-size: 1.3rem !important;
     line-height: 1 !important;
     letter-spacing: 0.02em !important;
     text-shadow: none !important;
   }
 
-  .countdown-unit-label {
-    font-size: 0.5rem !important;
-    letter-spacing: 0.12em !important;
+  html body #countdown .countdown-unit-label {
+    font-size: 0.45rem !important;
+    letter-spacing: 0.1em !important;
     margin-top: 3px !important;
     opacity: 0.6 !important;
   }
 
-  .countdown-sep {
-    font-size: 1.1rem !important;
-    opacity: 0.3 !important;
+  html body #countdown .countdown-sep {
+    display: inline-block !important;
+    font-size: 0.95rem !important;
+    opacity: 0.35 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* About Section Tuning */
-  #about {
-    padding: 36px 14px !important;
-    scroll-margin-top: 75px !important;
+  /* About Section Tuning: Hide duplicate giant emblem + duplicate 4 stats on mobile */
+  html body #about {
+    padding: 24px 14px !important;
+    scroll-margin-top: 70px !important;
     overflow: hidden !important;
   }
 
-  #about .about-inner {
+  html body #about .about-inner {
     width: 100% !important;
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 auto !important;
+    display: block !important;
     box-sizing: border-box !important;
   }
 
-  #about .section-title {
-    font-size: clamp(1.9rem, 7.5vw, 2.6rem) !important;
-    line-height: 1.05 !important;
-    margin-bottom: 12px !important;
-    text-align: left !important;
-    word-break: normal !important;
+  html body #about .about-visual {
+    display: none !important;
   }
 
-  #about .section-title .title-accent,
+  html body #about .section-title {
+    font-size: 1.85rem !important;
+    line-height: 1.02 !important;
+    margin-bottom: 10px !important;
+    text-align: left !important;
+  }
+
+  html body #about .section-title .title-accent,
   .title-accent {
     background: none !important;
     -webkit-background-clip: unset !important;
@@ -1132,35 +1325,186 @@ body.modal-locked {
     text-shadow: none !important;
   }
 
-  #about .section-body,
-  #about p.section-body {
+  html body #about .section-body,
+  html body #about p.section-body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-    font-size: 0.88rem !important;
+    font-size: 0.82rem !important;
     font-weight: 400 !important;
-    line-height: 1.65 !important;
+    line-height: 1.55 !important;
     color: rgba(255, 255, 255, 0.72) !important;
     text-transform: none !important;
     letter-spacing: normal !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Venue Section Mobile Polish */
+  html body #venue {
+    padding: 28px 14px !important;
+    overflow: hidden !important;
+  }
+
+  html body #venue .venue-header {
+    text-align: left !important;
+    margin-bottom: 14px !important;
+  }
+
+  html body #venue .venue-header .section-label {
+    justify-content: flex-start !important;
+    margin: 0 0 6px 0 !important;
+  }
+
+  html body #venue .venue-header .section-title {
+    text-align: left !important;
+    font-size: 1.8rem !important;
+    margin-bottom: 6px !important;
+  }
+
+  html body #venue .venue-header .section-body {
+    text-align: left !important;
+    font-size: 0.78rem !important;
+    line-height: 1.5 !important;
+    margin: 0 0 14px 0 !important;
+  }
+
+  html body #venue .venue-split-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  html body #venue .venue-pic-frame {
+    height: 165px !important;
+    min-height: 165px !important;
+    max-height: 165px !important;
+    border-radius: 12px !important;
+  }
+
+  html body #venue .venue-map-card {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  html body #venue .venue-map-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  html body #venue .venue-landmark-text {
+    font-size: 0.6rem !important;
+    letter-spacing: 0.08em !important;
+    white-space: nowrap !important;
+  }
+
+  html body #venue .venue-city-code {
+    font-size: 0.58rem !important;
+    padding: 2px 6px !important;
+    white-space: nowrap !important;
+  }
+
+  html body #venue .venue-map-frame {
+    height: 165px !important;
+    min-height: 165px !important;
+    max-height: 165px !important;
+    border-radius: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  html body #venue .venue-address-content {
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  html body #venue .venue-pin-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 8px !important;
+  }
+
+  html body #venue .venue-address-text strong {
+    font-size: 0.8rem !important;
+    line-height: 1.38 !important;
+    margin-bottom: 3px !important;
+    display: block !important;
+  }
+
+  html body #venue .venue-landmark-sub {
+    font-size: 0.7rem !important;
+    line-height: 1.35 !important;
+  }
+
+  html body #venue .venue-actions-row {
+    display: grid !important;
+    grid-template-columns: 1.25fr 0.95fr !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+  }
+
+  html body #venue .venue-nav-btn {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 8px !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0.06em !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+  }
+
+  /* Sponsors Section Mobile Polish: Compact 2x2 grid */
+  html body #sponsors {
+    padding: 28px 14px !important;
+  }
+
+  html body #sponsors .section-label {
+    font-size: 0.58rem !important;
+    letter-spacing: 0.14em !important;
+    margin-bottom: 8px !important;
+    white-space: nowrap !important;
+  }
+
+  html body #sponsors .section-title {
+    font-size: 1.8rem !important;
     margin-bottom: 16px !important;
   }
 
-  #about .about-stat-grid,
-  .about-stat-grid {
+  html body #sponsors .sponsors-row {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 8px !important;
     width: 100% !important;
-    max-width: 100% !important;
-    margin: 14px 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
   }
 
-  #about .about-stat,
-  .about-stat {
-    padding: 10px 8px !important;
-    min-height: auto !important;
-    box-sizing: border-box !important;
+  html body #sponsors .sponsor-slot {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 10px !important;
+    font-size: 0.65rem !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  html body #sponsors .sponsor-slot:nth-child(5) {
+    display: none !important;
+  }
+
+  html body #sponsors .sponsors-contact {
+    margin-top: 16px !important;
+    font-size: 0.75rem !important;
   }
 
   /* Prevent any full-width carousel from bleeding off-screen */
