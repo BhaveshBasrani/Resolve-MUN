@@ -1142,10 +1142,12 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
 .gf-key { transition: transform .35s var(--gf-spring), box-shadow .35s var(--gf-ease), opacity .6s var(--gf-ease) .7s, scale .7s var(--gf-spring) .7s; }
 
 @media (max-width: 640px) {
-  .gf-root[data-place="bottom-left"] .gf-label { left: 20px; bottom: 22px; max-width: 245px; }
-  .gf-title { font-size: 26px; letter-spacing: 0.03em; }
-  .gf-meta { font-size: 13.5px; }
-  .gf-key { right: 16px; bottom: 16px; width: 48px; height: 48px; border-radius: 14px; }
+  .gf-root[data-place="bottom-left"] .gf-label { left: 12px; bottom: 12px; max-width: 105px; gap: 2px; }
+  .gf-title { font-size: 14px; letter-spacing: 0.02em; line-height: 1.1; font-weight: 700; }
+  .gf-meta { font-size: 9px; letter-spacing: 0.01em; opacity: 0.7; }
+  .gf-key { right: 8px; bottom: 8px; width: 28px; height: 28px; border-radius: 8px; }
+  .gf-glyph--more { width: 16px; height: 7px; }
+  .gf-glyph--plus { width: 14px; height: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

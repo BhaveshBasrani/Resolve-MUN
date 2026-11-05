@@ -1007,30 +1007,30 @@ body.modal-locked {
   /* Compact Verified Account Card */
   .google-autofill-badge {
     width: 100% !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 8px !important;
     flex-shrink: 0 !important;
   }
 
-  .google-autofill-badge > div {
-    padding: 8px 12px !important;
+  .google-autofill-badge>div {
+    padding: 6px 10px !important;
     border-radius: 8px !important;
     background: rgba(255, 255, 255, 0.04) !important;
     border: 1px solid rgba(255, 255, 255, 0.14) !important;
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
     overflow: hidden !important;
   }
 
   .google-autofill-badge div[style*="font-size: 10px"] {
-    font-size: 11px !important;
+    font-size: 10.5px !important;
     font-weight: 700 !important;
     letter-spacing: 0.06em !important;
     line-height: 1.2 !important;
   }
 
   .google-autofill-badge div[style*="font-size: 11px"] {
-    font-size: 12px !important;
+    font-size: 11.5px !important;
     color: rgba(255, 255, 255, 0.7) !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -1040,17 +1040,17 @@ body.modal-locked {
 
   /* Section Labels: 12–13px */
   html body .form-group label {
-    font-size: 12.5px !important;
+    font-size: 12px !important;
     font-weight: 600 !important;
     letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
     color: rgba(255, 255, 255, 0.85) !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 5px !important;
     display: block !important;
     text-align: left !important;
   }
 
-  /* Form Inputs & Selects: 52–56px tall, 16px text (avoid iOS auto-zoom) */
+  /* Form Inputs & Selects: 48–50px tall, 16px text (avoid iOS auto-zoom) */
   html body .form-group input,
   html body .form-group select,
   html body .modal-content input,
@@ -1067,11 +1067,11 @@ body.modal-locked {
   html body #ebModal .form-group select,
   html body #socialsModal .form-group input,
   html body #socialsModal .form-group select {
-    height: 52px !important;
-    min-height: 52px !important;
-    max-height: 54px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 50px !important;
     font-size: 16px !important;
-    padding: 0 14px !important;
+    padding: 0 12px !important;
     border-radius: 10px !important;
     background: rgba(255, 255, 255, 0.04) !important;
     border: 1px solid rgba(255, 255, 255, 0.18) !important;
@@ -1082,9 +1082,9 @@ body.modal-locked {
 
   html body .form-group textarea,
   html body .modal-content textarea {
-    min-height: 72px !important;
+    min-height: 68px !important;
     font-size: 16px !important;
-    padding: 12px 14px !important;
+    padding: 10px 12px !important;
     border-radius: 10px !important;
     background: rgba(255, 255, 255, 0.04) !important;
     border: 1px solid rgba(255, 255, 255, 0.18) !important;
@@ -1093,7 +1093,7 @@ body.modal-locked {
 
   /* Form Group Spacing */
   html body .form-group {
-    margin-bottom: 14px !important;
+    margin-bottom: 12px !important;
     width: 100% !important;
   }
 
@@ -1117,10 +1117,10 @@ body.modal-locked {
   }
 
   /* Ensure bottom-most form elements don't get overlapped by sticky footer */
-  html body .form-step > div:not(.form-sticky-footer):last-of-type,
-  html body .form-step > .form-group:last-of-type,
-  html body .form-step > .terms-confirmation {
-    margin-bottom: 24px !important;
+  html body .form-step>div:not(.form-sticky-footer):not(.form-actions):last-of-type,
+  html body .form-step>.form-group:last-of-type,
+  html body .form-step>.terms-confirmation {
+    margin-bottom: 84px !important;
   }
 
   /* 5. PART 3: STICKY FOOTER (Next / Continue Button) */
@@ -1920,119 +1920,146 @@ body.modal-locked {
 }
 
 /* ==========================================================================
-   OFFICIAL DELEGATE ENTRY PASS PRINT MEDIA RULES (ISOLATED TICKET ONLY)
+   OFFICIAL DELEGATE ENTRY PASS PRINT MEDIA RULES (ISOLATED 1-PAGE PASS ONLY)
    ========================================================================== */
 @media print {
   @page {
     size: portrait;
-    margin: 8mm;
+    margin: 0;
   }
 
   html,
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 100% !important;
-    max-height: 100% !important;
-    overflow: hidden !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide header, navbar, footer, modals and scripts */
+  /* 1. Hide all non-dashboard chrome & UI elements */
   nav,
   footer,
   header,
-  .no-print,
   button,
   a,
+  .no-print,
   .modal-overlay,
   #print-pass-iframe {
     display: none !important;
     visibility: hidden !important;
   }
 
-  /* Reset layout structure for print */
-  body {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
+    /* 2. Hide everything under body EXCEPT #dashboard-root */
+    body>*:not(#dashboard-root) {
+      display: none !important;
+    }
 
-  body>* {
-    display: none !important;
-  }
+    /* 3. Setup #dashboard-root as 100vh viewport container */
+    #dashboard-root {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+      border: none !important;
+      overflow: hidden !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
 
-  /* Exclusively show the main wrapper with zero offsets */
-  body>main {
-    display: flex !important;
-    visibility: visible !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    overflow: hidden !important;
-    transform: none !important;
-    perspective: none !important;
-  }
 
-  body>main>* {
-    display: none !important;
-  }
+      /* 4. Hide all children of #dashboard-root EXCEPT #dashboard-main */
+      #dashboard-root>*:not(#dashboard-main) {
+        display: none !important;
+      }
 
-  body>main>div:has(#printable-pass-container) {
-    display: flex !important;
-    visibility: visible !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    height: 100% !important;
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
 
-  #printable-pass-container {
-    display: flex !important;
-    visibility: visible !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    max-width: 440px !important;
-    margin: auto !important;
-    padding: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    transform: none !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
+        /* 5. Setup #dashboard-main */
+        #dashboard-main {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 100% !important;
+          height: 100% !important;
+          max-height: 100% !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: transparent !important;
+          border: none !important;
+          overflow: hidden !important;
+        }
 
-  #printable-pass-container * {
-    visibility: visible !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
 
-  #printable-pass-container [style*="perspective"] {
-    perspective: none !important;
-    transform: none !important;
-  }
-}
+          /* 6. Hide all sections of #dashboard-main EXCEPT #digital-pass-card */
+          #dashboard-main>*:not(#digital-pass-card) {
+            display: none !important;
+          }
+
+
+            /* 7. Setup #digital-pass-card */
+            #digital-pass-card {
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              width: 100% !important;
+              height: 100% !important;
+              max-height: 100% !important;
+              min-height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: transparent !important;
+              border: none !important;
+              box-shadow: none !important;
+              overflow: hidden !important;
+            }
+
+            /* 8. Inside #digital-pass-card, hide header, format switcher, buttons. ONLY show #printable-pass-container */
+            #digital-pass-card>*:not(#printable-pass-container) {
+              display: none !important;
+            }
+
+            /* 9. Ticket container: perfectly centered on EXACTLY ONE PAGE */
+            #printable-pass-container {
+              display: flex !important;
+              visibility: visible !important;
+              align-items: center !important;
+              justify-content: center !important;
+              width: 100% !important;
+              max-width: 400px !important;
+              margin: auto !important;
+              padding: 0 !important;
+              background: transparent !important;
+              box-shadow: none !important;
+              border: none !important;
+              transform: none !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
+
+            #printable-pass-container * {
+              visibility: visible !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+
+            #printable-pass-container [style*="perspective"] {
+              perspective: none !important;
+              transform: none !important;
+            }
+          }

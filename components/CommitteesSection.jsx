@@ -140,12 +140,12 @@ export default function CommitteesSection() {
         <div className="section-label" style={{ margin: "0 0 8px 0" }}>
           Official Committees
         </div>
-        <h2 className="font-['Bebas_Neue'] text-3xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-2 break-words">
-          Where the Debate Happens
-        </h2>
-        <p className="font-['Oswald'] text-[11px] sm:text-sm font-normal text-zinc-400 max-w-2xl sm:mx-auto tracking-wide uppercase leading-relaxed">
-          Six elite simulations. Tap any folder to open the dossier and inspect committee files.
-        </p>
+          <h2 className="font-['Bebas_Neue'] text-2xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-2">
+            Where the Debate Happens
+          </h2>
+          <p className="font-['Oswald'] text-[11px] sm:text-sm font-normal text-zinc-400 max-w-2xl sm:mx-auto tracking-wide uppercase leading-relaxed">
+            Six elite simulations. Tap any folder to open the dossier and inspect committee files.
+          </p>
       </div>
 
       {/* Glass Folder Cards Grid: 2-column compact grid on mobile, flex-wrap on desktop */}

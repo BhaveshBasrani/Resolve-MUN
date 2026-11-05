@@ -743,39 +743,6 @@ export default function Home() {
             dispatchEv(input);
           }
         });
-
-        // 6. Visual Autofill Badges
-        const attachBadge = (badgeId, parentSelector) => {
-          if (!email) return;
-          const container = document.querySelector(parentSelector);
-          if (container && !document.getElementById(badgeId)) {
-            const badge = document.createElement('div');
-            badge.id = badgeId;
-            badge.className = 'google-autofill-badge';
-            badge.innerHTML = `
-              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px; padding: 9px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; overflow: hidden;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; opacity:0.85;">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <div style="min-width: 0; flex: 1; overflow: hidden;">
-                  <div style="font-size: 10px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.08em; line-height: 1.2;">
-                    Autofilled via Verified Account
-                  </div>
-                  <div style="font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    ${fullName ? `${fullName} · ${email}` : email}
-                  </div>
-                </div>
-              </div>
-            `;
-            container.insertBefore(badge, container.firstChild);
-          }
-        };
-
-        attachBadge('regGoogleBadge', '#regModal #step1');
-        attachBadge('delGoogleBadge', '#delModal #delStep1');
-        attachBadge('ocGoogleBadge', '#ocModal .modal-body, #ocModal form');
-        attachBadge('ebGoogleBadge', '#ebModal .modal-body, #ebModal form');
       }
 
       window.autofillAllKnownFields = autofillAllKnownFields;
