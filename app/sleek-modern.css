@@ -560,56 +560,99 @@ body.modal-locked {
   border-radius: 12px !important;
 }
 
-/* --- PAYMENT COMPONENT STYLING (MATCHING INDEX_ARCHIVE.HTML) --- */
+/* --- PAYMENT COMPONENT STYLING (MODERN MINIMALIST) --- */
 .payment-banner {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 14px !important;
-  padding: 16px !important;
-  text-align: center !important;
-  margin-bottom: 16px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  margin-bottom: 12px !important;
 }
 
-.payment-banner h3 {
+.payment-banner-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.payment-banner-label {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  display: block !important;
+  margin-bottom: 2px !important;
+}
+
+.payment-banner h3,
+.payment-banner-amount {
   font-family: 'Inter', system-ui, sans-serif !important;
-  font-size: 1.35rem !important;
+  font-size: 1.25rem !important;
   font-weight: 800 !important;
   color: #ffffff !important;
   letter-spacing: -0.01em !important;
   margin: 0 !important;
+  line-height: 1.2 !important;
 }
 
-.payment-banner .non-refundable-notice {
-  font-size: 0.68rem !important;
-  color: #f87171 !important;
-  opacity: 0.9 !important;
-  margin-top: 6px !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
+.payment-banner-badge {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #f87171 !important;
+  background: rgba(248, 113, 113, 0.1) !important;
+  border: 1px solid rgba(248, 113, 113, 0.25) !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
 }
 
 .payment-card {
-  background: #090909 !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  border-radius: 16px !important;
-  padding: 22px 18px !important;
-  margin-bottom: 16px !important;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6) !important;
+  background: #09090b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 14px !important;
+  padding: 16px 14px !important;
+  margin-bottom: 14px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.payment-qr-block {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-bottom: 14px !important;
+}
+
+.payment-step-indicator {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  display: block !important;
+  margin-bottom: 8px !important;
 }
 
 .qr-container {
-  width: 170px !important;
-  height: 170px !important;
-  margin: 0 auto 14px !important;
-  padding: 10px !important;
-  border-radius: 12px !important;
+  width: 140px !important;
+  height: 140px !important;
+  margin: 0 auto 8px !important;
+  padding: 6px !important;
+  border-radius: 10px !important;
   background: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
 .qr-container img {
@@ -625,19 +668,19 @@ body.modal-locked {
 }
 
 .upi-box {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  padding: 8px 16px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  padding: 6px 12px !important;
   border-radius: 8px !important;
-  font-size: 0.88rem !important;
+  font-size: 12px !important;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   color: #ffffff !important;
-  margin: 8px 0 10px !important;
-  transition: all 0.2s ease !important;
+  margin: 6px auto !important;
+  transition: all 0.15s ease !important;
 }
 
 .upi-box:hover {
@@ -649,15 +692,49 @@ body.modal-locked {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
+  gap: 6px !important;
   width: 100% !important;
-  max-width: 320px !important;
-  height: 40px !important;
+  max-width: 290px !important;
+  height: 38px !important;
+  padding: 0 14px !important;
   border-radius: 8px !important;
   background: #ffffff !important;
   color: #000000 !important;
   font-family: 'Inter', system-ui, sans-serif !important;
-  font-size: 0.72rem !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.02em !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+  margin: 6px auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.upi-mobile-pay-btn:hover {
+  background: #e4e4e7 !important;
+  transform: translateY(-1px) !important;
+}
+
+.upi-mobile-pay-btn:active {
+  transform: scale(0.98) !important;
+}
+
+.payment-verified-note {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  margin: 6px 0 0 0 !important;
+  text-align: center !important;
+}
+
+.payment-verified-note strong {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.08em !important;
@@ -832,7 +909,7 @@ body.modal-locked {
     height: 100dvh !important;
   }
 
-  /* 1. Modal Overlay: Docked mobile bottom sheet / full-screen */
+  /* 1. Modal Overlay: Clean, immersive mobile full-screen modal */
   .modal-overlay {
     position: fixed !important;
     inset: 0 !important;
@@ -842,16 +919,16 @@ body.modal-locked {
     padding: 0 !important;
     margin: 0 !important;
     display: flex !important;
-    align-items: flex-end !important;
+    align-items: center !important;
     justify-content: center !important;
-    background: rgba(0, 0, 0, 0.85) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    z-index: 9999 !important;
+    background: rgba(0, 0, 0, 0.94) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    z-index: 9999999 !important;
     overflow: hidden !important;
   }
 
-  /* 2. Modal Content: Nearly full-screen with 100dvh, suitable border-radius (16–20px) */
+  /* 2. Modal Content: Full-screen, edge-to-edge on mobile with zero peeking background */
   html body #regModal .modal-content,
   html body #delModal .modal-content,
   html body #ocModal .modal-content,
@@ -861,23 +938,22 @@ body.modal-locked {
   html body #selectionModal .modal-content,
   html body .modal-content,
   html body .selection-modal-content {
-    width: 100% !important;
+    width: 100vw !important;
     max-width: 100vw !important;
-    height: 96dvh !important;
+    height: 100dvh !important;
     max-height: 100dvh !important;
     margin: 0 !important;
     padding: 0 !important;
-    border-radius: 18px 18px 0 0 !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    border-bottom: none !important;
-    background: #070709 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: #09090b !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
     position: relative !important;
   }
 
-  /* Close Button: Fixed at top right, highly accessible */
+  /* Close Button: Sleek, high-precision top right */
   .modal-close,
   #regModal .modal-close,
   #delModal .modal-close,
@@ -887,22 +963,23 @@ body.modal-locked {
   #socialsModal .modal-close,
   #selectionModal .modal-close {
     position: absolute !important;
-    top: 14px !important;
+    top: 12px !important;
     right: 14px !important;
     width: 32px !important;
     height: 32px !important;
     z-index: 50 !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 8px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    color: #ffffff !important;
+    color: rgba(255, 255, 255, 0.8) !important;
     cursor: pointer !important;
+    transition: all 0.15s ease !important;
   }
 
-  /* 3. PART 1: FIXED MODAL HEADER (Title, Event details, Close button) */
+  /* 3. PART 1: FIXED MODAL HEADER (Minimalist, quiet luxury) */
   html body .modal-header,
   html body #regModal .modal-header,
   html body #ocModal .modal-header,
@@ -911,27 +988,16 @@ body.modal-locked {
   html body #ebModal .modal-header,
   html body #socialsModal .modal-header {
     flex-shrink: 0 !important;
-    padding: 16px 54px 12px 18px !important;
+    padding: 14px 50px 12px 18px !important;
     margin: 0 !important;
-    background: #070709 !important;
+    background: #09090b !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     text-align: left !important;
     position: relative !important;
     z-index: 30 !important;
   }
 
-  /* Pretitle: 11px */
-  .modal-pretitle {
-    font-size: 11px !important;
-    letter-spacing: 0.12em !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    color: rgba(255, 255, 255, 0.5) !important;
-    margin-bottom: 3px !important;
-    text-align: left !important;
-  }
-
-  /* Main Heading: approximately 23–26px */
+  /* Main Heading: 16.5px Clean, Modern Sans */
   .modal-title,
   .modal-header .modal-title,
   #regModal .modal-title,
@@ -940,17 +1006,18 @@ body.modal-locked {
   #secModal .modal-title,
   #ebModal .modal-title,
   #socialsModal .modal-title {
-    font-family: 'Bebas Neue', 'Inter', sans-serif !important;
-    font-size: 25px !important;
-    line-height: 1.1 !important;
-    letter-spacing: 0.02em !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 16.5px !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.01em !important;
     font-weight: 700 !important;
     color: #ffffff !important;
-    margin: 0 0 3px 0 !important;
+    margin: 0 0 2px 0 !important;
     text-align: left !important;
+    text-transform: uppercase !important;
   }
 
-  /* Event Subtitle: 12–13px */
+  /* Event Subtitle: 11.5px subtle */
   .modal-subtitle,
   #regModal .modal-subtitle,
   #ocModal .modal-subtitle,
@@ -958,23 +1025,24 @@ body.modal-locked {
   #secModal .modal-subtitle,
   #ebModal .modal-subtitle,
   #socialsModal .modal-subtitle {
-    font-size: 12.5px !important;
-    line-height: 1.35 !important;
-    color: rgba(255, 255, 255, 0.6) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 11.5px !important;
+    line-height: 1.3 !important;
+    color: rgba(255, 255, 255, 0.45) !important;
     display: block !important;
     text-align: left !important;
     margin: 0 !important;
+    font-weight: 400 !important;
   }
 
-  /* School Contingent Switch link: Wrap naturally */
+  /* Hide pretitle and bulky switch links on mobile */
+  .modal-pretitle {
+    display: none !important;
+  }
+
   .modal-header button,
   .modal-header a {
-    display: inline-flex !important;
-    flex-wrap: wrap !important;
-    white-space: normal !important;
-    text-align: left !important;
-    line-height: 1.4 !important;
-    margin-top: 6px !important;
+    display: none !important;
   }
 
   /* 4. PART 2: SCROLLABLE FORM CONTENT (Scrolls independently) */
@@ -1001,56 +1069,28 @@ body.modal-locked {
     flex-direction: column !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    padding: 16px 16px 16px 16px !important;
+    padding: 16px 16px 0 16px !important;
   }
 
-  /* Compact Verified Account Card */
+  /* Hide verified account autofill badge box */
   .google-autofill-badge {
-    width: 100% !important;
-    margin-bottom: 8px !important;
-    flex-shrink: 0 !important;
+    display: none !important;
   }
 
-  .google-autofill-badge>div {
-    padding: 6px 10px !important;
-    border-radius: 8px !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    overflow: hidden !important;
-  }
-
-  .google-autofill-badge div[style*="font-size: 10px"] {
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.06em !important;
-    line-height: 1.2 !important;
-  }
-
-  .google-autofill-badge div[style*="font-size: 11px"] {
-    font-size: 11.5px !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    max-width: 100% !important;
-  }
-
-  /* Section Labels: 12–13px */
+  /* Section Labels: 11px uppercase clean font */
   html body .form-group label {
-    font-size: 12px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
-    letter-spacing: 0.04em !important;
+    letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
-    color: rgba(255, 255, 255, 0.85) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
     margin-bottom: 5px !important;
     display: block !important;
     text-align: left !important;
   }
 
-  /* Form Inputs & Selects: 48–50px tall, 16px text (avoid iOS auto-zoom) */
+  /* Form Inputs & Selects: 42px sleek height, refined typography */
   html body .form-group input,
   html body .form-group select,
   html body .modal-content input,
@@ -1067,27 +1107,40 @@ body.modal-locked {
   html body #ebModal .form-group select,
   html body #socialsModal .form-group input,
   html body #socialsModal .form-group select {
-    height: 48px !important;
-    min-height: 48px !important;
-    max-height: 50px !important;
-    font-size: 16px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
     padding: 0 12px !important;
-    border-radius: 10px !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     color: #ffffff !important;
     box-sizing: border-box !important;
     width: 100% !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease !important;
+  }
+
+  html body .form-group input:focus,
+  html body .form-group select:focus,
+  html body .modal-content input:focus,
+  html body .modal-content select:focus {
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    outline: none !important;
   }
 
   html body .form-group textarea,
   html body .modal-content textarea {
-    min-height: 68px !important;
-    font-size: 16px !important;
+    min-height: 60px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 14px !important;
     padding: 10px 12px !important;
-    border-radius: 10px !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     color: #ffffff !important;
   }
 
@@ -1117,61 +1170,131 @@ body.modal-locked {
   }
 
   /* Ensure bottom-most form elements don't get overlapped by sticky footer */
-  html body .form-step>div:not(.form-sticky-footer):not(.form-actions):last-of-type,
-  html body .form-step>.form-group:last-of-type,
-  html body .form-step>.terms-confirmation {
-    margin-bottom: 84px !important;
+  html body .form-step > div:not(.form-sticky-footer):not(.form-actions):last-of-type,
+  html body .form-step > .form-group:last-of-type,
+  html body .form-step > *:has(+ .form-sticky-footer),
+  html body .form-step > *:has(+ .form-actions),
+  html body .form-step > .terms-confirmation {
+    margin-bottom: 24px !important;
   }
 
   /* 5. PART 3: STICKY FOOTER (Next / Continue Button) */
+  html body #regModal .form-sticky-footer,
+  html body #delModal .form-sticky-footer,
+  html body #ocModal .form-sticky-footer,
+  html body #secModal .form-sticky-footer,
+  html body #ebModal .form-sticky-footer,
+  html body #socialsModal .form-sticky-footer,
+  html body #selectionModal .form-sticky-footer,
+  html body #regModal .form-actions,
+  html body #delModal .form-actions,
+  html body #ocModal .form-actions,
+  html body #secModal .form-actions,
+  html body #ebModal .form-actions,
+  html body #socialsModal .form-actions,
+  html body #selectionModal .form-actions,
   html body .form-sticky-footer,
   html body .form-actions {
     position: sticky !important;
     bottom: 0 !important;
-    z-index: 40 !important;
+    z-index: 50 !important;
     flex-shrink: 0 !important;
-    background: #070709 !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
-    padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px !important;
+    background: #09090b !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 8px 16px max(10px, env(safe-area-inset-bottom, 10px)) 16px !important;
     margin-left: -16px !important;
     margin-right: -16px !important;
-    margin-bottom: -16px !important;
+    margin-bottom: 0 !important;
     margin-top: auto !important;
     width: calc(100% + 32px) !important;
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.8) !important;
     display: flex !important;
     align-items: center !important;
     gap: 10px !important;
   }
 
-  /* Full-width Touch Button inside Sticky Footer */
-  html body .btn-back,
-  html body .btn-next,
+  /* Refined, Sleek Action Button (High-End Monochrome) */
+  html body #regModal .btn-back,
+  html body #delModal .btn-back,
+  html body #ocModal .btn-back,
+  html body #secModal .btn-back,
+  html body #ebModal .btn-back,
+  html body #socialsModal .btn-back,
+  html body #selectionModal .btn-back,
   html body #regModal .btn-next,
+  html body #delModal .btn-next,
   html body #ocModal .btn-next,
   html body #secModal .btn-next,
-  html body #delModal .btn-next,
   html body #ebModal .btn-next,
-  html body #socialsModal .btn-next {
-    height: 50px !important;
-    min-height: 50px !important;
-    width: 100% !important;
-    font-size: 14px !important;
+  html body #socialsModal .btn-next,
+  html body #selectionModal .btn-next,
+  html body .btn-back,
+  html body .btn-next,
+  html body .btn-submit,
+  html body #regSubmitBtn,
+  html body #delSubmitBtn,
+  html body #ocSubmitBtn,
+  html body #secSubmitBtn,
+  html body #ebSubmitBtn {
+    height: 42px !important;
+    min-height: 42px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.06em !important;
+    letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
+    gap: 6px !important;
     line-height: 1 !important;
     margin: 0 !important;
+    box-shadow: none !important;
   }
 
+  html body #regModal .btn-next,
+  html body #delModal .btn-next,
+  html body #ocModal .btn-next,
+  html body #secModal .btn-next,
+  html body #ebModal .btn-next,
+  html body #socialsModal .btn-next,
+  html body #selectionModal .btn-next,
+  html body .btn-next,
+  html body .btn-submit,
+  html body #regSubmitBtn,
+  html body #delSubmitBtn,
+  html body #ocSubmitBtn,
+  html body #secSubmitBtn,
+  html body #ebSubmitBtn {
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: opacity 0.15s ease, transform 0.1s ease !important;
+  }
+
+  html body #regModal .btn-back,
+  html body #delModal .btn-back,
+  html body #ocModal .btn-back,
+  html body #secModal .btn-back,
+  html body #ebModal .btn-back,
+  html body #socialsModal .btn-back,
+  html body #selectionModal .btn-back,
   html body .btn-back {
     width: auto !important;
-    min-width: 80px !important;
+    min-width: 72px !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+
+  html body .btn-next:active,
+  html body .btn-back:active,
+  html body .btn-submit:active {
+    transform: scale(0.98) !important;
+    opacity: 0.9 !important;
   }
 
   /* Terms of Service & Privacy Policy Modal: Complete Mobile Optimization */
@@ -1420,8 +1543,9 @@ body.modal-locked {
     border-radius: 10px !important;
   }
 
-  .payment-banner h3 {
-    font-size: 1.1rem !important;
+  .payment-banner h3,
+  .payment-banner-amount {
+    font-size: 1.05rem !important;
   }
 
   .payment-card {
@@ -1431,8 +1555,8 @@ body.modal-locked {
   }
 
   .qr-container {
-    width: 132px !important;
-    height: 132px !important;
+    width: 130px !important;
+    height: 130px !important;
     margin: 0 auto 8px !important;
     padding: 6px !important;
     border-radius: 10px !important;
@@ -1449,7 +1573,7 @@ body.modal-locked {
     width: 100% !important;
     max-width: 280px !important;
     height: 36px !important;
-    font-size: 0.65rem !important;
+    font-size: 11px !important;
     margin: 6px auto !important;
     border-radius: 8px !important;
     white-space: nowrap !important;
@@ -2039,17 +2163,21 @@ body.modal-locked {
               align-items: center !important;
               justify-content: center !important;
               width: 100% !important;
-              max-width: 400px !important;
+              max-width: 360px !important;
+              max-height: 88vh !important;
               margin: auto !important;
               padding: 0 !important;
               background: transparent !important;
               box-shadow: none !important;
               border: none !important;
-              transform: none !important;
+              transform: scale(0.88) !important;
+              transform-origin: center center !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               page-break-after: avoid !important;
               break-after: avoid !important;
+              page-break-before: avoid !important;
+              break-before: avoid !important;
             }
 
             #printable-pass-container * {

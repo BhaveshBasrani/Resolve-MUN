@@ -10757,21 +10757,23 @@ img[src*="Logo.svg"],
   }
 }
 
-/* Sticky Action Footer inside Modals so NEXT button is ALWAYS visible & reachable */
-.form-sticky-footer,
-#regModal .form-actions,
-#delModal .form-actions,
-#ocModal .form-actions,
-#secModal .form-actions,
-#ebModal .form-actions,
-#socialsModal .form-actions {
-  position: sticky !important;
-  bottom: -24px !important;
-  z-index: 30 !important;
-  background: linear-gradient(180deg, rgba(5, 5, 5, 0) 0%, #050505 22%, #050505 100%) !important;
-  padding-top: 14px !important;
-  padding-bottom: 6px !important;
-  margin-top: 12px !important;
+/* Sticky Action Footer inside Modals so NEXT button is ALWAYS visible & reachable (Desktop only) */
+@media (min-width: 641px) {
+  .form-sticky-footer,
+  #regModal .form-actions,
+  #delModal .form-actions,
+  #ocModal .form-actions,
+  #secModal .form-actions,
+  #ebModal .form-actions,
+  #socialsModal .form-actions {
+    position: sticky !important;
+    bottom: -24px !important;
+    z-index: 30 !important;
+    background: linear-gradient(180deg, rgba(5, 5, 5, 0) 0%, #050505 22%, #050505 100%) !important;
+    padding-top: 14px !important;
+    padding-bottom: 6px !important;
+    margin-top: 12px !important;
+  }
 }
 
 /* Fix Chrome/Edge white/blue autofill background inside monochrome dark forms */

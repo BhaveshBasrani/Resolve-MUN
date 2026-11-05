@@ -29,9 +29,8 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header text-center">
-      <div class="modal-pretitle">RESOLVE MUN 2.0 · 27–29 NOV 2026</div>
       <h2 class="modal-title">CHOOSE YOUR PATHWAY</h2>
-      <p class="modal-subtitle">Meridian School, Kompally · Hyderabad</p>
+      <p class="modal-subtitle">Select an application track to begin</p>
     </div>
 
     <div class="selection-top-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
@@ -127,15 +126,8 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">RESOLVE MUN 2.0 · PRIORITY ROUND</div>
       <h2 class="modal-title">DELEGATE REGISTRATION</h2>
-      <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
-      <div style="margin-top: 8px; display: flex; justify-content: center;">
-        <button type="button" onclick="closeModalById('regModal'); selectPathway('delegation');" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.12); color: #ffffff; border-radius: 6px; padding: 5px 10px; font-size: 0.68rem; font-weight: 500; cursor: pointer; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; text-align: center; line-height: 1.35; transition: all 0.2s;">
-          <span style="color: rgba(255,255,255,0.6);">School Contingent (6+ Delegates)?</span>
-          <span style="font-weight: 700; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap;">Switch to Delegation Form &rarr;</span>
-        </button>
-      </div>
+      <span class="modal-subtitle">Step 1 of 3 · Personal Details</span>
     </div>
     
     <form id="regForm" novalidate>
@@ -208,6 +200,8 @@ export const homeHtml = `
           <label for="regExp">MUN Experience (Conference - Committee - Portfolio - Award/NA) <span style="color:#f87171;">*</span></label>
           <textarea id="regExp" name="munExperience" placeholder="List your past MUN experiences or write 'First Timer / N/A'" required data-required="true" style="resize: vertical; min-height: 58px;"></textarea>
         </div>
+
+        <div style="height: 70px; flex-shrink: 0;" aria-hidden="true"></div>
 
         <div class="form-sticky-footer">
           <button type="button" class="btn-next btn-full-width" onclick="nextStep(2)">
@@ -299,7 +293,9 @@ export const homeHtml = `
           </div>
         </div>
 
-        <div class="form-actions">
+        <div style="height: 70px; flex-shrink: 0;" aria-hidden="true"></div>
+
+        <div class="form-actions form-sticky-footer">
           <button type="button" class="btn-back" onclick="nextStep(1)">Back</button>
           <button type="button" class="btn-next" onclick="nextStep(3)">Proceed to Payment</button>
         </div>
@@ -308,73 +304,73 @@ export const homeHtml = `
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
         <div class="payment-banner">
-          <h3 id="regFeeDisplay">Registration Fee: ₹2,500</h3>
-          <p class="non-refundable-notice">⚠️ Payment is non-refundable once submitted</p>
+          <div class="payment-banner-row">
+            <div>
+              <span class="payment-banner-label">REGISTRATION FEE</span>
+              <h3 id="regFeeDisplay" class="payment-banner-amount">Registration Fee: ₹2,500</h3>
+            </div>
+            <span class="payment-banner-badge">Non-Refundable</span>
+          </div>
         </div>
 
         <div class="payment-card">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 12px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6; display: block;">1. SCAN UPI QR CODE TO PAY</label>
-            <div style="text-align: center;">
-              <div class="qr-container">
-                <img id="paymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D2500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegate%2520Fee&ecLevel=M&margin=1" alt="Official Payment QR Code">
-              </div>
-
-              <!-- Direct UPI Launch Button for Mobile Users -->
-              <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
-                <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
-                  <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
-                </a>
-              </div>
-
-              <div class="upi-box">
-                <span id="upiID">6301550628@nyes</span>
-                <button type="button" class="copy-btn" id="copyUpiBtn" onclick="copyUPI()" title="Copy UPI ID">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                  <span style="font-size: 0.7rem; font-weight: 600; margin-left: 4px;">COPY</span>
-                </button>
-              </div>
-              <p class="payment-contact" style="margin-top: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.6);">
-                <span style="color: #22c55e; font-weight: 600;">✓ Verified Payee:</span> <span>Bejugam Aditya</span>
-              </p>
+          <div class="payment-qr-block">
+            <span class="payment-step-indicator">1. SCAN QR CODE OR LAUNCH UPI APP</span>
+            <div class="qr-container">
+              <img id="paymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D2500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegate%2520Fee&ecLevel=M&margin=1" alt="Official Payment QR Code">
             </div>
-            <p class="payment-note" style="margin-top: 10px;">Scan with any UPI app or transfer directly to the UPI ID</p>
+
+            <!-- Direct UPI Launch Button for Mobile Users -->
+            <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI App">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+              <span>Pay via UPI (GPay / PhonePe / Paytm)</span>
+            </a>
+
+            <div class="upi-box">
+              <span id="upiID">6301550628@nyes</span>
+              <button type="button" class="copy-btn" id="copyUpiBtn" onclick="copyUPI()" title="Copy UPI ID" aria-label="Copy UPI ID">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>COPY</span>
+              </button>
+            </div>
+
+            <p class="payment-verified-note">
+              <span style="color: #22c55e; font-weight: 700;">✓</span> Payee: <strong>Bejugam Aditya</strong> &bull; Queries: <strong>+91 92121 07797</strong>
+            </p>
           </div>
 
-          <div class="form-group" style="margin-top: 16px;">
-            <label>2. TRANSACTION ID / 12-DIGIT UPI UTR <span style="color:#f87171;">*</span></label>
-            <input type="text" id="regTxnID" placeholder="Enter Transaction ID / 12-Digit UTR" required data-required="true">
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="regTxnID">2. Transaction ID / 12-Digit UPI UTR <span style="color:#f87171;">*</span></label>
+            <input type="text" id="regTxnID" name="transactionId" placeholder="Enter 12-digit UPI UTR or Txn ID" required data-required="true" autocomplete="off">
           </div>
 
           <div class="form-group">
-            <label>3. UPLOAD PAYMENT SCREENSHOT <span style="color:#f87171;">*</span></label>
+            <label for="regDriveLink">3. Upload Payment Screenshot <span style="color:#f87171;">*</span></label>
             <label class="file-upload-wrapper" for="regDriveLink">
               <span class="file-upload-btn">Choose File</span>
               <span class="file-name">No file chosen</span>
-              <input type="file" id="regDriveLink" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
+              <input type="file" id="regDriveLink" name="paymentProof" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
             </label>
           </div>
 
           <div class="form-group">
-            <label>4. ADDITIONAL INFORMATION / QUERIES (OPTIONAL)</label>
-            <input type="text" id="regAdditionalInfo" placeholder="Any specific notes or questions for the Secretariat">
+            <label for="regAdditionalInfo">4. Additional Notes / Queries (Optional)</label>
+            <input type="text" id="regAdditionalInfo" name="additionalNotes" placeholder="Any specific notes for the Secretariat" autocomplete="off">
           </div>
         </div>
 
-        <div class="payment-footer">
-          <p class="payment-contact">Verified Payee: <span>Bejugam Aditya</span> &bull; Queries: <span>+91 92121 07797</span></p>
-        </div>
-
-        <div class="form-actions">
-          <button type="button" class="btn-back" onclick="nextStep(2)">Back</button>
-          <button type="submit" class="btn-next">Submit Registration</button>
-        </div>
         <p class="terms-confirmation">
           By clicking Submit Registration, you agree to the
           <a href="#" onclick="openTermsModal('delegate'); return false;">Delegate Terms &amp; Conditions</a>
           of Resolve MUN 2.0.
         </p>
+
+        <div style="height: 70px; flex-shrink: 0;" aria-hidden="true"></div>
+
+        <div class="form-actions form-sticky-footer">
+          <button type="button" class="btn-back" onclick="nextStep(2)">Back</button>
+          <button type="submit" class="btn-next" id="regSubmitBtn">Submit Registration</button>
+        </div>
       </div>
     </form>
   </div>
@@ -1505,6 +1501,8 @@ export const homeHtml = `
 
 <div class="glow-line"></div>
 
+<!-- SECRETARIAT_PLACEHOLDER -->
+
 <!-- SPONSORS -->
 <section id="sponsors">
   <div class="sponsors-inner reveal" style="text-align: center;">
@@ -1540,9 +1538,8 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">RESOLVE MUN 2.0 · SALARIED ROLE</div>
-      <h2 class="modal-title">ORGANIZING COMMITTEE REGISTRATION</h2>
-      <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
+      <h2 class="modal-title">ORGANIZING COMMITTEE</h2>
+      <span class="modal-subtitle">Applications · Edition 2.0</span>
     </div>
     
     <form id="ocRegForm" novalidate>
@@ -1651,46 +1648,41 @@ export const homeHtml = `
 
         <!-- OC UPI Payment Card (Hidden automatically when 'Pay Later' is chosen) -->
         <div id="ocPaymentCardWrapper" class="payment-card">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 12px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6; display: block;">1. SCAN UPI QR CODE TO PAY</label>
-            <div style="text-align: center;">
-              <div class="qr-container">
-                <img id="ocPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D1500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520OC%2520Fee&ecLevel=M&margin=1" alt="OC Payment QR Code">
-              </div>
-
-              <!-- Direct UPI Launch Button for Mobile Users -->
-              <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
-                <a id="ocPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=1500&cu=INR&tn=Resolve%20MUN%202026%20OC%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
-                  <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
-                </a>
-              </div>
-
-              <div class="upi-box">
-                <span id="ocUpiID">6301550628@nyes</span>
-                <button type="button" class="copy-btn" onclick="copyOcUPI()" title="Copy UPI ID">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                  <span style="font-size: 0.7rem; font-weight: 600; margin-left: 4px;">COPY</span>
-                </button>
-              </div>
-              <p class="payment-contact" style="margin-top: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.6);">
-                <span style="color: #22c55e; font-weight: 600;">✓ Verified Payee:</span> <span>Bejugam Aditya</span>
-              </p>
+          <div class="payment-qr-block">
+            <span class="payment-step-indicator">1. SCAN QR CODE OR LAUNCH UPI APP</span>
+            <div class="qr-container">
+              <img id="ocPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D1500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520OC%2520Fee&ecLevel=M&margin=1" alt="OC Payment QR Code">
             </div>
-            <p class="payment-note" style="margin-top: 10px;">Scan with any UPI app or transfer directly to the UPI ID</p>
+
+            <!-- Direct UPI Launch Button for Mobile Users -->
+            <a id="ocPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=1500&cu=INR&tn=Resolve%20MUN%202026%20OC%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI App">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+              <span>Pay via UPI (GPay / PhonePe / Paytm)</span>
+            </a>
+
+            <div class="upi-box">
+              <span id="ocUpiID">6301550628@nyes</span>
+              <button type="button" class="copy-btn" onclick="copyOcUPI()" title="Copy UPI ID" aria-label="Copy UPI ID">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>COPY</span>
+              </button>
+            </div>
+            <p class="payment-verified-note">
+              <span style="color: #22c55e; font-weight: 700;">✓</span> Payee: <strong>Bejugam Aditya</strong> &bull; Queries: <strong>+91 92121 07797</strong>
+            </p>
           </div>
 
-          <div class="form-group" style="margin-top: 16px;">
-            <label>2. TRANSACTION ID / 12-DIGIT UPI UTR (REQUIRED IF PAYING NOW)</label>
-            <input type="text" id="ocTxnID" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Transaction ID">
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="ocTxnID">2. Transaction ID / 12-Digit UPI UTR (Required if paying now)</label>
+            <input type="text" id="ocTxnID" name="transactionId" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Transaction ID" autocomplete="off">
           </div>
 
           <div class="form-group">
-            <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+            <label for="ocDriveLink">3. Upload Payment Screenshot</label>
             <label class="file-upload-wrapper" for="ocDriveLink">
               <span class="file-upload-btn">Choose File</span>
               <span class="file-name">No file chosen</span>
-              <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*,.pdf">
+              <input type="file" id="ocDriveLink" name="paymentProof" class="file-upload-input" accept="image/*,.pdf">
             </label>
           </div>
         </div>
@@ -1698,21 +1690,24 @@ export const homeHtml = `
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div>
             <label for="ocReferral">Referral Code (Optional)</label>
-            <input type="text" id="ocReferral" placeholder="e.g. RES-123">
+            <input type="text" id="ocReferral" name="referralCode" placeholder="e.g. RES-123" autocomplete="off">
           </div>
           <div>
             <label for="ocAdditionalInfo">Additional Info (Optional)</label>
-            <input type="text" id="ocAdditionalInfo" placeholder="Any notes or questions">
+            <input type="text" id="ocAdditionalInfo" name="additionalNotes" placeholder="Any notes or questions" autocomplete="off">
           </div>
         </div>
 
-        <div class="form-actions">
-          <button type="button" class="btn-back" onclick="nextOcStep(1)">Back</button>
-          <button type="submit" class="btn-next">Submit OC Application</button>
-        </div>
         <p class="terms-confirmation">
           By submitting, you agree to the <a href="#" onclick="openTermsModal('oc'); return false;">OC Terms &amp; Conditions</a>.
         </p>
+
+        <div style="height: 70px; flex-shrink: 0;" aria-hidden="true"></div>
+
+        <div class="form-actions form-sticky-footer">
+          <button type="button" class="btn-back" onclick="nextOcStep(1)">Back</button>
+          <button type="submit" class="btn-next" id="ocSubmitBtn">Submit OC Application</button>
+        </div>
       </div>
     </form>
   </div>
@@ -1728,13 +1723,9 @@ export const homeHtml = `
       </svg>
     </button>
     
-    <div class="modal-header" style="text-align: left; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.12);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-        <span class="selection-badge" style="background: rgba(255, 255, 255, 0.08); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.25); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;">RESOLVE MUN 2.0 · SECRETARIAT</span>
-        <span style="font-size: 10px; color: #000000; font-weight: 800; background: #ffffff; padding: 2px 8px; border-radius: 4px; border: 1px solid #ffffff;">FREE TO APPLY</span>
-      </div>
-      <h2 class="modal-title" style="font-size: 1.5rem; letter-spacing: 0.02em; margin: 4px 0;">Secretariat Applications — Resolve MUN 2.0</h2>
-      <span class="modal-subtitle" style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Hyderabad · 27th – 29th November 2026</span>
+    <div class="modal-header">
+      <h2 class="modal-title">SECRETARIAT APPLICATION</h2>
+      <span class="modal-subtitle">Applications · Edition 2.0</span>
     </div>
 
     <!-- 3-STEP PROGRESS INDICATOR -->
@@ -1932,9 +1923,8 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">RESOLVE MUN 2.0 · EXECUTIVE BOARD</div>
-      <h2 class="modal-title">EXECUTIVE BOARD APPLICATIONS</h2>
-      <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
+      <h2 class="modal-title">EXECUTIVE BOARD</h2>
+      <span class="modal-subtitle">Applications · Edition 2.0</span>
     </div>
     
     <form id="ebRegForm" novalidate>
@@ -2076,15 +2066,8 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">RESOLVE MUN 2.0 · CONTINGENT</div>
       <h2 class="modal-title">DELEGATION REGISTRATION</h2>
-      <span class="modal-subtitle">Minimum 6 Delegates · ₹2,200/Delegate · Compete for ₹25,000 Best Delegation Prize</span>
-      <div style="margin-top: 12px; display: flex; justify-content: center;">
-        <button type="button" onclick="closeModalById('delModal'); selectPathway('delegate');" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.22); color: #ffffff; border-radius: 9999px; padding: 6px 14px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
-          <span>Registering as an Individual Delegate?</span>
-          <strong style="text-decoration: underline; text-underline-offset: 3px;">Switch to Individual Form &rarr;</strong>
-        </button>
-      </div>
+      <span class="modal-subtitle">School Contingent · 6+ Delegates</span>
     </div>
     
     <form id="delRegForm" novalidate>
@@ -2156,66 +2139,60 @@ export const homeHtml = `
         </div>
 
         <div class="payment-card">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 12px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6; display: block;">1. SCAN UPI QR CODE TO PAY</label>
-            <div style="text-align: center;">
-              <div class="qr-container">
-                <img id="delPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D13200%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegation%2520Fee&ecLevel=M&margin=1" alt="Delegation Payment QR Code">
-              </div>
-
-              <!-- Direct UPI Launch Button for Mobile Users -->
-              <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
-                <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
-                  <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
-                </a>
-              </div>
-
-              <div class="upi-box">
-                <span id="delUpiID">6301550628@nyes</span>
-                <button type="button" class="copy-btn" onclick="copyDelUPI()" title="Copy UPI ID">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                  <span style="font-size: 0.7rem; font-weight: 600; margin-left: 4px;">COPY</span>
-                </button>
-              </div>
-              <p class="payment-contact" style="margin-top: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.6);">
-                <span style="color: #22c55e; font-weight: 600;">✓ Verified Payee:</span> <span>Bejugam Aditya</span>
-              </p>
+          <div class="payment-qr-block">
+            <span class="payment-step-indicator">1. SCAN QR CODE OR LAUNCH UPI APP</span>
+            <div class="qr-container">
+              <img id="delPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D13200%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegation%2520Fee&ecLevel=M&margin=1" alt="Delegation Payment QR Code">
             </div>
-            <p class="payment-note" style="margin-top: 10px;">Scan with any UPI app or transfer directly to the UPI ID</p>
+
+            <!-- Direct UPI Launch Button for Mobile Users -->
+            <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI App">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+              <span>Pay via UPI (GPay / PhonePe / Paytm)</span>
+            </a>
+
+            <div class="upi-box">
+              <span id="delUpiID">6301550628@nyes</span>
+              <button type="button" class="copy-btn" onclick="copyDelUPI()" title="Copy UPI ID" aria-label="Copy UPI ID">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>COPY</span>
+              </button>
+            </div>
+            <p class="payment-verified-note">
+              <span style="color: #22c55e; font-weight: 700;">✓</span> Payee: <strong>Bejugam Aditya</strong> &bull; Queries: <strong>+91 92121 07797</strong>
+            </p>
           </div>
 
-          <div class="form-group" style="margin-top: 16px;">
-            <label>2. TRANSACTION ID / 12-DIGIT UPI UTR <span style="color:#f87171;">*</span></label>
-            <input type="text" id="delTxnID" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Transaction ID" required data-required="true">
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="delTxnID">2. Transaction ID / 12-Digit UPI UTR <span style="color:#f87171;">*</span></label>
+            <input type="text" id="delTxnID" name="transactionId" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Transaction ID" required data-required="true" autocomplete="off">
           </div>
 
           <div class="form-group">
-            <label>3. UPLOAD PAYMENT SCREENSHOT <span style="color:#f87171;">*</span></label>
+            <label for="delDriveLink">3. Upload Payment Screenshot <span style="color:#f87171;">*</span></label>
             <label class="file-upload-wrapper" for="delDriveLink">
               <span class="file-upload-btn">Choose File</span>
               <span class="file-name">No file chosen</span>
-              <input type="file" id="delDriveLink" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
+              <input type="file" id="delDriveLink" name="paymentProof" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
             </label>
           </div>
 
           <div class="form-group">
-            <label>4. ADDITIONAL INFO / QUERIES (OPTIONAL)</label>
-            <input type="text" id="delUTR" placeholder="Any notes or questions for the Secretariat">
+            <label for="delUTR">4. Additional Notes / Queries (Optional)</label>
+            <input type="text" id="delUTR" name="additionalNotes" placeholder="Any notes or questions for the Secretariat" autocomplete="off">
           </div>
         </div>
 
-        <div class="payment-footer">
-          <p class="payment-contact">Verified Payee: <span>Bejugam Aditya</span> &bull; Queries: <span>+91 92121 07797</span></p>
-        </div>
-
-        <div class="form-actions" style="margin-top: 14px;">
-          <button type="button" class="btn-back" onclick="nextDelStep(2)">Back</button>
-          <button type="submit" class="btn-next">Submit Delegation</button>
-        </div>
         <p class="terms-confirmation">
           By submitting, you agree to the <a href="#" onclick="openTermsModal('delegate'); return false;">Delegate Terms &amp; Conditions</a>.
         </p>
+
+        <div style="height: 70px; flex-shrink: 0;" aria-hidden="true"></div>
+
+        <div class="form-actions form-sticky-footer">
+          <button type="button" class="btn-back" onclick="nextDelStep(2)">Back</button>
+          <button type="submit" class="btn-next" id="delSubmitBtn">Submit Delegation</button>
+        </div>
       </div>
     </form>
   </div>
@@ -2232,9 +2209,8 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">RESOLVE MUN 2.0 · SOCIALS NIGHT</div>
-      <h2 class="modal-title">SOCIALS PASS REGISTRATION</h2>
-      <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
+      <h2 class="modal-title">SOCIALS NIGHT PASS</h2>
+      <span class="modal-subtitle">Delegate &amp; Visitor Access</span>
     </div>
     
     <form id="socialsRegForm" novalidate>

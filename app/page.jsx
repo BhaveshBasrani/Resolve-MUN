@@ -24,14 +24,17 @@ import Footer from "@/components/Footer";
 import { AuthModal } from "@/components/AuthModal";
 import ModalShaderBackdrop from "@/components/ModalShaderBackdrop";
 import CommitteesSection from "@/components/CommitteesSection";
+import SecretariatSection from "@/components/SecretariatSection";
 import DelegatePassSection from "@/components/DelegatePassSection";
 import DobPickerPortals from "@/components/DobPickerPortal";
 import { PaymentReceiptModal } from "@/components/ui/animated-ticket";
 import { GradientBackground } from "@/components/ui/paper-design-shader-background";
 
-const [homePart1, homePart2] = homeHtml.split("<!-- COMMITTEES_PLACEHOLDER -->");
+const [homePart1, rest1] = homeHtml.split("<!-- COMMITTEES_PLACEHOLDER -->");
+const [homePart2, homePart3] = (rest1 || "").split("<!-- SECRETARIAT_PLACEHOLDER -->");
 const HOME_PART1_HTML = { __html: homePart1 || homeHtml };
 const HOME_PART2_HTML = homePart2 ? { __html: homePart2 } : null;
+const HOME_PART3_HTML = homePart3 ? { __html: homePart3 } : null;
 
 export default function Home() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -2199,11 +2202,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Main Page HTML Content with Interactive Committees */}
+      {/* Main Page HTML Content with Interactive Committees & Secretariat Team */}
       <div id="main-container" ref={containerRef}>
         <div dangerouslySetInnerHTML={HOME_PART1_HTML} />
         <CommitteesSection />
         {HOME_PART2_HTML && <div dangerouslySetInnerHTML={HOME_PART2_HTML} />}
+        <SecretariatSection />
+        {HOME_PART3_HTML && <div dangerouslySetInnerHTML={HOME_PART3_HTML} />}
       </div>
       
       {/* Interactive Delegate Pass Section (Above Footer) */}

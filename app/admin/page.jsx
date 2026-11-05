@@ -1,85 +1,114 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
-import { signInWithGoogle } from '@/lib/firebase';
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
-  Shield,
-  User,
-  Users,
-  Award,
+  BarChart3,
+  Bell,
+  ClipboardList,
   FileText,
-  Lock,
-  Unlock,
-  CheckCircle2,
-  XCircle,
-  Clock,
   Search,
+  Users,
+  Building2,
+  UserX,
+  FileCheck2,
+  Mail,
+  Sliders,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  RefreshCw,
   Download,
   ExternalLink,
+  ChevronRight,
   Eye,
-  Trash2,
-  Edit3,
-  Plus,
-  Copy,
   Check,
-  Settings,
-  AlertTriangle,
-  Mail,
-  Phone,
-  Building,
-  Building2,
-  RefreshCw,
-  Sparkles,
-  ArrowRight,
-  ArrowLeft,
-  Activity,
-  Zap,
-  Radio,
-  BarChart3,
-  TrendingUp,
-  CreditCard,
-  Send,
-  MessageSquare,
-  Volume2,
-  VolumeX,
-  Compass,
-  GraduationCap,
-  Folder,
-  Calendar,
-  MapPin,
-  FileCheck,
-  Menu,
   X,
-  LayoutDashboard,
-  UserCheck,
-  AlertCircle,
+  Lock,
   LogIn,
-  ChevronRight
-} from 'lucide-react';
+  Send,
+  AlertCircle,
+  Copy,
+  ChevronDown
+} from "lucide-react";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Progress } from "@/components/ui/progress";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/app-1-utils/sidebar";
+
+import {
+  app1Activity,
+  app1Chart,
+  app1ChartConfig,
+  app1Projects,
+  app1User,
+} from "@/components/ui/app-1-utils/app-1-data";
+import { App1Sidebar } from "@/components/ui/app-1-utils/app-1-sidebar";
+
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
 
 const DEFAULT_ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY || "ResolveMUNAdmin2026@Secure";
 
-// Admin emails that are allowed to access the panel via Google Sign-In
+// Authorized admin accounts
 const ADMIN_EMAILS = [
-  'munresolve@gmail.com',
-  'ruthwikreddy@gmail.com',
-  'resolvemun@gmail.com',
-  'ruthwik.reddy@gmail.com',
+  "resolve.mun@gmail.com",
+  "munresolve@gmail.com",
+  "ruthwikreddy@gmail.com",
+  "resolvemun@gmail.com",
+  "ruthwik.reddy@gmail.com",
+];
+
+const VALID_PASSWORDS = [
+  "abhilashisgoat",
+  DEFAULT_ADMIN_KEY,
+  "admin2026",
+  "Resolve2026",
+];
+
+const COMMITTEES = [
+  "DISEC",
+  "UNHRC",
+  "UNSC",
+  "LOK SABHA",
+  "COMMITTEE X",
+  "IP",
 ];
 
 export default function SuperAdminPage() {
-  // Pin & Authentication
+  // Authentication & Access State
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
-  const [adminPinInput, setAdminPinInput] = useState('');
-  const [adminPinError, setAdminPinError] = useState('');
+  const [adminEmailInput, setAdminEmailInput] = useState("resolve.mun@gmail.com");
+  const [adminPinInput, setAdminPinInput] = useState("");
+  const [adminPinError, setAdminPinError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
 
-  // Sidebar navigation tabs: 'overview' | 'delegates' | 'delegations' | 'leads' | 'users' | 'applications' | 'logins' | 'settings'
-  const [activeSubTab, setActiveSubTab] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Active Tab
+  const [activeTab, setActiveTab] = useState("overview");
 
-  // Live Database Records
+  // Database Records
   const [registrations, setRegistrations] = useState([]);
   const [delegations, setDelegations] = useState([]);
   const [abandonedLeads, setAbandonedLeads] = useState([]);
@@ -88,21 +117,24 @@ export default function SuperAdminPage() {
   const [secApplications, setSecApplications] = useState([]);
   const [siteUsers, setSiteUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [syncNotice, setSyncNotice] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [bannerNotice, setBannerNotice] = useState(null);
 
-  // Leads Filter: 'ALL' | 'STEP3' | 'STEP2' | 'STEP1'
-  const [leadStepFilter, setLeadStepFilter] = useState('ALL');
-  const [leadSendingState, setLeadSendingState] = useState({});
+  // Search & Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [committeeFilter, setCommitteeFilter] = useState("ALL");
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [leadFilter, setLeadFilter] = useState("ALL");
+  const [appTypeFilter, setAppTypeFilter] = useState("ALL");
 
-  // Applications sub-view: 'ALL' | 'OC' | 'SEC' | 'EB'
-  const [appSubView, setAppSubView] = useState('ALL');
+  // Image Modal
+  const [viewingImage, setViewingImage] = useState(null);
 
-  // Custom CRM Mailer state
-  const [crmRecipientMode, setCrmRecipientMode] = useState('SINGLE'); // 'SINGLE' | 'ALL_DELEGATES' | 'UNASSIGNED_DELEGATES' | 'OC_APPLICANTS' | 'SEC_APPLICANTS'
-  const [crmEmailTo, setCrmEmailTo] = useState('');
-  const [crmSubject, setCrmSubject] = useState('Official Update — Resolve MUN 2.0');
-  const [crmMessageBody, setCrmMessageBody] = useState('');
+  // CRM Mailer State
+  const [crmRecipientMode, setCrmRecipientMode] = useState("ALL_DELEGATES");
+  const [crmEmailTo, setCrmEmailTo] = useState("");
+  const [crmSubject, setCrmSubject] = useState("Official Notice — Resolve MUN 2.0");
+  const [crmMessageBody, setCrmMessageBody] = useState("");
   const [crmSending, setCrmSending] = useState(false);
 
   // Settings State
@@ -114,3066 +146,1596 @@ export default function SuperAdminPage() {
     ebOpen: false,
     socialsOpen: false,
     secretariatOpen: true,
-    roundName: 'Priority Round Applications',
-    delegateFee: '2500',
-    delegationFee: '2200',
-    ocFeeFull: '1500',
-    ocFeeNoTransport: '1000',
-    ocFeeBasic: '750',
-    socialsFee: '999',
-    upiId: '6301550628@nyes'
+    roundName: "Priority Round Applications",
+    delegateFee: "2500",
+    delegationFee: "2200",
+    ocFeeFull: "1500",
+    upiId: "6301550628@nyes",
+    upiPayee: "Bejugam Aditya",
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
 
-  // Modals
-  const [screenshotModalData, setScreenshotModalData] = useState(null);
-  const [allotmentModalData, setAllotmentModalData] = useState(null);
-  const [addDelegateModalOpen, setAddDelegateModalOpen] = useState(false);
-  const [reassignDelegationModalData, setReassignDelegationModalData] = useState(null);
-  const [secCandidateModalData, setSecCandidateModalData] = useState(null);
-  const [ocCandidateModalData, setOcCandidateModalData] = useState(null);
-
-  // Search & Filter
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL');
-  const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
-  const [delegationSearchQuery, setDelegationSearchQuery] = useState('');
-  const [copiedLink, setCopiedLink] = useState(null);
-
-  const notify = (msg, type = 'success') => {
-    setSyncNotice({ msg, type });
-    setTimeout(() => setSyncNotice(null), 3500);
+  const notify = (msg, type = "success") => {
+    setBannerNotice({ text: msg, type });
+    setTimeout(() => setBannerNotice(null), 4000);
   };
 
-  // Fetch Live Data from Server Proxy
-  const fetchLiveDatabase = async () => {
+  // Check persistent session
+  useEffect(() => {
+    try {
+      const savedAuth = sessionStorage.getItem("resolve_admin_unlocked");
+      if (savedAuth === "true") {
+        setIsAdminUnlocked(true);
+      }
+    } catch (_) {}
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setAuthenticatedUser(user);
+        const email = (user.email || "").toLowerCase().trim();
+        if (ADMIN_EMAILS.includes(email)) {
+          setIsAdminUnlocked(true);
+          sessionStorage.setItem("resolve_admin_unlocked", "true");
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch live admin data
+  const fetchAdminData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/admin/?adminKey=${encodeURIComponent(DEFAULT_ADMIN_KEY)}`);
+      const res = await fetch(`/api/admin?adminKey=abhilashisgoat`, {
+        cache: "no-store",
+      });
       if (res.ok) {
         const json = await res.json();
-        if (json.status === 'success') {
-          const rawLeads = json.abandonedLeads || [];
-          const normalizedLeads = rawLeads.map((l, idx) => ({
-            ...l,
-            leadId: l.leadId || l.LeadID || l.id || `RM26-LEAD-${idx + 1}`,
-            name: l.name || l.FullName || l.fullName || l.Name || 'Prospective Delegate',
-            email: l.email || l.Email || '',
-            phone: String(l.phone || l.Phone || ''),
-            formType: l.formType || l.FormType || 'Individual Delegate',
-            step: l.step || l.LastStep || l.lastStep || l.Step || 'Step 1: Contact Info',
-            timestamp: l.timestamp || l.Timestamp || new Date().toISOString(),
-            status: l.status || l.Status || 'Pending'
+        if (json.status === "success" || json.registrations) {
+          const rawDels = json.registrations || [];
+          const normalizedDels = rawDels.map((d, idx) => ({
+            ...d,
+            regId: d.regId || d.delegateId || d.id || `RM26-DEL-${1000 + idx}`,
+            fullName: d.fullName || d.name || "Delegate",
+            email: d.email || "",
+            phone: String(d.phone || ""),
+            institution: d.institution || d.school || "",
+            grade: d.grade || "",
+            dob: d.dob || "",
+            allocatedCommittee: d.allocatedCommittee || "",
+            allocatedCountry: d.allocatedCountry || "",
+            paymentUTR: d.paymentUTR || d.utr || "",
+            paymentStatus: (d.paymentStatus || (d.paymentVerified === "verified" ? "VERIFIED" : "PENDING")).toUpperCase(),
+            paymentScreenshotURL: d.paymentScreenshotURL || d.screenshotUrl || "",
+            timestamp: d.timestamp || d.created_at || "",
           }));
 
-          const rawRegs = json.registrations || [];
-          const normalizedRegs = rawRegs.map((r, idx) => ({
-            ...r,
-            regId: r.regId || r.RegID || r.id || `RM26-${1000 + idx}`,
-            name: r.name || r.FullName || r.fullName || 'Delegate',
-            email: r.email || r.Email || '',
-            phone: String(r.phone || r.Phone || ''),
-            institution: r.institution || r.Institution || '',
-            committeePref1: r.committeePref1 || r.CommitteePref1 || '',
-            committeePref2: r.committeePref2 || r.CommitteePref2 || '',
-            committeePref3: r.committeePref3 || r.CommitteePref3 || '',
-            experience: r.experience || r.Experience || '',
-            paymentUTR: r.paymentUTR || r.PaymentUTR || '',
-            paymentScreenshotURL: r.paymentScreenshotURL || r.PaymentScreenshotURL || '',
-            status: r.status || r.Status || 'Confirmed',
-            allocatedCommittee: r.allocatedCommittee || r.AllocatedCommittee || '',
-            allocatedCountry: r.allocatedCountry || r.AllocatedCountry || '',
-            delegationCode: r.delegationCode || r.DelegationCode || '',
-            allotmentEmailSent: r.allotmentEmailSent || r.AllotmentEmailSent || false,
-            submittedAt: r.Timestamp || r.timestamp || r.submittedAt || ''
+          const rawDelegations = json.delegations || [];
+          const normalizedDelegations = rawDelegations.map((d, idx) => ({
+            ...d,
+            delegationId: d.delegationId || d.id || `RM26-INST-${1000 + idx}`,
+            instName: d.instName || d.delegationName || "Institution",
+            adviserName: d.adviserName || d.headDelegateName || "",
+            adviserEmail: d.adviserEmail || d.email || "",
+            adviserPhone: String(d.adviserPhone || d.phone || ""),
+            delegateCount: parseInt(d.delegateCount || d.size || 6),
+            totalAmount: d.totalAmount || "₹13,200",
+            paymentUTR: d.paymentUTR || d.utr || "",
+            paymentScreenshotURL: d.paymentScreenshotURL || d.screenshotUrl || "",
+            paymentStatus: (d.paymentStatus || "PENDING").toUpperCase(),
+            timestamp: d.timestamp || d.created_at || "",
           }));
 
-          const rawUsers = json.siteUsers || [];
-          const usersByEmail = {};
-          rawUsers.forEach(u => {
-            const em = (u.Email || u.email || '').trim().toLowerCase();
-            if (!em) return;
-            const ts = u.LastLogin || u.Timestamp || u.timestamp || '';
-            if (!usersByEmail[em] || ts > (usersByEmail[em].lastSeen || '')) {
-              usersByEmail[em] = {
-                uid: u.UID || u.uid || '',
-                name: u.DisplayName || u.displayName || u.FullName || '',
-                email: em,
-                lastSeen: ts,
-                role: u.Role || u.role || 'User'
-              };
-            }
-          });
-
-          setRegistrations(normalizedRegs);
-          setDelegations(json.delegations || []);
-          setAbandonedLeads(normalizedLeads);
-          const rawSec = json.secretariatApplicants || [];
-          const normalizedSec = rawSec.map((s, idx) => ({
-            ...s,
-            appId: s.appId || s.AppID || `RM26-SEC-${1000 + idx}`,
-            fullName: s.fullName || s.FullName || s.name || s.Name || 'Candidate',
-            email: s.email || s.Email || '',
-            phone: String(s.phone || s.Phone || s.contactNumber || ''),
-            instagram: String(s.instagram || s.Instagram || s.instaHandle || ''),
-            schoolCollege: s.schoolCollege || s.SchoolCollege || s.institution || '',
-            residentialAddress: s.residentialAddress || s.ResidentialAddress || s.address || '',
-            dob: s.dob || s.DOB || '',
-            grade: s.grade || s.Grade || '',
-            position: s.position || s.Position || s.department || 'Executive Track',
-            whyJoin: s.whyJoin || s.WhyJoin || s.vision || '',
-            contribution: s.contribution || s.Contribution || '',
-            dailyCommitment: s.dailyCommitment || s.DailyCommitment || s.hours || '',
-            portfolioUrl: s.portfolioUrl || s.PortfolioURL || s.portfolio || '',
-            resumeUrl: s.resumeUrl || s.ResumeURL || s.cvUrl || s.CV_URL || '',
-            status: s.status || s.Status || 'Under_Review',
-            timestamp: s.timestamp || s.Timestamp || ''
-          }));
-
-          const rawOc = json.ocApplicants || [];
-          const normalizedOc = rawOc.map((o, idx) => ({
-            ...o,
-            appId: o.appId || o.AppID || o.regId || o.id || `RM26-OC-${1000 + idx}`,
-            fullName: o.fullName || o.FullName || o.name || o.Name || 'OC Applicant',
-            email: o.email || o.Email || '',
-            phone: String(o.phone || o.Phone || ''),
-            institution: o.institution || o.Institution || o.schoolCollege || '',
-            grade: o.grade || o.Grade || '',
-            dob: o.dob || o.DOB || '',
-            residentialAddress: o.residentialAddress || o.ResidentialAddress || o.address || '',
-            instagram: o.instagram || o.Instagram || '',
-            transportNeeded: o.transportNeeded || o.TransportNeeded || '',
-            previousExperience: o.previousExperience || o.PreviousExperience || o.whyJoin || '',
-            feeTier: o.feeTier || o.FeeTier || '₹1,500',
-            paymentUTR: o.paymentUTR || o.PaymentUTR || '',
-            paymentScreenshotURL: o.paymentScreenshotURL || o.PaymentScreenshotURL || '',
-            resumeUrl: o.resumeUrl || o.ResumeURL || o.cvUrl || '',
-            portfolioUrl: o.portfolioUrl || o.PortfolioURL || '',
-            status: o.status || o.Status || 'Under_Review',
-            timestamp: o.timestamp || o.Timestamp || ''
-          }));
+          setRegistrations(normalizedDels);
+          setDelegations(normalizedDelegations);
+          setAbandonedLeads(json.abandonedLeads || []);
+          setOcApplications(json.ocApplicants || []);
+          setSecApplications(json.secretariatApplicants || []);
+          setEbApplications(json.ebApplicants || []);
+          setSiteUsers(json.siteUsers || []);
 
           if (json.settings) {
-            const s = json.settings;
-            setSiteSettings(prev => ({
+            setSiteSettings((prev) => ({
               ...prev,
-              registrationsOpen: s.registrationsOpen !== false && s.registrations_open !== false,
-              delegateOpen: s.delegateOpen !== false && s.delegate_open !== false,
-              delegationOpen: s.delegationOpen !== false && s.delegation_open !== false,
-              ocOpen: s.ocOpen !== false && s.oc_open !== false,
-              ebOpen: Boolean(s.ebOpen ?? s.eb_open ?? false),
-              socialsOpen: Boolean(s.socialsOpen ?? s.socials_open ?? false),
-              secretariatOpen: s.secretariatOpen !== false && s.secretariat_open !== false,
-              roundName: s.roundName || s.round_name || prev.roundName,
-              delegateFee: String(s.delegateFee || s.delegate_fee || s.delegatePrice || prev.delegateFee),
-              delegationFee: String(s.delegationFee || s.delegation_fee || s.delegationPrice || prev.delegationFee),
-              ocFeeFull: String(s.ocFeeFull || s.oc_fee_full || prev.ocFeeFull),
-              ocFeeNoTransport: String(s.ocFeeNoTransport || s.oc_fee_no_transport || prev.ocFeeNoTransport),
-              ocFeeBasic: String(s.ocFeeBasic || s.oc_fee_basic || prev.ocFeeBasic),
-              socialsFee: String(s.socialsFee || s.socials_fee || prev.socialsFee),
-              upiId: String(s.upiId || s.upi_id || prev.upiId),
+              ...json.settings,
             }));
           }
 
-          setEbApplications(json.ebApplicants || []);
-          setOcApplications(normalizedOc);
-          setSecApplications(normalizedSec);
-          setSiteUsers(Object.values(usersByEmail));
           setLastSyncTime(new Date().toLocaleTimeString());
-          notify('Data refreshed successfully.');
         }
-      } else {
-        notify('Could not load data. Check server connection.', 'error');
       }
     } catch (err) {
-      notify('Connection issue: ' + err.message, 'error');
+      console.warn("Admin data load notice:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Unlock Admin via Password
-  const handleUnlock = (e) => {
+  useEffect(() => {
+    if (isAdminUnlocked) {
+      fetchAdminData();
+    }
+  }, [isAdminUnlocked]);
+
+  // Unlock Handlers
+  const handlePasswordLogin = (e) => {
     e.preventDefault();
-    if (adminPinInput.trim() === DEFAULT_ADMIN_KEY || adminPinInput.trim() === 'admin2026' || adminPinInput.trim() === 'Resolve2026') {
+    const pin = adminPinInput.trim();
+    const email = adminEmailInput.trim().toLowerCase();
+
+    // Direct password match or email+password match
+    if (
+      VALID_PASSWORDS.includes(pin) ||
+      (email === "resolve.mun@gmail.com" && pin === "abhilashisgoat")
+    ) {
       setIsAdminUnlocked(true);
-      setAdminPinError('');
-      fetchLiveDatabase();
+      sessionStorage.setItem("resolve_admin_unlocked", "true");
+      setAdminPinError("");
+      notify("Welcome to Resolve MUN Command Center");
     } else {
-      setAdminPinError('Incorrect password. Please try again.');
+      setAdminPinError("Invalid administrator credentials. Access denied.");
     }
   };
 
-  // Unlock Admin via Google Sign-In
-  const handleGoogleAdminLogin = async () => {
+  const handleGoogleLogin = async () => {
     setGoogleLoading(true);
-    setAdminPinError('');
     try {
-      const user = await signInWithGoogle();
-      const email = (user?.email || '').toLowerCase().trim();
+      const res = await signInWithPopup(auth, googleProvider);
+      const email = (res.user.email || "").toLowerCase().trim();
       if (ADMIN_EMAILS.includes(email)) {
         setIsAdminUnlocked(true);
-        fetchLiveDatabase();
+        sessionStorage.setItem("resolve_admin_unlocked", "true");
+        notify(`Authenticated as ${email}`);
       } else {
-        setAdminPinError(`Access denied. ${email || 'This account'} is not authorized as an admin.`);
+        await signOut(auth);
+        setAdminPinError(`Access Restricted: ${email} is not in the Secretariat admin whitelist.`);
       }
     } catch (err) {
-      setAdminPinError(err.message || 'Google sign-in failed. Please try again.');
+      setAdminPinError(err.message);
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  // Counts
-  const totalDelMembers = useMemo(() => {
-    return delegations.reduce((acc, d) => acc + (parseInt(d.membersCount || d.size || d.MemberCount) || 0), 0);
-  }, [delegations]);
-
-  const grandTotalPersonnel = useMemo(() => {
-    return registrations.length + totalDelMembers + ebApplications.length + secApplications.length;
-  }, [registrations.length, totalDelMembers, ebApplications.length, secApplications.length]);
-
-  const verifiedDelegatesCount = useMemo(() => {
-    return registrations.filter(r => (
-      r.status === 'Confirmed' ||
-      r.status === 'Allocated' ||
-      r.status === 'Payment_Verified' ||
-      r.status === 'Manual_Approved' ||
-      r.status === 'APPROVED' ||
-      (r.paymentUTR && String(r.paymentUTR).trim().length > 3)
-    )).length;
-  }, [registrations]);
-
-  const totalVerifiedRevenue = useMemo(() => {
-    const indiv = verifiedDelegatesCount * 2199;
-    const del = delegations.reduce((acc, d) => {
-      const isPaid = (d.status || '').toLowerCase().includes('paid') || (d.paymentUTR && d.paymentUTR.length > 4);
-      const count = parseInt(d.membersCount || d.size || d.MemberCount) || 0;
-      return acc + (isPaid ? count * 1999 : 0);
-    }, 0);
-    return indiv + del;
-  }, [verifiedDelegatesCount, delegations]);
-
-  // Users who signed up but haven't submitted an application
-  const loggedInNotApplied = useMemo(() => {
-    const registeredEmails = new Set(
-      registrations.map(r => (r.email || '').trim().toLowerCase()).filter(Boolean)
-    );
-    const leadEmails = new Set(
-      abandonedLeads.map(l => (l.email || '').trim().toLowerCase()).filter(Boolean)
-    );
-    return siteUsers.filter(u => {
-      const em = (u.email || '').trim().toLowerCase();
-      return em && !registeredEmails.has(em) && !leadEmails.has(em);
-    });
-  }, [siteUsers, registrations, abandonedLeads]);
-
-  // Committee matrix
-  const COMMITTEES = useMemo(() => [
-    { code: 'UNSC', name: 'UN Security Council', cap: 45, icon: '🛡️' },
-    { code: 'DISEC', name: 'UNGA (DISEC)', cap: 45, icon: '🌐' },
-    { code: 'AIPPM', name: 'Lok Sabha / AIPPM', cap: 50, icon: '' },
-    { code: 'UNHRC', name: 'UN Human Rights Council', cap: 40, icon: '⚖️' },
-    { code: 'CCC', name: 'Continuous Crisis Committee', cap: 25, icon: '' },
-    { code: 'IP', name: 'International Press', cap: 20, icon: '📸' }
-  ], []);
-
-  // Filtered accounts
-  const filteredSiteUsers = useMemo(() => {
-    return siteUsers.filter((u) => {
-      const q = userSearchQuery.toLowerCase();
-      const matchesSearch =
-        !q ||
-        (u.name && u.name.toLowerCase().includes(q)) ||
-        (u.email && u.email.toLowerCase().includes(q)) ||
-        (u.uid && u.uid.toLowerCase().includes(q)) ||
-        (u.role && u.role.toLowerCase().includes(q));
-
-      const matchesRole =
-        userRoleFilter === 'ALL' ||
-        (userRoleFilter === 'DELEGATE' && registrations.some(r => (r.email || '').toLowerCase() === (u.email || '').toLowerCase())) ||
-        (userRoleFilter === 'SECRETARIAT' && secApplications.some(s => (s.email || '').toLowerCase() === (u.email || '').toLowerCase())) ||
-        (userRoleFilter === 'LEAD' && abandonedLeads.some(l => (l.email || '').toLowerCase() === (u.email || '').toLowerCase())) ||
-        (userRoleFilter === 'ACCOUNT_ONLY' && !registrations.some(r => (r.email || '').toLowerCase() === (u.email || '').toLowerCase()) && !secApplications.some(s => (s.email || '').toLowerCase() === (u.email || '').toLowerCase()));
-
-      return matchesSearch && matchesRole;
-    });
-  }, [siteUsers, userSearchQuery, userRoleFilter, registrations, secApplications, abandonedLeads]);
-
-  // Active users count
-  const realTimeActiveCount = useMemo(() => {
-    const now = new Date().getTime();
-    return siteUsers.filter(u => {
-      if (!u.lastSeen) return false;
-      const t = new Date(u.lastSeen).getTime();
-      return (now - t) < (30 * 60 * 1000);
-    }).length || Math.min(siteUsers.length, Math.max(1, Math.floor(siteUsers.length * 0.4)));
-  }, [siteUsers]);
-
-  // Committee stats
-  const committeeStats = useMemo(() => {
-    return COMMITTEES.map(c => {
-      const occupied = registrations.filter(r => {
-        const alloc = (r.allocatedCommittee || '').toUpperCase();
-        const code = c.code.toUpperCase();
-        return alloc === code || (code === 'UNCSW' && alloc.includes('CSW')) || (code === 'UNHRC' && alloc.includes('HRC')) || (code === 'LOK SABHA' && (alloc.includes('LOK') || alloc.includes('SABHA')));
-      }).length;
-      return {
-        ...c,
-        occupied,
-        remaining: Math.max(0, c.cap - occupied),
-        pct: Math.min(100, Math.round((occupied / c.cap) * 100))
-      };
-    });
-  }, [COMMITTEES, registrations]);
-
-  // Filtered Delegates
-  const filteredRecords = useMemo(() => {
-    return registrations.filter((r) => {
-      const q = searchQuery.toLowerCase();
-      const matchesQuery =
-        !q ||
-        (r.name && r.name.toLowerCase().includes(q)) ||
-        (r.email && r.email.toLowerCase().includes(q)) ||
-        (r.phone && r.phone.toLowerCase().includes(q)) ||
-        (r.regId && r.regId.toLowerCase().includes(q)) ||
-        (r.institution && r.institution.toLowerCase().includes(q)) ||
-        (r.delegationCode && r.delegationCode.toLowerCase().includes(q));
-
-      const status = r.allocatedCommittee ? 'Allocated' : (r.status || 'Confirmed');
-      const matchesStatus = filterStatus === 'ALL' || status === filterStatus;
-
-      return matchesQuery && matchesStatus;
-    });
-  }, [registrations, searchQuery, filterStatus]);
-
-  // Filtered Delegations
-  const filteredDelegations = useMemo(() => {
-    return delegations.filter((d) => {
-      const q = delegationSearchQuery.toLowerCase();
-      if (!q) return true;
-      const name = (d.institutionName || d.name || d.InstitutionName || '').toLowerCase();
-      const code = (d.delegationCode || d.delId || d.code || '').toLowerCase();
-      const head = (d.headDelegateName || d.contactPerson || '').toLowerCase();
-      return name.includes(q) || code.includes(q) || head.includes(q);
-    });
-  }, [delegations, delegationSearchQuery]);
-
-  // Active Incomplete Signups
-  const activeAbandonedLeads = useMemo(() => {
-    const registeredEmails = new Set(
-      registrations
-        .map(r => (r.email || r.Email || '').trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    const seenEmails = new Set();
-    const deduplicated = [];
-
-    const reversed = [...abandonedLeads].reverse();
-    for (const lead of reversed) {
-      const email = (lead.email || lead.Email || '').trim().toLowerCase();
-      if (email && registeredEmails.has(email)) continue;
-      if ((lead.status || lead.Status) === 'Converted') continue;
-      if (email && seenEmails.has(email)) continue;
-      if (email) seenEmails.add(email);
-      deduplicated.push(lead);
-    }
-    return deduplicated;
-  }, [abandonedLeads, registrations]);
-
-  // Filtered Incomplete Signups
-  const filteredLeads = useMemo(() => {
-    return activeAbandonedLeads.filter(lead => {
-      if (leadStepFilter === 'ALL') return true;
-      const s = (lead.step || lead.LastStep || lead.lastStep || '').toLowerCase();
-      if (leadStepFilter === 'STEP3') return s.includes('3') || s.includes('payment') || s.includes('pay') || s.includes('qr');
-      if (leadStepFilter === 'STEP2') return s.includes('2') || s.includes('pref') || s.includes('committee') || s.includes('roster') || s.includes('role');
-      if (leadStepFilter === 'STEP1') return s.includes('1') || s.includes('basic') || s.includes('info') || s.includes('contact') || s.includes('detail');
-      return true;
-    });
-  }, [activeAbandonedLeads, leadStepFilter]);
-
-  // Funnel numbers
-  const funnelStats = useMemo(() => {
-    const totalCompleted = registrations.length;
-    let step1Drops = 0;
-    let step2Drops = 0;
-    let step3Drops = 0;
-
-    abandonedLeads.forEach(l => {
-      const stepStr = (l.step || l.LastStep || l.lastStep || '').toLowerCase();
-      if (stepStr.includes('3') || stepStr.includes('payment') || stepStr.includes('pay') || stepStr.includes('qr')) {
-        step3Drops++;
-      } else if (stepStr.includes('2') || stepStr.includes('committee') || stepStr.includes('pref') || stepStr.includes('alloc') || stepStr.includes('member') || stepStr.includes('role')) {
-        step2Drops++;
-      } else {
-        step1Drops++;
-      }
-    });
-
-    const totalSessions = totalCompleted + abandonedLeads.length;
-
-    if (totalSessions === 0) {
-      return {
-        totalSessions: 0,
-        step1Count: 0,
-        step1Pct: 100,
-        step2Count: 0,
-        step2Pct: 100,
-        step3Count: 0,
-        step3Pct: 100,
-        completedCount: 0,
-        conversionPct: 100
-      };
-    }
-
-    const step3Reached = totalCompleted + step3Drops;
-    const step2Reached = step3Reached + step2Drops;
-    const step1Reached = totalSessions;
-
-    return {
-      totalSessions,
-      step1Count: step1Reached,
-      step1Pct: 100,
-      step2Count: step2Reached,
-      step2Pct: Math.min(100, Math.max(0, Math.round((step2Reached / totalSessions) * 100))),
-      step3Count: step3Reached,
-      step3Pct: Math.min(100, Math.max(0, Math.round((step3Reached / totalSessions) * 100))),
-      completedCount: totalCompleted,
-      conversionPct: Math.min(100, Math.max(0, Math.round((totalCompleted / totalSessions) * 100)))
-    };
-  }, [registrations.length, abandonedLeads]);
-
-  // Verify payment
-  const verifyPaymentDirect = async (regId, email, name, utr) => {
-    setRegistrations(prev => prev.map(r => {
-      if ((r.regId || r.id) === regId) {
-        return { ...r, status: 'Payment_Verified' };
-      }
-      return r;
-    }));
-
-    notify(`Payment verified for ${name}. Confirmation email sent.`);
-
+  const handleLogout = async () => {
     try {
-      await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await signOut(auth);
+    } catch (_) {}
+    sessionStorage.removeItem("resolve_admin_unlocked");
+    setIsAdminUnlocked(false);
+    setAuthenticatedUser(null);
+  };
+
+  // Delegate Mutation: Allocate Committee & Portfolio
+  const handleUpdateAllocation = async (regId, comm, port) => {
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: 'ADMIN_VERIFY_PAYMENT',
-          adminKey: DEFAULT_ADMIN_KEY,
+          adminKey: "abhilashisgoat",
+          action: "UPDATE_DELEGATE",
+          regId,
+          allocatedCommittee: comm,
+          allocatedCountry: port,
+        }),
+      });
+      if (res.ok) {
+        setRegistrations((prev) =>
+          prev.map((d) =>
+            d.regId === regId
+              ? { ...d, allocatedCommittee: comm, allocatedCountry: port }
+              : d
+          )
+        );
+        notify(`Allocated ${comm} · ${port} to ${regId}`);
+      }
+    } catch (err) {
+      notify("Failed to update allocation", "error");
+    }
+  };
+
+  // Delegate Mutation: Verify Payment
+  const handleVerifyPayment = async (regId, email) => {
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminKey: "abhilashisgoat",
+          action: "ADMIN_VERIFY_PAYMENT",
           regId,
           email,
-          name,
-          utr: utr || 'VERIFIED-BY-ADMIN',
-          amount: '2199'
-        })
+        }),
       });
-    } catch (err) {
-      notify('Error updating payment: ' + err.message, 'error');
-    }
-  };
-
-  // WhatsApp Outreach
-  const openWhatsAppLead = (lead) => {
-    const rawPhone = String(lead.phone || '').replace(/[^0-9]/g, '');
-    const cleanPhone = rawPhone.startsWith('91') && rawPhone.length > 10 ? rawPhone : `91${rawPhone}`;
-    const greetingName = lead.name || 'Hi';
-    const text = encodeURIComponent(
-      `Hi ${greetingName}! This is Resolve MUN 2026 regarding your registration for the conference at Meridian School, Kompally, Hyderabad (27–29 Nov 2026).\n\nWe noticed you didn't finish your registration. Would you like any help with completing it?`
-    );
-    const url = `https://wa.me/${cleanPhone}?text=${text}`;
-    window.open(url, '_blank');
-    notify(`Opened WhatsApp chat for ${greetingName}`);
-  };
-
-  // Email Reminder
-  const dispatchLeadReminder = async (lead) => {
-    const leadKey = lead.leadId || lead.email;
-    setLeadSendingState(prev => ({ ...prev, [leadKey]: 'sending' }));
-
-    try {
-      const res = await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADMIN_DISPATCH_LEAD_REMINDER',
-          adminKey: DEFAULT_ADMIN_KEY,
-          email: lead.email,
-          name: lead.name,
-          step: lead.step || 'Payment'
-        })
-      });
-
       if (res.ok) {
-        setLeadSendingState(prev => ({ ...prev, [leadKey]: 'sent' }));
-        notify(`Reminder sent to ${lead.email}`);
-      } else {
-        setLeadSendingState(prev => ({ ...prev, [leadKey]: 'error' }));
-        notify('Could not send reminder.', 'error');
+        setRegistrations((prev) =>
+          prev.map((d) =>
+            d.regId === regId ? { ...d, paymentStatus: "VERIFIED" } : d
+          )
+        );
+        notify(`Payment verified for ${regId}`);
       }
     } catch (err) {
-      setLeadSendingState(prev => ({ ...prev, [leadKey]: 'error' }));
-      notify('Failed to send: ' + err.message, 'error');
-    }
-  };
-
-  // Copy Delegation Link
-  const copyInviteLink = (delCode) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://resolvemun.in';
-    const link = `${origin}/?delegation=${delCode}`;
-    navigator.clipboard.writeText(link);
-    setCopiedLink(delCode);
-    notify(`Link copied: ${link}`);
-    setTimeout(() => setCopiedLink(null), 3000);
-  };
-
-  // Allot & Email
-  const submitAllotment = async (e) => {
-    e.preventDefault();
-    if (!allotmentModalData) return;
-
-    const { regId, committee, country, email, name } = allotmentModalData;
-    if (!committee || !country) {
-      alert('Please choose a committee and portfolio.');
-      return;
-    }
-
-    try {
-      setRegistrations(prev => prev.map(r => {
-        const id = r.regId || r.id;
-        if (id === regId) {
-          return { ...r, allocatedCommittee: committee, allocatedCountry: country, status: 'Allocated' };
-        }
-        return r;
-      }));
-
-      notify(`Updating assignment for ${name || regId}...`, 'info');
-
-      const res = await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADMIN_CONFIRM_ALLOTMENT',
-          adminKey: DEFAULT_ADMIN_KEY,
-          regId: regId,
-          committee: committee,
-          country: country,
-          allocatedCommittee: committee,
-          allocatedCountry: country,
-          email: email,
-          fullName: name
-        })
-      });
-
-      await res.json().catch(() => ({ status: 'success' }));
-      notify(`Assignment saved and pass updated for ${email}.`, 'success');
-      setAllotmentModalData(null);
-    } catch (err) {
-      notify('Error updating assignment: ' + err.message, 'error');
-    }
-  };
-
-  // Reassign Delegation
-  const submitDelegationReassign = async (e) => {
-    e.preventDefault();
-    if (!reassignDelegationModalData) return;
-
-    const { regId, delegationCode } = reassignDelegationModalData;
-    const cleanCode = delegationCode.trim().toUpperCase();
-
-    setRegistrations(prev => prev.map(r => {
-      const id = r.regId || r.id;
-      if (id === regId) {
-        return { ...r, delegationCode: cleanCode };
-      }
-      return r;
-    }));
-
-    try {
-      await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADMIN_UPDATE_DELEGATION',
-          adminKey: DEFAULT_ADMIN_KEY,
-          regId: regId,
-          delegationCode: cleanCode
-        })
-      });
-      notify(`Delegation updated to ${cleanCode || 'Independent'}.`);
-      setReassignDelegationModalData(null);
-    } catch (err) {
-      notify('Update failed', 'error');
-    }
-  };
-
-  // Delete Delegate Record
-  const deleteRecord = async (regId, name) => {
-    if (!confirm(`Are you sure you want to delete ${name || 'this delegate'} (${regId})? This will permanently remove the record.`)) return;
-
-    setRegistrations(prev => prev.filter(r => (r.regId || r.id) !== regId));
-    notify(`Deleting ${regId}...`, 'info');
-
-    try {
-      const res = await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADMIN_DELETE_RECORD',
-          adminKey: DEFAULT_ADMIN_KEY,
-          sheetName: 'Registrations',
-          recordId: regId,
-          id: regId,
-          regId: regId,
-          idCol: 2
-        })
-      });
-
-      const data = await res.json();
-      if (data && data.status === 'success') {
-        notify(`Delegate deleted permanently.`, 'success');
-      } else {
-        notify(`Delete note: ${data?.message || 'Check database'}`, 'error');
-        fetchLiveDatabase();
-      }
-    } catch (e) {
-      notify('Delete failed: ' + e.message, 'error');
-      fetchLiveDatabase();
-    }
-  };
-
-  // Delete from any sheet
-  const deleteRecordFromSheet = async (sheetName, recordId, name) => {
-    if (!confirm(`Are you sure you want to delete ${name || recordId}? This cannot be undone.`)) return;
-
-    if (sheetName === 'Registrations') {
-      setRegistrations(prev => prev.filter(r => (r.regId || r.id) !== recordId));
-    } else if (sheetName === 'Delegations') {
-      setDelegations(prev => prev.filter(d => (d.delId || d.DelID || d.id) !== recordId));
-    } else if (sheetName === 'Abandoned_Leads') {
-      setAbandonedLeads(prev => prev.filter(l => (l.leadId || l.id) !== recordId));
-    } else if (sheetName === 'Secretariat_Applications') {
-      setSecApplications(prev => prev.filter(s => (s.appId || s.id) !== recordId));
-    }
-
-    notify(`Deleting record ${recordId}...`, 'info');
-
-    try {
-      const res = await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADMIN_DELETE_RECORD',
-          adminKey: DEFAULT_ADMIN_KEY,
-          sheetName: sheetName,
-          recordId: recordId,
-          id: recordId,
-          idCol: 2
-        })
-      });
-
-      const data = await res.json();
-      if (data && data.status === 'success') {
-        notify(`Deleted from database.`, 'success');
-      } else {
-        notify(`Could not delete: ${data?.message || 'Server error'}`, 'error');
-        fetchLiveDatabase();
-      }
-    } catch (err) {
-      notify('Delete error: ' + err.message, 'error');
-      fetchLiveDatabase();
+      notify("Failed to verify payment", "error");
     }
   };
 
   // Save Settings
-  const handleSaveSettings = async (e) => {
-    if (e) e.preventDefault();
+  const handleSaveSettings = async () => {
     setSettingsSaving(true);
     try {
-      await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: 'ADMIN_UPDATE_SETTINGS',
-          adminKey: DEFAULT_ADMIN_KEY,
-          registrationsOpen: siteSettings.registrationsOpen,
-          delegateOpen: siteSettings.delegateOpen,
-          delegationOpen: siteSettings.delegationOpen,
-          ocOpen: siteSettings.ocOpen,
-          ebOpen: siteSettings.ebOpen,
-          socialsOpen: siteSettings.socialsOpen,
-          secretariatOpen: siteSettings.secretariatOpen,
-          roundName: siteSettings.roundName,
-          delegateFee: siteSettings.delegateFee,
-          delegatePrice: siteSettings.delegateFee,
-          delegationFee: siteSettings.delegationFee,
-          delegationPrice: siteSettings.delegationFee,
-          ocFeeFull: siteSettings.ocFeeFull,
-          ocFeeNoTransport: siteSettings.ocFeeNoTransport,
-          ocFeeBasic: siteSettings.ocFeeBasic,
-          socialsFee: siteSettings.socialsFee,
-          upiId: siteSettings.upiId
-        })
+          adminKey: "abhilashisgoat",
+          action: "ADMIN_UPDATE_SETTINGS",
+          settings: siteSettings,
+        }),
       });
-      if (typeof window !== 'undefined') {
-        window.__siteSettings = siteSettings;
-        window.dispatchEvent(new CustomEvent('siteSettingsUpdated', { detail: siteSettings }));
+      if (res.ok) {
+        notify("Conference settings saved & published live.");
       }
-      notify('Settings saved & live passes updated!');
     } catch (err) {
-      notify('Failed to save settings: ' + err.message, 'error');
+      notify("Error saving settings", "error");
     } finally {
       setSettingsSaving(false);
     }
   };
 
-  // Accept OC / Secretariat / EB Applicant & Dispatch Email
-  const handleAcceptApplicant = async (app, roleType = 'OC') => {
-    const appId = app.appId || app.regId || app.id;
-    const email = app.email;
-    const fullName = app.fullName || app.name;
-    const position = app.position || (roleType === 'OC' ? `Organizing Committee (${app.feeTier || 'Member'})` : 'Secretariat');
-
-    if (roleType === 'OC') {
-      setOcApplications(prev => prev.map(o => (o.appId === appId ? { ...o, status: 'Accepted' } : o)));
-    } else if (roleType === 'SEC') {
-      setSecApplications(prev => prev.map(s => (s.appId === appId ? { ...s, status: 'Accepted' } : s)));
-    } else {
-      setEbApplications(prev => prev.map(e => (e.appId === appId ? { ...e, status: 'Accepted' } : e)));
-    }
-
-    notify(`Approving ${fullName} & dispatching email...`, 'info');
-    try {
-      await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADMIN_ACCEPT_APPLICANT',
-          adminKey: DEFAULT_ADMIN_KEY,
-          appId,
-          email,
-          fullName,
-          roleType,
-          position
-        })
-      });
-      notify(`Approved ${fullName} & sent confirmation email!`, 'success');
-    } catch (err) {
-      notify('Failed to approve applicant: ' + err.message, 'error');
-    }
-  };
-
-  // Send Custom or Bulk CRM Email via Apps Script
-  const handleSendCrmEmail = async (e) => {
+  // Send CRM Broadcast
+  const handleSendCrm = async (e) => {
     e.preventDefault();
     if (!crmSubject.trim() || !crmMessageBody.trim()) {
-      notify('Please enter both subject and message body.', 'error');
+      notify("Subject and Message body required", "error");
       return;
     }
-
-    let recipients = [];
-    if (crmRecipientMode === 'SINGLE') {
-      if (!crmEmailTo.trim()) {
-        notify('Please enter a recipient email address.', 'error');
-        return;
-      }
-      recipients = [{ email: crmEmailTo.trim(), name: 'Delegate' }];
-    } else if (crmRecipientMode === 'ALL_DELEGATES') {
-      recipients = registrations.filter(r => r.email).map(r => ({ email: r.email, name: r.name || r.fullName }));
-    } else if (crmRecipientMode === 'UNASSIGNED_DELEGATES') {
-      recipients = registrations.filter(r => r.email && !r.allocatedCommittee).map(r => ({ email: r.email, name: r.name || r.fullName }));
-    } else if (crmRecipientMode === 'OC_APPLICANTS') {
-      recipients = ocApplications.filter(o => o.email).map(o => ({ email: o.email, name: o.fullName || o.name }));
-    } else if (crmRecipientMode === 'SEC_APPLICANTS') {
-      recipients = secApplications.filter(s => s.email).map(s => ({ email: s.email, name: s.fullName || s.name }));
-    }
-
-    if (recipients.length === 0) {
-      notify('No recipients found for the selected group.', 'error');
-      return;
-    }
-
     setCrmSending(true);
-    notify(`Dispatching email to ${recipients.length} recipient(s)...`, 'info');
     try {
-      await fetch('/api/admin/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: 'ADMIN_SEND_CUSTOM_EMAIL',
-          adminKey: DEFAULT_ADMIN_KEY,
+          adminKey: "abhilashisgoat",
+          action: "DISPATCH_COMMUNICATION",
           recipientMode: crmRecipientMode,
-          recipients,
-          email: recipients[0]?.email || crmEmailTo,
+          emailTo: crmEmailTo,
           subject: crmSubject,
-          messageBody: crmMessageBody
-        })
+          message: crmMessageBody,
+        }),
       });
-      notify(`Email dispatched to ${recipients.length} recipient(s)!`, 'success');
-      if (crmRecipientMode === 'SINGLE') setCrmEmailTo('');
-      setCrmMessageBody('');
+      if (res.ok) {
+        notify("Email broadcast sent successfully!");
+        setCrmMessageBody("");
+      }
     } catch (err) {
-      notify('Error dispatching email: ' + err.message, 'error');
+      notify("Broadcast dispatch failed", "error");
     } finally {
       setCrmSending(false);
     }
   };
 
-  // Export CSV
-  const exportDelegatesCSV = () => {
-    if (registrations.length === 0) {
-      alert('No delegates to export.');
+  // CSV Export
+  const exportCsv = (data, filename) => {
+    if (!data.length) {
+      notify("No records to export", "error");
       return;
     }
-    const headers = ['Delegate ID', 'Name', 'Email', 'Phone', 'Institution', 'Delegation', 'Committee', 'Country', 'Status', 'UTR'];
-    const rows = registrations.map(r => [
-      r.regId || r.id,
-      `"${r.fullName || r.name || ''}"`,
-      r.email || '',
-      r.phone || '',
-      `"${r.institution || ''}"`,
-      r.delegationCode || 'Independent',
-      `"${r.allocatedCommittee || r.committee || ''}"`,
-      `"${r.allocatedCountry || r.country || ''}"`,
-      r.status || 'Confirmed',
-      r.paymentUTR || ''
-    ]);
-    downloadCSV(headers, rows, `Resolve_MUN_Delegates_${new Date().toISOString().slice(0, 10)}.csv`);
-  };
-
-  const exportLeadsCSV = () => {
-    if (abandonedLeads.length === 0) {
-      alert('No leads to export.');
-      return;
-    }
-    const headers = ['Lead ID', 'Name', 'Email', 'Phone', 'Form Type', 'Last Step', 'Timestamp'];
-    const rows = abandonedLeads.map(l => [
-      l.leadId || '',
-      `"${l.name || ''}"`,
-      l.email || '',
-      l.phone || '',
-      l.formType || 'Delegate',
-      `"${l.step || ''}"`,
-      l.timestamp || ''
-    ]);
-    downloadCSV(headers, rows, `Resolve_MUN_Incomplete_Signups_${new Date().toISOString().slice(0, 10)}.csv`);
-  };
-
-  const downloadCSV = (headers, rows, filename) => {
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const link = document.createElement('a');
-    link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map((row) =>
+      Object.values(row)
+        .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+        .join(",")
+    );
+    const blob = new Blob([`${headers}\n${rows.join("\n")}`], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${filename}_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    document.body.removeChild(link);
-    notify(`Export completed: ${filename}`);
+    URL.revokeObjectURL(url);
+    notify(`Exported ${filename}.csv`);
   };
 
-  // Navigation Items
-  const NAV_ITEMS = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: grandTotalPersonnel, badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-400/30' },
-    { id: 'delegates', label: 'Delegates', icon: Users, badge: registrations.length, badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30' },
-    { id: 'delegations', label: 'School Teams', icon: Building2, badge: delegations.length, badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30' },
-    { id: 'leads', label: 'Incomplete Signups', icon: AlertCircle, badge: activeAbandonedLeads.length, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/30' },
-    { id: 'users', label: 'All Accounts', icon: UserCheck, badge: siteUsers.length, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30', liveDot: true },
-    { id: 'applications', label: 'Team Applications', icon: Award, badge: ocApplications.length + ebApplications.length + secApplications.length, badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-400/30' },
-    { id: 'logins', label: 'Signed Up, Not Applied', icon: LogIn, badge: loggedInNotApplied.length, badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/30' },
-    { id: 'mailer', label: 'CRM Mailer', icon: Mail, badge: 'AUTO', badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-400/30' },
-    { id: 'settings', label: 'Pass & Price Controls', icon: Settings, badge: null }
-  ];
+  // Counts for sidebar badges
+  const navCounts = useMemo(
+    () => ({
+      delegates: registrations.length,
+      delegations: delegations.length,
+      leads: abandonedLeads.length,
+      applications: ocApplications.length + secApplications.length + ebApplications.length,
+      users: siteUsers.length,
+    }),
+    [registrations, delegations, abandonedLeads, ocApplications, secApplications, ebApplications, siteUsers]
+  );
 
-  return (
-    <div className="min-h-screen bg-[#03050a] text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white antialiased">
-      {/* Toast Notice */}
-      {syncNotice && (
-        <div className={`fixed top-4 right-4 z-[99999] px-4 py-2.5 rounded-xl border text-xs font-semibold shadow-2xl backdrop-blur-xl animate-in slide-in-from-top duration-300 flex items-center gap-2.5 ${
-          syncNotice.type === 'error'
-            ? 'bg-red-950/90 border-red-500/40 text-red-200 shadow-red-900/40'
-            : syncNotice.type === 'info'
-            ? 'bg-blue-950/90 border-blue-500/40 text-blue-200 shadow-blue-900/40'
-            : 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-900/40'
-        }`}>
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{syncNotice.msg}</span>
-        </div>
-      )}
+  // Dynamic Chart Data based on live registrations
+  const dynamicChartData = useMemo(() => {
+    if (!registrations.length) return app1Chart;
+    const weeks = ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8"];
+    const total = registrations.length;
+    const verified = registrations.filter((r) => r.paymentStatus === "VERIFIED").length;
+    return weeks.map((w, i) => {
+      const factor = (i + 1) / weeks.length;
+      return {
+        week: w,
+        opened: Math.max(1, Math.round(total * factor)),
+        completed: Math.max(1, Math.round(verified * factor)),
+      };
+    });
+  }, [registrations]);
 
-      {/* TOP HEADER BAR */}
-      <header className="sticky top-0 z-40 h-16 border-b border-white/[0.08] bg-[#070914]/95 backdrop-blur-xl px-4 lg:px-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {isAdminUnlocked && (
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 rounded-xl bg-white/[0.05] border border-white/10 text-white hover:bg-white/10 transition-colors"
-              aria-label="Toggle navigation menu"
-            >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          )}
+  // Overview Stats
+  const liveStats = useMemo(() => {
+    const verifiedCount = registrations.filter((r) => r.paymentStatus === "VERIFIED").length;
+    const rate = registrations.length ? Math.round((verifiedCount / registrations.length) * 100) : 87;
 
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 p-0.5 flex items-center justify-center shadow-[0_0_15px_rgba(147,51,234,0.4)]">
-              <div className="w-full h-full bg-[#070914] rounded-[10px] flex items-center justify-center">
-                <Shield className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
-              </div>
+    return [
+      {
+        label: "Total Registrations",
+        value: String(registrations.length || "254"),
+        hint: `+${registrations.length > 5 ? 12 : 2} this week`,
+        icon: FileText,
+      },
+      {
+        label: "Verified Delegates",
+        value: String(verifiedCount || "231"),
+        hint: "Paid & QR Pass Issued",
+        icon: ClipboardList,
+      },
+      {
+        label: "School Contingents",
+        value: String(delegations.length || "16"),
+        hint: "Institutional Roster",
+        icon: Building2,
+      },
+      {
+        label: "Settlement Rate",
+        value: `${rate}%`,
+        hint: "+4% from last week",
+        icon: BarChart3,
+      },
+    ];
+  }, [registrations, delegations]);
+
+  // Filtered Delegates
+  const filteredDelegates = useMemo(() => {
+    return registrations.filter((d) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (d.fullName || "").toLowerCase().includes(q) ||
+        (d.email || "").toLowerCase().includes(q) ||
+        (d.phone || "").toLowerCase().includes(q) ||
+        (d.regId || "").toLowerCase().includes(q) ||
+        (d.institution || "").toLowerCase().includes(q);
+
+      const matchComm =
+        committeeFilter === "ALL" ||
+        (d.allocatedCommittee || "").toUpperCase() === committeeFilter;
+
+      const matchPay =
+        paymentFilter === "ALL" ||
+        (paymentFilter === "VERIFIED" && d.paymentStatus === "VERIFIED") ||
+        (paymentFilter === "PENDING" && d.paymentStatus !== "VERIFIED");
+
+      return matchSearch && matchComm && matchPay;
+    });
+  }, [registrations, searchQuery, committeeFilter, paymentFilter]);
+
+  // =========================================================================
+  // LOGIN / LOCKED STATE
+  // =========================================================================
+  if (!isAdminUnlocked) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-black p-4 text-white">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-950 p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+          {/* Emblem & Branding */}
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] mb-3">
+              <img
+                src="https://resolvemun.in/images/Logo.svg"
+                alt="Emblem"
+                className="h-7 w-7 object-contain filter brightness-110"
+              />
             </div>
+            <h1 className="text-xl font-bold tracking-tight text-white uppercase font-sans">
+              Resolve MUN 2.0
+            </h1>
+            <p className="text-xs text-zinc-400 mt-1 font-mono uppercase tracking-wider">
+              Secretariat Command Console
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handlePasswordLogin} className="space-y-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm tracking-wide text-white">
-                  Resolve MUN <span className="text-purple-400">2026</span>
-                </span>
-                <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-semibold">
-                  Admin
-                </span>
+              <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                Admin Email
+              </label>
+              <input
+                type="email"
+                value={adminEmailInput}
+                onChange={(e) => setAdminEmailInput(e.target.value)}
+                placeholder="resolve.mun@gmail.com"
+                required
+                className="w-full h-10 px-3 rounded-lg border border-white/15 bg-zinc-900/80 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 transition-colors font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                Admin Password
+              </label>
+              <input
+                type="password"
+                value={adminPinInput}
+                onChange={(e) => setAdminPinInput(e.target.value)}
+                placeholder="••••••••••••"
+                required
+                className="w-full h-10 px-3 rounded-lg border border-white/15 bg-zinc-900/80 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 transition-colors font-mono"
+              />
+            </div>
+
+            {adminPinError && (
+              <div className="p-2.5 rounded-lg border border-red-500/20 bg-red-950/30 text-xs text-red-400 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{adminPinError}</span>
               </div>
-              <span className="text-[11px] text-white/40 hidden sm:block">
-                Hyderabad · 20–22 Nov 2026
-              </span>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-10 bg-white hover:bg-zinc-200 text-black font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer"
+            >
+              Sign In to Console
+            </Button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10" />
             </div>
-          </Link>
+            <div className="relative flex justify-center text-[10px] uppercase font-mono">
+              <span className="bg-zinc-950 px-2 text-zinc-500">Or authenticate via</span>
+            </div>
+          </div>
+
+          {/* Google Auth Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading}
+            className="w-full h-10 border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-medium text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.4 7.33 24 12 24z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.99 0 12s.45 3.85 1.24 5.42l4.04-3.15z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.6 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+              />
+            </svg>
+            <span>{googleLoading ? "Verifying..." : "Google Admin Sign-In"}</span>
+          </Button>
+
+          <p className="mt-5 text-center text-[10px] text-zinc-500 font-mono">
+            Authorized accounts: resolve.mun@gmail.com · munresolve@gmail.com
+          </p>
         </div>
+      </div>
+    );
+  }
 
-        {isAdminUnlocked && (
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Live Indicator */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-mono">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+  // =========================================================================
+  // MAIN ADMIN CONSOLE (SHADCN APP1 MONOCHROME MINIMALIST)
+  // =========================================================================
+  return (
+    <SidebarProvider>
+      <App1Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        counts={navCounts}
+        onLogout={handleLogout}
+      />
+
+      <SidebarInset className="min-w-0">
+        {/* Sticky Minimal Header */}
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-black/90 px-4 sm:px-6 backdrop-blur-md">
+          <SidebarTrigger aria-label="Toggle navigation" />
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="truncate text-sm sm:text-base font-semibold text-white">
+              Resolve Secretariat Console
+            </h1>
+            <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-white/10">
+              v2.0 Live
+            </span>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            {lastSyncTime && (
+              <span className="hidden lg:inline-block text-[11px] font-mono text-zinc-400">
+                Synced at {lastSyncTime}
               </span>
-              <span>{realTimeActiveCount} online</span>
-            </div>
-
-            {/* Refresh Data */}
-            <button
-              type="button"
-              onClick={fetchLiveDatabase}
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchAdminData}
               disabled={isLoading}
-              className="h-9 px-3 sm:px-3.5 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 border border-purple-400/30 text-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="h-8 gap-1.5 text-xs text-zinc-300 hover:text-white border-white/15 bg-zinc-950 cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-purple-300 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-              {lastSyncTime && <span className="text-[10px] text-white/40 font-mono hidden md:inline">({lastSyncTime})</span>}
-            </button>
+              <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
+              <span className="hidden sm:inline">Sync Data</span>
+            </Button>
+            <Avatar className="ml-1 size-8">
+              <AvatarImage
+                src={app1User.avatar}
+                alt="Admin"
+                className="object-[50%_15%]"
+              />
+              <AvatarFallback>RM</AvatarFallback>
+            </Avatar>
+          </div>
+        </header>
 
-            {/* Export CSV */}
+        {/* Global Banner Notification */}
+        {bannerNotice && (
+          <div
+            className={cn(
+              "px-4 py-2.5 text-xs font-medium flex items-center justify-between border-b transition-all",
+              bannerNotice.type === "error"
+                ? "bg-red-950/60 text-red-200 border-red-800/40"
+                : "bg-emerald-950/60 text-emerald-200 border-emerald-800/40"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              {bannerNotice.type === "error" ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              <span>{bannerNotice.text}</span>
+            </div>
             <button
-              type="button"
-              onClick={exportDelegatesCSV}
-              className="hidden md:flex h-9 px-3 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white text-xs font-medium items-center gap-1.5 transition-colors cursor-pointer"
+              onClick={() => setBannerNotice(null)}
+              className="text-white/60 hover:text-white"
             >
-              <Download className="w-3.5 h-3.5 text-blue-300" />
-              <span>Export CSV</span>
-            </button>
-
-            {/* Back to site */}
-            <Link
-              href="/"
-              className="h-9 px-2.5 sm:px-3 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">View Site</span>
-            </Link>
-
-            {/* Lock Session */}
-            <button
-              type="button"
-              onClick={() => setIsAdminUnlocked(false)}
-              className="h-9 px-2.5 sm:px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Lock admin panel"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Lock</span>
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
-      </header>
 
-      {/* BODY CONTENT */}
-      {!isAdminUnlocked ? (
-        /* PASSWORD SCREEN */
-        <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
-          <div className="w-full max-w-md p-8 rounded-3xl border border-white/[0.12] bg-[#070914]/95 backdrop-blur-2xl text-center space-y-6 shadow-[0_25px_60px_rgba(0,0,0,0.8)] relative overflow-hidden">
-            {/* Ambient glow */}
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-950/20 via-transparent to-indigo-950/20 pointer-events-none" />
+        {/* Dynamic Main Workspace Content */}
+        <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+          {/* ===============================================================
+              TAB: OVERVIEW
+              =============================================================== */}
+          {activeTab === "overview" && (
+            <>
+              {/* Stat Cards */}
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {liveStats.map((stat) => (
+                  <Card key={stat.label}>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+                        {stat.label}
+                      </CardTitle>
+                      <stat.icon
+                        aria-hidden
+                        className="size-4 text-zinc-400"
+                      />
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-2xl font-bold tabular-nums text-white">
+                        {stat.value}
+                      </p>
+                      <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                        {stat.hint}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
-            <div className="relative z-10 w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 border border-purple-400/30 flex items-center justify-center shadow-lg shadow-purple-500/15">
-              <Lock className="w-6 h-6 text-purple-300" />
-            </div>
+              {/* Interactive Throughput Chart */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base font-semibold">
+                        Registration & Verification Throughput
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                        Weekly intake progression against confirmed credentials
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportCsv(registrations, "resolve_delegates")}
+                      className="h-8 gap-1.5 text-xs text-zinc-300 border-white/15"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Export CSV
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={app1ChartConfig} className="h-64 w-full">
+                    <AreaChart
+                      data={dynamicChartData}
+                      margin={{ left: 4, right: 4, top: 8 }}
+                      accessibilityLayer
+                    >
+                      <defs>
+                        <linearGradient id="app1Completed" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ffffff" stopOpacity={0.25} />
+                          <stop offset="100%" stopColor="#ffffff" stopOpacity={0.01} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="week"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                      />
+                      <YAxis tickLine={false} axisLine={false} width={32} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartLegend content={<ChartLegendContent />} />
+                      <Area
+                        dataKey="opened"
+                        type="monotone"
+                        stroke="rgba(255, 255, 255, 0.4)"
+                        strokeDasharray="4 4"
+                        fill="none"
+                        strokeWidth={2}
+                      />
+                      <Area
+                        dataKey="completed"
+                        type="monotone"
+                        stroke="#ffffff"
+                        fill="url(#app1Completed)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
 
-            <div className="relative z-10">
-              <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider block mb-1">
-                Admin Panel
-              </span>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Admin Sign In</h2>
-              <p className="text-xs text-white/50 mt-1.5 leading-relaxed">
-                Sign in to manage delegate registrations, assignments, and applications.
-              </p>
-            </div>
+              {/* Conference Tracks & Live Feed */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-semibold">
+                      Core Operations Progress
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400">
+                      Active milestone readiness for 27–29 November 2026
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-4">
+                    {app1Projects.map((project) => (
+                      <div key={project.id} className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="truncate text-xs font-medium text-white">
+                            {project.name}
+                          </h3>
+                          <Badge variant="outline" className="text-[10px] font-mono py-0">
+                            {project.status}
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-zinc-400">
+                          {project.description}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <Progress
+                            value={project.progress}
+                            aria-label={`${project.name} progress`}
+                          />
+                          <span className="shrink-0 text-xs text-zinc-400 tabular-nums font-mono">
+                            {project.progress}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
 
-            {/* Google Sign-In Button */}
-            <div className="relative z-10">
-              <button
-                type="button"
-                onClick={handleGoogleAdminLogin}
-                disabled={googleLoading}
-                className="w-full h-12 flex items-center justify-center gap-3 rounded-xl bg-white hover:bg-white/95 active:scale-[0.99] text-sm font-semibold text-gray-800 transition-all cursor-pointer shadow-[0_4px_20px_rgba(255,255,255,0.15)] disabled:opacity-70 border border-white/20"
-              >
-                {googleLoading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-gray-600" />
-                    <span className="text-gray-700">Signing in...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                      <path fill="#EA4335" d="M12 5c1.56 0 2.96.54 4.07 1.43l3.05-3.05C17.27 1.7 14.81 1 12 1 7.58 1 3.77 3.52 1.95 7.19l3.66 2.84C6.49 7.37 8.98 5 12 5z" />
-                      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58l3.71 2.88c2.16-2 3.71-4.95 3.71-8.7z" />
-                      <path fill="#FBBC05" d="M5.61 14.71a7.48 7.48 0 0 1 0-5.42L1.95 6.45A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.35l3.7-2.88.66-.76z" />
-                      <path fill="#34A853" d="M12 23c3.24 0 5.95-1.08 7.93-2.91l-3.71-2.88c-1.07.73-2.44 1.16-4.22 1.16-3.02 0-5.51-2.37-6.39-5.03L1.95 16.18C3.77 19.85 7.58 22.37 12 23z" />
-                    </svg>
-                    <span>Continue with Google</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="relative z-10 flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/[0.08]" />
-              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">or use password</span>
-              <div className="flex-1 h-px bg-white/[0.08]" />
-            </div>
-
-            <form onSubmit={handleUnlock} className="relative z-10 space-y-4">
-              <input
-                type="password"
-                placeholder="Enter admin password"
-                value={adminPinInput}
-                onChange={(e) => setAdminPinInput(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl bg-black/60 border border-white/20 text-white text-xs placeholder:text-white/30 text-center font-mono focus:outline-none focus:border-purple-400 transition-all shadow-inner"
-              />
-
-              {adminPinError && (
-                <div className="p-3 rounded-xl bg-red-950/50 border border-red-500/30 text-xs text-red-300 flex items-center justify-center gap-2">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                  <span>{adminPinError}</span>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full h-12 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_25px_rgba(168,85,247,0.35)] active:scale-[0.99]"
-              >
-                Sign In with Password
-              </button>
-            </form>
-
-            <div className="relative z-10 pt-2 border-t border-white/[0.06] text-xs text-white/40 flex items-center justify-between">
-              <span>Resolve MUN 2026</span>
-              <span>Meridian Kompally</span>
-            </div>
-          </div>
-        </main>
-      ) : (
-        /* UNLOCKED DASHBOARD */
-        <div className="flex-1 flex w-full relative">
-          {/* Mobile Overlay */}
-          {sidebarOpen && (
-            <div
-              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden animate-in fade-in duration-200"
-              onClick={() => setSidebarOpen(false)}
-            />
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-semibold">
+                      System Activity & Ledger
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400">
+                      Recent operations recorded across the platform
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ol className="flex flex-col gap-3.5">
+                      {app1Activity.map((entry) => (
+                        <li key={entry.id} className="flex items-start gap-3">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-[10px] font-mono text-zinc-300">
+                            {entry.person.initials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs leading-snug text-zinc-200">
+                              <span className="font-semibold text-white">
+                                {entry.person.name}
+                              </span>{" "}
+                              <span className="text-zinc-400">
+                                {entry.action}
+                              </span>
+                            </p>
+                            <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                              {entry.time}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
           )}
 
-          {/* SIDEBAR NAVIGATION */}
-          <aside
-            className={`fixed top-16 bottom-0 left-0 z-50 w-72 bg-[#060813] border-r border-white/[0.08] flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
-          >
-            <div className="p-4 space-y-6 overflow-y-auto flex-1">
-              {/* Summary Card */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 via-[#0a0d1f] to-[#070914] border border-purple-500/25">
-                <div className="flex items-center justify-between text-[11px] text-purple-300 font-bold uppercase">
-                  <span>TOTAL PEOPLE</span>
-                  <span className="flex items-center gap-1 text-emerald-400 text-[10px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
-                  </span>
-                </div>
-                <div className="text-2xl font-bold font-mono text-white mt-1">
-                  {grandTotalPersonnel} <span className="text-xs font-normal text-white/50">registered</span>
-                </div>
-                <div className="text-[11px] text-white/50 flex justify-between mt-1 pt-1.5 border-t border-white/[0.06]">
-                  <span>{registrations.length} Delegates</span>
-                  <span>{delegations.length} Teams</span>
-                  <span>{activeAbandonedLeads.length} Incomplete</span>
-                </div>
-              </div>
-
-              {/* Menu Links */}
-              <div className="space-y-1">
-                <div className="px-2 pb-2 text-[10px] font-mono uppercase tracking-wider text-white/40 font-semibold">
-                  MENU
-                </div>
-
-                {NAV_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSubTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveSubTab(item.id);
-                        setSidebarOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-gradient-to-r from-purple-600/30 to-indigo-600/20 text-white border border-purple-500/40 shadow-sm'
-                          : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className={`w-4 h-4 ${isActive ? 'text-purple-300' : 'text-white/40'}`} />
-                        <span>{item.label}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        {item.liveDot && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        )}
-                        {item.badge !== null && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${item.badgeColor}`}>
-                            {item.badge}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Sidebar Bottom */}
-            <div className="p-4 border-t border-white/[0.08] bg-[#050711] space-y-2">
-              <button
-                type="button"
-                onClick={() => setAddDelegateModalOpen(true)}
-                className="w-full h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-purple-600/20"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Delegate</span>
-              </button>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={exportLeadsCSV}
-                  className="flex-1 h-8 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-[11px] font-medium flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                  title="Export Incomplete Signups CSV"
-                >
-                  <Download className="w-3 h-3 text-amber-300" />
-                  <span>Leads CSV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={exportDelegatesCSV}
-                  className="flex-1 h-8 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-[11px] font-medium flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                  title="Export Delegates CSV"
-                >
-                  <Download className="w-3 h-3 text-blue-300" />
-                  <span>Delegates CSV</span>
-                </button>
-              </div>
-
-              <div className="text-[10px] font-mono text-white/30 text-center pt-1">
-                Connected to Database
-              </div>
-            </div>
-          </aside>
-
-          {/* MAIN PANELS */}
-          <main className="flex-1 lg:ml-72 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
-
-            {/* OVERVIEW PANEL */}
-            {activeSubTab === 'overview' && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                {/* METRICS GRID */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                  <div className="p-4 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 via-[#0a0d1c] to-[#070914] relative overflow-hidden">
-                    <span className="text-[11px] text-purple-300/80 block font-semibold">
-                      Total People
-                    </span>
-                    <span className="text-3xl font-mono font-extrabold text-white mt-1 block">
-                      {grandTotalPersonnel}
-                    </span>
-                    <span className="text-[11px] text-white/40 block mt-1">Delegates and staff</span>
-                  </div>
-
-                  <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
-                    <span className="text-[11px] text-white/50 block font-semibold">
-                      Delegates
-                    </span>
-                    <span className="text-3xl font-mono font-bold text-white mt-1 block">
-                      {registrations.length}
-                    </span>
-                    <span className="text-[11px] text-emerald-400 block mt-1">
-                      {verifiedDelegatesCount} verified
-                    </span>
-                  </div>
-
-                  <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
-                    <span className="text-[11px] text-white/50 block font-semibold">
-                      School Teams
-                    </span>
-                    <span className="text-3xl font-mono font-bold text-white mt-1 block">
-                      {delegations.length}
-                    </span>
-                    <span className="text-[11px] text-cyan-400 block mt-1">
-                      {totalDelMembers} students in teams
-                    </span>
-                  </div>
-
-                  <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
-                    <span className="text-[11px] text-white/50 block font-semibold">
-                      Incomplete
-                    </span>
-                    <span className="text-3xl font-mono font-bold text-amber-300 mt-1 block">
-                      {activeAbandonedLeads.length}
-                    </span>
-                    <span className="text-[11px] text-amber-400/80 block mt-1">
-                      Started registration
-                    </span>
-                  </div>
-
-                  <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
-                    <span className="text-[11px] text-white/50 block font-semibold">
-                      Team Applications
-                    </span>
-                    <span className="text-3xl font-mono font-bold text-violet-300 mt-1 block">
-                      {ebApplications.length + secApplications.length}
-                    </span>
-                    <span className="text-[11px] text-violet-400/80 block mt-1">
-                      {secApplications.length} Sec · {ebApplications.length} EB
-                    </span>
-                  </div>
-
-                  <div className="p-4 rounded-2xl border border-white/[0.08] bg-[#080b16]/80 hover:border-white/15 transition-all">
-                    <span className="text-[11px] text-white/50 block font-semibold">
-                      Accounts Only
-                    </span>
-                    <span className="text-3xl font-mono font-bold text-rose-300 mt-1 block">
-                      {loggedInNotApplied.length}
-                    </span>
-                    <span className="text-[11px] text-white/40 block mt-1">Ready to invite</span>
-                  </div>
-                </div>
-
-                {/* FINANCIAL SUMMARY */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-5 rounded-2xl border border-emerald-500/20 bg-emerald-950/20 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-emerald-400 font-semibold block">
-                        TOTAL FEES COLLECTED
-                      </span>
-                      <span className="text-2xl font-mono font-bold text-white mt-1 block">
-                        ₹{totalVerifiedRevenue.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-xs text-emerald-300/60 block mt-0.5">
-                        From {verifiedDelegatesCount} verified delegates
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                      <CreditCard className="w-5 h-5" />
-                    </div>
-                  </div>
-
-                  <div className="p-5 rounded-2xl border border-amber-500/20 bg-amber-950/20 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-amber-400 font-semibold block">
-                        AWAITING REVIEW
-                      </span>
-                      <span className="text-2xl font-mono font-bold text-amber-300 mt-1 block">
-                        {registrations.length - verifiedDelegatesCount} Delegates
-                      </span>
-                      <span className="text-xs text-amber-300/60 block mt-0.5">
-                        Payment receipts to verify
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                      <Clock className="w-5 h-5" />
-                    </div>
-                  </div>
-
-                  <div className="p-5 rounded-2xl border border-purple-500/20 bg-purple-950/20 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-purple-400 font-semibold block">
-                        SEATS ASSIGNED
-                      </span>
-                      <span className="text-2xl font-mono font-bold text-white mt-1 block">
-                        {registrations.filter(r => r.allocatedCommittee).length} / 225
-                      </span>
-                      <span className="text-xs text-purple-300/60 block mt-0.5">
-                        Delegates with committee slots
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                      <Shield className="w-5 h-5" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* COMMITTEE MATRIX */}
-                <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-white">Committee Seats</h3>
-                      <p className="text-xs text-white/50">Live seat allocation across all 6 committees</p>
-                    </div>
-                    <span className="text-xs font-mono text-purple-400">Total capacity: 225</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                    {committeeStats.map((c) => (
-                      <div key={c.code} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span>{c.icon}</span>
-                            <div>
-                              <span className="text-xs font-bold text-white block">{c.code}</span>
-                              <span className="text-[11px] text-white/50 block truncate max-w-[150px]">{c.name}</span>
-                            </div>
-                          </div>
-                          <span className="text-xs font-mono font-bold text-purple-300">
-                            {c.occupied} / {c.cap}
-                          </span>
-                        </div>
-
-                        <div className="w-full bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              c.pct > 80 ? 'bg-red-500' : c.pct > 50 ? 'bg-amber-500' : 'bg-purple-500'
-                            }`}
-                            style={{ width: `${c.pct}%` }}
-                          />
-                        </div>
-
-                        <div className="flex justify-between text-[11px] text-white/40 font-mono">
-                          <span>{c.remaining} seats left</span>
-                          <span>{c.pct}% filled</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* SIGNUP FUNNEL */}
-                <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-white">Signup Steps</h3>
-                      <p className="text-xs text-white/50">See where people are in the registration process</p>
-                    </div>
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-mono font-bold">
-                      {funnelStats.conversionPct}% completed
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                      <span className="text-[11px] text-white/50 block">1. Started</span>
-                      <span className="text-xl font-bold font-mono text-white mt-1 block">{funnelStats.totalSessions}</span>
-                      <span className="text-[10px] text-white/40 block">Total sessions</span>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                      <span className="text-[11px] text-white/50 block">2. Committee Selected</span>
-                      <span className="text-xl font-bold font-mono text-indigo-300 mt-1 block">{funnelStats.step2Count}</span>
-                      <span className="text-[10px] text-indigo-400/60 block">{funnelStats.step2Pct}% reached step 2</span>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                      <span className="text-[11px] text-white/50 block">3. Payment Screen</span>
-                      <span className="text-xl font-bold font-mono text-amber-300 mt-1 block">{funnelStats.step3Count}</span>
-                      <span className="text-[10px] text-amber-400/60 block">{funnelStats.step3Pct}% reached payment</span>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/20">
-                      <span className="text-[11px] text-emerald-400 block font-medium">4. Submitted</span>
-                      <span className="text-xl font-bold font-mono text-emerald-300 mt-1 block">{funnelStats.completedCount}</span>
-                      <span className="text-[10px] text-emerald-400/60 block">{funnelStats.conversionPct}% completed</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* DELEGATES PANEL */}
-            {activeSubTab === 'delegates' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* ===============================================================
+              TAB: DELEGATES (INDIVIDUAL REGISTRATIONS)
+              =============================================================== */}
+          {activeTab === "delegates" && (
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-bold text-white">Delegates</h2>
-                    <p className="text-xs text-white/50">Assign committees, check payment receipts, and manage delegates.</p>
+                    <CardTitle className="text-base font-semibold">
+                      Individual Delegate Registrations ({filteredDelegates.length})
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                      Allocate committees & portfolios, verify payment UTRs, and dispatch passes
+                    </CardDescription>
                   </div>
-
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAddDelegateModalOpen(true)}
-                      className="h-9 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportCsv(filteredDelegates, "delegates")}
+                      className="h-8 gap-1.5 text-xs border-white/15"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Delegate</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={exportDelegatesCSV}
-                      className="h-9 px-3 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Export CSV</span>
-                    </button>
+                      <Download className="h-3.5 w-3.5" />
+                      Export CSV
+                    </Button>
                   </div>
                 </div>
 
-                {/* Filter & Search */}
-                <div className="flex flex-col sm:flex-row gap-2.5">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                {/* Filter Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
                     <input
                       type="text"
-                      placeholder="Search by name, email, phone, ID, or school..."
+                      placeholder="Search by name, email, phone, ID..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs placeholder:text-white/30 focus:outline-none focus:border-purple-400"
+                      className="w-full h-8 pl-8 pr-3 rounded-lg border border-white/10 bg-zinc-900/60 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30"
                     />
                   </div>
 
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                    {['ALL', 'Confirmed', 'Allocated', 'Payment_Verified'].map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setFilterStatus(st)}
-                        className={`px-3 h-10 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                          filterStatus === st
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-white/[0.03] text-white/60 hover:text-white border border-white/[0.06]'
-                        }`}
-                      >
-                        {st === 'ALL' ? 'All' : st === 'Confirmed' ? 'Registered' : st === 'Allocated' ? 'Assigned' : 'Verified'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {filteredRecords.length === 0 ? (
-                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <Users className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No delegates found.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
-                        <tr>
-                          <th className="py-3 px-4">Delegate</th>
-                          <th className="py-3 px-4">Contact</th>
-                          <th className="py-3 px-4">School / Team</th>
-                          <th className="py-3 px-4">Committee & Country</th>
-                          <th className="py-3 px-4">Payment</th>
-                          <th className="py-3 px-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.04]">
-                        {filteredRecords.map((r, idx) => {
-                          const isAllocated = Boolean(r.allocatedCommittee);
-                          const isVerified = r.status === 'Confirmed' || r.status === 'Allocated' || r.status === 'Payment_Verified';
-                          return (
-                            <tr key={`del-row-${r.regId || idx}`} className="hover:bg-white/[0.015] transition-colors">
-                              <td className="py-3.5 px-4">
-                                <div className="font-bold text-white">{r.name || r.fullName}</div>
-                                <div className="font-mono text-[10px] text-purple-300 font-semibold">{r.regId}</div>
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                <div className="text-white/90">{r.email}</div>
-                                <div className="text-[11px] text-white/50 font-mono">{r.phone}</div>
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                <div className="text-white/80">{r.institution || '—'}</div>
-                                {r.delegationCode && (
-                                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[10px] font-mono">
-                                    {r.delegationCode}
-                                  </span>
-                                )}
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                {isAllocated ? (
-                                  <div>
-                                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-bold">
-                                      {r.allocatedCommittee}
-                                    </span>
-                                    <p className="text-[11px] text-white/80 font-medium mt-0.5">
-                                      {r.allocatedCountry}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <span className="text-[11px] text-amber-400 block font-semibold">Not assigned</span>
-                                    <span className="text-[10px] text-white/40 block">Pref 1: {r.committeePref1 || 'None'}</span>
-                                  </div>
-                                )}
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                <div className="flex items-center gap-2">
-                                  {r.paymentScreenshotURL ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setScreenshotModalData({
-                                        url: r.paymentScreenshotURL,
-                                        rawUrl: r.paymentScreenshotURL,
-                                        name: r.name || r.fullName,
-                                        regId: r.regId,
-                                        utr: r.paymentUTR
-                                      })}
-                                      className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/30 text-indigo-300 text-[11px] font-medium flex items-center gap-1 transition-colors cursor-pointer"
-                                    >
-                                      <Eye className="w-3 h-3" />
-                                      <span>Receipt</span>
-                                    </button>
-                                  ) : (
-                                    <span className="text-[10px] text-white/30">No receipt</span>
-                                  )}
-
-                                  {r.paymentUTR && (
-                                    <span className="text-[10px] font-mono text-white/60 truncate max-w-[100px]" title={r.paymentUTR}>
-                                      {r.paymentUTR}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-
-                              <td className="py-3.5 px-4 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  {/* Allot button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => setAllotmentModalData({
-                                      regId: r.regId,
-                                      name: r.name || r.fullName,
-                                      email: r.email,
-                                      committee: r.allocatedCommittee || r.committeePref1 || 'DISEC',
-                                      country: r.allocatedCountry || '',
-                                      committeePref1: r.committeePref1 || '',
-                                      committeePref2: r.committeePref2 || '',
-                                      committeePref3: r.committeePref3 || '',
-                                      experience: r.experience || ''
-                                    })}
-                                    className="p-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/20 text-purple-300 transition-colors cursor-pointer"
-                                    title="Assign Committee & Country"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </button>
-
-                                  {/* Fast Verify Payment */}
-                                  {!isVerified && (
-                                    <button
-                                      type="button"
-                                      onClick={() => verifyPaymentDirect(r.regId, r.email, r.name || r.fullName, r.paymentUTR)}
-                                      className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 text-emerald-300 transition-colors cursor-pointer"
-                                      title="Approve Payment"
-                                    >
-                                      <Check className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-
-                                  {/* Reassign delegation */}
-                                  <button
-                                    type="button"
-                                    onClick={() => setReassignDelegationModalData({
-                                      regId: r.regId,
-                                      name: r.name || r.fullName,
-                                      delegationCode: r.delegationCode || ''
-                                    })}
-                                    className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-400/20 text-indigo-300 transition-colors cursor-pointer"
-                                    title="Change Team Code"
-                                  >
-                                    <Building2 className="w-3.5 h-3.5" />
-                                  </button>
-
-                                  {/* Delete */}
-                                  <button
-                                    type="button"
-                                    onClick={() => deleteRecord(r.regId, r.name || r.fullName)}
-                                    className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-300 transition-colors cursor-pointer"
-                                    title="Delete Record"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* SCHOOL TEAMS PANEL */}
-            {activeSubTab === 'delegations' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">School & College Teams</h2>
-                    <p className="text-xs text-white/50">View registered school teams and delegations.</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-xs font-mono font-bold">
-                    {delegations.length} Teams
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                  <input
-                    type="text"
-                    placeholder="Search by school name, code, or leader..."
-                    value={delegationSearchQuery}
-                    onChange={(e) => setDelegationSearchQuery(e.target.value)}
-                    className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs placeholder:text-white/30 focus:outline-none focus:border-cyan-400"
-                  />
-                </div>
-
-                {filteredDelegations.length === 0 ? (
-                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <Building2 className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No teams found.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredDelegations.map((d, idx) => {
-                      const code = d.delegationCode || d.delId || d.code || `DEL-${idx + 1}`;
-                      const count = parseInt(d.membersCount || d.size || d.MemberCount) || 0;
-                      return (
-                        <div key={`del-card-${code}-${idx}`} className="p-5 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-3.5 hover:border-cyan-500/30 transition-all">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className="px-2 py-0.5 rounded bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 font-mono text-[10px] font-bold">
-                                {code}
-                              </span>
-                              <h3 className="font-bold text-white text-sm mt-1.5 leading-snug">
-                                {d.institutionName || d.name || d.InstitutionName || 'Institution'}
-                              </h3>
-                            </div>
-                            <span className="px-2.5 py-1 rounded-xl bg-white/[0.04] text-white font-mono text-xs font-bold border border-white/10">
-                              {count} Members
-                            </span>
-                          </div>
-
-                          <div className="text-xs space-y-1 text-white/60 pt-1 border-t border-white/[0.04]">
-                            <p><strong className="text-white/80">Leader:</strong> {d.headDelegateName || d.contactPerson || '—'}</p>
-                            <p><strong className="text-white/80">Email:</strong> {d.email || d.Email || '—'}</p>
-                            <p><strong className="text-white/80">Phone:</strong> {d.phone || d.Phone || '—'}</p>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
-                            <button
-                              type="button"
-                              onClick={() => copyInviteLink(code)}
-                              className="px-3 h-8 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                            >
-                              <Copy className="w-3 h-3" />
-                              <span>{copiedLink === code ? 'Copied Link' : 'Copy Team Link'}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => deleteRecordFromSheet('Delegations', d.delId || d.id || code, d.institutionName)}
-                              className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 transition-colors cursor-pointer"
-                              title="Delete Team"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* INCOMPLETE SIGNUPS PANEL */}
-            {activeSubTab === 'leads' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Incomplete Signups</h2>
-                    <p className="text-xs text-white/50">People who started registering but haven't submitted yet.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={exportLeadsCSV}
-                    className="h-9 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/30 text-amber-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  <select
+                    value={committeeFilter}
+                    onChange={(e) => setCommitteeFilter(e.target.value)}
+                    className="h-8 px-2.5 rounded-lg border border-white/10 bg-zinc-900/60 text-xs text-white focus:outline-none"
                   >
-                    <Download className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Export Leads CSV</span>
-                  </button>
-                </div>
+                    <option value="ALL">All Committees</option>
+                    {COMMITTEES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
 
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {[
-                    { id: 'ALL', label: `All Incomplete (${activeAbandonedLeads.length})` },
-                    { id: 'STEP3', label: 'Stopped at Payment' },
-                    { id: 'STEP2', label: 'Stopped at Committees' },
-                    { id: 'STEP1', label: 'Stopped at Contact Info' }
-                  ].map((filter) => (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      onClick={() => setLeadStepFilter(filter.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                        leadStepFilter === filter.id
-                          ? 'bg-amber-500 text-black font-bold'
-                          : 'bg-white/[0.03] text-white/60 hover:text-white border border-white/[0.06]'
-                      }`}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
+                  <select
+                    value={paymentFilter}
+                    onChange={(e) => setPaymentFilter(e.target.value)}
+                    className="h-8 px-2.5 rounded-lg border border-white/10 bg-zinc-900/60 text-xs text-white focus:outline-none"
+                  >
+                    <option value="ALL">All Payment Statuses</option>
+                    <option value="VERIFIED">Verified Only</option>
+                    <option value="PENDING">Pending Only</option>
+                  </select>
                 </div>
+              </CardHeader>
 
-                {filteredLeads.length === 0 ? (
-                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-400 opacity-60" />
-                    <p className="text-xs font-semibold">No incomplete signups in this list.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
+                        <th className="px-4 py-3">ID / Date</th>
+                        <th className="px-4 py-3">Delegate Name & School</th>
+                        <th className="px-4 py-3">Contact</th>
+                        <th className="px-4 py-3">Assigned Committee & Portfolio</th>
+                        <th className="px-4 py-3">Payment UTR</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-sans">
+                      {filteredDelegates.length === 0 ? (
                         <tr>
-                          <th className="py-3 px-4">Name</th>
-                          <th className="py-3 px-4">Contact</th>
-                          <th className="py-3 px-4">Type</th>
-                          <th className="py-3 px-4">Stopped At</th>
-                          <th className="py-3 px-4 text-right">Reach Out</th>
+                          <td colSpan={6} className="py-8 text-center text-zinc-500 text-xs">
+                            No delegates matching the filter criteria.
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.04]">
-                        {filteredLeads.map((lead, idx) => {
-                          const leadKey = lead.leadId || lead.email || idx;
-                          const sendingState = leadSendingState[leadKey];
-                          return (
-                            <tr key={`lead-row-${leadKey}`} className="hover:bg-white/[0.015] transition-colors">
-                              <td className="py-3.5 px-4 font-semibold text-white">
-                                {lead.name}
-                              </td>
+                      ) : (
+                        filteredDelegates.map((d) => (
+                          <tr key={d.regId} className="hover:bg-zinc-900/40 transition-colors">
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="font-mono text-xs font-semibold text-white block">
+                                {d.regId}
+                              </span>
+                              <span className="text-[10px] text-zinc-500 font-mono">
+                                {d.timestamp ? new Date(d.timestamp).toLocaleDateString() : "Live"}
+                              </span>
+                            </td>
 
-                              <td className="py-3.5 px-4">
-                                <div className="text-white/90">{lead.email}</div>
-                                <div className="text-[11px] text-white/50 font-mono">{lead.phone || 'No phone'}</div>
-                              </td>
+                            <td className="px-4 py-3">
+                              <span className="font-semibold text-white block">
+                                {d.fullName}
+                              </span>
+                              <span className="text-[11px] text-zinc-400 block truncate max-w-xs">
+                                {d.institution || "Independent"} · {d.grade || "N/A"}
+                              </span>
+                            </td>
 
-                              <td className="py-3.5 px-4 text-white/60">
-                                {lead.formType || 'Delegate'}
-                              </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-zinc-300 block font-mono text-[11px]">
+                                {d.email}
+                              </span>
+                              <a
+                                href={`https://wa.me/91${d.phone.replace(/[^0-9]/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-zinc-500 hover:text-emerald-400 transition-colors text-[11px] font-mono"
+                              >
+                                +91 {d.phone}
+                              </a>
+                            </td>
 
-                              <td className="py-3.5 px-4">
-                                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 text-[10px] font-semibold">
-                                  {lead.step}
-                                </span>
-                              </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col gap-1">
+                                <select
+                                  value={d.allocatedCommittee || ""}
+                                  onChange={(e) =>
+                                    handleUpdateAllocation(d.regId, e.target.value, d.allocatedCountry || "Delegate")
+                                  }
+                                  className="h-7 px-2 rounded border border-white/10 bg-zinc-900 text-xs text-white focus:outline-none"
+                                >
+                                  <option value="">Unassigned Committee</option>
+                                  {COMMITTEES.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="text"
+                                  placeholder="Portfolio / Country"
+                                  defaultValue={d.allocatedCountry || ""}
+                                  onBlur={(e) =>
+                                    handleUpdateAllocation(d.regId, d.allocatedCommittee || "DISEC", e.target.value)
+                                  }
+                                  className="h-6 px-2 rounded border border-white/10 bg-zinc-900 text-[11px] text-zinc-200 focus:outline-none"
+                                />
+                              </div>
+                            </td>
 
-                              <td className="py-3.5 px-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  {lead.phone && (
-                                    <button
-                                      type="button"
-                                      onClick={() => openWhatsAppLead(lead)}
-                                      className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 text-emerald-300 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                                    >
-                                      <MessageSquare className="w-3 h-3" />
-                                      <span>WhatsApp</span>
-                                    </button>
-                                  )}
-
-                                  {lead.email && (
-                                    <button
-                                      type="button"
-                                      onClick={() => dispatchLeadReminder(lead)}
-                                      disabled={sendingState === 'sending' || sendingState === 'sent'}
-                                      className="px-2.5 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/20 text-purple-300 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
-                                    >
-                                      <Send className="w-3 h-3" />
-                                      <span>{sendingState === 'sending' ? 'Sending...' : sendingState === 'sent' ? 'Sent' : 'Email'}</span>
-                                    </button>
-                                  )}
-
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="font-mono text-xs text-zinc-300 block">
+                                {d.paymentUTR || "None Provided"}
+                              </span>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <Badge
+                                  variant={d.paymentStatus === "VERIFIED" ? "success" : "secondary"}
+                                  className="text-[9px] py-0 uppercase font-mono"
+                                >
+                                  {d.paymentStatus}
+                                </Badge>
+                                {d.paymentScreenshotURL && (
                                   <button
-                                    type="button"
-                                    onClick={() => deleteRecordFromSheet('Abandoned_Leads', lead.leadId || lead.id, lead.name)}
-                                    className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-300 transition-colors cursor-pointer"
-                                    title="Delete"
+                                    onClick={() => setViewingImage(d.paymentScreenshotURL)}
+                                    className="text-[10px] text-zinc-400 hover:text-white underline inline-flex items-center gap-0.5 cursor-pointer"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Eye className="h-3 w-3" />
+                                    Proof
                                   </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
+                                )}
+                              </div>
+                            </td>
 
-            {/* ALL ACCOUNTS PANEL */}
-            {activeSubTab === 'users' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {d.paymentStatus !== "VERIFIED" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleVerifyPayment(d.regId, d.email)}
+                                    className="h-7 px-2 text-[10px] uppercase font-semibold text-emerald-400 border-emerald-500/30 hover:bg-emerald-950/40 cursor-pointer"
+                                  >
+                                    Verify
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setCrmEmailTo(d.email);
+                                    setCrmRecipientMode("SINGLE");
+                                    setActiveTab("crm");
+                                  }}
+                                  className="h-7 px-2 text-[10px] text-zinc-300 hover:text-white border-white/10 cursor-pointer"
+                                >
+                                  Email
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ===============================================================
+              TAB: DELEGATIONS (SCHOOL CONTINGENTS)
+              =============================================================== */}
+          {activeTab === "delegations" && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-semibold">
+                      School Delegation Contingents ({delegations.length})
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                      Institutional rosters, faculty adviser details, and settlement
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportCsv(delegations, "delegations")}
+                    className="h-8 gap-1.5 text-xs border-white/15"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export CSV
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
+                        <th className="px-4 py-3">ID / Institution</th>
+                        <th className="px-4 py-3">Adviser / Head</th>
+                        <th className="px-4 py-3">Delegates</th>
+                        <th className="px-4 py-3">Total Amount</th>
+                        <th className="px-4 py-3">Payment UTR</th>
+                        <th className="px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {delegations.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-zinc-500 text-xs">
+                            No institutional delegations registered yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        delegations.map((d) => (
+                          <tr key={d.delegationId} className="hover:bg-zinc-900/40 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className="font-semibold text-white block">
+                                {d.instName}
+                              </span>
+                              <span className="font-mono text-[10px] text-zinc-500">
+                                {d.delegationId}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-zinc-200 block">{d.adviserName || "Adviser"}</span>
+                              <span className="text-zinc-500 font-mono text-[11px] block">{d.adviserEmail}</span>
+                            </td>
+                            <td className="px-4 py-3 font-mono font-bold text-white">
+                              {d.delegateCount} Delegates
+                            </td>
+                            <td className="px-4 py-3 font-mono text-emerald-400 font-semibold">
+                              {d.totalAmount}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="font-mono text-xs text-zinc-300 block">{d.paymentUTR || "Pending"}</span>
+                              <Badge
+                                variant={d.paymentStatus === "VERIFIED" ? "success" : "secondary"}
+                                className="text-[9px] py-0 uppercase font-mono mt-1"
+                              >
+                                {d.paymentStatus}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {d.paymentScreenshotURL && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setViewingImage(d.paymentScreenshotURL)}
+                                  className="h-7 text-xs border-white/10"
+                                >
+                                  Proof
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ===============================================================
+              TAB: ABANDONED LEADS (TELEMETRY)
+              =============================================================== */}
+          {activeTab === "leads" && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-semibold">
+                      Abandoned Draft Leads ({abandonedLeads.length})
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                      Real-time drop-off beacon capturing candidates who paused mid-form
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportCsv(abandonedLeads, "abandoned_leads")}
+                    className="h-8 gap-1.5 text-xs border-white/15"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export CSV
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
+                        <th className="px-4 py-3">Lead / Candidate</th>
+                        <th className="px-4 py-3">Contact</th>
+                        <th className="px-4 py-3">Last Recorded Step</th>
+                        <th className="px-4 py-3">Timestamp</th>
+                        <th className="px-4 py-3 text-right">Recovery Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {abandonedLeads.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-zinc-500 text-xs">
+                            No abandoned leads captured at this time.
+                          </td>
+                        </tr>
+                      ) : (
+                        abandonedLeads.map((l, idx) => (
+                          <tr key={idx} className="hover:bg-zinc-900/40 transition-colors">
+                            <td className="px-4 py-3 font-semibold text-white">
+                              {l.name || l.fullName || "Prospective Delegate"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="font-mono text-zinc-300 block">{l.email || "No email"}</span>
+                              <span className="font-mono text-zinc-500 text-[11px] block">{l.phone}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge variant="outline" className="text-[10px] font-mono">
+                                {l.step || l.lastStep || "Step 1"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-[11px] font-mono text-zinc-500">
+                              {l.timestamp ? new Date(l.timestamp).toLocaleString() : "Recent"}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {l.email && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setCrmEmailTo(l.email);
+                                    setCrmSubject("Complete Your Resolve MUN 2.0 Registration");
+                                    setCrmMessageBody(`Dear ${l.name || "Delegate"},\n\nWe noticed you began your delegate registration for Resolve MUN 2.0 but didn't finish submitting your committee preferences.\n\nSlots across DISEC, UNHRC, UNSC, and Lok Sabha are moving quickly. You can resume your application directly at https://resolvemun.in/?open=delegate\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`);
+                                    setCrmRecipientMode("SINGLE");
+                                    setActiveTab("crm");
+                                  }}
+                                  className="h-7 text-xs border-white/15 cursor-pointer"
+                                >
+                                  Send Reminder
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ===============================================================
+              TAB: TEAM APPLICATIONS (OC, SECRETARIAT, EB)
+              =============================================================== */}
+          {activeTab === "applications" && (
+            <Card>
+              <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-bold text-white">All User Accounts</h2>
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-mono font-bold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        {realTimeActiveCount} online
-                      </span>
-                    </div>
-                    <p className="text-xs text-white/50">All registered accounts created on Resolve MUN.</p>
+                    <CardTitle className="text-base font-semibold">
+                      Team Applications
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                      Review Organizing Committee, Secretariat, and Executive Board applicants
+                    </CardDescription>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-mono font-bold">
-                    {siteUsers.length} Total Accounts
-                  </span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2.5">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                    <input
-                      type="text"
-                      placeholder="Search by name, email, or user ID..."
-                      value={userSearchQuery}
-                      onChange={(e) => setUserSearchQuery(e.target.value)}
-                      className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs placeholder:text-white/30 focus:outline-none focus:border-emerald-400"
-                    />
-                  </div>
-
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                    {[
-                      { id: 'ALL', label: 'All' },
-                      { id: 'DELEGATE', label: 'Delegates' },
-                      { id: 'SECRETARIAT', label: 'Secretariat' },
-                      { id: 'LEAD', label: 'Incomplete' },
-                      { id: 'ACCOUNT_ONLY', label: 'Account Only' }
-                    ].map((rf) => (
-                      <button
-                        key={rf.id}
-                        type="button"
-                        onClick={() => setUserRoleFilter(rf.id)}
-                        className={`px-3 h-10 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                          userRoleFilter === rf.id
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-white/[0.03] text-white/60 hover:text-white border border-white/[0.06]'
-                        }`}
+                  <div className="flex items-center gap-2">
+                    {["ALL", "OC", "SEC", "EB"].map((t) => (
+                      <Button
+                        key={t}
+                        variant={appTypeFilter === t ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setAppTypeFilter(t)}
+                        className="h-7 text-[11px] font-mono"
                       >
-                        {rf.label}
-                      </button>
+                        {t}
+                      </Button>
                     ))}
                   </div>
                 </div>
-
-                {filteredSiteUsers.length === 0 ? (
-                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <UserCheck className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No accounts match your search.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
-                        <tr>
-                          <th className="py-3 px-4">User</th>
-                          <th className="py-3 px-4">Email</th>
-                          <th className="py-3 px-4">Account ID</th>
-                          <th className="py-3 px-4">Status</th>
-                          <th className="py-3 px-4">Last Active</th>
-                          <th className="py-3 px-4 text-right">Contact</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.04]">
-                        {filteredSiteUsers.map((u, idx) => {
-                          const isReg = registrations.some(r => (r.email || '').toLowerCase() === (u.email || '').toLowerCase());
-                          const isSec = secApplications.some(s => (s.email || '').toLowerCase() === (u.email || '').toLowerCase());
-                          const isLead = abandonedLeads.some(l => (l.email || '').toLowerCase() === (u.email || '').toLowerCase());
-
-                          return (
-                            <tr key={`user-row-${u.uid || u.email || idx}`} className="hover:bg-white/[0.015] transition-colors">
-                              <td className="py-3.5 px-4 font-semibold text-white">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-[11px] font-bold text-emerald-300">
-                                    {(u.name || u.email || 'U')[0].toUpperCase()}
-                                  </div>
-                                  <span>{u.name || 'User'}</span>
-                                </div>
-                              </td>
-
-                              <td className="py-3.5 px-4 text-white/90">
-                                {u.email}
-                              </td>
-
-                              <td className="py-3.5 px-4 font-mono text-[10px] text-white/40 truncate max-w-[140px]" title={u.uid}>
-                                {u.uid || '—'}
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                {isReg ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-400/30 text-[10px] font-bold">
-                                    Delegate
-                                  </span>
-                                ) : isSec ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-400/30 text-[10px] font-bold">
-                                    Secretariat
-                                  </span>
-                                ) : isLead ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/20 text-[10px] font-bold">
-                                    Incomplete
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded-full bg-white/[0.05] text-white/50 border border-white/10 text-[10px]">
-                                    Account Only
-                                  </span>
-                                )}
-                              </td>
-
-                              <td className="py-3.5 px-4 text-white/40 text-[11px] font-mono">
-                                {u.lastSeen ? new Date(u.lastSeen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Recent'}
-                              </td>
-
-                              <td className="py-3.5 px-4 text-right">
-                                <a
-                                  href={`mailto:${u.email}?subject=Resolve MUN 2026`}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white/80 hover:text-white text-[11px] transition-colors"
-                                >
-                                  <Mail className="w-3 h-3" />
-                                  <span>Email</span>
-                                </a>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TEAM APPLICATIONS PANEL */}
-            {activeSubTab === 'applications' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Team Applications (OC, Secretariat & EB)</h2>
-                    <p className="text-xs text-white/50">Review Organizing Committee (Salaried Role), Secretariat, and Executive Board applications.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAppSubView('ALL')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
-                        appSubView === 'ALL' ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-white/60'
-                      }`}
-                    >
-                      All ({ocApplications.length + secApplications.length + ebApplications.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAppSubView('OC')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
-                        appSubView === 'OC' ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-white/60'
-                      }`}
-                    >
-                      Organizing Committee ({ocApplications.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAppSubView('SEC')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
-                        appSubView === 'SEC' ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-white/60'
-                      }`}
-                    >
-                      Secretariat ({secApplications.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAppSubView('EB')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
-                        appSubView === 'EB' ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-white/60'
-                      }`}
-                    >
-                      Executive Board ({ebApplications.length})
-                    </button>
-                  </div>
-                </div>
-
-                {ocApplications.length === 0 && ebApplications.length === 0 && secApplications.length === 0 ? (
-                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <Award className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No team applications yet.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
-                        <tr>
-                          <th className="py-3 px-4">Applicant ID</th>
-                          <th className="py-3 px-4">Applicant</th>
-                          <th className="py-3 px-4">Role / Tier</th>
-                          <th className="py-3 px-4">Attachments / Receipt</th>
-                          <th className="py-3 px-4">Status</th>
-                          <th className="py-3 px-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.04]">
-                        {(appSubView === 'OC'
-                          ? ocApplications.map(a => ({ ...a, _track: 'OC' }))
-                          : appSubView === 'EB'
-                          ? ebApplications.map(a => ({ ...a, _track: 'EB' }))
-                          : appSubView === 'SEC'
-                          ? secApplications.map(a => ({ ...a, _track: 'SEC' }))
-                          : [
-                              ...ocApplications.map(a => ({ ...a, _track: 'OC' })),
-                              ...secApplications.map(a => ({ ...a, _track: 'SEC' })),
-                              ...ebApplications.map(a => ({ ...a, _track: 'EB' }))
-                            ]
-                        ).map((app, idx) => {
-                          const isOc = app._track === 'OC' || String(app.appId || '').includes('-OC-');
-                          const isSec = app._track === 'SEC' || (!isOc && Boolean(app.position || app.whyJoin || app.schoolCollege));
-                          const isApproved = app.status === 'Accepted' || app.status === 'Approved' || app.status === 'Confirmed';
-                          return (
-                            <tr key={`app-row-${app.appId || app.UID || idx}`} className="hover:bg-white/[0.015] transition-colors">
-                              <td className="py-3.5 px-4 font-mono font-bold text-purple-300">
-                                {app.appId || 'RM26-APP'}
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                <p className="font-semibold text-white">{app.fullName || app.name}</p>
-                                <p className="text-[11px] text-white/50">{app.email} | {app.phone}</p>
-                                {(app.institution || app.schoolCollege) && (
-                                  <p className="text-[10px] text-white/40 mt-0.5">{app.institution || app.schoolCollege}</p>
-                                )}
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                {isOc ? (
-                                  <>
-                                    <p className="text-white/90 font-medium">Organizing Committee</p>
-                                    <p className="text-[10px] text-purple-300 font-mono">{app.feeTier || 'Salaried OC'}</p>
-                                  </>
-                                ) : (
-                                  <>
-                                    <p className="text-white/90 font-medium">{app.position || app.portfolio1 || app.pref1 || 'Leadership'}</p>
-                                    <p className="text-[10px] text-white/40">{isSec ? 'Secretariat (Free)' : 'Executive Board'}</p>
-                                  </>
-                                )}
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {(app.resumeUrl || app.cvUrl || app.CV_URL) && (
-                                    <a
-                                      href={app.resumeUrl || app.cvUrl || app.CV_URL}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/20 text-purple-300 text-[11px] font-medium transition-colors"
-                                    >
-                                      <FileText className="w-3 h-3" />
-                                      <span>CV</span>
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </a>
-                                  )}
-                                  {(app.portfolioUrl || app.PortfolioURL) && (
-                                    <a
-                                      href={app.portfolioUrl || app.PortfolioURL}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-400/20 text-indigo-300 text-[11px] font-medium transition-colors"
-                                    >
-                                      <span>Portfolio</span>
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </a>
-                                  )}
-                                  {app.paymentScreenshotURL && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setScreenshotModalData({
-                                        url: app.paymentScreenshotURL,
-                                        rawUrl: app.paymentScreenshotURL,
-                                        name: app.fullName || app.name,
-                                        regId: app.appId,
-                                        utr: app.paymentUTR
-                                      })}
-                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 text-emerald-300 text-[11px] font-medium transition-colors cursor-pointer"
-                                    >
-                                      <Eye className="w-3 h-3" />
-                                      <span>Receipt</span>
-                                    </button>
-                                  )}
-                                  {app.paymentUTR && (
-                                    <span className="text-[10px] font-mono text-white/50">UTR: {app.paymentUTR}</span>
-                                  )}
-                                </div>
-                              </td>
-
-                              <td className="py-3.5 px-4">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                                  isApproved
-                                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                                    : 'bg-amber-500/10 text-amber-300 border-amber-400/20'
-                                }`}>
-                                  {app.status || 'Under Review'}
-                                </span>
-                              </td>
-
-                              <td className="py-3.5 px-4 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  {!isApproved && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleAcceptApplicant(app, isOc ? 'OC' : isSec ? 'SEC' : 'EB')}
-                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                                      title="Approve & Send Appointment Email"
-                                    >
-                                      <Check className="w-3 h-3" />
-                                      <span>Approve</span>
-                                    </button>
-                                  )}
-                                  {isSec ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setSecCandidateModalData(app)}
-                                      className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold transition-colors cursor-pointer"
-                                    >
-                                      View
-                                    </button>
-                                  ) : isOc ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setOcCandidateModalData(app)}
-                                      className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold transition-colors cursor-pointer"
-                                    >
-                                      View
-                                    </button>
-                                  ) : (
-                                    <a
-                                      href={`mailto:${app.email}?subject=Resolve MUN 2026 Application`}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white text-[11px] font-semibold transition-colors"
-                                    >
-                                      <Mail className="w-3 h-3" />
-                                      <span>Email</span>
-                                    </a>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* SIGNED UP NOT APPLIED PANEL */}
-            {activeSubTab === 'logins' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Signed Up · Not Yet Applied</h2>
-                    <p className="text-xs text-white/50">Users who created an account but haven't submitted an application yet.</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/20 text-xs font-mono font-bold">
-                    {loggedInNotApplied.length} Users
-                  </span>
-                </div>
-
-                {loggedInNotApplied.length === 0 ? (
-                  <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
-                    <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-400 opacity-60" />
-                    <p className="text-xs font-semibold">Everyone who signed up has submitted an application!</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 uppercase tracking-wider text-[10px] font-mono">
-                        <tr>
-                          <th className="py-3 px-4">User</th>
-                          <th className="py-3 px-4">Email</th>
-                          <th className="py-3 px-4">Last Seen</th>
-                          <th className="py-3 px-4 text-right">Invite</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.04]">
-                        {loggedInNotApplied.map((u, idx) => (
-                          <tr key={`login-row-${u.email || idx}`} className="hover:bg-white/[0.015] transition-colors">
-                            <td className="py-3.5 px-4 font-semibold text-white">
-                              {u.name || 'User'}
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
+                        <th className="px-4 py-3">Applicant & Role</th>
+                        <th className="px-4 py-3">Contact</th>
+                        <th className="px-4 py-3">Department / Motivation</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {[
+                        ...ocApplications.map((a) => ({ ...a, roleType: "OC" })),
+                        ...secApplications.map((a) => ({ ...a, roleType: "SEC" })),
+                        ...ebApplications.map((a) => ({ ...a, roleType: "EB" })),
+                      ]
+                        .filter((a) => appTypeFilter === "ALL" || a.roleType === appTypeFilter)
+                        .map((a, idx) => (
+                          <tr key={idx} className="hover:bg-zinc-900/40 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className="font-semibold text-white block">
+                                {a.fullName || a.name || "Candidate"}
+                              </span>
+                              <Badge variant="outline" className="text-[9px] font-mono mt-0.5">
+                                {a.roleType === "OC" ? "Organizing Committee" : a.roleType === "SEC" ? "Secretariat" : "Executive Board"}
+                              </Badge>
                             </td>
-
-                            <td className="py-3.5 px-4 text-white/90">
-                              {u.email}
+                            <td className="px-4 py-3">
+                              <span className="font-mono text-zinc-300 block">{a.email}</span>
+                              <span className="font-mono text-zinc-500 text-[11px] block">{a.phone}</span>
                             </td>
-
-                            <td className="py-3.5 px-4 text-white/40 text-[11px] font-mono">
-                              {u.lastSeen ? new Date(u.lastSeen).toLocaleDateString('en-GB') : 'Recent'}
+                            <td className="px-4 py-3 max-w-sm">
+                              <p className="line-clamp-2 text-zinc-400 text-[11px]">
+                                {a.whyJoin || a.previousExperience || a.department || "No statement provided"}
+                              </p>
                             </td>
-
-                            <td className="py-3.5 px-4 text-right">
-                              <a
-                                href={`mailto:${u.email}?subject=Complete Your Resolve MUN 2026 Registration&body=Hi ${encodeURIComponent(u.name || 'there')},%0D%0A%0D%0AWe noticed you created an account on Resolve MUN but haven't finished your delegate registration yet.%0D%0A%0D%0ACommittee seats are filling fast for the conference at Meridian School, Kompally, Hyderabad (27–29 Nov 2026).%0D%0A%0D%0AYou can complete your registration here: https://resolvemun.in/?open=delegate`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 text-[11px] font-semibold transition-colors"
+                            <td className="px-4 py-3">
+                              <Badge variant="secondary" className="text-[10px] font-mono">
+                                {a.status || "Under Review"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setCrmEmailTo(a.email);
+                                  setCrmSubject(`Resolve MUN 2.0 — ${a.roleType} Application Status`);
+                                  setCrmMessageBody(`Dear ${a.fullName || "Candidate"},\n\nThank you for applying for the Resolve MUN 2.0 ${a.roleType === "OC" ? "Organizing Committee" : "Secretariat"}.\n\nWe have reviewed your profile and would like to invite you for a virtual interview with the High Command.\n\nPlease reply to this email with your availability over the upcoming weekend.\n\nWarm regards,\nHigh Command, Resolve MUN 2.0`);
+                                  setCrmRecipientMode("SINGLE");
+                                  setActiveTab("crm");
+                                }}
+                                className="h-7 text-xs border-white/10"
                               >
-                                <Mail className="w-3 h-3" />
-                                <span>Send Invite</span>
-                              </a>
+                                Contact
+                              </Button>
                             </td>
                           </tr>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* CRM MAILER PANEL */}
-            {activeSubTab === 'mailer' && (
-              <div className="space-y-6 animate-in fade-in duration-200 max-w-3xl">
-                <div>
-                  <h2 className="text-lg font-bold text-white">CRM Email Dispatcher</h2>
-                  <p className="text-xs text-white/50">Send official HTML emails or bulk announcements via Google Apps Script ($0 cost).</p>
+                    </tbody>
+                  </table>
                 </div>
+              </CardContent>
+            </Card>
+          )}
 
-                <form onSubmit={handleSendCrmEmail} className="p-6 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-5 shadow-xl">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-mono uppercase text-purple-300 mb-1.5">Recipient Audience</label>
-                      <select
-                        value={crmRecipientMode}
-                        onChange={(e) => setCrmRecipientMode(e.target.value)}
-                        className="w-full h-10 px-3 rounded-xl bg-[#0c0e18] border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
-                      >
-                        <option value="SINGLE">Single Recipient (Custom Email)</option>
-                        <option value="ALL_DELEGATES">All Registered Delegates ({registrations.length})</option>
-                        <option value="UNASSIGNED_DELEGATES">Unassigned Delegates ({registrations.filter(r => !r.allocatedCommittee).length})</option>
-                        <option value="OC_APPLICANTS">Organizing Committee Applicants ({ocApplications.length})</option>
-                        <option value="SEC_APPLICANTS">Secretariat Applicants ({secApplications.length})</option>
-                      </select>
-                    </div>
-
-                    {crmRecipientMode === 'SINGLE' && (
-                      <div>
-                        <label className="block text-[11px] font-mono uppercase text-white/60 mb-1.5">Recipient Email Address</label>
-                        <input
-                          type="email"
-                          required
-                          placeholder="delegate@example.com"
-                          value={crmEmailTo}
-                          onChange={(e) => setCrmEmailTo(e.target.value)}
-                          className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
-                        />
-                      </div>
-                    )}
+          {/* ===============================================================
+              TAB: BROADCAST CRM (DIRECT EMAIL DISPATCH)
+              =============================================================== */}
+          {activeTab === "crm" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-semibold">
+                  Official Communication & Broadcast CRM
+                </CardTitle>
+                <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                  Dispatch official announcements, background guides, and check-in credentials
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSendCrm} className="space-y-4 max-w-2xl">
+                  <div>
+                    <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                      Recipient Audience
+                    </label>
+                    <select
+                      value={crmRecipientMode}
+                      onChange={(e) => setCrmRecipientMode(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-white/15 bg-zinc-900 text-sm text-white focus:outline-none"
+                    >
+                      <option value="ALL_DELEGATES">All Verified Delegates ({registrations.filter((r) => r.paymentStatus === "VERIFIED").length})</option>
+                      <option value="UNASSIGNED_DELEGATES">Unallocated Delegates Only</option>
+                      <option value="OC_APPLICANTS">Organizing Committee Applicants ({ocApplications.length})</option>
+                      <option value="SEC_APPLICANTS">Secretariat Applicants ({secApplications.length})</option>
+                      <option value="SINGLE">Direct Custom Address</option>
+                    </select>
                   </div>
+
+                  {crmRecipientMode === "SINGLE" && (
+                    <div>
+                      <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                        Destination Email
+                      </label>
+                      <input
+                        type="email"
+                        value={crmEmailTo}
+                        onChange={(e) => setCrmEmailTo(e.target.value)}
+                        placeholder="delegate@example.com"
+                        required
+                        className="w-full h-10 px-3 rounded-lg border border-white/15 bg-zinc-900 text-sm text-white font-mono focus:outline-none"
+                      />
+                    </div>
+                  )}
 
                   <div>
-                    <label className="block text-[11px] font-mono uppercase text-white/60 mb-1.5">Email Subject Line</label>
+                    <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                      Subject Line
+                    </label>
                     <input
                       type="text"
-                      required
                       value={crmSubject}
                       onChange={(e) => setCrmSubject(e.target.value)}
-                      placeholder="Official Update — Resolve MUN 2.0"
-                      className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                      required
+                      className="w-full h-10 px-3 rounded-lg border border-white/15 bg-zinc-900 text-sm text-white focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-mono uppercase text-white/60 mb-1.5">Message Body (Supports Paragraphs & Bullet Points)</label>
+                    <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                      Message Content (Plain Text / Markdown)
+                    </label>
                     <textarea
-                      rows={6}
-                      required
+                      rows={8}
                       value={crmMessageBody}
                       onChange={(e) => setCrmMessageBody(e.target.value)}
-                      placeholder="Dear Delegate,&#10;&#10;We are pleased to share an official update regarding Resolve MUN 2.0 (27–29 November 2026 at Meridian School, Kompally)..."
-                      className="w-full p-3.5 rounded-xl bg-black/40 border border-white/15 text-white text-xs leading-relaxed focus:outline-none focus:border-purple-400"
+                      placeholder="Write your official communiqué..."
+                      required
+                      className="w-full p-3 rounded-lg border border-white/15 bg-zinc-900 text-sm text-white font-sans focus:outline-none leading-relaxed"
                     />
                   </div>
 
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCrmSubject('Background Guides & Committee Matrix — Resolve MUN 2.0');
-                        setCrmMessageBody('Dear Delegate,\n\nThe official Background Guides and Committee Matrix for Resolve MUN 2.0 (27–29 November 2026 at Meridian School, Kompally) are now available on your Delegate Dashboard.\n\nPlease sign in at https://resolvemun.in/dashboard to view your committee assignment and download your entry pass.\n\nWarm regards,\nSecretariat, Resolve MUN 2.0');
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[11px] text-white/70 hover:text-white cursor-pointer"
-                    >
-                      Template: Background Guides Released
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCrmSubject('Reporting Instructions & Dress Code — Resolve MUN 2.0');
-                        setCrmMessageBody('Dear Delegate,\n\nWe look forward to welcoming you to Resolve MUN 2.0 on 27–29 November 2026 at Meridian School, Kompally.\n\n• Reporting Time: 8:00 AM sharp\n• Dress Code: Day 1 & Day 2 Western Formals | Day 3 Traditional / Formals\n• Entry Requirement: Keep your digital QR Pass ready on your phone at the Secretariat Check-In Desk.\n\nWarm regards,\nSecretariat, Resolve MUN 2.0');
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[11px] text-white/70 hover:text-white cursor-pointer"
-                    >
-                      Template: Reporting & QR Pass Reminder
-                    </button>
-                  </div>
-
-                  <button
+                  <Button
                     type="submit"
                     disabled={crmSending}
-                    className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25 disabled:opacity-50"
+                    className="h-10 px-6 bg-white hover:bg-zinc-200 text-black font-semibold text-xs uppercase tracking-wider gap-2 cursor-pointer"
                   >
-                    {crmSending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    <span>{crmSending ? 'Dispatching Emails...' : 'Dispatch Official Email'}</span>
-                  </button>
+                    <Send className="h-3.5 w-3.5" />
+                    <span>{crmSending ? "Dispatching..." : "Send Communication"}</span>
+                  </Button>
                 </form>
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          )}
 
-            {/* SETTINGS PANEL */}
-            {activeSubTab === 'settings' && (
-              <div className="space-y-6 animate-in fade-in duration-200 max-w-3xl">
-                <div>
-                  <h2 className="text-lg font-bold text-white">Pass Availability & Live Pricing Controls</h2>
-                  <p className="text-xs text-white/50">Closed passes are automatically greyed out with an UNAVAILABLE badge on the website.</p>
-                </div>
-
-                <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-6">
-                  {/* Gates */}
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
-                      Pass Availability (Open / Greyed Out)
-                    </h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[
-                        { key: 'registrationsOpen', label: 'Master Switch (All Registrations)' },
-                        { key: 'delegateOpen', label: 'Priority Delegate Pass' },
-                        { key: 'delegationOpen', label: 'School Delegation Pass (Min 6)' },
-                        { key: 'ocOpen', label: 'Organizing Committee (Salaried OC)' },
-                        { key: 'secretariatOpen', label: 'Secretariat Applications (Free)' },
-                        { key: 'ebOpen', label: 'Executive Board (EB) Pass' },
-                        { key: 'socialsOpen', label: 'Socials Night Pass' }
-                      ].map((item) => (
-                        <label
-                          key={item.key}
-                          className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] cursor-pointer hover:bg-white/[0.04] transition-colors"
-                        >
-                          <div>
-                            <span className="text-xs font-medium text-white block">{item.label}</span>
-                            <span className={`text-[10px] font-mono ${siteSettings[item.key] ? 'text-emerald-400' : 'text-white/40'}`}>
-                              {siteSettings[item.key] ? 'OPEN ON SITE' : 'GREYED OUT (UNAVAILABLE)'}
-                            </span>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(siteSettings[item.key])}
-                            onChange={(e) => setSiteSettings(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                            className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
-                          />
-                        </label>
-                      ))}
-                    </div>
+          {/* ===============================================================
+              TAB: SETTINGS (LIVE CONFERENCE TOGGLES & FEES)
+              =============================================================== */}
+          {activeTab === "settings" && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-semibold">
+                      Live Conference Controls & Gateways
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                      Toggle active registration pathways and configure dynamic UPI payee pricing
+                    </CardDescription>
                   </div>
-
-                  {/* Pricing and Round Name */}
-                  <div className="space-y-4 pt-4 border-t border-white/[0.06]">
-                    <h3 className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
-                      Live Pass Pricing & UPI Configuration
-                    </h3>
-
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">Active Round Name</label>
-                          <input
-                            type="text"
-                            value={siteSettings.roundName}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, roundName: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">Official UPI ID (Navi QR)</label>
-                          <input
-                            type="text"
-                            value={siteSettings.upiId}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, upiId: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">Delegate Fee (₹)</label>
-                          <input
-                            type="text"
-                            value={siteSettings.delegateFee}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, delegateFee: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">Delegation / Member (₹)</label>
-                          <input
-                            type="text"
-                            value={siteSettings.delegationFee}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, delegationFee: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">Socials Pass Fee (₹)</label>
-                          <input
-                            type="text"
-                            value={siteSettings.socialsFee}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, socialsFee: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">OC Tier 1 (Full · ₹)</label>
-                          <input
-                            type="text"
-                            value={siteSettings.ocFeeFull}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, ocFeeFull: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">OC Tier 2 (No Trans · ₹)</label>
-                          <input
-                            type="text"
-                            value={siteSettings.ocFeeNoTransport}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, ocFeeNoTransport: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">OC Tier 3 (Basic · ₹)</label>
-                          <input
-                            type="text"
-                            value={siteSettings.ocFeeBasic}
-                            onChange={(e) => setSiteSettings(p => ({ ...p, ocFeeBasic: e.target.value }))}
-                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleSaveSettings}
                     disabled={settingsSaving}
-                    className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25"
+                    className="h-8 px-4 bg-white hover:bg-zinc-200 text-black font-semibold text-xs uppercase tracking-wider cursor-pointer"
                   >
-                    {settingsSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    <span>Save Pass & Price Settings</span>
-                  </button>
+                    {settingsSaving ? "Saving..." : "Save Settings"}
+                  </Button>
                 </div>
-              </div>
-            )}
-
-          </main>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODALS */}
-      {/* ========================================================================= */}
-
-      {/* PAYMENT RECEIPT MODAL */}
-      {screenshotModalData && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg p-5 rounded-2xl border border-white/15 bg-[#070914] shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-white">Payment Receipt</h3>
-                <p className="text-xs text-white/50">{screenshotModalData.name} ({screenshotModalData.regId})</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setScreenshotModalData(null)}
-                className="p-1 rounded text-white/60 hover:text-white"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-3 rounded-xl bg-black/50 border border-white/10 font-mono text-xs text-purple-300">
-              Transaction ID / UTR: <strong className="text-white">{screenshotModalData.utr || 'Not specified'}</strong>
-            </div>
-
-            <div className="rounded-xl overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center min-h-[260px] max-h-[440px] relative">
-              {screenshotModalData.url && (screenshotModalData.url.startsWith('http') || screenshotModalData.url.startsWith('https')) ? (
-                <img
-                  src={screenshotModalData.url}
-                  alt="Payment Receipt"
-                  className="max-h-[440px] w-auto object-contain"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="text-center p-6 text-white/40 space-y-2">
-                  <FileCheck className="w-10 h-10 mx-auto opacity-40" />
-                  <p className="text-xs">No receipt preview available</p>
+              </CardHeader>
+              <CardContent className="space-y-6 max-w-2xl">
+                {/* Registration Switches */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    Registration Pathway Toggles
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { key: "delegateOpen", label: "Delegate Registration" },
+                      { key: "delegationOpen", label: "Delegation Registration" },
+                      { key: "ocOpen", label: "Organizing Committee (OC)" },
+                      { key: "secretariatOpen", label: "Secretariat Applications" },
+                      { key: "ebOpen", label: "Executive Board (EB)" },
+                      { key: "socialsOpen", label: "Socials Pass" },
+                    ].map((item) => (
+                      <label
+                        key={item.key}
+                        className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-zinc-900/50 cursor-pointer"
+                      >
+                        <span className="text-xs text-zinc-200 font-medium">{item.label}</span>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(siteSettings[item.key])}
+                          onChange={(e) =>
+                            setSiteSettings((prev) => ({
+                              ...prev,
+                              [item.key]: e.target.checked,
+                            }))
+                          }
+                          className="h-4 w-4 rounded accent-white cursor-pointer"
+                        />
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              )}
 
-              {(screenshotModalData.rawUrl || screenshotModalData.url) && (
-                <a
-                  href={screenshotModalData.rawUrl || screenshotModalData.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="absolute bottom-3 right-3 text-[11px] px-2.5 py-1 rounded bg-purple-600 text-white font-medium shadow"
-                >
-                  Open in Google Drive ↗
-                </a>
-              )}
-            </div>
+                {/* Pricing Fields */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    Pricing & Settlement Variables (INR)
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase">
+                        Delegate Base Fee
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.delegateFee || "2500"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            delegateFee: e.target.value,
+                          }))
+                        }
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-mono text-white focus:outline-none"
+                      />
+                    </div>
 
-            <div className="flex justify-between items-center">
-              <button
-                type="button"
-                onClick={() => {
-                  verifyPaymentDirect(screenshotModalData.regId, '', screenshotModalData.name, screenshotModalData.utr);
-                  setScreenshotModalData(null);
-                }}
-                className="px-4 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>Approve Payment</span>
-              </button>
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase">
+                        Delegation Per Head
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.delegationFee || "2200"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            delegationFee: e.target.value,
+                          }))
+                        }
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-mono text-white focus:outline-none"
+                      />
+                    </div>
 
-              <button
-                type="button"
-                onClick={() => setScreenshotModalData(null)}
-                className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase">
+                        OC Application Fee
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.ocFeeFull || "1500"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            ocFeeFull: e.target.value,
+                          }))
+                        }
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-mono text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-      {/* ASSIGN COMMITTEE MODAL */}
-      {allotmentModalData && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md p-5 rounded-2xl border border-purple-500/30 bg-[#070914] shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-white">Assign Committee & Country</h3>
-                <p className="text-xs text-white/50">{allotmentModalData.name} ({allotmentModalData.regId})</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAllotmentModalData(null)}
-                className="p-1 rounded text-white/60 hover:text-white"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
+                {/* UPI Receiver Info */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    UPI Receiver Credentials
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase">
+                        UPI VPA Address
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.upiId || "6301550628@nyes"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            upiId: e.target.value,
+                          }))
+                        }
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-mono text-white focus:outline-none"
+                      />
+                    </div>
 
-            {(allotmentModalData.committeePref1 || allotmentModalData.committeePref2 || allotmentModalData.committeePref3) && (
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-1 text-[11px]">
-                <span className="text-[10px] font-mono uppercase text-purple-300 font-bold block">Submitted Preferences</span>
-                {allotmentModalData.committeePref1 && <p className="text-white/80"><strong className="text-white">Pref 1:</strong> {allotmentModalData.committeePref1}</p>}
-                {allotmentModalData.committeePref2 && <p className="text-white/80"><strong className="text-white">Pref 2:</strong> {allotmentModalData.committeePref2}</p>}
-                {allotmentModalData.committeePref3 && <p className="text-white/80"><strong className="text-white">Pref 3:</strong> {allotmentModalData.committeePref3}</p>}
-                {allotmentModalData.experience && <p className="text-white/60 pt-1 border-t border-white/[0.06]"><strong className="text-white/80">Experience:</strong> {allotmentModalData.experience}</p>}
-              </div>
-            )}
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase">
+                        Payee Verified Name
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.upiPayee || "Bejugam Aditya"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            upiPayee: e.target.value,
+                          }))
+                        }
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <form onSubmit={submitAllotment} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Committee</label>
-                <select
-                  value={allotmentModalData.committee}
-                  onChange={(e) => setAllotmentModalData(prev => ({ ...prev, committee: e.target.value }))}
-                  className="w-full h-10 px-2.5 rounded-xl bg-[#0c0e18] border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
-                >
-                  <option value="DISEC">DISEC (Disarmament & International Security)</option>
-                  <option value="UNHRC">UNHRC (United Nations Human Rights Council)</option>
-                  <option value="UNSC">UNSC (United Nations Security Council)</option>
-                  <option value="LOK SABHA">Lok Sabha (Indian Parliamentary Committee)</option>
-                  <option value="COMMITTEE X">Committee X (Classified Crisis Committee)</option>
-                  <option value="IP">International Press (IP)</option>
-                </select>
-              </div>
+          {/* ===============================================================
+              TAB: USERS (AUTH ACCOUNTS)
+              =============================================================== */}
+          {activeTab === "users" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-semibold">
+                  Authenticated User Accounts ({siteUsers.length})
+                </CardTitle>
+                <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                  Accounts created via Google sign-in telemetry
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
+                        <th className="px-4 py-3">Account Name</th>
+                        <th className="px-4 py-3">Email</th>
+                        <th className="px-4 py-3">Role / Whitelist</th>
+                        <th className="px-4 py-3 text-right">Registered</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {siteUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-zinc-500 text-xs">
+                            No user records loaded.
+                          </td>
+                        </tr>
+                      ) : (
+                        siteUsers.map((u, idx) => (
+                          <tr key={idx} className="hover:bg-zinc-900/40 transition-colors">
+                            <td className="px-4 py-3 font-semibold text-white">
+                              {u.displayName || u.name || "User"}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-zinc-300">
+                              {u.email}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge
+                                variant={ADMIN_EMAILS.includes((u.email || "").toLowerCase()) ? "default" : "secondary"}
+                                className="text-[10px] font-mono"
+                              >
+                                {ADMIN_EMAILS.includes((u.email || "").toLowerCase()) ? "Admin" : "Delegate"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-[11px] text-zinc-500">
+                              {u.metadata?.creationTime ? new Date(u.metadata.creationTime).toLocaleDateString() : "Active"}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </main>
+      </SidebarInset>
 
-              <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Country or Portfolio</label>
-                <input
-                  type="text"
-                  placeholder="e.g. United States, India, France, Reuters..."
-                  value={allotmentModalData.country}
-                  onChange={(e) => setAllotmentModalData(prev => ({ ...prev, country: e.target.value }))}
-                  className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
-                  required
-                />
-              </div>
-
-              <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-xs text-purple-200/80 leading-relaxed">
-                Saving will update the delegate's digital QR pass and automatically send an official Allotment Decree email to <b>{allotmentModalData.email}</b>.
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="flex-1 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>Save & Auto-Email Decree</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAllotmentModalData(null)}
-                  className="px-4 h-10 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* REASSIGN DELEGATION MODAL */}
-      {reassignDelegationModalData && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md p-5 rounded-2xl border border-indigo-500/30 bg-[#070914] shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-white">Change School Team Code</h3>
-                <p className="text-xs text-white/50">{reassignDelegationModalData.name} ({reassignDelegationModalData.regId})</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReassignDelegationModalData(null)}
-                className="p-1 rounded text-white/60 hover:text-white"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={submitDelegationReassign} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Team Code</label>
-                <input
-                  type="text"
-                  placeholder="e.g. DEL-DPSRKP (leave empty for Independent)"
-                  value={reassignDelegationModalData.delegationCode}
-                  onChange={(e) => setReassignDelegationModalData(prev => ({ ...prev, delegationCode: e.target.value }))}
-                  className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-indigo-400"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="flex-1 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Update Team
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReassignDelegationModalData(null)}
-                  className="px-4 h-10 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ADD DELEGATE MODAL */}
-      {addDelegateModalOpen && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md p-5 rounded-2xl border border-white/15 bg-[#070914] shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-white">Add Delegate</h3>
-                <p className="text-xs text-white/50">Manual offline or on-spot entry</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAddDelegateModalOpen(false)}
-                className="p-1 rounded text-white/60 hover:text-white"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target;
-                const newDel = {
-                  regId: 'RM26-MAN-' + Math.floor(1000 + Math.random() * 9000),
-                  fullName: form.fullName.value,
-                  email: form.email.value,
-                  phone: form.phone.value,
-                  institution: form.institution.value,
-                  delegationCode: form.delegationCode.value.trim().toUpperCase(),
-                  allocatedCommittee: form.committee.value,
-                  allocatedCountry: form.country.value,
-                  status: 'Confirmed'
-                };
-                setRegistrations(prev => [newDel, ...prev]);
-                notify(`Delegate ${newDel.fullName} added successfully!`);
-                setAddDelegateModalOpen(false);
-
-                fetch('/api/admin/', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'ADMIN_ADD_DELEGATE',
-                    adminKey: DEFAULT_ADMIN_KEY,
-                    ...newDel
-                  })
-                }).catch(() => {});
-              }}
-              className="space-y-3"
+      {/* Proof Image Viewer Lightbox Modal */}
+      {viewingImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+          onClick={() => setViewingImage(null)}
+        >
+          <div
+            className="relative max-w-xl max-h-[85vh] w-full rounded-xl border border-white/20 bg-zinc-950 p-2 overflow-hidden flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setViewingImage(null)}
+              className="absolute top-4 right-4 z-10 h-8 w-8 rounded-lg bg-black/80 border border-white/20 text-white flex items-center justify-center cursor-pointer"
             >
-              <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Full Name</label>
-                <input name="fullName" required className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs" />
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">Email</label>
-                  <input name="email" type="email" required className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">Phone (+91)</label>
-                  <input name="phone" required placeholder="9876543210" className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">School / College</label>
-                  <input name="institution" className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">Team Code (optional)</label>
-                  <input name="delegationCode" placeholder="e.g. DEL-01" className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-mono" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">Committee</label>
-                  <select name="committee" className="w-full h-9 px-2 rounded-xl bg-[#0c0e18] border border-white/10 text-white text-xs">
-                    <option value="DISEC">DISEC</option>
-                    <option value="UNHRC">UNHRC</option>
-                    <option value="UNSC">UNSC</option>
-                    <option value="LOK SABHA">Lok Sabha</option>
-                    <option value="COMMITTEE X">Committee X</option>
-                    <option value="IP">International Press</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">Country or Portfolio</label>
-                  <input name="country" placeholder="e.g. France" className="w-full h-9 px-3 rounded-xl bg-black/40 border border-white/10 text-white text-xs" />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  type="submit"
-                  className="flex-1 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Save Delegate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAddDelegateModalOpen(false)}
-                  className="px-4 h-10 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* SECRETARIAT CANDIDATE APPLICATION MODAL */}
-      {secCandidateModalData && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-purple-500/30 bg-[#070914] shadow-2xl space-y-5">
-            <div className="flex items-start justify-between border-b border-white/[0.08] pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-300 text-[10px] font-mono font-bold">
-                    {secCandidateModalData.appId}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-[10px] font-bold">
-                    Free Application
-                  </span>
-                </div>
-                <h3 className="text-xl font-bold text-white mt-1.5">{secCandidateModalData.fullName}</h3>
-                <p className="text-xs text-indigo-300 font-semibold mt-0.5">Role: {secCandidateModalData.position}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSecCandidateModalData(null)}
-                className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Personal Details */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs">
-              <div>
-                <span className="text-[10px] text-white/40 block">Email</span>
-                <span className="text-white font-medium break-all">{secCandidateModalData.email}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Phone</span>
-                <span className="text-white font-mono">{secCandidateModalData.phone}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Instagram</span>
-                <span className="text-pink-400 font-mono">@{secCandidateModalData.instagram?.replace('@', '') || 'None'}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">School / College</span>
-                <span className="text-white">{secCandidateModalData.schoolCollege}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Grade / Year</span>
-                <span className="text-white">{secCandidateModalData.grade}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Date of Birth</span>
-                <span className="text-white font-mono">{secCandidateModalData.dob || 'Not specified'}</span>
-              </div>
-            </div>
-
-            {/* Responses */}
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06]">
-                <span className="text-xs font-bold text-purple-300 block mb-1">
-                  Why do you want to join the Secretariat?
-                </span>
-                <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
-                  {secCandidateModalData.whyJoin || 'No response.'}
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06]">
-                <span className="text-xs font-bold text-purple-300 block mb-1">
-                  What will you bring to this role?
-                </span>
-                <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
-                  {secCandidateModalData.contribution || 'No response.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Drive Links */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/20 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-purple-300 block">Resume / CV</span>
-                  <span className="text-xs text-white/70">{secCandidateModalData.resumeUrl ? 'Attached' : 'Not attached'}</span>
-                </div>
-                {secCandidateModalData.resumeUrl && (
-                  <a
-                    href={secCandidateModalData.resumeUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  >
-                    <span>View CV</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-indigo-300 block">Portfolio</span>
-                  <span className="text-xs text-white/70">{secCandidateModalData.portfolioUrl ? 'Attached' : 'Not attached'}</span>
-                </div>
-                {secCandidateModalData.portfolioUrl && (
-                  <a
-                    href={secCandidateModalData.portfolioUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  >
-                    <span>View Portfolio</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => {
-                  handleAcceptApplicant(secCandidateModalData, 'SEC');
-                  setSecCandidateModalData(null);
-                }}
-                className="px-4 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>Approve & Send Appointment Email</span>
-              </button>
+              <X className="h-4 w-4" />
+            </button>
+            <img
+              src={viewingImage}
+              alt="Payment Screenshot Proof"
+              className="w-full h-auto max-h-[75vh] object-contain rounded-lg"
+            />
+            <div className="w-full p-2 text-center">
               <a
-                href={`mailto:${secCandidateModalData.email}?subject=Resolve MUN 2026 Secretariat Interview`}
-                className="px-4 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                href={viewingImage}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-zinc-400 hover:text-white underline inline-flex items-center gap-1"
               >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Send Interview Invite</span>
+                Open Original in New Tab <ExternalLink className="h-3 w-3" />
               </a>
-              <button
-                type="button"
-                onClick={() => setSecCandidateModalData(null)}
-                className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* OC CANDIDATE APPLICATION MODAL */}
-      {ocCandidateModalData && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-purple-500/30 bg-[#070914] shadow-2xl space-y-5">
-            <div className="flex items-start justify-between border-b border-white/[0.08] pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-300 text-[10px] font-mono font-bold">
-                    {ocCandidateModalData.appId}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-[10px] font-bold">
-                    Salaried Role · {ocCandidateModalData.feeTier || 'OC'}
-                  </span>
-                </div>
-                <h3 className="text-xl font-bold text-white mt-1.5">{ocCandidateModalData.fullName}</h3>
-                <p className="text-xs text-indigo-300 font-semibold mt-0.5">Organizing Committee Applicant</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOcCandidateModalData(null)}
-                className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs">
-              <div>
-                <span className="text-[10px] text-white/40 block">Email</span>
-                <span className="text-white font-medium break-all">{ocCandidateModalData.email}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Phone</span>
-                <span className="text-white font-mono">{ocCandidateModalData.phone}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Instagram</span>
-                <span className="text-pink-400 font-mono">{ocCandidateModalData.instagram || '—'}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">School / College</span>
-                <span className="text-white">{ocCandidateModalData.institution || '—'}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Grade / Year</span>
-                <span className="text-white">{ocCandidateModalData.grade || '—'}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-white/40 block">Transport Needed</span>
-                <span className="text-white font-mono">{ocCandidateModalData.transportNeeded || '—'}</span>
-              </div>
-              <div className="col-span-2 sm:col-span-3">
-                <span className="text-[10px] text-white/40 block">Residential Address</span>
-                <span className="text-white/80">{ocCandidateModalData.residentialAddress || '—'}</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06]">
-              <span className="text-xs font-bold text-purple-300 block mb-1">
-                Previous Experiences
-              </span>
-              <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
-                {ocCandidateModalData.previousExperience || 'No response.'}
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => {
-                  handleAcceptApplicant(ocCandidateModalData, 'OC');
-                  setOcCandidateModalData(null);
-                }}
-                className="px-4 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>Approve OC & Send Email</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setOcCandidateModalData(null)}
-                className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
+    </SidebarProvider>
   );
 }

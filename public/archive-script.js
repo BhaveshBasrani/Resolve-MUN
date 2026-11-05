@@ -1210,6 +1210,8 @@
 
   function openRegistration() {
     restoreFormData();
+    const subtitle = regModal.querySelector('.modal-subtitle');
+    if (subtitle) subtitle.textContent = 'Step 1 of 3 · Personal Details';
     regModal.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -1297,6 +1299,16 @@
     modal.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
     const targetStep = modal.querySelector('#step' + stepNum);
     if (targetStep) targetStep.classList.add('active');
+
+    const subtitle = modal.querySelector('.modal-subtitle');
+    if (subtitle) {
+      const stepLabels = {
+        1: 'Step 1 of 3 · Personal Details',
+        2: 'Step 2 of 3 · Committee Preferences',
+        3: 'Step 3 of 3 · Payment & Submission'
+      };
+      subtitle.textContent = stepLabels[stepNum] || `Step ${stepNum} of 3`;
+    }
 
     const modalContent = modal.querySelector('.modal-content');
     if (modalContent) modalContent.scrollTop = 0;
@@ -1937,6 +1949,16 @@
     const targetStep = document.getElementById('delStep' + stepNum);
     if (targetStep) targetStep.classList.add('active');
 
+    const delSub = document.querySelector('#delModal .modal-subtitle');
+    if (delSub) {
+      const stepMap = {
+        1: 'Step 1 of 3 · Institutional Details',
+        2: 'Step 2 of 3 · Delegation Roster',
+        3: 'Step 3 of 3 · Delegation Payment'
+      };
+      delSub.textContent = stepMap[stepNum] || `Step ${stepNum} of 3`;
+    }
+
     if (stepNum === 3) {
       const size = parseInt(document.getElementById('delSize').value) || 6;
       const perDel = Number(window.__siteSettings?.delegationFee || 2200);
@@ -2215,6 +2237,15 @@
     document.querySelectorAll('#ocModal .form-step').forEach(step => step.classList.remove('active'));
     const targetStep = document.getElementById('ocStep' + stepNum);
     if (targetStep) targetStep.classList.add('active');
+
+    const ocSub = document.querySelector('#ocModal .modal-subtitle');
+    if (ocSub) {
+      const stepMap = {
+        1: 'Step 1 of 2 · Applicant Profile',
+        2: 'Step 2 of 2 · Department & Payment'
+      };
+      ocSub.textContent = stepMap[stepNum] || `Step ${stepNum} of 2`;
+    }
     const ocContent = document.querySelector('#ocModal .modal-content');
     if (ocContent) ocContent.scrollTop = 0;
 
