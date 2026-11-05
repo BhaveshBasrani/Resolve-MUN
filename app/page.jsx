@@ -7,6 +7,7 @@ import {
   submitOcApplication,
   submitEbApplication,
   submitSecretariatApplication,
+  submitSocialsApplication,
   submitWaitlistEntry,
   fetchSystemSettingsCached,
   onAuthStateChanged,
@@ -24,6 +25,8 @@ import { AuthModal } from "@/components/AuthModal";
 import ModalShaderBackdrop from "@/components/ModalShaderBackdrop";
 import CommitteesSection from "@/components/CommitteesSection";
 import DelegatePassSection from "@/components/DelegatePassSection";
+import DobPickerPortals from "@/components/DobPickerPortal";
+import { PaymentReceiptModal } from "@/components/ui/animated-ticket";
 import { GradientBackground } from "@/components/ui/paper-design-shader-background";
 
 const [homePart1, homePart2] = homeHtml.split("<!-- COMMITTEES_PLACEHOLDER -->");
@@ -97,21 +100,19 @@ export default function Home() {
           localStorage.setItem("resolve_user_name", u.displayName || "");
           localStorage.setItem("resolve_user_email", u.email || "");
           localStorage.setItem("resolve_user_photo", u.photoURL || "");
+          localStorage.setItem("resolve_user_verified", "true");
           if (window.autofillAllKnownFields) window.autofillAllKnownFields(u);
         }
 
-        const dismissed =
-          typeof window !== "undefined"
-            ? sessionStorage.getItem("resolve_welcome_dismissed_" + u.uid)
-            : null;
-        if (!dismissed) {
-          setShowWelcomeBox(true);
-        }
         if (typeof window !== "undefined" && window.pendingPathway) {
           const target = window.pendingPathway;
           window.pendingPathway = null;
           setTimeout(() => {
-            if (window.selectPathway) window.selectPathway(target);
+            if (target === "SCROLL_TO_PASSES") {
+              if (window.scrollToPassesSection) window.scrollToPassesSection();
+            } else if (window.selectPathway) {
+              window.selectPathway(target);
+            }
           }, 300);
         }
         setCurrentUser((prev) => {
@@ -164,11 +165,17 @@ export default function Home() {
       window.submitEbToFirebase = async (data) => {
         return await submitEbApplication(data);
       };
+      window.submitSocialsToFirebase = async (data) => {
+        return await submitSocialsApplication(data);
+      };
       window.submitWaitlistToFirebase = async (data) => {
         return await submitWaitlistEntry(data);
       };
       window.submitSecretariatToFirebase = async (data) => {
         return await submitSecretariatApplication(data);
+      };
+      window.submitSocialsToFirebase = async (data) => {
+        return await submitSocialsApplication(data, currentUserRef.current);
       };
     }
 
@@ -221,31 +228,50 @@ export default function Home() {
         munCount: document.getElementById("ocMunCount")?.value || "",
         why: document.getElementById("ocWhy")?.value?.trim() || "",
         attributes: document.getElementById("ocAttributes")?.value?.trim() || "",
+        payment_tier: feeTier,
+        fee_amount: feeAmount,
         feeTier,
         feeAmount,
         payment_utr: isPayLater ? "PAY_LATER" : txnId,
         payment_screenshot_link: screenshotBase64,
         referral: document.getElementById("ocReferral")?.value?.trim() || "",
-        additionalInfo: document.getElementById("ocAdditionalInfo")?.value?.trim() || "",
+        additional_info: document.getElementById("ocAdditionalInfo")?.value?.trim() || "",
       };
 
       const spinner = document.getElementById("submitSpinner");
       try {
         if (spinner) spinner.style.display = "flex";
-        await window.submitOcToFirebase(data);
+        const res = await window.submitOcToFirebase(data);
         if (typeof window !== "undefined") {
           localStorage.setItem("resolve_user_registered", "true");
+          localStorage.removeItem("resolveMunOcRegForm");
           if (emailVal) localStorage.setItem("resolve_user_email", emailVal);
           if (nameVal) localStorage.setItem("resolve_user_name", nameVal);
         }
-        if (window.showCustomAlert) {
-          window.showCustomAlert("OC Application submitted! Redirecting to your dashboard...", "success");
-        }
         form.reset();
         if (window.closeModalById) window.closeModalById("ocModal");
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 1200);
+        const ocTicketId = res?.appId || `RM26-OC-${Math.floor(1000 + Math.random() * 9000)}`;
+        if (typeof window.showPaymentReceiptModal === "function") {
+          window.showPaymentReceiptModal({
+            ticketId: ocTicketId,
+            amount: feeAmount,
+            date: new Date(),
+            cardHolder: nameVal,
+            utrNumber: isPayLater ? "PAY LATER" : txnId,
+            passCategory: "OC Pass",
+            barcodeValue: ocTicketId,
+            onContinue: () => {
+              window.location.href = "/dashboard";
+            },
+          });
+        } else {
+          if (window.showCustomAlert) {
+            window.showCustomAlert("OC Application submitted! Redirecting to your dashboard...", "success");
+          }
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 1200);
+        }
       } catch (err) {
         console.error("OC Submit Error:", err);
         if (window.showCustomAlert) {
@@ -256,40 +282,129 @@ export default function Home() {
       }
     };
 
-    // Attach listener to the form after it's injected into DOM
-    const observeOcForm = () => {
-      const observer = new MutationObserver((mutations, obs) => {
-        const form = document.getElementById('ocRegForm');
-        if (form) {
-          form.onsubmit = window.handleOcSubmit;
-          obs.disconnect();
+    // Global Form Submission Handler for Socials Pass
+    window.handleSocialsSubmit = async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const txnId = document.getElementById("socialsTxnID")?.value?.trim() || "";
+      const fileInput = document.getElementById("socialsDriveLink");
+      const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+      if (!txnId || txnId.replace(/\D/g, "").length !== 12) {
+        if (window.showCustomAlert) {
+          window.showCustomAlert("Please enter a valid 12-digit UPI UTR / Reference ID.", "warning");
         }
+        return;
+      }
+      if (!hasFile) {
+        if (window.showCustomAlert) {
+          window.showCustomAlert("Please upload your UPI payment screenshot.", "warning");
+        }
+        return;
+      }
+
+      const screenshotBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result || "");
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(fileInput.files[0]);
+      });
+
+      const nameVal = document.getElementById("socialsName")?.value?.trim() || "";
+      const emailVal = document.getElementById("socialsEmail")?.value?.trim() || "";
+      const socialsFee = Number(window.__siteSettings?.socialsFee || 999);
+
+      const data = {
+        name: nameVal,
+        fullName: nameVal,
+        phone: document.getElementById("socialsPhone")?.value?.trim() || "",
+        email: emailVal,
+        institute: document.getElementById("socialsInst")?.value?.trim() || "",
+        dob: document.getElementById("socialsDob")?.value || "",
+        grade: document.getElementById("socialsGrade")?.value || "",
+        referral: document.getElementById("socialsReferral")?.value?.trim() || "",
+        registration_fee: socialsFee,
+        payment_utr: txnId,
+        payment_screenshot_link: screenshotBase64,
+      };
+
+      const spinner = document.getElementById("submitSpinner");
+      try {
+        if (spinner) spinner.style.display = "flex";
+        const res = await window.submitSocialsToFirebase(data);
+        localStorage.removeItem("resolveMunSocialsRegForm");
+        form.reset();
+        if (window.closeModalById) window.closeModalById("socialsModal");
+        const socTicketId = res?.regId || `RM26-SOC-${Math.floor(1000 + Math.random() * 9000)}`;
+        if (typeof window.showPaymentReceiptModal === "function") {
+          window.showPaymentReceiptModal({
+            ticketId: socTicketId,
+            amount: socialsFee,
+            date: new Date(),
+            cardHolder: nameVal,
+            utrNumber: txnId,
+            passCategory: "Socials Night Pass",
+            barcodeValue: socTicketId,
+            onContinue: () => {
+              window.location.href = "/dashboard";
+            },
+          });
+        } else {
+          window.location.href = "/dashboard";
+        }
+      } catch (err) {
+        console.error("Socials Submit Error:", err);
+        if (window.showCustomAlert) {
+          window.showCustomAlert("Submission Error: " + (err?.message || "Please try again."), "error");
+        }
+      } finally {
+        if (spinner) spinner.style.display = "none";
+      }
+    };
+
+    // Attach listeners to OC and Socials forms
+    const bindCustomForms = () => {
+      const ocForm = document.getElementById("ocRegForm");
+      if (ocForm) ocForm.onsubmit = window.handleOcSubmit;
+      const socForm = document.getElementById("socialsRegForm");
+      if (socForm) socForm.onsubmit = window.handleSocialsSubmit;
+    };
+    bindCustomForms();
+    const observeCustomForms = () => {
+      const observer = new MutationObserver(() => {
+        bindCustomForms();
       });
       observer.observe(document.body, { childList: true, subtree: true });
     };
-    observeOcForm();
+    observeCustomForms();
 
     return () => unsubscribe();
   }, []);
   const containerRef = useRef(null);
 
+  const scrollToPassesSection = () => {
+    if (typeof window === "undefined") return;
+    const target = document.getElementById("delegate-pass");
+    if (target) {
+      const navOffset = 64;
+      const targetTop = target.getBoundingClientRect().top + window.scrollY - navOffset;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+    }
+  };
+
   const handleOpenSelection = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true") {
-      window.location.href = "/dashboard";
-      return;
-    }
-    const isVerified = Boolean(
-      auth.currentUser &&
-      (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
-    );
+    const isAuthenticated = Boolean(auth.currentUser);
 
-    if (isVerified) {
-      setAuthInitialMode("pathway");
+    if (isAuthenticated) {
+      scrollToPassesSection();
     } else {
+      if (typeof window !== "undefined") {
+        window.pendingPathway = "SCROLL_TO_PASSES";
+      }
       setAuthInitialMode("signup");
+      setAuthOpen(true);
     }
-    setAuthOpen(true);
   };
 
   useEffect(() => {
@@ -383,6 +498,7 @@ export default function Home() {
     // 1. Setup Global Window Modal Methods
     if (typeof window !== "undefined") {
       const closeModalById = (modalId) => {
+        if (window.saveAllModalDrafts) window.saveAllModalDrafts(modalId);
         const modal = document.getElementById(modalId);
         if (modal) {
           modal.classList.remove("active");
@@ -407,18 +523,18 @@ export default function Home() {
         setAuthOpen(false);
       };
 
+      window.scrollToPassesSection = scrollToPassesSection;
+
       window.openSelectionModal = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        const isVerified = Boolean(
-          auth.currentUser &&
-          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
-        );
-        if (isVerified) {
-          setAuthInitialMode("pathway");
+        const isAuthenticated = Boolean(auth.currentUser);
+        if (isAuthenticated) {
+          scrollToPassesSection();
         } else {
+          window.pendingPathway = "SCROLL_TO_PASSES";
           setAuthInitialMode("signup");
+          setAuthOpen(true);
         }
-        setAuthOpen(true);
       };
 
       window.openSelection = window.openSelectionModal;
@@ -567,6 +683,16 @@ export default function Home() {
         if (fullName) setVal('ebName', fullName);
         if (email) setVal('ebEmail', email);
 
+        // 4b. Secretariat & Socials Forms (#secModal & #socialsModal)
+        if (fullName) {
+          setVal('secName', fullName);
+          setVal('socialsName', fullName);
+        }
+        if (email) {
+          setVal('secEmail', email);
+          setVal('socialsEmail', email);
+        }
+
         // 5. Priority Waitlist & Global Inputs
         const waitlistInputs = document.querySelectorAll('input[name="waitlist_email"], #waitlistEmail, .waitlist-input');
         waitlistInputs.forEach(input => {
@@ -585,24 +711,22 @@ export default function Home() {
             badge.id = badgeId;
             badge.className = 'google-autofill-badge';
             badge.innerHTML = `
-              <div style="background: rgba(66, 133, 244, 0.08); border: 1px solid rgba(66, 133, 244, 0.28); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0;">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
                   </svg>
                   <div>
-                    <div style="font-size: 11px; font-weight: 700; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.06em;">
-                      Autofilled via Google Account
+                    <div style="font-size: 11px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.08em;">
+                      Autofilled via Verified Account
                     </div>
-                    <div style="font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 1px;">
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 1px;">
                       ${fullName ? `${fullName} (${email})` : email}
                     </div>
                   </div>
                 </div>
-                <span style="font-size: 10px; font-family: monospace; color: #34d399; background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.25); padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; font-weight: 600; white-space: nowrap;">
+                <span style="font-size: 10px; font-family: monospace; color: #000000; background: #ffffff; border: 1px solid #ffffff; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; font-weight: 700; white-space: nowrap;">
                   Verified
                 </span>
               </div>
@@ -721,6 +845,11 @@ export default function Home() {
       };
 
       window.selectPathway = function (type) {
+        if (type === "SCROLL_TO_PASSES") {
+          scrollToPassesSection();
+          return;
+        }
+
         const s = window.__siteSettings || {};
         if (s.registrationsOpen === false) {
           if (window.showCustomAlert) {
@@ -735,6 +864,7 @@ export default function Home() {
           oc: s.ocOpen !== false,
           secretariat: s.secretariatOpen !== false,
           eb: Boolean(s.ebOpen),
+          socials: Boolean(s.socialsOpen),
         };
 
         if (openCheck[type] === false) {
@@ -744,22 +874,15 @@ export default function Home() {
           return;
         }
 
-        if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true" && (type === "delegate" || type === "delegation")) {
-          window.location.href = "/dashboard";
-          return;
-        }
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
         closeModalById("selectionModal");
 
-        // Auth & Verification Gate: Only verified users can proceed to forms
-        const isVerified = Boolean(
-          auth.currentUser &&
-          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
-        );
+        // Auth Gate: If logged in, open modal directly; if not logged in, open AuthModal then open clicked ticket modal
+        const isAuthenticated = Boolean(auth.currentUser);
 
-        if (!isVerified) {
+        if (!isAuthenticated) {
           window.pendingPathway = type;
-          setAuthInitialMode(auth.currentUser ? "code" : "signup");
+          setAuthInitialMode("signup");
           setAuthOpen(true);
           return;
         }
@@ -771,6 +894,7 @@ export default function Home() {
           window.openDelRegistration();
           return;
         } else if (type === "oc") {
+          if (window.restoreAllModalDrafts) window.restoreAllModalDrafts("ocModal");
           const ocModal = document.getElementById("ocModal");
           if (ocModal) {
             ocModal.classList.add("active");
@@ -784,13 +908,40 @@ export default function Home() {
           }
           return;
         } else if (type === "eb") {
+          if (window.restoreAllModalDrafts) window.restoreAllModalDrafts("ebModal");
           const ebModal = document.getElementById("ebModal");
           if (ebModal) {
             ebModal.classList.add("active");
             document.body.style.overflow = "hidden";
+            if (auth.currentUser) {
+              const nameEl = document.getElementById("ebName");
+              const emailEl = document.getElementById("ebEmail");
+              if (nameEl && !nameEl.value) nameEl.value = auth.currentUser.displayName || "";
+              if (emailEl && !emailEl.value) emailEl.value = auth.currentUser.email || "";
+            }
+          }
+          return;
+        } else if (type === "socials") {
+          if (window.restoreAllModalDrafts) window.restoreAllModalDrafts("socialsModal");
+          const socialsModal = document.getElementById("socialsModal");
+          if (socialsModal) {
+            const socFee = Number(window.__siteSettings?.socialsFee || 999);
+            const feeEl = document.getElementById("socialsFeeDisplay");
+            if (feeEl) feeEl.innerText = `Pass Fee: ₹${socFee.toLocaleString("en-IN")}`;
+            const scanEl = document.getElementById("socialsQRScanLabel");
+            if (scanEl) scanEl.innerText = `SCAN & PAY ₹${socFee.toLocaleString("en-IN")}`;
+            socialsModal.classList.add("active");
+            document.body.style.overflow = "hidden";
+            if (auth.currentUser) {
+              const nameEl = document.getElementById("socialsName");
+              const emailEl = document.getElementById("socialsEmail");
+              if (nameEl && !nameEl.value) nameEl.value = auth.currentUser.displayName || "";
+              if (emailEl && !emailEl.value) emailEl.value = auth.currentUser.email || "";
+            }
           }
           return;
         } else if (type === "secretariat") {
+          if (window.restoreAllModalDrafts) window.restoreAllModalDrafts("secModal");
           const secModal = document.getElementById("secModal");
           if (secModal) {
             secModal.classList.add("active");
@@ -813,27 +964,60 @@ export default function Home() {
         window.selectPathway("oc");
       };
 
+      window.openEbModal = function () {
+        window.selectPathway("eb");
+      };
+
+      window.openSocialsModal = function () {
+        window.selectPathway("socials");
+      };
+
+      window.nextSocialsStep = function (stepNum) {
+        const modal = document.getElementById("socialsModal");
+        if (!modal) return;
+        if (stepNum === 2) {
+          const name = document.getElementById("socialsName")?.value?.trim();
+          const phone = document.getElementById("socialsPhone")?.value?.trim();
+          const email = document.getElementById("socialsEmail")?.value?.trim();
+          const inst = document.getElementById("socialsInst")?.value?.trim();
+          const grade = document.getElementById("socialsGrade")?.value;
+          const dob = document.getElementById("socialsDob")?.value;
+          if (!name || !phone || !email || !inst || !grade || !dob) {
+            if (window.showCustomAlert) {
+              window.showCustomAlert("Please complete all required fields including Date of Birth.", "warning");
+            }
+            return;
+          }
+          if (!checkIndianPhoneValid(phone)) {
+            if (window.showCustomAlert) {
+              window.showCustomAlert("Please enter a valid 10-digit Indian mobile number.", "warning");
+            }
+            return;
+          }
+        }
+        modal.querySelectorAll(".form-step").forEach((s) => s.classList.remove("active"));
+        const target = document.getElementById(`socialsStep${stepNum}`);
+        if (target) target.classList.add("active");
+        const content = modal.querySelector(".modal-content");
+        if (content) content.scrollTop = 0;
+        if (window.saveAllModalDrafts) window.saveAllModalDrafts("socialsModal");
+      };
+
 
       window.openRegistration = function () {
-        if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true") {
-          window.location.href = "/dashboard";
-          return;
-        }
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        // Auth & Verification Gate
-        const isVerified = Boolean(
-          auth.currentUser &&
-          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
-        );
-        if (!isVerified) {
+        // Auth Gate
+        const isAuthenticated = Boolean(auth.currentUser);
+        if (!isAuthenticated) {
           window.pendingPathway = "delegate";
-          setAuthInitialMode(auth.currentUser ? "code" : "signup");
+          setAuthInitialMode("signup");
           setAuthOpen(true);
           return;
         }
 
         const regModal = document.getElementById("regModal");
         if (regModal) {
+          if (window.restoreAllModalDrafts) window.restoreAllModalDrafts("regModal");
           // Auto-prefill authenticated user info
           if (auth.currentUser) {
             const nameEl = document.getElementById("regName");
@@ -865,25 +1049,19 @@ export default function Home() {
       };
 
       window.openDelRegistration = function () {
-        if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true") {
-          window.location.href = "/dashboard";
-          return;
-        }
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        // Auth & Verification Gate
-        const isVerified = Boolean(
-          auth.currentUser &&
-          (auth.currentUser.emailVerified || (typeof window !== "undefined" && localStorage.getItem("resolve_user_verified") === "true"))
-        );
-        if (!isVerified) {
+        // Auth Gate
+        const isAuthenticated = Boolean(auth.currentUser);
+        if (!isAuthenticated) {
           window.pendingPathway = "delegation";
-          setAuthInitialMode(auth.currentUser ? "code" : "signup");
+          setAuthInitialMode("signup");
           setAuthOpen(true);
           return;
         }
 
         const delModal = document.getElementById("delModal");
         if (delModal) {
+          if (window.restoreAllModalDrafts) window.restoreAllModalDrafts("delModal");
           if (auth.currentUser) {
             const headNameEl = document.getElementById("delAdviserName");
             const headEmailEl = document.getElementById("delAdviserEmail");
@@ -1028,74 +1206,263 @@ export default function Home() {
         }
         const currentPayee = {
           pa: window.__siteSettings?.upiId || "6301550628@nyes",
-          pn: "Bejugam Aditya",
+          pn: window.__siteSettings?.upiPayee || "Bejugam Aditya",
         };
         const upiText = document.getElementById(upiTextElementId);
         if (upiText) upiText.innerText = currentPayee.pa;
 
-        const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&tn=${encodeURIComponent("Resolve MUN 2026 Fee")}`;
-        
+        let categoryNote = "Resolve MUN 2026 Delegate Fee";
+        let mobileLinkId = "payUpiMobileLink";
+        if (imgElementId === "ocPaymentQRImage") {
+          categoryNote = "Resolve MUN 2026 OC Fee";
+          mobileLinkId = "ocPayUpiMobileLink";
+        } else if (imgElementId === "delPaymentQRImage") {
+          categoryNote = "Resolve MUN 2026 Delegation Fee";
+          mobileLinkId = "delPayUpiMobileLink";
+        } else if (imgElementId === "socialsPaymentQRImage") {
+          categoryNote = "Resolve MUN 2026 Socials Pass";
+          mobileLinkId = "socialsPayUpiMobileLink";
+        }
+
+        const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&tn=${encodeURIComponent(categoryNote)}`;
+
         // Update direct mobile link if element exists
-        const mobileLink = document.getElementById("payUpiMobileLink");
-        if (mobileLink && imgElementId === "paymentQRImage") {
+        const mobileLink = document.getElementById(mobileLinkId);
+        if (mobileLink) {
           mobileLink.href = upiString;
         }
 
         const qrImage = document.getElementById(imgElementId);
         if (!qrImage) return;
 
-        // Try primary QR service with high resolution
-        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(upiString)}&bgcolor=ffffff&color=05060c&margin=1`;
-        qrImage.onerror = () => {
-          qrImage.src = `https://quickchart.io/qr?size=320&text=${encodeURIComponent(upiString)}`;
+        // Dynamic QR code generated with exact locked price via QuickChart (with qrserver fallback)
+        const safeEncodedData = encodeURIComponent(upiString);
+        const quickChartUrl = `https://quickchart.io/qr?size=300&text=${safeEncodedData}&ecLevel=M&margin=1`;
+        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${safeEncodedData}`;
+
+        qrImage.crossOrigin = "anonymous";
+        qrImage.onerror = function () {
+          if (this.src !== fallbackUrl) {
+            this.src = fallbackUrl;
+          }
         };
+        qrImage.src = quickChartUrl;
       };
 
       window.refreshDelegatePaymentQR = function () {
-        const fee = String(window.__siteSettings?.delegateFee || 2500);
-        window.generateDynamicQR(fee, "paymentQRImage", "upiID");
+        if (typeof window.updateDelegatePaymentUI === "function") {
+          window.updateDelegatePaymentUI();
+        } else {
+          const fee = String(window.__siteSettings?.delegateFee || 2500);
+          window.generateDynamicQR(fee, "paymentQRImage", "upiID");
+        }
         if (window.showCustomAlert) {
-          window.showCustomAlert(`UPI QR code refreshed for ₹${Number(fee).toLocaleString("en-IN")}`, "info");
+          window.showCustomAlert("UPI payment QR refreshed with verified rate.", "info");
         }
       };
 
-      // Live Screenshot preview handler
-      const attachFilePreview = (inputId, nameSpanId, previewId) => {
-        const input = document.getElementById(inputId);
-        const nameSpan = document.getElementById(nameSpanId);
-        const preview = document.getElementById(previewId);
-        if (!input || input.__previewAttached) return;
-        input.__previewAttached = true;
-        input.addEventListener("change", function () {
-          if (this.files && this.files[0]) {
-            const file = this.files[0];
-            if (nameSpan) {
-              nameSpan.textContent = file.name;
-              nameSpan.style.color = "#22c55e";
-            }
-            if (preview && file.type.startsWith("image/")) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                const sizeKb = (file.size / 1024).toFixed(1);
-                preview.innerHTML = `
-                  <img src="${e.target.result}" alt="Proof" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
-                  <div style="flex: 1; min-width: 0;">
-                    <p style="margin: 0; font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #22c55e; font-weight: 600;">Payment Screenshot Attached (${sizeKb} KB) ✓</p>
-                  </div>
-                `;
-                preview.style.display = "flex";
-              };
-              reader.readAsDataURL(file);
-            }
+      // 42 Official Secretariat & OC Ambassador Codes + Legacy Partner Codes
+      const REFERRAL_CODE_PRICING = {
+        SBXS2026: 2350,
+        AETHERXR2026: 2350,
+        DIYA: 2350,
+        ICFAI: 2000,
+        NYA200: 2350,
+        SOLARIS: 2350,
+        PROMOTION: 2350,
+        UNT100: 2350,
+        HET100: 2350,
+        YCE200: 2350,
+        AN69: 2350,
+        ATHENAXR2026: 2350,
+        STYLE100: 2350,
+        TTG300: 2300,
+        PARNIKA200: 2350,
+        RAYON67: 2350,
+        IRISXRESOLVE: 2350,
+        ABHINAYA200: 2350,
+        SKA200: 1999,
+        // 42 Official Codes from Spreadsheet
+        AVETE99: 2350,
+        BHAFN01: 2350,
+        POOCF02: 2350,
+        RAYFM03: 2350,
+        JAYFM04: 2350,
+        NIKSH05: 2350,
+        AARCL06: 2350,
+        SNVPU99: 2350,
+        SWASG07: 2350,
+        KANDG08: 2350,
+        ROHDD09: 2350,
+        DHACS10: 2350,
+        JOTDC11: 2350,
+        RAACA12: 2350,
+        RISCO13: 2350,
+        ABHCA14: 2350,
+        ADYSA15: 2350,
+        GAYFH16: 2350,
+        AARDM17: 2350,
+        ABHCC18: 2350,
+        HIMCI19: 2350,
+        DEVOC20: 2350,
+        DHASP21: 2350,
+        HAVST22: 2350,
+        NIPLG23: 2350,
+        MEGDA24: 2350,
+        RYAMK25: 2350,
+        SHRPL26: 2350,
+        TANHP27: 2350,
+        HEMOR28: 2350,
+        AKAUF29: 2350,
+        ANAUO30: 2350,
+        CHAUO31: 2350,
+        LIKUM32: 2350,
+        VAIUM33: 2350,
+        ISHUD34: 2350,
+        MOKUD35: 2350,
+        PARUD36: 2350,
+        NIYUH37: 2350,
+        SAAUH38: 2350,
+        DEEUC39: 2350,
+        PRAUC40: 2350,
+        VIGUP41: 2350,
+        YUVUT42: 2350,
+      };
+
+      const REFERRAL_AMBASSADORS = {
+        AVETE99: "Abhilash Vijayakumar",
+        BHAFN01: "Bhavesh",
+        POOCF02: "Poorvika",
+        RAYFM03: "Rayon",
+        JAYFM04: "Jayakrishna",
+        NIKSH05: "Nikhilesh",
+        AARCL06: "Aarav",
+        SNVPU99: "Saanvi",
+        SWASG07: "Swayam",
+        KANDG08: "Kanishka",
+        ROHDD09: "Rohan",
+        DHACS10: "Dhanvi",
+        JOTDC11: "Jotshna",
+        RAACA12: "Raahil",
+        RISCO13: "Risheeth",
+        ABHCA14: "Abhik",
+        ADYSA15: "Advith",
+        GAYFH16: "Gayathri",
+        AARDM17: "Aarushi",
+        ABHCC18: "Abhinaya",
+        HIMCI19: "Hima Varshith",
+        DEVOC20: "Devansh",
+        DHASP21: "Dhairya",
+        HAVST22: "Havish",
+        NIPLG23: "Nipun",
+        MEGDA24: "Meghana",
+        RYAMK25: "Ryan",
+        SHRPL26: "Shresth",
+        TANHP27: "Tanishka",
+        HEMOR28: "Hemanth",
+        AKAUF29: "Akanksha",
+        ANAUO30: "Anaitha",
+        CHAUO31: "Chaitanya",
+        LIKUM32: "Likhith",
+        VAIUM33: "Vaishnavi",
+        ISHUD34: "Ishika",
+        MOKUD35: "Moksha",
+        PARUD36: "Parinithi",
+        NIYUH37: "Niyati",
+        SAAUH38: "Saanvi",
+        DEEUC39: "Deeksha",
+        PRAUC40: "Pragnhavi",
+        VIGUP41: "Vignesh",
+        YUVUT42: "Yuvraj",
+      };
+
+      const normalizeReferral = (code) => (code || "").trim().toUpperCase();
+
+      window.getDelegateFeeFromReferral = function () {
+        const val = normalizeReferral(document.getElementById("regReferral")?.value);
+        const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
+        return REFERRAL_CODE_PRICING[val] || baseFee;
+      };
+
+      window.updateDelegatePaymentUI = function () {
+        const fee = window.getDelegateFeeFromReferral();
+        const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
+        const feeDisplay = document.getElementById("regFeeDisplay");
+        if (feeDisplay) {
+          feeDisplay.innerText = `Registration Fee: ₹${Number(fee).toLocaleString("en-IN")}`;
+        }
+        window.generateDynamicQR(String(fee), "paymentQRImage", "upiID");
+
+        const referralVal = normalizeReferral(document.getElementById("regReferral")?.value);
+        const feedbackEl = document.getElementById("referralFeedback");
+        if (feedbackEl) {
+          if (!referralVal) {
+            feedbackEl.innerText = "";
+            feedbackEl.style.color = "";
+          } else if (REFERRAL_CODE_PRICING[referralVal]) {
+            const applied = REFERRAL_CODE_PRICING[referralVal];
+            const savings = baseFee - applied;
+            const ambassador = REFERRAL_AMBASSADORS[referralVal];
+            const note = ambassador ? ` (${ambassador})` : "";
+            feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
+            feedbackEl.style.color = "#22c55e";
+          } else {
+            feedbackEl.innerText = "Referral code not recognized";
+            feedbackEl.style.color = "#ef4444";
           }
+        }
+      };
+
+      const attachReferralListener = () => {
+        const refInput = document.getElementById("regReferral");
+        if (refInput && !refInput.__referralAttached) {
+          refInput.__referralAttached = true;
+          refInput.addEventListener("input", window.updateDelegatePaymentUI);
+          refInput.addEventListener("change", window.updateDelegatePaymentUI);
+        }
+      };
+      setTimeout(attachReferralListener, 500);
+
+      // Global single-row file upload handler (No duplicate previews, validates 5MB)
+      const initFileUploadListeners = () => {
+        document.querySelectorAll(".file-upload-input").forEach((input) => {
+          if (input.__fileListenerAttached) return;
+          input.__fileListenerAttached = true;
+          input.addEventListener("change", function () {
+            const wrapper = this.closest(".file-upload-wrapper");
+            const fileNameSpan = wrapper ? wrapper.querySelector(".file-name") : null;
+            if (this.files && this.files.length > 0) {
+              const file = this.files[0];
+              const maxSize = 5 * 1024 * 1024; // 5MB limit
+              if (file.size > maxSize) {
+                if (window.showCustomAlert) {
+                  window.showCustomAlert(`File "${file.name}" exceeds 5MB limit.`, "error");
+                }
+                this.value = "";
+                if (fileNameSpan) {
+                  fileNameSpan.textContent = "File too large (max 5MB)";
+                  fileNameSpan.style.color = "#ef4444";
+                }
+                if (wrapper) wrapper.style.borderColor = "#ef4444";
+                return;
+              }
+              const sizeKb = (file.size / 1024).toFixed(1);
+              if (fileNameSpan) {
+                fileNameSpan.textContent = `${file.name} (${sizeKb} KB) ✓`;
+                fileNameSpan.style.color = "#22c55e";
+              }
+              if (wrapper) wrapper.style.borderColor = "rgba(34, 197, 94, 0.4)";
+            } else {
+              if (fileNameSpan) {
+                fileNameSpan.textContent = "No file chosen";
+                fileNameSpan.style.color = "";
+              }
+              if (wrapper) wrapper.style.borderColor = "";
+            }
+          });
         });
       };
-      setTimeout(() => {
-        attachFilePreview("regDriveLink", "regDriveFileName", "regScreenshotPreview");
-        attachFilePreview("delDriveLink", "delDriveFileName", "delScreenshotPreview");
-        attachFilePreview("ocDriveLink", "ocDriveFileName", "ocScreenshotPreview");
-      }, 500);
+      setTimeout(initFileUploadListeners, 500);
 
       window.closeSecModal = function () {
         closeModalById("secModal");
@@ -1173,6 +1540,7 @@ export default function Home() {
 
         const modalContent = document.querySelector("#secModal .modal-content");
         if (modalContent) modalContent.scrollTop = 0;
+        if (window.saveAllModalDrafts) window.saveAllModalDrafts("secModal");
       };
 
       const fileToBase64 = (file) =>
@@ -1249,18 +1617,31 @@ export default function Home() {
             timestamp: new Date().toISOString()
           };
 
-          await submitSecretariatApplication(payload);
-
-          if (window.showCustomAlert) {
-            window.showCustomAlert("Application submitted! We've sent a confirmation to your email.", "success");
-          } else {
-            alert("Application submitted! We've sent a confirmation to your email.");
-          }
+          const secRes = await submitSecretariatApplication(payload);
+          localStorage.removeItem("resolveMunSecRegForm");
 
           const form = document.getElementById("secRegForm");
           if (form) form.reset();
           window.nextSecStep(1);
           closeModalById("secModal");
+
+          const secTicketId = secRes?.appId || `RM26-SEC-${Math.floor(1000 + Math.random() * 9000)}`;
+          if (typeof window.showPaymentReceiptModal === "function") {
+            window.showPaymentReceiptModal({
+              ticketId: secTicketId,
+              amount: 0,
+              date: new Date(),
+              cardHolder: payload.fullName,
+              utrNumber: "SECRETARIAT-APP",
+              passCategory: `Secretariat (${position})`,
+              barcodeValue: secTicketId,
+              onContinue: () => {
+                window.location.href = "/dashboard";
+              },
+            });
+          } else if (window.showCustomAlert) {
+            window.showCustomAlert("Application submitted! We've sent a confirmation to your email.", "success");
+          }
         } catch (err) {
           console.error("Submission error:", err);
           if (window.showCustomAlert) {
@@ -1277,6 +1658,134 @@ export default function Home() {
         }
       };
 
+      const MODAL_STORAGE_CONFIG = {
+        regModal: {
+          key: "resolveMunRegForm",
+          stepPrefix: "step",
+          fields: [
+            "regName", "regGrade", "regPhone", "regEmail", "regInstitute", "regAddress",
+            "regTransport", "regDob", "regReferral", "regEmergencyName", "regEmergencyPhone", "regExp",
+            "pref1_committee", "pref1_port1", "pref1_port2", "pref1_role",
+            "pref2_committee", "pref2_port1", "pref2_port2", "pref2_role",
+            "pref3_committee", "pref3_port1", "pref3_port2", "pref3_role",
+            "regTxnID", "regAdditionalInfo", "regUTR"
+          ]
+        },
+        delModal: {
+          key: "resolveMunDelRegForm",
+          stepPrefix: "delStep",
+          fields: [
+            "delInstName", "delAdviserName", "delAdviserPhone", "delAdviserEmail", "delSize",
+            "delReferral", "delTxnID", "delUTR"
+          ]
+        },
+        ocModal: {
+          key: "resolveMunOcRegForm",
+          stepPrefix: "ocStep",
+          fields: [
+            "ocName", "ocDob", "ocGrade", "ocPhone", "ocEmail", "ocInst", "ocAddress", "ocInsta",
+            "ocMunCount", "ocWhy", "ocAttributes", "ocFeeTier", "ocTxnID", "ocUTR", "ocReferral", "ocAdditionalInfo"
+          ]
+        },
+        ebModal: {
+          key: "resolveMunEbRegForm",
+          stepPrefix: "ebStep",
+          fields: [
+            "ebName", "ebPhone", "ebEmail", "ebDob", "ebReferral", "ebInst", "ebRole", "ebMunCount",
+            "ebExp", "ebWhy", "ebPref1", "ebPref2"
+          ]
+        },
+        secModal: {
+          key: "resolveMunSecRegForm",
+          stepPrefix: "secStep",
+          fields: [
+            "secName", "secEmail", "secPhone", "secInsta", "secSchool", "secAddress",
+            "secGrade", "secDob", "secExp", "secPosition", "secWhy", "secContribution", "secHours"
+          ]
+        },
+        socialsModal: {
+          key: "resolveMunSocialsRegForm",
+          stepPrefix: "socialsStep",
+          fields: [
+            "socialsName", "socialsPhone", "socialsEmail", "socialsInst", "socialsGrade",
+            "socialsDob", "socialsReferral", "socialsTxnID"
+          ]
+        }
+      };
+
+      const saveModalDraft = (modalId) => {
+        const cfg = MODAL_STORAGE_CONFIG[modalId];
+        if (!cfg || typeof window === "undefined") return;
+        try {
+          const saved = {};
+          cfg.fields.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) saved[id] = el.value;
+          });
+          if (modalId === "delModal") {
+            const container = document.getElementById("delegateInputsContainer");
+            if (container) {
+              container.querySelectorAll("input, select").forEach((inp) => {
+                if (inp.name) saved[inp.name] = inp.value;
+              });
+            }
+          }
+          const activeStep = document.querySelector(`#${modalId} .form-step.active`);
+          if (activeStep && activeStep.id) {
+            saved._activeStep = parseInt(activeStep.id.replace(cfg.stepPrefix, ""), 10) || 1;
+          }
+          localStorage.setItem(cfg.key, JSON.stringify(saved));
+        } catch (_) {}
+      };
+
+      const restoreModalDraft = (modalId) => {
+        const cfg = MODAL_STORAGE_CONFIG[modalId];
+        if (!cfg || typeof window === "undefined") return;
+        try {
+          const raw = localStorage.getItem(cfg.key);
+          if (!raw) return;
+          const saved = JSON.parse(raw);
+          cfg.fields.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el && saved[id]) {
+              el.value = saved[id];
+              if (id.toLowerCase().endsWith("dob")) {
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+              }
+              if (id === "ocFeeTier" && typeof window.updateOcFeeTierUI === "function") {
+                window.updateOcFeeTierUI(saved[id]);
+              }
+            }
+          });
+          if (saved._activeStep && saved._activeStep >= 1) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+              const target = document.getElementById(`${cfg.stepPrefix}${saved._activeStep}`);
+              if (target) {
+                modal.querySelectorAll(".form-step").forEach((s) => s.classList.remove("active"));
+                target.classList.add("active");
+              }
+            }
+          }
+        } catch (_) {}
+      };
+
+      window.saveAllModalDrafts = saveModalDraft;
+      window.restoreAllModalDrafts = restoreModalDraft;
+
+      // Attach auto-save listeners to all modal inputs
+      setTimeout(() => {
+        Object.keys(MODAL_STORAGE_CONFIG).forEach((modalId) => {
+          const modal = document.getElementById(modalId);
+          if (modal && !modal.__autoSaveBound) {
+            modal.__autoSaveBound = true;
+            modal.addEventListener("input", () => saveModalDraft(modalId));
+            modal.addEventListener("change", () => saveModalDraft(modalId));
+          }
+          restoreModalDraft(modalId);
+        });
+      }, 300);
+
       // Modal close buttons
       const modalList = [
         "selectionModal",
@@ -1285,6 +1794,7 @@ export default function Home() {
         "ocModal",
         "ebModal",
         "secModal",
+        "socialsModal",
         "commModal",
         "termsModal",
       ];
@@ -1295,6 +1805,7 @@ export default function Home() {
         { btnId: "closeOcModal", modalId: "ocModal" },
         { btnId: "closeEbModal", modalId: "ebModal" },
         { btnId: "closeSecModal", modalId: "secModal" },
+        { btnId: "closeSocialsModal", modalId: "socialsModal" },
       ];
 
       closeButtons.forEach(({ btnId, modalId }) => {
@@ -1777,6 +2288,8 @@ export default function Home() {
       )}
 
       <ModalShaderBackdrop />
+      <DobPickerPortals />
+      <PaymentReceiptModal />
       <AuthModal
         isOpen={authOpen}
         initialMode={authInitialMode}

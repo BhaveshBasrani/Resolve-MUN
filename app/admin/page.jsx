@@ -2735,10 +2735,8 @@ export default function SuperAdminPage() {
                   <option value="UNHRC">UNHRC (United Nations Human Rights Council)</option>
                   <option value="UNSC">UNSC (United Nations Security Council)</option>
                   <option value="LOK SABHA">Lok Sabha (Indian Parliamentary Committee)</option>
-                  <option value="IP">IP (International Press)</option>
-                  <option value="COMMITTEE X">Committee X (Crisis / Special Committee)</option>
-                  <option value="CCC">CCC (Continuous Crisis Committee)</option>
-                  <option value="UNCSW">UNCSW (Commission on Status of Women)</option>
+                  <option value="COMMITTEE X">Committee X (Classified Crisis Committee)</option>
+                  <option value="IP">International Press (IP)</option>
                 </select>
               </div>
 
@@ -2906,11 +2904,11 @@ export default function SuperAdminPage() {
                 <div>
                   <label className="block text-xs font-medium text-white/70 mb-1">Committee</label>
                   <select name="committee" className="w-full h-9 px-2 rounded-xl bg-[#0c0e18] border border-white/10 text-white text-xs">
-                    <option value="UNSC">UNSC</option>
-                    <option value="UNGA (DISEC)">UNGA (DISEC)</option>
+                    <option value="DISEC">DISEC</option>
                     <option value="UNHRC">UNHRC</option>
-                    <option value="AIPPM">AIPPM</option>
-                    <option value="CCC">CCC</option>
+                    <option value="UNSC">UNSC</option>
+                    <option value="LOK SABHA">Lok Sabha</option>
+                    <option value="COMMITTEE X">Committee X</option>
                     <option value="IP">International Press</option>
                   </select>
                 </div>

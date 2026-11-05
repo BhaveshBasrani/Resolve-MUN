@@ -130,6 +130,12 @@ export const homeHtml = `
       <div class="modal-pretitle">RESOLVE MUN 2.0 · PRIORITY ROUND</div>
       <h2 class="modal-title">DELEGATE REGISTRATION</h2>
       <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
+      <div style="margin-top: 12px; display: flex; justify-content: center;">
+        <button type="button" onclick="closeModalById('regModal'); selectPathway('delegation');" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.22); color: #ffffff; border-radius: 9999px; padding: 6px 14px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+          <span>Registering a School Contingent (6+ Delegates)?</span>
+          <strong style="text-decoration: underline; text-underline-offset: 3px;">Switch to Delegation Form &rarr;</strong>
+        </button>
+      </div>
     </div>
     
     <form id="regForm" novalidate>
@@ -151,15 +157,10 @@ export const homeHtml = `
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="regInstitute">School / College / Institution <span style="color:#f87171;">*</span></label>
-          <input type="text" id="regInstitute" name="institution" placeholder="Enter your school or college name" required data-required="true">
-        </div>
-
-        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;">
           <div>
-            <label for="regDob">Date of Birth <span style="color:#f87171;">*</span></label>
-            <input type="date" id="regDob" name="dob" required data-required="true" autocomplete="bday" style="color-scheme: dark;">
+            <label for="regInstitute">School / College / Institution <span style="color:#f87171;">*</span></label>
+            <input type="text" id="regInstitute" name="institution" placeholder="Enter your school or college name" required data-required="true">
           </div>
           <div>
             <label for="regGrade">Grade / Class / Year <span style="color:#f87171;">*</span></label>
@@ -176,9 +177,15 @@ export const homeHtml = `
           </div>
         </div>
 
+        <div class="form-group" style="position: relative;">
+          <label for="regDob">Date of Birth <span style="color:#f87171;">*</span></label>
+          <div id="regDobMount"></div>
+          <input type="text" id="regDob" name="dob" required data-required="true" readonly tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:1px;width:1px;bottom:0;left:0;">
+        </div>
+
         <div class="form-group">
           <label for="regAddress">Full Residential Address <span style="color:#f87171;">*</span></label>
-          <textarea id="regAddress" name="address" placeholder="Enter your full residential address (used for transport route mapping if opted)" required data-required="true" style="resize: vertical; min-height: 60px;"></textarea>
+          <textarea id="regAddress" name="address" placeholder="Enter your full residential address (used for transport route mapping if opted)" required data-required="true" style="resize: vertical; min-height: 54px;"></textarea>
         </div>
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
@@ -199,13 +206,15 @@ export const homeHtml = `
 
         <div class="form-group">
           <label for="regExp">MUN Experience (Conference - Committee - Portfolio - Award/NA) <span style="color:#f87171;">*</span></label>
-          <textarea id="regExp" name="munExperience" placeholder="List your past MUN experiences or write 'First Timer / N/A'" required data-required="true" style="resize: vertical; min-height: 68px;"></textarea>
+          <textarea id="regExp" name="munExperience" placeholder="List your past MUN experiences or write 'First Timer / N/A'" required data-required="true" style="resize: vertical; min-height: 58px;"></textarea>
         </div>
 
-        <button type="button" class="btn-next btn-full-width" onclick="nextStep(2)">
-          Next: Committee Preferences
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
+        <div class="form-sticky-footer">
+          <button type="button" class="btn-next btn-full-width" onclick="nextStep(2)">
+            Next: Committee Preferences
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
 
       <!-- STEP 2: COMMITTEE PREFERENCE -->
@@ -224,10 +233,8 @@ export const homeHtml = `
             <option value="UNHRC">UNHRC</option>
             <option value="UNSC">UNSC</option>
             <option value="LOK SABHA">Lok Sabha</option>
-            <option value="IP">International Press (IP)</option>
             <option value="COMMITTEE X">Committee X</option>
-            <option value="CCC">CCC</option>
-            <option value="UNCSW">UNCSW</option>
+            <option value="IP">International Press</option>
           </select>
           <div id="pref1_container" style="display: none; margin-top: 10px;">
             <div id="pref1_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -251,10 +258,8 @@ export const homeHtml = `
             <option value="UNHRC">UNHRC</option>
             <option value="UNSC">UNSC</option>
             <option value="LOK SABHA">Lok Sabha</option>
-            <option value="IP">International Press (IP)</option>
             <option value="COMMITTEE X">Committee X</option>
-            <option value="CCC">CCC</option>
-            <option value="UNCSW">UNCSW</option>
+            <option value="IP">International Press</option>
           </select>
           <div id="pref2_container" style="display: none; margin-top: 10px;">
             <div id="pref2_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -278,10 +283,8 @@ export const homeHtml = `
             <option value="UNHRC">UNHRC</option>
             <option value="UNSC">UNSC</option>
             <option value="LOK SABHA">Lok Sabha</option>
-            <option value="IP">International Press (IP)</option>
             <option value="COMMITTEE X">Committee X</option>
-            <option value="CCC">CCC</option>
-            <option value="UNCSW">UNCSW</option>
+            <option value="IP">International Press</option>
           </select>
           <div id="pref3_container" style="display: none; margin-top: 10px;">
             <div id="pref3_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -304,95 +307,72 @@ export const homeHtml = `
 
       <!-- STEP 3: PAYMENT & SUBMISSION -->
       <div class="form-step" id="step3">
-        <div class="payment-banner" style="text-align: center; margin-bottom: 16px; padding: 14px 16px; border-radius: 14px; background: radial-gradient(circle at top, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.06) 100%); border: 1px solid rgba(168,85,247,0.22);">
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.68rem; font-weight: 700; font-family: ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.14em; color: #c084fc; background: rgba(168,85,247,0.14); border: 1px solid rgba(168,85,247,0.3); padding: 4px 12px; border-radius: 9999px; margin-bottom: 8px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #a855f7; display: inline-block; box-shadow: 0 0 8px #a855f7;"></span>
-            Priority Round · Delegate Registration
-          </span>
-          <h3 id="regFeeDisplay" style="font-size: 1.6rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0; font-family: 'Oswald', sans-serif;">Registration Fee: ₹2,500</h3>
-          <p class="non-refundable-notice" style="font-size: 0.68rem; color: #60a5fa; margin-top: 5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">Payment is non-refundable once submitted</p>
+        <div class="payment-banner">
+          <h3 id="regFeeDisplay">Registration Fee: ₹2,500</h3>
+          <p class="non-refundable-notice">⚠️ Payment is non-refundable once submitted</p>
         </div>
 
-        <div class="payment-card" style="background: #07080e; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 18px 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);">
+        <div class="payment-card">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 10px; font-size: 0.7rem; letter-spacing: 0.16em; opacity: 0.85; font-weight: 700; color: #e2e8f0; display: block;">1. SCAN NAVI / UPI QR CODE VIA ANY UPI APP</label>
+            <label style="text-align: center; margin-bottom: 12px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6; display: block;">1. SCAN UPI QR CODE TO PAY</label>
             <div style="text-align: center;">
-              
-              <!-- DYNAMIC AUTOGENERATED QR CONTAINER WITH VIEWING BRACKETS -->
-              <div class="qr-container" style="position: relative; display: inline-block; padding: 12px; border-radius: 16px; background: #ffffff; box-shadow: 0 0 30px rgba(99,102,241,0.25); border: 2px solid rgba(255,255,255,0.2);">
-                <img id="paymentQRImage" src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D2500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegate%2520Fee&bgcolor=ffffff&color=05060c&margin=1" alt="Payment QR Code" style="width: 170px; height: 170px; display: block; border-radius: 8px;">
-                <div id="paymentQRScanLabel" style="margin-top: 6px; font-size: 0.65rem; font-weight: 800; color: #0f172a; font-family: ui-monospace, monospace; letter-spacing: 0.06em;">SCAN & PAY ₹2,500</div>
+              <div class="qr-container">
+                <img id="paymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D2500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegate%2520Fee&ecLevel=M&margin=1" alt="Official Payment QR Code">
               </div>
 
-              <!-- DIRECT MOBILE UPI DEEP LINK BUTTON -->
-              <div style="margin-top: 12px;">
-                <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 280px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; box-shadow: 0 4px 15px rgba(79,70,229,0.35); transition: all 0.2s;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                  Pay via UPI App (Mobile)
+              <!-- Direct UPI Launch Button for Mobile Users -->
+              <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
+                <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  Pay via UPI App (GPay / PhonePe / Paytm)
                 </a>
               </div>
 
-              <div class="upi-supported-apps" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 12px 0;">
-                <span class="upi-app-pill" style="font-size: 0.62rem; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600;">Navi</span>
-                <span class="upi-app-pill" style="font-size: 0.62rem; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600;">GPay</span>
-                <span class="upi-app-pill" style="font-size: 0.62rem; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600;">PhonePe</span>
-                <span class="upi-app-pill" style="font-size: 0.62rem; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600;">Paytm</span>
-                <span class="upi-app-pill" style="font-size: 0.62rem; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600;">BHIM</span>
+              <div class="upi-box">
+                <span id="upiID">6301550628@nyes</span>
+                <button type="button" class="copy-btn" id="copyUpiBtn" onclick="copyUPI()" title="Copy UPI ID">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span style="font-size: 0.7rem; font-weight: 600; margin-left: 4px;">COPY</span>
+                </button>
               </div>
-
-              <!-- UPI ID BOX WITH COPY & REFRESH -->
-              <div class="upi-box" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; max-width: 320px; margin: 0 auto; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 6px 10px;">
-                <span id="upiID" style="font-family: ui-monospace, monospace; font-size: 0.74rem; color: #e2e8f0; font-weight: 600; overflow: hidden; text-overflow: ellipsis;">6301550628@nyes</span>
-                <div style="display: flex; gap: 5px; shrink: 0;">
-                  <button type="button" class="refresh-qr-btn" onclick="refreshDelegatePaymentQR()" title="Regenerate QR" style="width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                  </button>
-                  <button type="button" class="copy-btn" id="copyUpiBtn" onclick="copyUPI()" title="Copy UPI ID" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #a5b4fc; font-size: 0.68rem; font-weight: 700; cursor: pointer;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    <span>COPY</span>
-                  </button>
-                </div>
-              </div>
-              <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; color: #94a3b8; margin-top: 6px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                Verified Payee: <strong style="color: #ffffff;">Bejugam Aditya</strong>
-              </span>
+              <p class="payment-contact" style="margin-top: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.6);">
+                <span style="color: #22c55e; font-weight: 600;">✓ Verified Payee:</span> <span>Bejugam Aditya</span>
+              </p>
             </div>
+            <p class="payment-note" style="margin-top: 10px;">Scan with any UPI app or transfer directly to the UPI ID</p>
           </div>
 
-          <div class="form-group" style="margin-top: 18px;">
-            <label for="regTxnID" style="font-size: 0.72rem; font-weight: 700; color: #e2e8f0; letter-spacing: 0.08em;">2. TRANSACTION / UTR / REFERENCE ID <span style="color:#f87171;">*</span></label>
-            <input type="text" id="regTxnID" placeholder="Enter UPI Transaction ID / 12-digit UTR" required data-required="true" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 0.82rem; font-family: ui-monospace, monospace;">
+          <div class="form-group" style="margin-top: 16px;">
+            <label>2. TRANSACTION ID / 12-DIGIT UPI UTR <span style="color:#f87171;">*</span></label>
+            <input type="text" id="regTxnID" placeholder="Enter Transaction ID / 12-Digit UTR" required data-required="true">
           </div>
 
-          <div class="form-group" style="margin-top: 14px;">
-            <label style="font-size: 0.72rem; font-weight: 700; color: #e2e8f0; letter-spacing: 0.08em;">3. UPLOAD PAYMENT SCREENSHOT <span style="color:#f87171;">*</span></label>
-            <label class="file-upload-wrapper" for="regDriveLink" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.25); border-radius: 10px;">
-              <span class="file-upload-btn" style="padding: 4px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.72rem; font-weight: 700; color: #ffffff;">Choose File</span>
-              <span class="file-name" id="regDriveFileName" style="font-size: 0.72rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No file chosen</span>
-              <input type="file" id="regDriveLink" class="file-upload-input" accept="image/*,.pdf" required data-required="true" style="display: none;">
+          <div class="form-group">
+            <label>3. UPLOAD PAYMENT SCREENSHOT <span style="color:#f87171;">*</span></label>
+            <label class="file-upload-wrapper" for="regDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="regDriveLink" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
             </label>
-            <div id="regScreenshotPreview" style="display: none; margin-top: 8px; padding: 8px; border-radius: 8px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25);" class="payment-screenshot-preview"></div>
           </div>
 
-          <div class="form-group" style="margin-top: 14px;">
-            <label for="regAdditionalInfo" style="font-size: 0.72rem; font-weight: 700; color: #e2e8f0; letter-spacing: 0.08em;">4. ADDITIONAL INFORMATION / QUERIES (OPTIONAL)</label>
-            <input type="text" id="regAdditionalInfo" placeholder="Any specific notes or questions for the Secretariat" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 0.82rem;">
-          </div>
-
-          <div style="margin-top: 16px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); text-align: center;">
-            <p style="font-size: 0.68rem; color: #cbd5e1; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Meridian School, Kompally, Hyderabad</p>
-            <p style="font-size: 0.64rem; color: #94a3b8; margin: 4px 0 0 0;">Conference Dates: 27th – 29th November 2026</p>
+          <div class="form-group">
+            <label>4. ADDITIONAL INFORMATION / QUERIES (OPTIONAL)</label>
+            <input type="text" id="regAdditionalInfo" placeholder="Any specific notes or questions for the Secretariat">
           </div>
         </div>
 
-        <div class="form-actions" style="display: flex; gap: 10px; margin-top: 16px;">
-          <button type="button" class="btn-back" onclick="nextStep(2)" style="flex: 1; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.76rem; font-weight: 700; text-transform: uppercase; cursor: pointer;">Back</button>
-          <button type="submit" class="btn-next" style="flex: 2; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; color: #fff; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,0.35);">Submit Registration</button>
+        <div class="payment-footer">
+          <p class="payment-contact">Verified Payee: <span>Bejugam Aditya</span> &bull; Queries: <span>+91 92121 07797</span></p>
         </div>
-        <p class="terms-confirmation" style="font-size: 0.64rem; color: #64748b; text-align: center; margin-top: 12px; line-height: 1.4;">
+
+        <div class="form-actions">
+          <button type="button" class="btn-back" onclick="nextStep(2)">Back</button>
+          <button type="submit" class="btn-next">Submit Registration</button>
+        </div>
+        <p class="terms-confirmation">
           By clicking Submit Registration, you agree to the
-          <a href="#" onclick="openTermsModal('delegate'); return false;" style="color: #818cf8; text-decoration: underline;">Delegate Terms &amp; Conditions</a>
+          <a href="#" onclick="openTermsModal('delegate'); return false;">Delegate Terms &amp; Conditions</a>
           of Resolve MUN 2.0.
         </p>
       </div>
@@ -1337,23 +1317,27 @@ export const homeHtml = `
   </div>
 
   <div class="letter-inner">
-    <div class="section-label reveal" style="justify-content: center;">Official Correspondence</div>
-    <h2 class="section-title reveal" style="text-align: center;">A LETTER FROM THE<br>FOUNDER</h2>
+    <div class="section-label reveal letter-section-label">Official Correspondence</div>
+    <h2 class="section-title reveal letter-section-title">A Letter from the Founder</h2>
     
-    <div class="letter-container reveal reveal-delay-2">
-      <!-- Luxury Letterhead -->
-      <div class="letterhead-top">
+    <article class="letter-container reveal reveal-delay-2" aria-label="Letter from the Founder">
+      <!-- Letterhead -->
+      <header class="letterhead-top">
         <div class="letterhead-seal">
           <img src="/images/Logo.svg" alt="Resolve MUN" onerror="this.src='https://resolvemun.in/images/Logo.svg'" />
           <div class="letterhead-seal-text">
-            <span class="lh-org">RESOLVE MODEL UNITED NATIONS 2.0</span>
-            <span class="lh-office">OFFICE OF THE FOUNDER · HYDERABAD</span>
+            <span class="lh-org">Resolve Model United Nations</span>
+            <span class="lh-office">Office of the Founder</span>
           </div>
         </div>
-        <div class="letterhead-edition">27–29 NOV 2026</div>
-      </div>
+        <div class="letterhead-meta">
+          <span class="lh-meta-row"><em>Ref.</em> RMUN/2026/FO-01</span>
+          <span class="lh-meta-row"><em>Edition</em> 2.0 · 27–29 Nov 2026</span>
+          <span class="lh-meta-row"><em>Venue</em> Hyderabad, India</span>
+        </div>
+      </header>
 
-      <div class="letter-divider-line"></div>
+      <div class="letter-divider-line" aria-hidden="true"></div>
 
       <div class="letter-content">
         <p class="letter-salutation">Dear Delegates,</p>
@@ -1362,7 +1346,7 @@ export const homeHtml = `
           Every conference makes a promise. Very few take the responsibility of keeping it.
         </p>
 
-        <p>
+        <p class="letter-first">
           When we envisioned Resolve, we wanted to build something that extended beyond the usual expectations of a Model United Nations conference. We wanted a room where ideas mattered, where disagreements were meaningful, where research was evident in every argument, and where leadership was measured not by the position one held, but by the substance one brought to the table.
         </p>
 
@@ -1399,14 +1383,21 @@ export const homeHtml = `
         </p>
       </div>
 
-      <div class="letter-signature-block">
+      <footer class="letter-signature-block">
         <p class="letter-signoff">With regards,</p>
+        <div class="letter-sig-script" aria-hidden="true">Niveditt Basrani</div>
+        <div class="letter-sig-rule" aria-hidden="true"></div>
         <div class="letter-founder-info">
-          <div class="founder-sig-name">NIVEDITT BASRANI</div>
-          <div class="founder-sig-role">Founder, Resolve Model United Nations 2026</div>
+          <div class="founder-sig-name">Niveditt Basrani</div>
+          <div class="founder-sig-role">Founder, Resolve Model United Nations</div>
         </div>
+      </footer>
+
+      <div class="letter-footnote">
+        <span>resolvemun.in</span>
+        <span>Hyderabad · India</span>
       </div>
-    </div>
+    </article>
   </div>
 </section>
 
@@ -1557,9 +1548,9 @@ export const homeHtml = `
     <form id="ocRegForm" novalidate>
       <!-- STEP 1: PERSONAL & CORE DETAILS -->
       <div class="form-step active" id="ocStep1">
-        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
-          <p style="margin: 0; font-size: 0.78rem; color: #7dd3fc; font-weight: 700;">Salaried Role · Organizing Committee</p>
-          <p style="margin: 4px 0 0 0; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.45;">
+        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
+          <p style="margin: 0; font-size: 0.78rem; color: #ffffff; font-weight: 700;">Salaried Role · Organizing Committee</p>
+          <p style="margin: 4px 0 0 0; font-size: 0.72rem; color: rgba(255,255,255,0.7); line-height: 1.45;">
             OC members are eligible for performance-based remuneration &amp; referral commissions per the OC Terms &amp; Conditions.
           </p>
         </div>
@@ -1580,15 +1571,10 @@ export const homeHtml = `
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="ocInst">School / College / Institution <span style="color:#f87171;">*</span></label>
-          <input type="text" id="ocInst" name="institution" placeholder="Enter your school or college name" required data-required="true">
-        </div>
-
-        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;">
           <div>
-            <label for="ocDob">Date of Birth <span style="color:#f87171;">*</span></label>
-            <input type="date" id="ocDob" name="dob" required data-required="true" style="color-scheme: dark;">
+            <label for="ocInst">School / College / Institution <span style="color:#f87171;">*</span></label>
+            <input type="text" id="ocInst" name="institution" placeholder="Enter your school or college name" required data-required="true">
           </div>
           <div>
             <label for="ocGrade">Grade / Class / Year <span style="color:#f87171;">*</span></label>
@@ -1605,9 +1591,15 @@ export const homeHtml = `
           </div>
         </div>
 
+        <div class="form-group" style="position: relative;">
+          <label for="ocDob">Date of Birth <span style="color:#f87171;">*</span></label>
+          <div id="ocDobMount"></div>
+          <input type="text" id="ocDob" name="dob" required data-required="true" readonly tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:1px;width:1px;bottom:0;left:0;">
+        </div>
+
         <div class="form-group">
           <label for="ocAddress">Full Residential Address <span style="color:#f87171;">*</span></label>
-          <textarea id="ocAddress" name="address" placeholder="Enter your residential address" required data-required="true" style="resize: vertical; min-height: 56px;"></textarea>
+          <textarea id="ocAddress" name="address" placeholder="Enter your residential address" required data-required="true" style="resize: vertical; min-height: 54px;"></textarea>
         </div>
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
@@ -1627,10 +1619,12 @@ export const homeHtml = `
           </div>
         </div>
 
-        <button type="button" class="btn-next btn-full-width" onclick="nextOcStep(2)">
-          Next: Experience &amp; Fee Tier
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
+        <div class="form-sticky-footer">
+          <button type="button" class="btn-next btn-full-width" onclick="nextOcStep(2)">
+            Next: Experience &amp; Fee Tier
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
 
       <!-- STEP 2: MOTIVATION, FEE TIER & PAYMENT -->
@@ -1656,33 +1650,48 @@ export const homeHtml = `
         </div>
 
         <!-- OC UPI Payment Card (Hidden automatically when 'Pay Later' is chosen) -->
-        <div id="ocPaymentCardWrapper" class="payment-card" style="background: #07080e; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
-          <div style="text-align: center;">
-            <label style="text-align: center; margin-bottom: 8px; font-size: 0.68rem; letter-spacing: 0.14em; color: #7dd3fc; font-weight: 700; display: block;">SCAN NAVI / UPI QR CODE (BEJUGAM ADITYA)</label>
-            <div class="qr-container" style="display: inline-block; padding: 10px; border-radius: 12px; background: #ffffff;">
-              <img id="ocPaymentQRImage" src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D1500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520OC%2520Fee&bgcolor=ffffff&color=05060c&margin=1" alt="OC Payment QR Code" style="width: 150px; height: 150px; display: block; border-radius: 6px;">
-              <div id="ocQRScanLabel" style="margin-top: 5px; font-size: 0.64rem; font-weight: 800; color: #0f172a; font-family: ui-monospace, monospace;">SCAN &amp; PAY ₹1,500</div>
+        <div id="ocPaymentCardWrapper" class="payment-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="text-align: center; margin-bottom: 12px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6; display: block;">1. SCAN UPI QR CODE TO PAY</label>
+            <div style="text-align: center;">
+              <div class="qr-container">
+                <img id="ocPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D1500%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520OC%2520Fee&ecLevel=M&margin=1" alt="OC Payment QR Code">
+              </div>
+
+              <!-- Direct UPI Launch Button for Mobile Users -->
+              <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
+                <a id="ocPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=1500&cu=INR&tn=Resolve%20MUN%202026%20OC%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  Pay via UPI App (GPay / PhonePe / Paytm)
+                </a>
+              </div>
+
+              <div class="upi-box">
+                <span id="ocUpiID">6301550628@nyes</span>
+                <button type="button" class="copy-btn" onclick="copyOcUPI()" title="Copy UPI ID">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span style="font-size: 0.7rem; font-weight: 600; margin-left: 4px;">COPY</span>
+                </button>
+              </div>
+              <p class="payment-contact" style="margin-top: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.6);">
+                <span style="color: #22c55e; font-weight: 600;">✓ Verified Payee:</span> <span>Bejugam Aditya</span>
+              </p>
             </div>
-            <div class="upi-box" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; max-width: 300px; margin: 10px auto 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 5px 10px;">
-              <span id="ocUpiID" style="font-family: ui-monospace, monospace; font-size: 0.72rem; color: #e2e8f0; font-weight: 600;">6301550628@nyes</span>
-              <button type="button" class="copy-btn" onclick="copyOcUPI()" style="padding: 3px 8px; border-radius: 6px; background: rgba(56,189,248,0.2); border: 1px solid rgba(56,189,248,0.4); color: #7dd3fc; font-size: 0.65rem; font-weight: 700; cursor: pointer;">COPY</button>
-            </div>
-            <span style="font-size: 0.66rem; color: #94a3b8;">Verified Payee: <strong style="color: #fff;">Bejugam Aditya</strong></span>
+            <p class="payment-note" style="margin-top: 10px;">Scan with any UPI app or transfer directly to the UPI ID</p>
           </div>
 
-          <div class="form-group" style="margin-top: 12px;">
-            <label for="ocTxnID" style="font-size: 0.72rem;">Transaction / Reference ID (Required if paying now)</label>
-            <input type="text" id="ocTxnID" placeholder="Enter UPI Transaction ID / 12-digit UTR">
+          <div class="form-group" style="margin-top: 16px;">
+            <label>2. TRANSACTION ID / 12-DIGIT UPI UTR (REQUIRED IF PAYING NOW)</label>
+            <input type="text" id="ocTxnID" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Transaction ID">
           </div>
 
-          <div class="form-group" style="margin-top: 10px;">
-            <label style="font-size: 0.72rem;">Upload Payment Screenshot</label>
-            <label class="file-upload-wrapper" for="ocDriveLink" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.25); border-radius: 8px;">
-              <span class="file-upload-btn" style="padding: 4px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: #fff;">Choose File</span>
-              <span class="file-name" id="ocDriveFileName" style="font-size: 0.7rem; color: #94a3b8;">No file chosen</span>
-              <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*,.pdf" style="display: none;">
+          <div class="form-group">
+            <label>3. UPLOAD PAYMENT SCREENSHOT</label>
+            <label class="file-upload-wrapper" for="ocDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="ocDriveLink" class="file-upload-input" accept="image/*,.pdf">
             </label>
-            <div id="ocScreenshotPreview" style="display: none; margin-top: 6px;" class="payment-screenshot-preview"></div>
           </div>
         </div>
 
@@ -1701,8 +1710,8 @@ export const homeHtml = `
           <button type="button" class="btn-back" onclick="nextOcStep(1)">Back</button>
           <button type="submit" class="btn-next">Submit OC Application</button>
         </div>
-        <p class="terms-confirmation" style="font-size: 0.64rem; color: #64748b; text-align: center; margin-top: 10px;">
-          By submitting, you agree to the <a href="#" onclick="openTermsModal('oc'); return false;" style="color: #38bdf8; text-decoration: underline;">OC Terms &amp; Conditions</a>.
+        <p class="terms-confirmation">
+          By submitting, you agree to the <a href="#" onclick="openTermsModal('oc'); return false;">OC Terms &amp; Conditions</a>.
         </p>
       </div>
     </form>
@@ -1719,10 +1728,10 @@ export const homeHtml = `
       </svg>
     </button>
     
-    <div class="modal-header" style="text-align: left; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+    <div class="modal-header" style="text-align: left; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.12);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-        <span class="selection-badge" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.3); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;">RESOLVE MUN 2.0 · SECRETARIAT</span>
-        <span style="font-size: 10px; color: #34d399; font-weight: 700; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.25);">FREE TO APPLY</span>
+        <span class="selection-badge" style="background: rgba(255, 255, 255, 0.08); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.25); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;">RESOLVE MUN 2.0 · SECRETARIAT</span>
+        <span style="font-size: 10px; color: #000000; font-weight: 800; background: #ffffff; padding: 2px 8px; border-radius: 4px; border: 1px solid #ffffff;">FREE TO APPLY</span>
       </div>
       <h2 class="modal-title" style="font-size: 1.5rem; letter-spacing: 0.02em; margin: 4px 0;">Secretariat Applications — Resolve MUN 2.0</h2>
       <span class="modal-subtitle" style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Hyderabad · 27th – 29th November 2026</span>
@@ -1740,7 +1749,7 @@ export const homeHtml = `
     <form id="secRegForm" onsubmit="window.submitSecForm ? window.submitSecForm(event) : event.preventDefault()">
       <!-- STEP 1: BRIEFING & INVITATION (FROM GOOGLE FORM PAGE 1) -->
       <div class="form-step active" id="secStep1">
-        <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 20px; line-height: 1.65;">
+        <div style="background: #0a0a0a; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 20px; line-height: 1.65;">
           <p style="font-size: 0.88rem; color: #ffffff; font-weight: 600; margin-top: 0; margin-bottom: 12px;">
             Resolve MUN is inviting motivated individuals to apply for our Secretariat for Resolve MUN 2.0.
           </p>
@@ -1753,7 +1762,7 @@ export const homeHtml = `
           <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 12px;">
             Prior experience in MUN or event organising is a plus, but not mandatory. What matters most is that you're motivated, reliable, and ready to put in the work.
           </p>
-          <p style="font-size: 0.85rem; color: #a5b4fc; font-weight: 600; margin-bottom: 0;">
+          <p style="font-size: 0.85rem; color: #ffffff; font-weight: 700; margin-bottom: 0;">
             If this sounds like you, we'd love to have you on board. Apply now and be part of the team building Resolve MUN 2.0.
           </p>
         </div>
@@ -1798,15 +1807,10 @@ export const homeHtml = `
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="secAddress">Full Residential Address</label>
-          <input type="text" id="secAddress" name="residentialAddress" placeholder="Your residential address">
-        </div>
-
-        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;">
           <div>
-            <label for="secDob">Date of Birth <span style="color:#f87171;">*</span></label>
-            <input type="date" id="secDob" name="dob" required data-required="true" style="color-scheme: dark;">
+            <label for="secAddress">Full Residential Address</label>
+            <input type="text" id="secAddress" name="residentialAddress" placeholder="Your residential address">
           </div>
           <div>
             <label for="secGrade">Grade <span style="color:#f87171;">*</span></label>
@@ -1822,12 +1826,18 @@ export const homeHtml = `
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="secExp">Previous MUN / Leadership Experiences</label>
-          <textarea id="secExp" name="previousExperiences" placeholder="List your relevant MUN or leadership roles" style="resize: vertical; min-height: 60px;"></textarea>
+        <div class="form-group" style="position: relative;">
+          <label for="secDob">Date of Birth <span style="color:#f87171;">*</span></label>
+          <div id="secDobMount"></div>
+          <input type="text" id="secDob" name="dob" required data-required="true" readonly tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:1px;width:1px;bottom:0;left:0;">
         </div>
 
-        <div class="form-actions" style="margin-top: 20px;">
+        <div class="form-group">
+          <label for="secExp">Previous MUN / Leadership Experiences</label>
+          <textarea id="secExp" name="previousExperiences" placeholder="List your relevant MUN or leadership roles" style="resize: vertical; min-height: 56px;"></textarea>
+        </div>
+
+        <div class="form-actions form-sticky-footer" style="margin-top: 16px;">
           <button type="button" class="btn-back" onclick="nextSecStep(1)">Back</button>
           <button type="button" class="btn-next" onclick="nextSecStep(3)">
             <span>Next: Role &amp; Experience</span>
@@ -1877,41 +1887,33 @@ export const homeHtml = `
           <input type="text" id="secHours" name="dailyCommitment" placeholder="e.g. 2–3 hours per day" required data-required="true">
         </div>
 
-        <!-- DRIVE UPLOAD 1: PORTFOLIO / WORK (UP TO 5 FILES / LINK) -->
-        <div class="form-group" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px;">
-          <label style="margin-bottom: 4px; font-weight: 700; color: #ffffff;">Previous designs, work, resume, edits, etc. (upto 5)</label>
-          <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin: 0 0 10px 0;">Upload your work files or portfolio (PDF, images, ZIP, max 50MB)</p>
-          <label class="file-upload-wrapper" for="secPortfolioFile" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(99,102,241,0.1); border: 1px dashed rgba(129,140,248,0.4); border-radius: 8px;">
-            <span class="file-upload-btn" style="background: #6366f1; color: white; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;">+ Add File</span>
-            <span class="file-name" id="secPortfolioFileName" style="font-size: 11px; color: rgba(255,255,255,0.6);">No file chosen</span>
-            <input type="file" id="secPortfolioFile" class="file-upload-input" accept=".pdf,.png,.jpg,.jpeg,.zip,.docx" style="display: none;">
-          </label>
-          <div id="secPortfolioPreview" style="display: none; margin-top: 8px; font-size: 11px; color: #34d399; font-weight: 600;"></div>
+        <!-- DRIVE UPLOAD 1: PORTFOLIO / WORK -->
+        <div class="form-group">
+          <div id="secPortfolioFileMount"></div>
+          <input type="file" id="secPortfolioFile" class="file-upload-input" accept=".pdf,.png,.jpg,.jpeg,.zip,.docx" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
+          <span id="secPortfolioFileName" style="display:none;"></span>
+          <div id="secPortfolioPreview" style="display: none;"></div>
         </div>
 
-        <!-- DRIVE UPLOAD 2: RESUME / CV (OPTIONAL BUT RECOMMENDED) -->
-        <div class="form-group" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px;">
-          <label style="margin-bottom: 4px; font-weight: 700; color: #ffffff;">Resume/CV Upload (optional but recommended)</label>
-          <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin: 0 0 10px 0;">Upload 1 supported file (PDF or DOC, max 10 MB)</p>
-          <label class="file-upload-wrapper" for="secResumeFile" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(168,85,247,0.1); border: 1px dashed rgba(192,132,252,0.4); border-radius: 8px;">
-            <span class="file-upload-btn" style="background: #a855f7; color: white; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;">+ Add File</span>
-            <span class="file-name" id="secResumeFileName" style="font-size: 11px; color: rgba(255,255,255,0.6);">No file chosen</span>
-            <input type="file" id="secResumeFile" class="file-upload-input" accept=".pdf,.doc,.docx" style="display: none;">
-          </label>
-          <div id="secResumePreview" style="display: none; margin-top: 8px; font-size: 11px; color: #34d399; font-weight: 600;"></div>
+        <!-- DRIVE UPLOAD 2: RESUME / CV -->
+        <div class="form-group">
+          <div id="secResumeFileMount"></div>
+          <input type="file" id="secResumeFile" class="file-upload-input" accept=".pdf,.doc,.docx,image/*" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
+          <span id="secResumeFileName" style="display:none;"></span>
+          <div id="secResumePreview" style="display: none;"></div>
         </div>
 
         <!-- GOOGLE FORM FOOTER NOTICE -->
-        <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 10px; padding: 14px 16px; margin: 16px 0;">
+        <div style="background: #0a0a0a; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 10px; padding: 14px 16px; margin: 16px 0;">
           <p style="margin: 0 0 6px 0; font-size: 0.78rem; font-weight: 700; color: #ffffff;">Shortlisted applicants will be contacted for an interview.</p>
-          <p style="margin: 0 0 8px 0; font-size: 0.75rem; color: rgba(255,255,255,0.85); font-weight: 600;">Selections and allocations will be made on the basis of merit and availability.</p>
-          <p style="margin: 0; font-size: 0.72rem; color: #a5b4fc; font-family: monospace;">Instagram Handle: @mun.resolve &bull; Email ID: resolve.mun@gmail.com</p>
-          <p style="margin: 6px 0 0 0; font-size: 0.72rem; color: #34d399; font-weight: 700;">&bull; No registration or application fee required.</p>
+          <p style="margin: 0 0 8px 0; font-size: 0.75rem; color: rgba(255,255,255,0.8); font-weight: 600;">Selections and allocations will be made on the basis of merit and availability.</p>
+          <p style="margin: 0; font-size: 0.72rem; color: rgba(255,255,255,0.65); font-family: monospace;">Instagram Handle: @mun.resolve &bull; Email ID: resolve.mun@gmail.com</p>
+          <p style="margin: 6px 0 0 0; font-size: 0.72rem; color: #ffffff; font-weight: 700;">&bull; No registration or application fee required.</p>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextSecStep(2)">Back</button>
-          <button type="submit" class="btn-next" id="secSubmitBtn" style="background: linear-gradient(135deg, #6366f1, #a855f7); font-weight: 700;">Submit Application</button>
+          <button type="submit" class="btn-next" id="secSubmitBtn" style="background: #ffffff; color: #000000; font-weight: 800;">Submit Application</button>
         </div>
       </div>
     </form>
@@ -1921,7 +1923,7 @@ export const homeHtml = `
 
 <!-- EB APPLICATION MODAL -->
 <div class="modal-overlay" id="ebModal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 660px; max-height: 90vh; overflow-y: auto;">
     <button class="modal-close" id="closeEbModal" aria-label="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1930,34 +1932,34 @@ export const homeHtml = `
     </button>
     
     <div class="modal-header">
-      <div class="modal-pretitle">RESOLVE MUN 2.0</div>
-      <h2 class="modal-title">EB APPLICATIONS</h2>
-      <span class="modal-subtitle">Apply to chair a committee</span>
+      <div class="modal-pretitle">RESOLVE MUN 2.0 · EXECUTIVE BOARD</div>
+      <h2 class="modal-title">EXECUTIVE BOARD APPLICATIONS</h2>
+      <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
     </div>
     
-    <form id="ebRegForm">
+    <form id="ebRegForm" novalidate>
       <!-- STEP 1: PERSONAL DETAILS -->
       <div class="form-step active" id="ebStep1">
         <div class="form-group">
-          <label for="ebName">Full Name</label>
-          <input type="text" id="ebName" required data-required="true" autocomplete="name">
+          <label for="ebName">Full Name <span style="color:#f87171;">*</span></label>
+          <input type="text" id="ebName" placeholder="Enter your full name" required data-required="true" autocomplete="name">
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
-            <label for="ebPhone">Phone (WhatsApp)</label>
-            <input type="tel" id="ebPhone" required data-required="true" autocomplete="tel" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
+            <label for="ebPhone">Contact Number (WhatsApp) <span style="color:#f87171;">*</span></label>
+            <input type="tel" id="ebPhone" placeholder="10-digit mobile number" required data-required="true" autocomplete="tel" minlength="10" maxlength="10" title="Please enter a valid 10-digit phone number">
           </div>
           <div>
-            <label for="ebEmail">Email Address</label>
-            <input type="email" id="ebEmail" required data-required="true" autocomplete="email">
+            <label for="ebEmail">Email Address <span style="color:#f87171;">*</span></label>
+            <input type="email" id="ebEmail" placeholder="you@example.com" required data-required="true" autocomplete="email">
           </div>
         </div>
 
-        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;">
           <div>
-            <label for="ebDob">Date of Birth</label>
-            <input type="date" id="ebDob" required data-required="true" autocomplete="bday">
+            <label for="ebInst">Institution / School / College <span style="color:#f87171;">*</span></label>
+            <input type="text" id="ebInst" placeholder="Enter your institution or college" required data-required="true">
           </div>
           <div>
             <label for="ebReferral">Referral Code (Optional)</label>
@@ -1965,93 +1967,93 @@ export const homeHtml = `
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="ebInst">Institution / School / College</label>
-          <input type="text" id="ebInst" required data-required="true">
+        <div class="form-group" style="position: relative;">
+          <label for="ebDob">Date of Birth <span style="color:#f87171;">*</span></label>
+          <div id="ebDobMount"></div>
+          <input type="text" id="ebDob" required data-required="true" readonly tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:1px;width:1px;bottom:0;left:0;">
         </div>
 
-        <button type="button" class="btn-next btn-full-width" onclick="nextEbStep(2)">
-          Next: Experience
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
+        <div class="form-sticky-footer">
+          <button type="button" class="btn-next btn-full-width" onclick="nextEbStep(2)">
+            Next: Chairing Experience
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
 
       <!-- STEP 2: EXPERIENCE -->
       <div class="form-step" id="ebStep2">
-        <div class="form-group">
-          <label for="ebRole">Preferred Role</label>
-          <select id="ebRole" required data-required="true">
-            <option value="" disabled selected>Select a role</option>
-            <option value="Chairperson">Chairperson</option>
-            <option value="Vice-Chairperson">Vice-Chairperson</option>
-            <option value="Rapporteur">Rapporteur</option>
-          </select>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="ebRole">Preferred Role <span style="color:#f87171;">*</span></label>
+            <select id="ebRole" required data-required="true">
+              <option value="" disabled selected>Select Role</option>
+              <option value="Chairperson">Chairperson</option>
+              <option value="Vice-Chairperson">Vice-Chairperson</option>
+              <option value="Rapporteur / Director">Rapporteur / Director</option>
+            </select>
+          </div>
+          <div>
+            <label for="ebMunCount">Total MUNs Attended / Chaired <span style="color:#f87171;">*</span></label>
+            <select id="ebMunCount" required data-required="true">
+              <option value="" disabled selected>Select Count</option>
+              <option value="5-15">5–15 MUNs</option>
+              <option value="15-25">15–25 MUNs</option>
+              <option value="25-40">25–40 MUNs</option>
+              <option value="40+">40+ MUNs</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="ebMunCount">Number of MUNs attended</label>
-          <select id="ebMunCount" required data-required="true">
-            <option value="" disabled selected>Select an option</option>
-            <option value="15-20">15-20</option>
-            <option value="21-30">21-30</option>
-            <option value="31-50">31-50</option>
-            <option value="51+">51 &amp; More</option>
-          </select>
+          <label for="ebExp">Executive Board / Delegate Experience Summary <span style="color:#f87171;">*</span></label>
+          <textarea id="ebExp" placeholder="List your key EB appointments and delegate awards" required data-required="true" style="min-height: 80px;"></textarea>
         </div>
 
         <div class="form-group">
-          <label for="ebExp">MUN Experience (Detailed Summary)</label>
-          <textarea id="ebExp" required data-required="true" style="min-height: 80px;"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="ebWhy">Why should we select you?</label>
-          <textarea id="ebWhy" required data-required="true" style="min-height: 70px;"></textarea>
+          <label for="ebWhy">Proposed Agendas &amp; Vision for Your Committee <span style="color:#f87171;">*</span></label>
+          <textarea id="ebWhy" placeholder="Share 1-2 agenda ideas and your moderation philosophy" required data-required="true" style="min-height: 70px;"></textarea>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextEbStep(1)">Back</button>
-          <button type="button" class="btn-next" onclick="nextEbStep(3)">Committees</button>
+          <button type="button" class="btn-next" onclick="nextEbStep(3)">Next: Committees &amp; CV</button>
         </div>
       </div>
 
-      <!-- STEP 3: PREFERENCES -->
+      <!-- STEP 3: PREFERENCES & CV -->
       <div class="form-step" id="ebStep3">
-        <p style="font-size: 0.75rem; color: var(--gold); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Committee Preferences</p>
-        
-        <div class="form-group">
-          <label for="ebPref1">Preference 1</label>
-          <select id="ebPref1" required data-required="true">
-            <option value="" disabled selected>Select Committee</option>
-            <option value="DISEC">DISEC</option>
-            <option value="LOK SABHA">Lok Sabha</option>
-            <option value="UNHRC">UNHRC</option>
-            <option value="UNSC">UNSC</option>
-            <option value="COMMITTEE X">Committee X</option>
-            <option value="IP (International Press)">IP (International Press)</option>
-          </select>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="ebPref1">Committee Preference 1 <span style="color:#f87171;">*</span></label>
+            <select id="ebPref1" required data-required="true">
+              <option value="" disabled selected>Select Committee 1</option>
+              <option value="DISEC">DISEC</option>
+              <option value="UNHRC">UNHRC</option>
+              <option value="UNSC">UNSC</option>
+              <option value="LOK SABHA">Lok Sabha</option>
+              <option value="COMMITTEE X">Committee X</option>
+              <option value="IP">International Press</option>
+            </select>
+          </div>
+          <div>
+            <label for="ebPref2">Committee Preference 2 <span style="color:#f87171;">*</span></label>
+            <select id="ebPref2" required data-required="true">
+              <option value="" disabled selected>Select Committee 2</option>
+              <option value="DISEC">DISEC</option>
+              <option value="UNHRC">UNHRC</option>
+              <option value="UNSC">UNSC</option>
+              <option value="LOK SABHA">Lok Sabha</option>
+              <option value="COMMITTEE X">Committee X</option>
+              <option value="IP">International Press</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="ebPref2">Preference 2</label>
-          <select id="ebPref2" required data-required="true">
-            <option value="" disabled selected>Select Committee</option>
-            <option value="DISEC">DISEC</option>
-            <option value="LOK SABHA">Lok Sabha</option>
-            <option value="UNHRC">UNHRC</option>
-            <option value="UNSC">UNSC</option>
-            <option value="COMMITTEE X">Committee X</option>
-            <option value="IP (International Press)">IP (International Press)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="ebCv">Upload CV / Portfolio (PDF or Image)</label>
-          <label class="file-upload-wrapper" for="ebCv">
-            <span class="file-upload-btn">Choose File</span>
-            <span class="file-name">No file chosen</span>
-            <input type="file" id="ebCv" class="file-upload-input" accept=".pdf,image/*" required data-required="true" style="display: none;">
-          </label>
+          <label for="ebCv">Executive Board CV / Portfolio <span style="color:#f87171;">*</span></label>
+          <div id="ebCvMount"></div>
+          <input type="file" id="ebCv" class="file-upload-input" accept=".pdf,image/*,.doc,.docx" required data-required="true" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
         </div>
 
         <div class="form-actions">
@@ -2077,6 +2079,12 @@ export const homeHtml = `
       <div class="modal-pretitle">RESOLVE MUN 2.0 · CONTINGENT</div>
       <h2 class="modal-title">DELEGATION REGISTRATION</h2>
       <span class="modal-subtitle">Minimum 6 Delegates · ₹2,200/Delegate · Compete for ₹25,000 Best Delegation Prize</span>
+      <div style="margin-top: 12px; display: flex; justify-content: center;">
+        <button type="button" onclick="closeModalById('delModal'); selectPathway('delegate');" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.22); color: #ffffff; border-radius: 9999px; padding: 6px 14px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+          <span>Registering as an Individual Delegate?</span>
+          <strong style="text-decoration: underline; text-underline-offset: 3px;">Switch to Individual Form &rarr;</strong>
+        </button>
+      </div>
     </div>
     
     <form id="delRegForm" novalidate>
@@ -2138,75 +2146,215 @@ export const homeHtml = `
 
       <!-- STEP 3: PAYMENT & CONFIRMATION -->
       <div class="form-step" id="delStep3">
-        <div class="payment-banner" style="text-align: center; margin-bottom: 14px;">
-          <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #60a5fa; background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.25); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">Delegation Registration</span>
-          <h3 id="delTotalPriceDisplay" style="font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0;">Total Amount: ₹13,200</h3>
-          <p id="delPerDelegateNote" style="font-size: 0.68rem; opacity: 0.7; margin-top: 4px;">(₹2,200 per enrolled delegate · Minimum 6 delegates)</p>
-          <p class="non-refundable-notice" style="font-size: 0.65rem; color: #60a5fa; opacity: 0.9; margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">Payment is non-refundable once submitted</p>
+        <div class="payment-banner" style="text-align: center; margin-bottom: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.18); border-radius: 14px; padding: 14px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+            Institutional Delegation · Cash Prize Eligible
+          </div>
+          <div id="delTotalPriceDisplay" style="font-size: 1.75rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 4px 0 0 0; font-family: 'Inter', system-ui, sans-serif;">Total Amount: ₹13,200</div>
+          <p id="delPerDelegateNote" style="font-size: 11.5px; color: rgba(255,255,255,0.6); margin-top: 4px;">(₹2,200 per enrolled delegate · Minimum 6 delegates)</p>
         </div>
 
         <div class="payment-card">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="text-align: center; margin-bottom: 10px; font-size: 0.65rem; letter-spacing: 0.16em; opacity: 0.7; font-weight: 700;">1. SCAN NAVI / UPI QR CODE VIA ANY UPI APP</label>
+            <label style="text-align: center; margin-bottom: 12px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6; display: block;">1. SCAN UPI QR CODE TO PAY</label>
             <div style="text-align: center;">
-              <div class="qr-container" style="display: inline-block; padding: 10px; background: #fff; border-radius: 12px;">
-                <img id="delPaymentQRImage" src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D13200%26cu%3DINR&bgcolor=ffffff&color=05060c&margin=1" alt="Delegation Payment QR Code" style="width: 160px; height: 160px; display: block; border-radius: 6px;">
+              <div class="qr-container">
+                <img id="delPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D13200%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegation%2520Fee&ecLevel=M&margin=1" alt="Delegation Payment QR Code">
               </div>
 
-              <div class="upi-supported-apps">
-                <span class="upi-app-pill">Navi</span>
-                <span class="upi-app-pill">GPay</span>
-                <span class="upi-app-pill">PhonePe</span>
-                <span class="upi-app-pill">Paytm</span>
-                <span class="upi-app-pill">BHIM</span>
+              <!-- Direct UPI Launch Button for Mobile Users -->
+              <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
+                <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  Pay via UPI App (GPay / PhonePe / Paytm)
+                </a>
               </div>
 
               <div class="upi-box">
                 <span id="delUpiID">6301550628@nyes</span>
-                <button type="button" class="refresh-qr-btn" onclick="const size = parseInt(document.getElementById('delSize').value) || 6; generateDynamicQR((size * (window.__siteSettings?.delegationFee || 2200)).toString(), 'delPaymentQRImage', 'delUpiID')" title="Regenerate QR">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                </button>
                 <button type="button" class="copy-btn" onclick="copyDelUPI()" title="Copy UPI ID">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span style="font-size: 0.7rem; font-weight: 600; margin-left: 4px;">COPY</span>
                 </button>
               </div>
-              <span style="display: block; font-size: 0.68rem; color: #a1a1aa; margin-top: 2px;">Verified Payee: <strong style="color: #fff;">Bejugam Aditya</strong></span>
+              <p class="payment-contact" style="margin-top: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.6);">
+                <span style="color: #22c55e; font-weight: 600;">✓ Verified Payee:</span> <span>Bejugam Aditya</span>
+              </p>
             </div>
+            <p class="payment-note" style="margin-top: 10px;">Scan with any UPI app or transfer directly to the UPI ID</p>
           </div>
 
           <div class="form-group" style="margin-top: 16px;">
-            <label for="delTxnID">2. TRANSACTION / UTR / REFERENCE ID <span style="color:#f87171;">*</span></label>
-            <input type="text" id="delTxnID" placeholder="Enter UPI Transaction ID / 12-digit UTR" required data-required="true">
+            <label>2. TRANSACTION ID / 12-DIGIT UPI UTR <span style="color:#f87171;">*</span></label>
+            <input type="text" id="delTxnID" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Transaction ID" required data-required="true">
           </div>
 
           <div class="form-group">
             <label>3. UPLOAD PAYMENT SCREENSHOT <span style="color:#f87171;">*</span></label>
             <label class="file-upload-wrapper" for="delDriveLink">
               <span class="file-upload-btn">Choose File</span>
-              <span class="file-name" id="delDriveFileName">No file chosen</span>
-              <input type="file" id="delDriveLink" class="file-upload-input" accept="image/*,.pdf" required data-required="true" style="display: none;">
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="delDriveLink" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
             </label>
-            <div id="delScreenshotPreview" style="display: none;" class="payment-screenshot-preview"></div>
           </div>
 
           <div class="form-group">
-            <label for="delUTR">4. ADDITIONAL INFO / QUERIES (OPTIONAL)</label>
+            <label>4. ADDITIONAL INFO / QUERIES (OPTIONAL)</label>
             <input type="text" id="delUTR" placeholder="Any notes or questions for the Secretariat">
           </div>
+        </div>
 
-          <div style="margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-            <p style="font-size: 0.66rem; color: #94a3b8; font-family: ui-monospace, monospace; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">Meridian School, Kompally, Hyderabad</p>
-            <p style="font-size: 0.62rem; color: #64748b; margin: 3px 0 0 0;">Conference Dates: 27th – 29th November 2026</p>
-          </div>
+        <div class="payment-footer">
+          <p class="payment-contact">Verified Payee: <span>Bejugam Aditya</span> &bull; Queries: <span>+91 92121 07797</span></p>
         </div>
 
         <div class="form-actions" style="margin-top: 14px;">
           <button type="button" class="btn-back" onclick="nextDelStep(2)">Back</button>
           <button type="submit" class="btn-next">Submit Delegation</button>
         </div>
-        <p class="terms-confirmation" style="font-size: 0.64rem; color: #64748b; text-align: center; margin-top: 10px;">
-          By submitting, you agree to the <a href="#" onclick="openTermsModal('delegate'); return false;" style="color: #60a5fa; text-decoration: underline;">Delegate Terms &amp; Conditions</a>.
+        <p class="terms-confirmation">
+          By submitting, you agree to the <a href="#" onclick="openTermsModal('delegate'); return false;">Delegate Terms &amp; Conditions</a>.
         </p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- SOCIALS PASS REGISTRATION MODAL -->
+<div class="modal-overlay" id="socialsModal">
+  <div class="modal-content" style="max-width: 640px; max-height: 90vh; overflow-y: auto;">
+    <button class="modal-close" id="closeSocialsModal" onclick="closeModalById('socialsModal')" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="modal-header">
+      <div class="modal-pretitle">RESOLVE MUN 2.0 · SOCIALS NIGHT</div>
+      <h2 class="modal-title">SOCIALS PASS REGISTRATION</h2>
+      <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
+    </div>
+    
+    <form id="socialsRegForm" novalidate>
+      <!-- STEP 1: PERSONAL DETAILS -->
+      <div class="form-step active" id="socialsStep1">
+        <div class="form-group">
+          <label for="socialsName">Full Name <span style="color:#f87171;">*</span></label>
+          <input type="text" id="socialsName" placeholder="Enter your full name" required data-required="true" autocomplete="name">
+        </div>
+        
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="socialsPhone">Contact Number (WhatsApp) <span style="color:#f87171;">*</span></label>
+            <input type="tel" id="socialsPhone" placeholder="10-digit mobile number" required data-required="true" minlength="10" maxlength="10">
+          </div>
+          <div>
+            <label for="socialsEmail">Email ID <span style="color:#f87171;">*</span></label>
+            <input type="email" id="socialsEmail" placeholder="you@example.com" required data-required="true" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;">
+          <div>
+            <label for="socialsInst">School / College / Institution <span style="color:#f87171;">*</span></label>
+            <input type="text" id="socialsInst" placeholder="Enter your school or college" required data-required="true">
+          </div>
+          <div>
+            <label for="socialsGrade">Grade / Year <span style="color:#f87171;">*</span></label>
+            <select id="socialsGrade" required data-required="true">
+              <option value="" disabled selected>Select Grade</option>
+              <option value="8th">8th</option>
+              <option value="9th">9th</option>
+              <option value="10th">10th</option>
+              <option value="11th">11th</option>
+              <option value="12th">12th</option>
+              <option value="Undergraduate / College">Undergraduate / College</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="position: relative;">
+          <label for="socialsDob">Date of Birth <span style="color:#f87171;">*</span></label>
+          <div id="socialsDobMount"></div>
+          <input type="text" id="socialsDob" required data-required="true" readonly tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:1px;width:1px;bottom:0;left:0;">
+        </div>
+
+        <div class="form-group">
+          <label for="socialsReferral">Referral Code (Optional)</label>
+          <input type="text" id="socialsReferral" placeholder="e.g. RES-123" autocomplete="off">
+        </div>
+
+        <div class="form-sticky-footer">
+          <button type="button" class="btn-next btn-full-width" onclick="nextSocialsStep(2)">
+            Next: UPI Payment
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: UPI PAYMENT -->
+      <div class="form-step" id="socialsStep2">
+        <div class="payment-banner">
+          <h3 id="socialsFeeDisplay">Pass Fee: ₹999</h3>
+          <p class="non-refundable-notice">Admit One · Socials Night Access</p>
+        </div>
+
+        <div class="payment-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="text-align: center; margin-bottom: 12px; font-size: 0.65rem; letter-spacing: 0.2em; opacity: 0.6; display: block;">1. SCAN UPI QR CODE TO PAY</label>
+            <div style="text-align: center;">
+              <div class="qr-container">
+                <img id="socialsPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D999%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Socials%2520Pass&ecLevel=M&margin=1" alt="Socials Pass Payment QR Code">
+              </div>
+
+              <!-- Direct UPI Launch Button for Mobile Users -->
+              <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
+                <a id="socialsPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=999&cu=INR&tn=Resolve%20MUN%202026%20Socials%20Pass" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  Pay via UPI App (GPay / PhonePe / Paytm)
+                </a>
+              </div>
+
+              <div class="upi-box">
+                <span id="socialsUpiID">6301550628@nyes</span>
+                <button type="button" class="copy-btn" onclick="copyUPI()" title="Copy UPI ID">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span style="font-size: 0.7rem; font-weight: 600; margin-left: 4px;">COPY</span>
+                </button>
+              </div>
+              <p class="payment-contact" style="margin-top: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.6);">
+                <span style="color: #22c55e; font-weight: 600;">✓ Verified Payee:</span> <span>Bejugam Aditya</span>
+              </p>
+            </div>
+            <p class="payment-note" style="margin-top: 10px;">Scan with any UPI app or transfer directly to the UPI ID</p>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
+            <label for="socialsTxnID">2. 12-DIGIT UPI UTR / REFERENCE ID <span style="color:#f87171;">*</span></label>
+            <input type="text" id="socialsTxnID" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Reference ID" required data-required="true">
+          </div>
+
+          <div class="form-group">
+            <label>3. UPLOAD PAYMENT SCREENSHOT <span style="color:#f87171;">*</span></label>
+            <label class="file-upload-wrapper" for="socialsDriveLink">
+              <span class="file-upload-btn">Choose File</span>
+              <span class="file-name">No file chosen</span>
+              <input type="file" id="socialsDriveLink" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
+            </label>
+          </div>
+        </div>
+
+        <div class="payment-footer">
+          <p class="payment-contact">Verified Payee: <span>Bejugam Aditya</span> &bull; Queries: <span>+91 92121 07797</span></p>
+        </div>
+
+        <div class="form-actions" style="margin-top: 14px;">
+          <button type="button" class="btn-back" onclick="nextSocialsStep(1)">Back</button>
+          <button type="submit" class="btn-next">Submit Socials Pass</button>
+        </div>
       </div>
     </form>
   </div>

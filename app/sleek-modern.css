@@ -39,7 +39,6 @@ section,
 body.modal-locked {
   overflow: hidden !important;
   overscroll-behavior: none !important;
-  touch-action: none !important;
 }
 
 /* --- ERADICATE MODAL PARTICLES & FULLSCREEN WHITE GLITCHES --- */
@@ -62,45 +61,63 @@ body.modal-locked {
   position: relative !important;
 }
 
-/* --- APPLICATION MODAL OVERLAYS (SUBTLE, MINIMAL, NO STUPID PARTICLES) --- */
+/* --- APPLICATION MODAL OVERLAYS (ZERO LAG, CRISP MONOCHROME) --- */
 .modal-overlay {
-  background: rgba(4, 5, 12, 0.85) !important;
-  backdrop-filter: blur(22px) !important;
-  -webkit-backdrop-filter: blur(22px) !important;
+  background: rgba(0, 0, 0, 0.88) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
   padding: 16px !important;
   z-index: 100000 !important;
-  overflow: hidden !important;
-  overscroll-behavior: none !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
 }
 
-/* Flat, Defined Dialogue Box (Auth Page Style, Zero Visible Scrollbars) */
+/* Flat, Defined Dialogue Box with Smooth Native Scrolling */
 .modal-content,
 .selection-modal-content,
 .terms-modal-content {
   width: 100% !important;
-  max-width: 540px !important;
-  max-height: 88vh !important;
-  background: #080911 !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  border-radius: 18px !important; /* Smooth squircle dialogue box */
+  max-width: 660px !important;
+  max-height: 90vh !important;
+  background: #050505 !important;
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+  border-radius: 20px !important;
   padding: 24px 28px !important;
-  box-shadow: 
-    0 24px 70px rgba(0, 0, 0, 0.95),
-    0 0 35px rgba(99, 102, 241, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.96),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
   overscroll-behavior: contain !important;
   transform: none !important;
-  scrollbar-width: none !important; /* Hide Firefox scrollbar */
-  -ms-overflow-style: none !important; /* Hide IE/Edge scrollbar */
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent !important;
 }
 
 .modal-content::-webkit-scrollbar,
 .selection-modal-content::-webkit-scrollbar,
 .terms-modal-content::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  display: block !important;
+  width: 6px !important;
+}
+
+.modal-content::-webkit-scrollbar-track,
+.selection-modal-content::-webkit-scrollbar-track,
+.terms-modal-content::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.modal-content::-webkit-scrollbar-thumb,
+.selection-modal-content::-webkit-scrollbar-thumb,
+.terms-modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.32) !important;
+  border-radius: 999px !important;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover,
+.selection-modal-content::-webkit-scrollbar-thumb:hover,
+.terms-modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.55) !important;
 }
 
 .selection-modal-content {
@@ -201,6 +218,7 @@ body.modal-locked {
 }
 
 @media (max-width: 600px) {
+
   .selection-top-grid,
   .selection-bottom-grid {
     grid-template-columns: 1fr !important;
@@ -209,7 +227,8 @@ body.modal-locked {
 
 .selection-card {
   min-height: 110px !important;
-  border-radius: 14px !important; /* Squircle with softly rounded corners */
+  border-radius: 14px !important;
+  /* Squircle with softly rounded corners */
   padding: 14px 16px !important;
   background: rgba(255, 255, 255, 0.03) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -351,26 +370,27 @@ body.modal-locked {
 .form-group label {
   display: block !important;
   font-family: 'Inter', system-ui, sans-serif !important;
-  font-size: 0.64rem !important;
+  font-size: 0.68rem !important;
   font-weight: 600 !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
-  color: rgba(255, 255, 255, 0.65) !important;
-  margin-bottom: 3px !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  margin-bottom: 6px !important;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100% !important;
-  height: 38px !important;
-  padding: 6px 12px !important;
-  border-radius: 10px !important; /* Square with smoothly rounded corners */
+  height: 40px !important;
+  padding: 8px 12px !important;
+  border-radius: 10px !important;
+  /* Square with smoothly rounded corners */
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
   background: rgba(255, 255, 255, 0.035) !important;
   color: #ffffff !important;
   font-family: 'Inter', system-ui, sans-serif !important;
-  font-size: 0.8rem !important;
+  font-size: 0.82rem !important;
   outline: none !important;
   box-sizing: border-box !important;
   transition: border-color 0.15s ease, background 0.15s ease !important;
@@ -378,7 +398,10 @@ body.modal-locked {
 
 .form-group textarea {
   height: auto !important;
-  min-height: 58px !important;
+  min-height: 70px !important;
+  line-height: 1.45 !important;
+  padding: 10px 12px !important;
+  resize: vertical !important;
 }
 
 .form-group input:focus,
@@ -417,7 +440,8 @@ body.modal-locked {
 .btn-next {
   height: 38px !important;
   padding: 0 18px !important;
-  border-radius: 10px !important; /* Square with smoothly rounded corners */
+  border-radius: 10px !important;
+  /* Square with smoothly rounded corners */
   font-family: 'Inter', system-ui, sans-serif !important;
   font-size: 0.74rem !important;
   font-weight: 700 !important;
@@ -454,7 +478,8 @@ body.modal-locked {
   height: 46px !important;
   min-height: 46px !important;
   padding: 0 28px !important;
-  border-radius: 12px !important; /* Square button with smoothly rounded corners */
+  border-radius: 12px !important;
+  /* Square button with smoothly rounded corners */
   font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
   font-size: 0.82rem !important;
   font-weight: 700 !important;
@@ -463,7 +488,7 @@ body.modal-locked {
   color: #ffffff !important;
   background: linear-gradient(180deg, rgba(35, 30, 50, 0.95) 0%, rgba(18, 16, 28, 0.98) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  box-shadow: 
+  box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.7),
     inset 0 1px 1px rgba(255, 255, 255, 0.4),
@@ -484,15 +509,13 @@ body.modal-locked {
   inset: -1px !important;
   border-radius: 12px !important;
   padding: 1.5px !important;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.7) 0%,
-    rgba(99, 102, 241, 0.9) 20%,
-    rgba(236, 72, 153, 0.9) 45%,
-    rgba(234, 179, 8, 0.8) 65%,
-    rgba(59, 130, 246, 0.9) 85%,
-    rgba(255, 255, 255, 0.7) 100%
-  ) !important;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.7) 0%,
+      rgba(99, 102, 241, 0.9) 20%,
+      rgba(236, 72, 153, 0.9) 45%,
+      rgba(234, 179, 8, 0.8) 65%,
+      rgba(59, 130, 246, 0.9) 85%,
+      rgba(255, 255, 255, 0.7) 100%) !important;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
   -webkit-mask-composite: xor !important;
@@ -506,7 +529,7 @@ body.modal-locked {
 #register .cta-actions .adaptive-hero-btn:hover,
 .cta-btn-hero-match:hover {
   transform: translateY(-2px) scale(1.01) !important;
-  box-shadow: 
+  box-shadow:
     0 0 25px rgba(99, 102, 241, 0.45),
     0 12px 30px rgba(0, 0, 0, 0.85),
     inset 0 1px 2px rgba(255, 255, 255, 0.6) !important;
@@ -537,90 +560,208 @@ body.modal-locked {
   border-radius: 12px !important;
 }
 
-/* --- PAYMENT COMPONENT STYLING --- */
+/* --- PAYMENT COMPONENT STYLING (MATCHING INDEX_ARCHIVE.HTML) --- */
 .payment-banner {
-  background: linear-gradient(135deg, rgba(49, 46, 129, 0.4) 0%, rgba(88, 28, 135, 0.4) 100%) !important;
-  padding: 8px 12px !important;
-  border-radius: 10px !important;
-  margin-bottom: 10px !important;
-  border: 1px solid rgba(129, 140, 248, 0.25) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+  padding: 16px !important;
+  text-align: center !important;
+  margin-bottom: 16px !important;
 }
 
 .payment-banner h3 {
   font-family: 'Inter', system-ui, sans-serif !important;
-  font-size: 0.82rem !important;
-  font-weight: 700 !important;
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+
+.payment-banner .non-refundable-notice {
+  font-size: 0.68rem !important;
+  color: #f87171 !important;
+  opacity: 0.9 !important;
+  margin-top: 6px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
 }
 
 .payment-card {
-  background: linear-gradient(180deg, rgba(13, 16, 28, 0.9) 0%, rgba(7, 9, 16, 0.98) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 14px !important;
-  padding: 20px 18px !important;
-  margin-bottom: 14px !important;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  background: #090909 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 16px !important;
+  padding: 22px 18px !important;
+  margin-bottom: 16px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6) !important;
 }
 
 .qr-container {
-  width: 175px !important;
-  height: 175px !important;
-  margin: 0 auto 12px !important;
+  width: 170px !important;
+  height: 170px !important;
+  margin: 0 auto 14px !important;
   padding: 10px !important;
-  border-radius: 14px !important;
+  border-radius: 12px !important;
   background: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.22), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease !important;
-}
-
-.qr-container:hover {
-  transform: scale(1.02) !important;
-  box-shadow: 0 0 35px rgba(168, 85, 247, 0.35), 0 12px 30px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
 }
 
 .qr-container img {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   display: block !important;
 }
 
 .qr-container::after {
-  content: '' !important;
-  position: absolute !important;
-  inset: -2px !important;
-  border-radius: 16px !important;
-  padding: 2px !important;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.6), rgba(59, 130, 246, 0.4), rgba(212, 175, 55, 0.5)) !important;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
-  -webkit-mask-composite: xor !important;
-  mask-composite: exclude !important;
-  pointer-events: none !important;
+  display: none !important;
 }
 
 .upi-box {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  padding: 8px 14px !important;
-  border-radius: 10px !important;
-  font-size: 0.82rem !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-size: 0.88rem !important;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 10px !important;
-  color: #f1f5f9 !important;
-  margin: 6px 0 12px !important;
+  color: #ffffff !important;
+  margin: 8px 0 10px !important;
   transition: all 0.2s ease !important;
 }
 
 .upi-box:hover {
   background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(168, 85, 247, 0.4) !important;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.upi-mobile-pay-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 320px !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+.upi-mobile-pay-btn:hover {
+  background: #e2e8f0 !important;
+  transform: translateY(-1px) !important;
+}
+
+.upi-mobile-pay-btn:active {
+  transform: translateY(0) !important;
+}
+
+.copy-btn {
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
+  transition: color 0.15s, transform 0.15s !important;
+}
+
+.copy-btn:hover {
+  color: #ffffff !important;
+  transform: scale(1.1) !important;
+}
+
+.payment-note {
+  font-size: 0.78rem !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  margin-top: 6px !important;
+  font-style: normal !important;
+  text-align: center !important;
+}
+
+.file-upload-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  height: 44px !important;
+  padding: 4px 10px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  cursor: pointer !important;
+  transition: border-color 0.15s ease, background 0.15s ease !important;
+}
+
+.file-upload-wrapper:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.file-upload-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 14px !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  flex-shrink: 0 !important;
+}
+
+.file-name {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  flex: 1 !important;
+}
+
+.payment-footer {
+  text-align: center !important;
+  margin-top: 18px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.payment-contact {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.82rem !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  letter-spacing: 0.02em !important;
+}
+
+.payment-contact span {
+  color: #ffffff !important;
+  font-weight: 600 !important;
 }
 
 .upi-supported-apps {
@@ -670,36 +811,91 @@ body.modal-locked {
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
-/* --- MOBILE SLEEK REFINEMENT --- */
+/* --- MOBILE SLEEK REFINEMENT (320px - 640px) --- */
 @media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
   .modal-content,
   .selection-modal-content,
   .terms-modal-content {
-    max-width: 95% !important;
-    padding: 18px 16px !important;
-    border-radius: 8px !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 92dvh !important;
+    margin: auto 0 0 0 !important;
+    padding: 20px 16px calc(32px + env(safe-area-inset-bottom, 24px)) !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
   }
-  
-  .selection-grid {
+
+  /* Collapse all inline 2-column form grids to single column on mobile */
+  .modal-content .form-group[style*="grid-template-columns"],
+  #pref1_portfolios,
+  #pref2_portfolios,
+  #pref3_portfolios {
     grid-template-columns: 1fr !important;
-    gap: 8px !important;
+    gap: 12px !important;
+  }
+
+  .selection-grid,
+  .selection-top-grid,
+  .selection-bottom-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
   }
 
   .selection-card {
     min-height: auto !important;
-    padding: 12px 14px !important;
-    border-radius: 6px !important;
+    padding: 14px 16px !important;
+    border-radius: 12px !important;
   }
 
+  /* Prevent iOS Safari auto-zoom by enforcing 16px font size on mobile form fields */
   .form-group input,
   .form-group select,
   .form-group textarea {
-    height: 35px !important;
+    height: 44px !important;
+    font-size: 16px !important;
+    padding: 8px 12px !important;
+  }
+
+  .form-group textarea {
+    height: auto !important;
+    min-height: 76px !important;
+  }
+
+  .typeform-step-indicator {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    padding: 6px 8px !important;
+  }
+
+  .step-pill {
+    font-size: 0.62rem !important;
+    padding: 4px 8px !important;
+  }
+
+  .btn-back,
+  .btn-next {
+    height: 44px !important;
     font-size: 0.78rem !important;
+    padding: 0 16px !important;
   }
 
   .cta-btn-hero-match {
     width: 100% !important;
     padding: 0 16px !important;
+  }
+
+  .qr-container {
+    width: 185px !important;
+    height: 185px !important;
   }
 }

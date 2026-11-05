@@ -543,6 +543,9 @@ var ShaderMount = class {
     visualViewport?.removeEventListener("resize", this.handleVisualViewportChange);
     document.removeEventListener("visibilitychange", this.handleDocumentVisibilityChange);
     this.uniformLocations = {};
+    try {
+      this.gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    } catch (_) {}
     this.canvasElement.remove();
     delete this.parentElement.paperShaderMount;
   };
@@ -1370,13 +1373,36 @@ var ShaderMount2 = forwardRef(
     ...divProps
   }, forwardedRef) {
     const [isInitialized, setIsInitialized] = useState(false);
+    const [inView, setInView] = useState(false);
     const divRef = useRef2(null);
     const shaderMountRef = useRef2(null);
     const webGlContextAttributesRef = useRef2(webGlContextAttributes);
+    const isLowPower = typeof window !== "undefined" && (
+      window.matchMedia?.("(max-width: 768px), (pointer: coarse)").matches ||
+      (navigator.deviceMemory && navigator.deviceMemory <= 4)
+    );
+    const effMinPixelRatio = isLowPower ? 1 : minPixelRatio;
+    const effMaxPixelCount = isLowPower ? 360000 : maxPixelCount;
+    // Only hold a WebGL context while the shader is on/near screen (prevents mobile GPU crash-reload loops)
     useEffect(() => {
+      const el = divRef.current;
+      if (!el || typeof IntersectionObserver === "undefined") {
+        setInView(true);
+        return;
+      }
+      const io = new IntersectionObserver(
+        ([entry]) => setInView(entry.isIntersecting),
+        { rootMargin: "200px 0px" }
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    }, []);
+    useEffect(() => {
+      if (!inView) return;
+      let cancelled = false;
       const initShader = async () => {
         const uniforms = await processUniforms(uniformsProp);
-        if (divRef.current && !shaderMountRef.current) {
+        if (!cancelled && divRef.current && !shaderMountRef.current) {
           shaderMountRef.current = new ShaderMount(
             divRef.current,
             fragmentShader,
@@ -1384,8 +1410,8 @@ var ShaderMount2 = forwardRef(
             webGlContextAttributesRef.current,
             speed,
             frame,
-            minPixelRatio,
-            maxPixelCount,
+            effMinPixelRatio,
+            effMaxPixelCount,
             mipmaps
           );
           setIsInitialized(true);
@@ -1393,10 +1419,12 @@ var ShaderMount2 = forwardRef(
       };
       initShader();
       return () => {
+        cancelled = true;
         shaderMountRef.current?.dispose();
         shaderMountRef.current = null;
+        setIsInitialized(false);
       };
-    }, [fragmentShader]);
+    }, [fragmentShader, inView]);
     useEffect(() => {
       let isStale = false;
       const updateUniforms = async () => {
@@ -1414,11 +1442,11 @@ var ShaderMount2 = forwardRef(
       shaderMountRef.current?.setSpeed(speed);
     }, [speed, isInitialized]);
     useEffect(() => {
-      shaderMountRef.current?.setMaxPixelCount(maxPixelCount);
-    }, [maxPixelCount, isInitialized]);
+      shaderMountRef.current?.setMaxPixelCount(effMaxPixelCount);
+    }, [effMaxPixelCount, isInitialized]);
     useEffect(() => {
-      shaderMountRef.current?.setMinPixelRatio(minPixelRatio);
-    }, [minPixelRatio, isInitialized]);
+      shaderMountRef.current?.setMinPixelRatio(effMinPixelRatio);
+    }, [effMinPixelRatio, isInitialized]);
     useEffect(() => {
       shaderMountRef.current?.setFrame(frame);
     }, [frame, isInitialized]);

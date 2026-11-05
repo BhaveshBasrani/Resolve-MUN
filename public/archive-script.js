@@ -37,28 +37,119 @@
   // UTILITY FUNCTIONS (QR & VALIDATION)
   // ==========================================
 
-  const DELEGATE_BASE_FEE = 2799;
+  const DELEGATE_BASE_FEE = 2500;
   const REFERRAL_CODE_PRICING = {
-    SBXS2026: 2599,
-    AETHERXR2026: 2499,
-    DIYA: 2499,
+    SBXS2026: 2400,
+    AETHERXR2026: 2399,
+    DIYA: 2399,
     ICFAI: 2000,
-    NYA200: 2699,
-    SOLARIS: 2599,
-    PROMOTION: 2349,
-    UNT100: 2349,
-    HET100: 2399,
-    YCE200: 2399,
-    AN69: 2399,
-    ATHENAXR2026: 2699,
-    STYLE100: 2599,
-    TTG300: 2300,
-    PARNIKA200: 2449,
-    RAYON67: 2349,
-    IRISXRESOLVE: 2499,
-    ABHINAYA200: 2499,
+    NYA200: 2400,
+    SOLARIS: 2400,
+    PROMOTION: 2300,
+    UNT100: 2300,
+    HET100: 2350,
+    YCE200: 2350,
+    AN69: 2350,
+    ATHENAXR2026: 2400,
+    STYLE100: 2400,
+    TTG300: 2200,
+    PARNIKA200: 2350,
+    RAYON67: 2250,
+    IRISXRESOLVE: 2399,
+    ABHINAYA200: 2399,
     SKA200: 1999,
+    // Secretariat & OC Official Ambassadors
+    AVETE99: 2350,
+    BHAFN01: 2350,
+    POOCF02: 2350,
+    RAYFM03: 2350,
+    JAYFM04: 2350,
+    NIKSH05: 2350,
+    AARCL06: 2350,
+    SNVPU99: 2350,
+    SWASG07: 2350,
+    KANDG08: 2350,
+    ROHDD09: 2350,
+    DHACS10: 2350,
+    JOTDC11: 2350,
+    RAACA12: 2350,
+    RISCO13: 2350,
+    ABHCA14: 2350,
+    ADYSA15: 2350,
+    GAYFH16: 2350,
+    AARDM17: 2350,
+    ABHCC18: 2350,
+    HIMCI19: 2350,
+    DEVOC20: 2350,
+    DHASP21: 2350,
+    HAVST22: 2350,
+    NIPLG23: 2350,
+    MEGDA24: 2350,
+    RYAMK25: 2350,
+    SHRPL26: 2350,
+    TANHP27: 2350,
+    HEMOR28: 2350,
+    AKAUF29: 2350,
+    ANAUO30: 2350,
+    CHAUO31: 2350,
+    LIKUM32: 2350,
+    VAIUM33: 2350,
+    ISHUD34: 2350,
+    MOKUD35: 2350,
+    PARUD36: 2350,
+    NIYUH37: 2350,
+    SAAUH38: 2350,
+    DEEUC39: 2350,
+    PRAUC40: 2350,
+    VIGUP41: 2350,
+    YUVUT42: 2350,
+  };
 
+  const REFERRAL_AMBASSADORS = {
+    AVETE99: "Abhilash Vijayakumar",
+    BHAFN01: "Bhavesh",
+    POOCF02: "Poorvika",
+    RAYFM03: "Rayon",
+    JAYFM04: "Jayakrishna",
+    NIKSH05: "Nikhilesh",
+    AARCL06: "Aarav",
+    SNVPU99: "Saanvi",
+    SWASG07: "Swayam",
+    KANDG08: "Kanishka",
+    ROHDD09: "Rohan",
+    DHACS10: "Dhanvi",
+    JOTDC11: "Jotshna",
+    RAACA12: "Raahil",
+    RISCO13: "Risheeth",
+    ABHCA14: "Abhik",
+    ADYSA15: "Advith",
+    GAYFH16: "Gayathri",
+    AARDM17: "Aarushi",
+    ABHCC18: "Abhinaya",
+    HIMCI19: "Hima Varshith",
+    DEVOC20: "Devansh",
+    DHASP21: "Dhairya",
+    HAVST22: "Havish",
+    NIPLG23: "Nipun",
+    MEGDA24: "Meghana",
+    RYAMK25: "Ryan",
+    SHRPL26: "Shresth",
+    TANHP27: "Tanishka",
+    HEMOR28: "Hemanth",
+    AKAUF29: "Akanksha",
+    ANAUO30: "Anaitha",
+    CHAUO31: "Chaitanya",
+    LIKUM32: "Likhith",
+    VAIUM33: "Vaishnavi",
+    ISHUD34: "Ishika",
+    MOKUD35: "Moksha",
+    PARUD36: "Parinithi",
+    NIYUH37: "Niyati",
+    SAAUH38: "Saanvi",
+    DEEUC39: "Deeksha",
+    PRAUC40: "Pragnhavi",
+    VIGUP41: "Vignesh",
+    YUVUT42: "Yuvraj",
   };
 
   function normalizeReferralCode(code) {
@@ -75,7 +166,7 @@
     const fee = getDelegateFeeFromReferral();
     const feeDisplay = document.getElementById('regFeeDisplay');
     if (feeDisplay) {
-      feeDisplay.innerText = `Registration Fee: ₹${fee}`;
+      feeDisplay.innerText = `Registration Fee: ₹${Number(fee).toLocaleString("en-IN")}`;
     }
     generateDynamicQR(String(fee), 'paymentQRImage', 'upiID');
 
@@ -88,7 +179,9 @@
       } else if (REFERRAL_CODE_PRICING[referralVal]) {
         const applied = REFERRAL_CODE_PRICING[referralVal];
         const savings = DELEGATE_BASE_FEE - applied;
-        feedbackEl.innerText = `Valid code applied — Pay ₹${applied}${savings > 0 ? ` (You save ₹${savings})` : ''}`;
+        const ambassador = REFERRAL_AMBASSADORS[referralVal];
+        const ambassadorNote = ambassador ? ` (${ambassador})` : '';
+        feedbackEl.innerText = `Valid referral code applied${ambassadorNote} — Pay ₹${Number(applied).toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${Number(savings).toLocaleString("en-IN")})` : ''}`;
         feedbackEl.style.color = '#22c55e';
       } else {
         feedbackEl.innerText = 'Referral code not recognized';
@@ -101,16 +194,16 @@
     updateDelegatePaymentUI();
   }
 
-  // 1. Dynamic QR Generator (Ad-Blocker Safe & QuickChart API)
+  // 1. Dynamic UPI QR Generator (Ad-Blocker Safe QuickChart API with Local Fallback)
   async function generateDynamicQR(amountStr, imgElementId, upiTextElementId) {
-    let cleanAmount = "2199";
+    let cleanAmount = "2500";
     if (amountStr) {
-      cleanAmount = String(amountStr).replace(/[^0-9.]/g, '') || "2199";
+      cleanAmount = String(amountStr).replace(/[^0-9.]/g, '') || "2500";
     }
 
     const currentPayee = {
-      pa: "bhoomianilbasrani@okhdfcbank",
-      pn: "Bhoomi Basrani"
+      pa: (typeof window !== 'undefined' && window.__siteSettings?.upiId) || "6301550628@nyes",
+      pn: (typeof window !== 'undefined' && window.__siteSettings?.upiPayee) || "Bejugam Aditya"
     };
 
     const upiText = document.getElementById(upiTextElementId);
@@ -118,13 +211,46 @@
       upiText.innerText = currentPayee.pa;
     }
 
+    let categoryNote = "Resolve MUN 2026 Delegate Fee";
+    let mobileLinkId = "payUpiMobileLink";
+    let scanLabelId = "paymentQRScanLabel";
+
+    if (imgElementId === "ocPaymentQRImage") {
+      categoryNote = "Resolve MUN 2026 OC Fee";
+      mobileLinkId = "ocPayUpiMobileLink";
+      scanLabelId = "ocQRScanLabel";
+    } else if (imgElementId === "delPaymentQRImage") {
+      categoryNote = "Resolve MUN 2026 Delegation Fee";
+      mobileLinkId = "delPayUpiMobileLink";
+      scanLabelId = "delQRScanLabel";
+    } else if (imgElementId === "socialsPaymentQRImage") {
+      categoryNote = "Resolve MUN 2026 Socials Pass";
+      mobileLinkId = "socialsPayUpiMobileLink";
+      scanLabelId = "socialsQRScanLabel";
+    }
+
+    const upiUri = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&tn=${encodeURIComponent(categoryNote)}`;
+
+    const mobileLink = document.getElementById(mobileLinkId);
+    if (mobileLink) {
+      mobileLink.href = upiUri;
+    }
+
+    const scanLabel = document.getElementById(scanLabelId);
+    if (scanLabel) {
+      scanLabel.innerText = `SCAN & PAY ₹${Number(cleanAmount).toLocaleString("en-IN")}`;
+    }
+
     const qrImage = document.getElementById(imgElementId);
-    if (!qrImage) return;
-
-    const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR`;
-    const safeEncodedData = encodeURIComponent(upiString);
-
-    qrImage.src = `https://quickchart.io/qr?size=320&text=${safeEncodedData}`;
+    if (qrImage) {
+      const dynamicUrl = `https://quickchart.io/qr?size=300&text=${encodeURIComponent(upiUri)}`;
+      qrImage.crossOrigin = "anonymous";
+      qrImage.onerror = () => {
+        qrImage.onerror = null;
+        qrImage.src = "/images/upi-qr.png";
+      };
+      qrImage.src = dynamicUrl;
+    }
   }
 
   // 2. Form Validation Error Handling
@@ -779,18 +905,6 @@
   if (closeSelectionModalBtn) closeSelectionModalBtn.onclick = closeSelection;
 
   function selectPathway(type) {
-    /*
-    if (typeof window.isLive !== 'undefined' && !window.isLive) {
-      if (type === 'oc') {
-        openOcRegistration();
-      } else if (type === 'eb') {
-        openEbRegistration();
-      } else {
-        openSelection();
-      }
-      return;
-    }
-    */
     closeSelection();
     if (type === 'delegate') {
       openRegistration();
@@ -800,6 +914,43 @@
       openOcRegistration();
     } else if (type === 'eb') {
       openEbRegistration();
+    } else if (type === 'socials') {
+      openSocialsRegistration();
+    } else if (type === 'secretariat') {
+      openSecRegistration();
+    }
+  }
+
+  function openSocialsRegistration() {
+    if (typeof restoreSocialsFormData === 'function') restoreSocialsFormData();
+    const socialsModal = document.getElementById('socialsModal');
+    if (socialsModal) {
+      socialsModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeSocialsRegistration() {
+    const socialsModal = document.getElementById('socialsModal');
+    if (socialsModal) {
+      socialsModal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  function openSecRegistration() {
+    const secModal = document.getElementById('secModal');
+    if (secModal) {
+      secModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeSecRegistration() {
+    const secModal = document.getElementById('secModal');
+    if (secModal) {
+      secModal.classList.remove('active');
+      document.body.style.overflow = '';
     }
   }
 
@@ -924,7 +1075,9 @@
   document.querySelectorAll('.file-upload-input').forEach(input => {
     input.addEventListener('change', function () {
       const wrapper = this.closest('.file-upload-wrapper');
+      if (!wrapper) return;
       const fileNameSpan = wrapper.querySelector('.file-name');
+      if (!fileNameSpan) return;
 
       if (this.files && this.files.length > 0) {
         const file = this.files[0];
@@ -961,7 +1114,7 @@
     'pref1_committee', 'pref1_port1', 'pref1_port2', 'pref1_role',
     'pref2_committee', 'pref2_port1', 'pref2_port2', 'pref2_role',
     'pref3_committee', 'pref3_port1', 'pref3_port2', 'pref3_role',
-    'regTxnID', 'regDriveLink', 'regUTR'
+    'regTxnID', 'regAdditionalInfo', 'regUTR'
   ];
 
   function saveFormData() {
@@ -970,6 +1123,10 @@
       const el = document.getElementById(id);
       if (el) saved[id] = el.value;
     });
+    const activeStep = document.querySelector('#regModal .form-step.active');
+    if (activeStep && activeStep.id) {
+      saved._activeStep = parseInt(activeStep.id.replace('step', ''), 10) || 1;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
   }
 
@@ -986,6 +1143,9 @@
             val = 'LOK SABHA';
           }
           el.value = val;
+          if (id === 'regDob') {
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
         }
       });
       // Re-trigger committee UI updates so containers/roles show correctly
@@ -993,7 +1153,6 @@
         const commVal = saved['pref' + n + '_committee'];
         if (commVal) {
           updatePortfolioOptions(n);
-          // Special handling for Portfolios/Role fields that were dynamically generated/hidden
           const port1 = document.getElementById('pref' + n + '_port1');
           const port2 = document.getElementById('pref' + n + '_port2');
           const role = document.getElementById('pref' + n + '_role');
@@ -1002,6 +1161,14 @@
           if (role && saved['pref' + n + '_role']) role.value = saved['pref' + n + '_role'];
         }
       });
+      if (saved._activeStep && saved._activeStep >= 1 && saved._activeStep <= 3) {
+        const modal = document.getElementById('regModal');
+        if (modal) {
+          modal.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+          const target = modal.querySelector('#step' + saved._activeStep);
+          if (target) target.classList.add('active');
+        }
+      }
     } catch (_) { }
   }
 
@@ -1028,22 +1195,15 @@
   }
 
   function openRegistration() {
-    if (typeof window !== 'undefined' && localStorage.getItem('resolve_user_registered') === 'true') {
-      showCustomAlert('You are already registered! Redirecting to your Delegate Dashboard...', 'success', 3000);
-      setTimeout(() => { window.location.href = '/dashboard'; }, 800);
-      return;
-    }
     restoreFormData();
     regModal.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
 
   function closeRegistration() {
+    saveFormData();
     regModal.classList.remove('active');
     document.body.style.overflow = '';
-    // Reset to step 1
-    nextStep(1);
-    regForm.reset();
   }
 
   function copyUPI() {
@@ -1064,12 +1224,14 @@
     if (stepNum > currentStepNum) {
       const inputs = currentActiveStep.querySelectorAll('input[required], select[required], textarea[required]');
       let isValid = true;
+      let firstInvalid = null;
 
       inputs.forEach(input => {
-        if (input.offsetParent === null) return;
+        const isDobField = input.id === 'regDob';
+        if (input.offsetParent === null && !isDobField) return;
 
         let inputLineValid = true;
-        let errMsg = "This field is required.";
+        let errMsg = isDobField ? "Please select your date of birth." : "This field is required.";
 
         if (!input.value.trim()) {
           inputLineValid = false;
@@ -1084,6 +1246,7 @@
         if (!inputLineValid) {
           showError(input, errMsg);
           isValid = false;
+          if (!firstInvalid) firstInvalid = isDobField ? (document.getElementById('regDobMount') || input.parentElement) : input;
         } else {
           clearError(input);
         }
@@ -1099,12 +1262,18 @@
               showError(p1, "Portfolios must be unique.");
               showError(p2, "Portfolios must be unique.");
               isValid = false;
+              if (!firstInvalid) firstInvalid = p1;
             }
           }
         }
       }
 
-      if (!isValid) return;
+      if (!isValid) {
+        if (firstInvalid && firstInvalid.scrollIntoView) {
+          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
     }
 
     if (stepNum === 3) {
@@ -1114,6 +1283,9 @@
     modal.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
     const targetStep = modal.querySelector('#step' + stepNum);
     if (targetStep) targetStep.classList.add('active');
+
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
 
     const progressSteps = document.querySelectorAll('#regModal .progress-step');
     progressSteps.forEach((step, idx) => {
@@ -1291,6 +1463,10 @@
         payment_utr: utrVal,
         paymentUTR: utrVal,
         payment_screenshot_link: fileBase64,
+        paymentScreenshotBase64: fileBase64,
+        screenshotBase64: fileBase64,
+        screenshotName: fileName,
+        fileName: fileName,
 
         pref1_committee: document.getElementById("pref1_committee").value,
         pref1_country: document.getElementById("pref1_role")?.value ||
@@ -1341,12 +1517,28 @@
         }
       }
 
-      showCustomAlert('Registration successful! Confirmation email sent. Redirecting to your dashboard...', 'success', 5000);
+      const ticketId = (submitRes && (submitRes.regId || submitRes.delegateId)) || `RM26-DEL-${Math.floor(1000 + Math.random() * 9000)}`;
       clearFormData();
+      regForm.reset();
+      nextStep(1);
       closeRegistration();
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1500);
+      if (typeof window.showPaymentReceiptModal === 'function') {
+        window.showPaymentReceiptModal({
+          ticketId,
+          amount: data.registration_fee,
+          date: new Date(),
+          cardHolder: nameVal,
+          utrNumber: utrVal,
+          passCategory: "Delegate Pass",
+          barcodeValue: ticketId,
+          onContinue: () => { window.location.href = '/dashboard'; }
+        });
+      } else {
+        showCustomAlert('Registration successful! Confirmation email sent. Redirecting to your dashboard...', 'success', 5000);
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+      }
     } catch (err) {
       showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
     } finally {
@@ -1379,7 +1571,7 @@
   const DEL_STORAGE_KEY = 'resolveMunDelRegForm';
   const delFormFieldIds = [
     'delInstName', 'delAdviserName', 'delAdviserPhone', 'delAdviserEmail', 'delSize',
-    'delTxnID', 'delUTR'
+    'delReferral', 'delTxnID', 'delUTR'
   ];
 
   function saveDelFormData() {
@@ -1396,6 +1588,11 @@
       container.querySelectorAll('input, select').forEach(input => {
         saved[input.name] = input.value;
       });
+    }
+
+    const activeStep = document.querySelector('#delModal .form-step.active');
+    if (activeStep && activeStep.id) {
+      saved._activeStep = parseInt(activeStep.id.replace('delStep', ''), 10) || 1;
     }
 
     localStorage.setItem(DEL_STORAGE_KEY, JSON.stringify(saved));
@@ -1418,6 +1615,12 @@
       updateDelPrice();
       // Re-generate delegate fields which will use the saved values
       updateDelegateFields();
+
+      if (saved._activeStep && saved._activeStep >= 1 && saved._activeStep <= 3) {
+        document.querySelectorAll('#delModal .form-step').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById('delStep' + saved._activeStep);
+        if (target) target.classList.add('active');
+      }
     } catch (_) { }
   }
 
@@ -1530,11 +1733,11 @@
             <select name="del_pref_${i}" required onchange="updateDelPortfolioOptions(${i})">
               <option value="" disabled ${!savedValues[`del_pref_${i}`] ? 'selected' : ''}>Select Committee</option>
               <option value="DISEC" ${savedValues[`del_pref_${i}`] === 'DISEC' ? 'selected' : ''}>DISEC</option>
-              <option value="LOK SABHA" ${(savedValues[`del_pref_${i}`] === 'LOK SABHA' || savedValues[`del_pref_${i}`] === 'LOKSABHA') ? 'selected' : ''}>Lok Sabha</option>
               <option value="UNHRC" ${savedValues[`del_pref_${i}`] === 'UNHRC' ? 'selected' : ''}>UNHRC</option>
-              <option value="CCC" ${savedValues[`del_pref_${i}`] === 'CCC' ? 'selected' : ''}>CCC</option>
-              <option value="UNCSW" ${savedValues[`del_pref_${i}`] === 'UNCSW' ? 'selected' : ''}>UNCSW</option>
-              <option value="IP" ${savedValues[`del_pref_${i}`] === 'IP' ? 'selected' : ''}>IP</option>
+              <option value="UNSC" ${savedValues[`del_pref_${i}`] === 'UNSC' ? 'selected' : ''}>UNSC</option>
+              <option value="LOK SABHA" ${(savedValues[`del_pref_${i}`] === 'LOK SABHA' || savedValues[`del_pref_${i}`] === 'LOKSABHA') ? 'selected' : ''}>Lok Sabha</option>
+              <option value="COMMITTEE X" ${savedValues[`del_pref_${i}`] === 'COMMITTEE X' ? 'selected' : ''}>Committee X</option>
+              <option value="IP" ${savedValues[`del_pref_${i}`] === 'IP' ? 'selected' : ''}>International Press</option>
             </select>
            </div>
            <div id="del_portfolio_container_${i}">
@@ -1668,14 +1871,10 @@
   }
 
   function closeDelRegistration() {
+    saveDelFormData();
     const delModal = document.getElementById('delModal');
-    const delRegForm = document.getElementById('delRegForm');
-    delModal.classList.remove('active');
+    if (delModal) delModal.classList.remove('active');
     document.body.style.overflow = '';
-    nextDelStep(1);
-    delRegForm.reset();
-    updateDelPrice();
-    updateDelegateFields();
   }
 
   function nextDelStep(stepNum) {
@@ -1821,13 +2020,30 @@
         localStorage.setItem('resolve_user_email', data.adviserEmail);
         localStorage.setItem('resolve_user_name', data.adviserName);
       }
-      showCustomAlert('Delegation registered successfully! All ' + size + ' delegates added. Redirecting to your dashboard...', 'success', 5000);
-      delRegForm.reset();
+      const delTicketId = `RM26-INST-${Math.floor(1000 + Math.random() * 9000)}`;
       clearDelFormData();
+      delRegForm.reset();
+      nextDelStep(1);
+      updateDelPrice();
+      updateDelegateFields();
       closeDelRegistration();
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1500);
+      if (typeof window.showPaymentReceiptModal === 'function') {
+        window.showPaymentReceiptModal({
+          ticketId: delTicketId,
+          amount: data.totalAmount,
+          date: new Date(),
+          cardHolder: `${data.instName} (${size} Delegates)`,
+          utrNumber: data.txnID,
+          passCategory: "Official Contingent",
+          barcodeValue: delTicketId,
+          onContinue: () => { window.location.href = '/dashboard'; }
+        });
+      } else {
+        showCustomAlert('Delegation registered successfully! All ' + size + ' delegates added. Redirecting to your dashboard...', 'success', 5000);
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+      }
     } catch (err) {
       showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
     } finally {
@@ -1851,8 +2067,8 @@
   // AUTO-SAVE OC form fields to localStorage
   const OC_STORAGE_KEY = 'resolveMunOcRegForm';
   const ocFormFieldIds = [
-    'ocName', 'ocDob', 'ocGrade', 'ocPhone', 'ocEmail', 'ocInst', 'ocInsta',
-    'ocMunCount', 'ocWhy', 'ocAttributes', 'ocTxnID', 'ocUTR', 'ocDriveLink'
+    'ocName', 'ocDob', 'ocGrade', 'ocPhone', 'ocEmail', 'ocInst', 'ocAddress', 'ocInsta',
+    'ocMunCount', 'ocWhy', 'ocAttributes', 'ocFeeTier', 'ocTxnID', 'ocUTR', 'ocReferral', 'ocAdditionalInfo'
   ];
 
   function saveOcFormData() {
@@ -1861,6 +2077,10 @@
       const el = document.getElementById(id);
       if (el) saved[id] = el.value;
     });
+    const activeStep = document.querySelector('#ocModal .form-step.active');
+    if (activeStep && activeStep.id) {
+      saved._activeStep = parseInt(activeStep.id.replace('ocStep', ''), 10) || 1;
+    }
     localStorage.setItem(OC_STORAGE_KEY, JSON.stringify(saved));
   }
 
@@ -1871,8 +2091,21 @@
       const saved = JSON.parse(raw);
       ocFormFieldIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el && saved[id]) el.value = saved[id];
+        if (el && saved[id]) {
+          el.value = saved[id];
+          if (id === 'ocDob') {
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          if (id === 'ocFeeTier' && typeof window.updateOcFeeTierUI === 'function') {
+            window.updateOcFeeTierUI(saved[id]);
+          }
+        }
       });
+      if (saved._activeStep && saved._activeStep >= 1 && saved._activeStep <= 2) {
+        document.querySelectorAll('#ocModal .form-step').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById('ocStep' + saved._activeStep);
+        if (target) target.classList.add('active');
+      }
     } catch (_) { }
   }
 
@@ -1909,15 +2142,35 @@
   }
 
   function closeOcRegistration() {
-    ocModal.classList.remove('active');
+    saveOcFormData();
+    if (ocModal) ocModal.classList.remove('active');
     document.body.style.overflow = '';
-    // Reset to step 1
-    nextOcStep(1);
-    ocRegForm.reset();
   }
 
   if (closeOcBtn) {
     closeOcBtn.addEventListener('click', closeOcRegistration);
+  }
+
+  function updateOcFeeTierUI(tierVal) {
+    const sel = document.getElementById('ocFeeTier');
+    let amount = 1500;
+    if (sel) {
+      const opt = sel.options[sel.selectedIndex];
+      amount = parseInt(opt ? opt.getAttribute('data-amount') : '1500', 10);
+    }
+    const card = document.getElementById('ocPaymentCardWrapper');
+    const uTrGroup = document.getElementById('ocUtrGroup');
+    const ssGroup = document.getElementById('ocScreenshotGroup');
+    if (amount === 0) {
+      if (card) card.style.display = 'none';
+      if (uTrGroup) uTrGroup.style.display = 'none';
+      if (ssGroup) ssGroup.style.display = 'none';
+    } else {
+      if (card) card.style.display = 'block';
+      if (uTrGroup) uTrGroup.style.display = 'block';
+      if (ssGroup) ssGroup.style.display = 'block';
+      generateDynamicQR(String(amount), 'ocPaymentQRImage', 'ocUpiID');
+    }
   }
 
   function nextOcStep(stepNum) {
@@ -1941,13 +2194,15 @@
       if (!isValid) return;
     }
 
-    if (stepNum === 3) {
-      generateDynamicQR("1699", "ocPaymentQRImage", "ocUpiID");
+    if (stepNum === 2) {
+      updateOcFeeTierUI();
     }
 
     document.querySelectorAll('#ocModal .form-step').forEach(step => step.classList.remove('active'));
     const targetStep = document.getElementById('ocStep' + stepNum);
     if (targetStep) targetStep.classList.add('active');
+    const ocContent = document.querySelector('#ocModal .modal-content');
+    if (ocContent) ocContent.scrollTop = 0;
 
     const progressSteps = document.querySelectorAll('#ocModal .progress-step');
     progressSteps.forEach((step, idx) => {
@@ -2029,7 +2284,10 @@
         why: document.getElementById("ocWhy").value,
         attributes: document.getElementById("ocAttributes").value,
         payment_utr: document.getElementById("ocTxnID")?.value || document.getElementById("ocUTR")?.value || "",
-        payment_screenshot_link: fileBase64
+        payment_screenshot_link: fileBase64,
+        paymentScreenshotBase64: fileBase64,
+        screenshotBase64: fileBase64,
+        screenshotName: fileName,
       };
 
       if (typeof window.submitOcToFirebase === 'function') {
@@ -2088,60 +2346,39 @@
     });
   }
 
+  let scrollTicking = false;
   window.addEventListener('scroll', () => {
-    if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 60);
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(() => {
+      scrollTicking = false;
+      if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 60);
 
-    // Active Navigation Highlighting
-    const sections = ['hero', 'about', 'letter', 'committees', 'venue', 'secretariat'];
-    let current = '';
+      // Active Navigation Highlighting
+      const sections = ['hero', 'about', 'letter', 'committees', 'venue', 'secretariat'];
+      let current = '';
 
-    const pageYOffset = window.pageYOffset;
+      const pageYOffset = window.pageYOffset;
 
-    sections.forEach(s => {
-      const section = document.getElementById(s);
-      if (section) {
-        const sectionTop = section.offsetTop;
-        const sectionHeight = section.offsetHeight;
-        if (pageYOffset >= sectionTop - 250) {
-          current = s;
-        }
-      }
-    });
-
-    document.querySelectorAll('.nav-links a').forEach(link => {
-      link.classList.remove('active');
-      const href = link.getAttribute('href').substring(1);
-      if (href === current) {
-        link.classList.add('active');
-      }
-    });
-
-    // Venue Parallax Effect
-    const venueVisual = document.querySelector('.venue-visual');
-    if (venueVisual) {
-      const img = venueVisual.querySelector('img');
-      if (img) {
-        const rect = venueVisual.getBoundingClientRect();
-        const viewHeight = window.innerHeight;
-
-        // Only calculate if section is in view
-        if (rect.top < viewHeight && rect.bottom > 0) {
-          // Calculate how far through the element the scroll is (0 to 1)
-          const elementHeight = rect.height;
-          const elementVisible = viewHeight - rect.top;
-          const scrollFraction = Math.max(0, Math.min(1, elementVisible / (viewHeight + elementHeight)));
-
-          // Delay movement until the section is fully established on screen
-          // Movement starts after the initial reveal and landing
-          let moveAmount = 0;
-          if (scrollFraction > 0.45) { // Threshold for "reading part"
-            moveAmount = (scrollFraction - 0.45) * 50;
+      sections.forEach(s => {
+        const section = document.getElementById(s);
+        if (section) {
+          const sectionTop = section.offsetTop;
+          if (pageYOffset >= sectionTop - 250) {
+            current = s;
           }
-
-          img.style.transform = `translateY(${moveAmount}px)`;
         }
-      }
-    }
+      });
+
+      document.querySelectorAll('.nav-links a').forEach(link => {
+        link.classList.remove('active');
+        const hrefAttr = link.getAttribute('href') || '';
+        const href = hrefAttr.startsWith('#') ? hrefAttr.substring(1) : hrefAttr;
+        if (href === current) {
+          link.classList.add('active');
+        }
+      });
+    });
   }, { passive: true });
 
   // SCROLL REVEAL
@@ -2276,7 +2513,7 @@
     // High-performance canvas particle system
     resize();
     requestAnimationFrame(function drawParticles() {
-      if (canvas && canvas.dataset.visible === 'false') {
+      if ((canvas && canvas.dataset.visible === 'false') || document.body.style.overflow === 'hidden') {
         setTimeout(() => requestAnimationFrame(drawParticles), 600);
         return;
       }
@@ -2389,7 +2626,7 @@
   const EB_STORAGE_KEY = 'resolveMunEbRegForm';
   const ebFormFieldIds = [
     'ebName', 'ebPhone', 'ebEmail', 'ebDob', 'ebReferral', 'ebInst', 'ebRole', 'ebMunCount',
-    'ebExp', 'ebWhy', 'ebPref1', 'ebPref2', 'ebCv'
+    'ebExp', 'ebWhy', 'ebPref1', 'ebPref2'
   ];
 
   function saveEbFormData() {
@@ -2398,6 +2635,10 @@
       const el = document.getElementById(id);
       if (el) saved[id] = el.value;
     });
+    const activeStep = document.querySelector('#ebModal .form-step.active');
+    if (activeStep && activeStep.id) {
+      saved._activeStep = parseInt(activeStep.id.replace('ebStep', ''), 10) || 1;
+    }
     localStorage.setItem(EB_STORAGE_KEY, JSON.stringify(saved));
   }
 
@@ -2408,8 +2649,18 @@
       const saved = JSON.parse(raw);
       ebFormFieldIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el && saved[id]) el.value = saved[id];
+        if (el && saved[id]) {
+          el.value = saved[id];
+          if (id === 'ebDob') {
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
       });
+      if (saved._activeStep && saved._activeStep >= 1 && saved._activeStep <= 3) {
+        document.querySelectorAll('#ebModal .form-step').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById('ebStep' + saved._activeStep);
+        if (target) target.classList.add('active');
+      }
     } catch (_) { }
   }
 
@@ -2430,8 +2681,6 @@
   document.addEventListener('DOMContentLoaded', restoreEbFormData);
 
   function openEbRegistration() {
-    alert("EB Applications are now closed.");
-    return;
     restoreEbFormData();
     if (ebModal) {
       ebModal.classList.add('active');
@@ -2440,11 +2689,10 @@
   }
 
   function closeEbRegistration() {
+    saveEbFormData();
     if (ebModal) {
       ebModal.classList.remove('active');
       document.body.style.overflow = '';
-      nextEbStep(1);
-      ebRegForm.reset();
     }
   }
 
@@ -2504,7 +2752,11 @@
       }
 
       const data = {
+        action: 'SUBMIT_EB',
         type: 'EB_APPLICATION',
+        cvBase64: fileBase64,
+        cv_base64: fileBase64,
+        cvName: fileName,
         recaptcha_token: token,
         name: document.getElementById("ebName") ? document.getElementById("ebName").value : "",
         phone: document.getElementById("ebPhone") ? document.getElementById("ebPhone").value : "",
@@ -2532,10 +2784,25 @@
       } else {
         await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
       }
-      showCustomAlert('Application submitted successfully! We will review your profile and contact you soon.', 'success', 6000);
-      ebRegForm.reset();
+      const ebTicketId = `RM26-EB-${Math.floor(1000 + Math.random() * 9000)}`;
       clearEbFormData();
+      ebRegForm.reset();
+      nextEbStep(1);
       closeEbRegistration();
+      if (typeof window.showPaymentReceiptModal === 'function') {
+        window.showPaymentReceiptModal({
+          ticketId: ebTicketId,
+          amount: 0,
+          date: new Date(),
+          cardHolder: data.name,
+          utrNumber: "EB-APPLICATION",
+          passCategory: `EB (${data.position || 'Chair'})`,
+          barcodeValue: ebTicketId,
+          onContinue: () => { window.location.href = '/dashboard'; }
+        });
+      } else {
+        showCustomAlert('Application submitted successfully! We will review your profile and contact you soon.', 'success', 6000);
+      }
     } catch (err) {
       showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
     } finally {
@@ -2550,7 +2817,169 @@
   // Handle outside click for EB Modal
   window.addEventListener('click', (e) => {
     if (e.target === ebModal) closeEbRegistration();
+    const socialsModal = document.getElementById('socialsModal');
+    if (e.target === socialsModal) closeSocialsRegistration();
   });
+
+  // --- SOCIALS PASS REGISTRATION LOGIC ---
+  const SOCIALS_STORAGE_KEY = 'resolve_socials_reg_draft_v1';
+  const socialsFieldIds = [
+    'socialsName', 'socialsPhone', 'socialsEmail', 'socialsInst',
+    'socialsGrade', 'socialsDob', 'socialsReferral', 'socialsTxnID'
+  ];
+
+  function saveSocialsFormData() {
+    const saved = {};
+    socialsFieldIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) saved[id] = el.value;
+    });
+    localStorage.setItem(SOCIALS_STORAGE_KEY, JSON.stringify(saved));
+  }
+
+  function restoreSocialsFormData() {
+    const raw = localStorage.getItem(SOCIALS_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw);
+      socialsFieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && saved[id]) {
+          el.value = saved[id];
+          if (id === 'socialsDob') {
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  function clearSocialsFormData() {
+    localStorage.removeItem(SOCIALS_STORAGE_KEY);
+  }
+
+  function nextSocialsStep(step) {
+    const s1 = document.getElementById('socialsStep1');
+    const s2 = document.getElementById('socialsStep2');
+    if (!s1 || !s2) return;
+    if (step === 2) {
+      const requiredInputs = s1.querySelectorAll('[required]');
+      let valid = true;
+      requiredInputs.forEach(inp => {
+        if (!inp.value || !inp.value.trim()) {
+          valid = false;
+          inp.style.borderColor = '#ef4444';
+        } else {
+          inp.style.borderColor = '';
+        }
+      });
+      if (!valid) {
+        if (typeof showCustomAlert === 'function') {
+          showCustomAlert('Please fill in all required fields before proceeding to payment.', 'error');
+        }
+        return;
+      }
+      s1.classList.remove('active');
+      s2.classList.add('active');
+    } else {
+      s2.classList.remove('active');
+      s1.classList.add('active');
+    }
+  }
+
+  // Hook input/change listeners for socials persistence
+  socialsFieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', saveSocialsFormData);
+      el.addEventListener('change', saveSocialsFormData);
+    }
+  });
+
+  const socialsRegForm = document.getElementById('socialsRegForm');
+  if (socialsRegForm) {
+    socialsRegForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const closeBtn = document.getElementById('closeSocialsModal');
+      const backBtns = e.target.querySelectorAll('.btn-back');
+
+      if (!validateForm(e.target)) return;
+      btn.disabled = true;
+      btn.innerHTML = 'Submitting Pass...';
+      if (closeBtn) closeBtn.style.pointerEvents = 'none';
+      backBtns.forEach(b => b.disabled = true);
+      showSpinner();
+
+      try {
+        const token = await getRecaptchaToken('socials_registration');
+        const fileInput = document.getElementById('socialsDriveLink');
+        let fileBase64 = "";
+        let fileName = "";
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          fileBase64 = await fileToBase64(file);
+          fileName = file.name;
+        }
+
+        const data = {
+          action: 'SUBMIT_SOCIALS',
+          type: 'SOCIALS_REGISTRATION',
+          screenshotBase64: fileBase64,
+          payment_screenshot_link: fileBase64,
+          paymentScreenshotBase64: fileBase64,
+          screenshotName: fileName,
+          recaptcha_token: token,
+          name: document.getElementById('socialsName') ? document.getElementById('socialsName').value : '',
+          phone: document.getElementById('socialsPhone') ? document.getElementById('socialsPhone').value : '',
+          email: document.getElementById('socialsEmail') ? document.getElementById('socialsEmail').value : '',
+          institution: document.getElementById('socialsInst') ? document.getElementById('socialsInst').value : '',
+          grade: document.getElementById('socialsGrade') ? document.getElementById('socialsGrade').value : '',
+          dob: document.getElementById('socialsDob') ? document.getElementById('socialsDob').value : '',
+          referral: document.getElementById('socialsReferral') ? document.getElementById('socialsReferral').value : '',
+          transaction_id: document.getElementById('socialsTxnID') ? document.getElementById('socialsTxnID').value : '',
+          screenshot_file: fileBase64,
+          screenshot_filename: fileName,
+          amount: 999
+        };
+
+        if (typeof window.submitSocialsToFirebase === 'function') {
+          await window.submitSocialsToFirebase(data);
+        } else {
+          await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
+        }
+
+        const socialsTicketId = `RM26-SOC-${Math.floor(1000 + Math.random() * 9000)}`;
+        clearSocialsFormData();
+        socialsRegForm.reset();
+        nextSocialsStep(1);
+        closeSocialsRegistration();
+
+        if (typeof window.showPaymentReceiptModal === 'function') {
+          window.showPaymentReceiptModal({
+            ticketId: socialsTicketId,
+            amount: 999,
+            date: new Date(),
+            cardHolder: data.name,
+            utrNumber: data.transaction_id,
+            passCategory: "Socials Night Pass",
+            barcodeValue: socialsTicketId,
+            onContinue: () => { window.location.href = '/dashboard'; }
+          });
+        } else {
+          showCustomAlert('Socials Pass registered successfully! Your ticket has been generated.', 'success', 6000);
+        }
+      } catch (err) {
+        showCustomAlert("Submission Error: " + (err && err.message ? err.message : String(err)), 'error', 7000);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Submit Socials Pass';
+        if (closeBtn) closeBtn.style.pointerEvents = 'all';
+        backBtns.forEach(b => b.disabled = false);
+        hideSpinner();
+      }
+    });
+  }
 
   // EXPERIENCE tabs
   const expItems = document.querySelectorAll('.exp-item');
@@ -2864,6 +3293,18 @@
     window.closeOcRegistration = typeof closeOcRegistration !== 'undefined' ? closeOcRegistration : () => { };
     window.openEbRegistration = typeof openEbRegistration !== 'undefined' ? openEbRegistration : () => { };
     window.closeEbRegistration = typeof closeEbRegistration !== 'undefined' ? closeEbRegistration : () => { };
+    window.openEbModal = typeof openEbRegistration !== 'undefined' ? openEbRegistration : () => { };
+    window.closeEbModal = typeof closeEbRegistration !== 'undefined' ? closeEbRegistration : () => { };
+    window.openOcModal = typeof openOcRegistration !== 'undefined' ? openOcRegistration : () => { };
+    window.closeOcModal = typeof closeOcRegistration !== 'undefined' ? closeOcRegistration : () => { };
+    window.openSocialsModal = typeof openSocialsRegistration !== 'undefined' ? openSocialsRegistration : () => { };
+    window.openSocialsRegistration = typeof openSocialsRegistration !== 'undefined' ? openSocialsRegistration : () => { };
+    window.closeSocialsModal = typeof closeSocialsRegistration !== 'undefined' ? closeSocialsRegistration : () => { };
+    window.closeSocialsRegistration = typeof closeSocialsRegistration !== 'undefined' ? closeSocialsRegistration : () => { };
+    window.openSecModal = typeof openSecRegistration !== 'undefined' ? openSecRegistration : () => { };
+    window.openSecRegistration = typeof openSecRegistration !== 'undefined' ? openSecRegistration : () => { };
+    window.closeSecModal = typeof closeSecRegistration !== 'undefined' ? closeSecRegistration : () => { };
+    window.closeSecRegistration = typeof closeSecRegistration !== 'undefined' ? closeSecRegistration : () => { };
     window.selectPathway = typeof selectPathway !== 'undefined' ? selectPathway : () => { };
     window.openSelection = typeof openSelection !== 'undefined' ? openSelection : (typeof openSelectionModal !== 'undefined' ? openSelectionModal : () => { });
     window.openTermsModal = typeof openTermsModal !== 'undefined' ? openTermsModal : () => { };
@@ -2884,6 +3325,8 @@
     window.refreshDelegatePaymentQR = typeof refreshDelegatePaymentQR !== 'undefined' ? refreshDelegatePaymentQR : () => { };
     window.refreshDelegationPaymentQR = typeof refreshDelegationPaymentQR !== 'undefined' ? refreshDelegationPaymentQR : () => { };
     window.generateDynamicQR = typeof generateDynamicQR !== 'undefined' ? generateDynamicQR : () => { };
+    window.updateOcFeeTierUI = typeof updateOcFeeTierUI !== 'undefined' ? updateOcFeeTierUI : () => { };
+    window.nextSocialsStep = typeof nextSocialsStep !== 'undefined' ? nextSocialsStep : () => { };
   }
 
 })();
@@ -3036,6 +3479,12 @@
     function render() {
       if (!isVisible) {
         animId = null;
+        return;
+      }
+      if (document.body.style.overflow === 'hidden') {
+        setTimeout(() => {
+          if (isVisible) animId = requestAnimationFrame(render);
+        }, 400);
         return;
       }
       const time = (performance.now() - startTime) * 0.001;

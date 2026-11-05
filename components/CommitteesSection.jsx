@@ -5,22 +5,8 @@ import GlassFolder from "./ui/glass-folder";
 
 const COMMITTEES = [
   {
-    id: "unsc",
-    label: "UNSC",
-    meta: "Security Council · 4 Files",
-    tone: "dark",
-    art: "ember",
-    seed: 101,
-    files: [
-      { name: "UNSC Mandate & Rules.pdf", meta: "Security Council · Veto Power" },
-      { name: "Crisis Protocol Dossier", meta: "Continuous Crisis · Directives", art: "ember" },
-      { name: "Country Matrix (15 States)", meta: "P5 & Non-Permanent" },
-      { name: "Background Guide", meta: "PDF · Releasing Soon" },
-    ],
-  },
-  {
     id: "disec",
-    label: "UNGA - DISEC",
+    label: "DISEC",
     meta: "Disarmament & Security · 4 Files",
     tone: "dark",
     art: "aurora",
@@ -47,6 +33,20 @@ const COMMITTEES = [
     ],
   },
   {
+    id: "unsc",
+    label: "UNSC",
+    meta: "Security Council · 4 Files",
+    tone: "dark",
+    art: "ember",
+    seed: 101,
+    files: [
+      { name: "UNSC Mandate & Rules.pdf", meta: "Security Council · Veto Power" },
+      { name: "Crisis Protocol Dossier", meta: "Continuous Crisis · Directives", art: "ember" },
+      { name: "Country Matrix (15 States)", meta: "P5 & Non-Permanent" },
+      { name: "Background Guide", meta: "PDF · Releasing Soon" },
+    ],
+  },
+  {
     id: "loksabha",
     label: "Lok Sabha",
     meta: "Indian Parliament · 4 Files",
@@ -61,16 +61,30 @@ const COMMITTEES = [
     ],
   },
   {
+    id: "committeex",
+    label: "Committee X",
+    meta: "Classified Crisis · 4 Files",
+    tone: "dark",
+    art: "ember",
+    seed: 606,
+    files: [
+      { name: "Classified Mandate & Protocol", meta: "Special Crisis · Top Secret" },
+      { name: "Cabinet Directives Dossier", meta: "Dynamic Crisis Updates", art: "ember" },
+      { name: "Portfolio Matrix", meta: "Classified Allocations" },
+      { name: "Background Guide", meta: "PDF · Releasing Soon" },
+    ],
+  },
+  {
     id: "ip",
-    label: "IP (Press Corps)",
-    meta: "International Press · 4 Files",
+    label: "International Press",
+    meta: "Press Corps · 4 Files",
     tone: "dark",
     art: "dusk",
     seed: 505,
     files: [
       { name: "Press Code of Conduct", meta: "Accreditation & Wire Ethics" },
       { name: "Investigative Media Dossier", meta: "Press Releases & Live Intel", art: "dusk" },
-      { name: "Media House Beats", meta: "Reuters, BBC, Al Jazeera, NYT" },
+      { name: "Media House Roles", meta: "Reporter & Photographer" },
       { name: "Background Guide", meta: "PDF · Releasing Soon" },
     ],
   },
@@ -103,22 +117,22 @@ export default function CommitteesSection() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto text-center mb-16">
-        <div className="section-label" style={{ justifyContent: "center", margin: "0 auto 12px auto" }}>
+      <div className="relative z-10 max-w-7xl mx-auto text-left sm:text-center mb-10 sm:mb-16">
+        <div className="section-label" style={{ margin: "0 0 10px 0" }}>
           Official Committees
         </div>
-        <h2 className="font-['Bebas_Neue'] text-5xl sm:text-6xl md:text-7xl tracking-wider text-white uppercase leading-none mb-4">
+        <h2 className="font-['Bebas_Neue'] text-3xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-3">
           Where the Debate Happens
         </h2>
-        <p className="font-['Oswald'] text-sm sm:text-base font-normal text-zinc-400 max-w-2xl mx-auto tracking-wide uppercase">
-          Five elite simulations. Crisis, diplomacy, and parliamentary debate. Click or hover any folder to open the dossier and inspect committee files.
+        <p className="font-['Oswald'] text-xs sm:text-sm font-normal text-zinc-400 max-w-2xl sm:mx-auto tracking-wide uppercase">
+          Six elite simulations. Crisis, diplomacy, and parliamentary debate. Click or hover any folder to open the dossier and inspect committee files.
         </p>
       </div>
 
       {/* Glass Folder Cards Grid */}
-      <div className="relative z-10 max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-8 sm:gap-10 lg:gap-12 pb-8">
+      <div className="relative z-10 max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-6 sm:gap-10 lg:gap-12 pb-8">
         {COMMITTEES.map((comm, idx) => (
-          <div key={comm.id} className="transition-transform duration-300 hover:scale-[1.02]">
+          <div key={comm.id} className="w-full max-w-[310px] flex justify-center transition-transform duration-300 sm:hover:scale-[1.02]">
             <GlassFolder
               label={comm.label}
               meta={comm.meta}
@@ -135,10 +149,10 @@ export default function CommitteesSection() {
               onFileSelect={(file) => handleFileSelect(file, comm.label)}
               menu={[
                 {
-                  label: "Apply for Committee",
+                  label: "Register as Delegate",
                   onSelect: () => {
                     if (typeof window !== "undefined" && window.selectPathway) {
-                      window.selectPathway("secretariat");
+                      window.selectPathway("delegate");
                     }
                   },
                 },

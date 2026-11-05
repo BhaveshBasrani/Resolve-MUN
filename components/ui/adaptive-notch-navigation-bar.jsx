@@ -422,7 +422,7 @@ export function NotchNav({
         ref={containerRef}
         className={cn(
           "xl:hidden absolute z-50 flex flex-col bg-[#050608]/95 backdrop-blur-xl text-white select-none pointer-events-auto border-b border-x border-white/[0.14] shadow-[0_12px_40px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.12)]",
-          "w-[94vw] max-w-md left-1/2 -translate-x-1/2 px-3 py-1",
+          "w-[95vw] max-w-md left-1/2 -translate-x-1/2 px-2.5 sm:px-3 py-1",
           isBottom ? "bottom-0 rounded-t-[20px]" : "top-0 rounded-b-[20px]"
         )}
       >
@@ -432,13 +432,13 @@ export function NotchNav({
         {/* Unified Horizontal Bar */}
         <div
           className={cn(
-            "w-full flex h-9 items-center justify-between gap-2",
+            "w-full flex h-9 sm:h-10 items-center justify-between gap-1.5 sm:gap-2",
             isBottom ? "items-baseline" : "items-center"
           )}
         >
           {/* Left Logo Slot */}
           {showLogo && logo && (
-            <div className="flex shrink-0 items-center text-white scale-90 origin-left">
+            <div className="flex shrink-0 items-center text-white scale-[0.88] sm:scale-95 origin-left">
               {logo}
             </div>
           )}
@@ -450,7 +450,7 @@ export function NotchNav({
             aria-haspopup="listbox"
             aria-label="Toggle navigation menu"
             onClick={handleToggleDropdown}
-            className="group flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-bold uppercase tracking-wider text-white outline-none transition-colors hover:bg-zinc-850 border border-white/10"
+            className="group flex h-7 sm:h-8 cursor-pointer items-center justify-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white outline-none transition-colors hover:bg-zinc-850 border border-white/15 bg-white/[0.04]"
           >
             {activeItem?.icon && (
               <activeItem.icon className="size-3.5 shrink-0 text-zinc-300" />

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { GrainGradient } from "@paper-design/shaders-react";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import {
   auth,
   signInWithGoogle,
@@ -26,10 +25,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
 
 // Ultra-premium, lightweight Dot Matrix Canvas (60fps, zero-dependency)
 function CanvasDotMatrix({
@@ -284,12 +279,35 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
     }
   };
 
-  // Auto-transition to pathway selection from celebration screen
+  const completeAuthFlow = () => {
+    if (onClose) onClose();
+    if (typeof window !== "undefined") {
+      const target = window.pendingPathway;
+      window.pendingPathway = null;
+      setTimeout(() => {
+        if (target && target !== "SCROLL_TO_PASSES") {
+          if (window.selectPathway) window.selectPathway(target);
+        } else {
+          if (window.scrollToPassesSection) {
+            window.scrollToPassesSection();
+          } else {
+            const el = document.getElementById("delegate-pass");
+            if (el) {
+              const top = el.getBoundingClientRect().top + window.scrollY - 64;
+              window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+            }
+          }
+        }
+      }, 180);
+    }
+  };
+
+  // Auto-transition to target ticket modal or passes section from celebration screen
   useEffect(() => {
     if (mode === "success") {
       const t = setTimeout(() => {
-        setMode("pathway");
-      }, 2200);
+        completeAuthFlow();
+      }, 1100);
       return () => clearTimeout(t);
     }
   }, [mode]);
@@ -404,13 +422,8 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         }
         setSuccess("Signed in successfully!");
         setTimeout(() => {
-          if (onClose) onClose();
-          if (typeof window !== "undefined" && window.pendingPathway) {
-            const pathway = window.pendingPathway;
-            window.pendingPathway = null;
-            if (window.selectPathway) window.selectPathway(pathway);
-          }
-        }, 500);
+          completeAuthFlow();
+        }, 350);
       }
     } catch (err) {
       let msg = err.message || "Authentication failed.";
@@ -451,24 +464,9 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
       }
       setSuccess("Signed in with Google successfully!");
 
-      // For sign-up mode, go to pathway selection so new users can register
-      if (mode === "signup") {
-        setTimeout(() => {
-          setSuccess("");
-          setMode("pathway");
-        }, 600);
-        return;
-      }
-
-      // For sign-in mode, close and redirect if pending pathway
       setTimeout(() => {
-        if (onClose) onClose();
-        if (typeof window !== "undefined" && window.pendingPathway) {
-          const pathway = window.pendingPathway;
-          window.pendingPathway = null;
-          if (window.selectPathway) window.selectPathway(pathway);
-        }
-      }, 500);
+        completeAuthFlow();
+      }, 350);
     } catch (err) {
       let msg = err.message || "Google sign-in failed.";
       if (msg.includes("popup-closed") || msg.includes("cancelled")) {
@@ -540,20 +538,20 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       {/* Main Two-Column Container */}
-      <div className="relative z-10 w-full max-w-[780px] h-auto max-h-[92vh] rounded-2xl border border-white/20 bg-[#07080e] shadow-[0_25px_65px_rgba(0,0,0,0.85),0_0_35px_rgba(99,102,241,0.12)] overflow-hidden grid md:grid-cols-[1.14fr_0.86fr]">
+      <div className="relative z-10 w-full max-w-[780px] h-auto max-h-[92vh] rounded-2xl border border-white/25 bg-[#050505] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.08)] overflow-hidden grid md:grid-cols-[1.14fr_0.86fr] transition-all duration-300 ease-out">
         
         {/* Rounded-Edge Square High-Visibility Close Button */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3 right-3 z-40 w-9 h-9 rounded-xl bg-black/80 hover:bg-black border border-white/30 hover:border-white/60 text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.6)] active:scale-95 group"
+          className="absolute top-3 right-3 z-40 w-9 h-9 rounded-xl bg-black hover:bg-white text-white hover:text-black border border-white/25 hover:border-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.8)] active:scale-95 group"
         >
-          <X className="w-4 h-4 text-white/90 group-hover:text-white transition-colors" strokeWidth={2.2} />
+          <X className="w-4 h-4 transition-colors" strokeWidth={2.2} />
         </button>
 
         {/* ── LEFT COLUMN ── */}
-        <div className="relative flex flex-col justify-center overflow-hidden px-5 py-4 sm:px-6 sm:py-5 border-b md:border-b-0 md:border-r border-white/10 max-h-[92vh]">
+        <div className="relative flex flex-col justify-center overflow-hidden px-5 py-4 sm:px-6 sm:py-5 border-b md:border-b-0 md:border-r border-white/15 max-h-[92vh]">
           {/* Ambient Dot Matrix Canvas during Code & Success modes */}
           {(mode === "code" || mode === "success") && (
             <CanvasDotMatrix
@@ -579,13 +577,13 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                       setError("");
                       setSuccess("");
                     }}
-                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/50 hover:text-white transition-colors cursor-pointer"
+                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/55 hover:text-white transition-colors cursor-pointer"
                   >
-                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-white/40 group-hover:text-white" />
+                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-white/50 group-hover:text-white" />
                     <span>Back to sign up</span>
                   </button>
-                  <span className="text-[10px] font-mono tracking-[0.2em] text-amber-400 uppercase font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                    UNVERIFIED
+                  <span className="text-[10px] font-mono tracking-[0.2em] text-white/80 uppercase font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/20">
+                    VERIFY EMAIL
                   </span>
                 </div>
 
@@ -602,14 +600,14 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
 
                 {/* Feedback Alerts */}
                 {error && (
-                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs flex items-start gap-2 text-left animate-in fade-in duration-150">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+                  <div className="p-3 rounded-xl bg-white/[0.05] border border-white/30 text-white text-xs flex items-start gap-2 text-left animate-in fade-in duration-150">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-white mt-0.5" />
                     <span className="leading-snug">{error}</span>
                   </div>
                 )}
                 {success && (
-                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs flex items-start gap-2 text-left animate-in fade-in duration-150">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+                  <div className="p-3 rounded-xl bg-white/[0.05] border border-white/30 text-white text-xs flex items-start gap-2 text-left animate-in fade-in duration-150">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-white mt-0.5" />
                     <span className="leading-snug">{success}</span>
                   </div>
                 )}
@@ -621,10 +619,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                       <div
                         key={i}
                         className={cn(
-                          "relative w-10 sm:w-11 h-12 sm:h-13 rounded-xl border transition-all duration-200 flex items-center justify-center bg-[#090b14] shadow-[0_2px_8px_rgba(0,0,0,0.5)]",
+                          "relative w-10 sm:w-11 h-12 sm:h-13 rounded-xl border transition-all duration-200 flex items-center justify-center bg-[#0a0a0a] shadow-[0_2px_8px_rgba(0,0,0,0.6)]",
                           digit
-                            ? "border-white/50 bg-white/[0.06] shadow-[0_0_15px_rgba(255,255,255,0.15)]"
-                            : "border-white/15 hover:border-white/30 focus-within:border-white/60 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_20px_rgba(99,102,241,0.25)]"
+                            ? "border-white bg-white/[0.08] shadow-[0_0_15px_rgba(255,255,255,0.18)]"
+                            : "border-white/20 hover:border-white/40 focus-within:border-white focus-within:bg-[#121212] focus-within:shadow-[0_0_20px_rgba(255,255,255,0.18)]"
                         )}
                       >
                         <input
@@ -645,7 +643,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                         />
                         {!digit && (
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="text-xl sm:text-2xl text-white/20 font-mono font-light">
+                            <span className="text-xl sm:text-2xl text-white/25 font-mono font-light">
                               •
                             </span>
                           </div>
@@ -664,7 +662,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     className={`text-xs sm:text-[13px] transition-all font-sans font-medium ${
                       resendCooldown > 0
                         ? "text-white/35 cursor-not-allowed"
-                        : "text-white/55 hover:text-white cursor-pointer underline underline-offset-4 hover:scale-[1.02] active:scale-[0.98]"
+                        : "text-white/60 hover:text-white cursor-pointer underline underline-offset-4 hover:scale-[1.02] active:scale-[0.98]"
                     }`}
                   >
                     {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
@@ -681,7 +679,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                       setError("");
                       setSuccess("");
                     }}
-                    className="w-[32%] rounded-full bg-white text-black font-bold px-4 py-3 text-xs sm:text-sm uppercase tracking-wider hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer shadow-[0_2px_12px_rgba(255,255,255,0.2)]"
+                    className="w-[32%] rounded-xl bg-transparent border border-white/25 text-white font-bold px-4 py-3 text-xs sm:text-sm uppercase tracking-wider hover:bg-white/10 hover:border-white/50 active:scale-[0.98] transition-all cursor-pointer"
                   >
                     Back
                   </button>
@@ -689,10 +687,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     type="button"
                     onClick={() => handleVerifyCode()}
                     disabled={!code.every((d) => d !== "") || loading}
-                    className={`flex-1 rounded-full font-bold py-3 text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
+                    className={`flex-1 rounded-xl font-bold py-3 text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
                       code.every((d) => d !== "") && !loading
-                        ? "bg-white text-black border-transparent hover:bg-white/90 cursor-pointer active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.4)]"
-                        : "bg-white/5 text-white/35 border border-white/10 cursor-not-allowed"
+                        ? "bg-white text-black border border-white hover:bg-zinc-200 cursor-pointer active:scale-[0.98] shadow-[0_0_25px_rgba(255,255,255,0.3)]"
+                        : "bg-white/[0.04] text-white/35 border border-white/15 cursor-not-allowed"
                     }`}
                   >
                     {loading ? (
@@ -727,7 +725,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                 <div className="py-6 flex items-center justify-center">
                   <div className="relative">
                     <div className="absolute inset-0 rounded-full bg-white/20 blur-xl animate-pulse" />
-                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-white via-white/95 to-white/80 flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.45)]">
+                    <div className="relative w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.45)]">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-black" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -737,10 +735,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
 
                 <button
                   type="button"
-                  onClick={() => setMode("pathway")}
-                  className="w-full rounded-full bg-white text-black font-bold py-3.5 hover:bg-white/90 active:scale-[0.98] transition-all shadow-[0_0_35px_rgba(255,255,255,0.35)] cursor-pointer text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+                  onClick={completeAuthFlow}
+                  className="w-full rounded-xl bg-white text-black font-bold py-3.5 hover:bg-zinc-200 active:scale-[0.98] transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)] cursor-pointer text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2"
                 >
-                  <span>Choose How to Register</span>
+                  <span>Continue</span>
                   <ChevronRight className="w-4 h-4 text-black" />
                 </button>
               </section>
@@ -754,19 +752,19 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   <button
                     type="button"
                     onClick={() => switchMode(currentUser ? "profile" : "signup")}
-                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/45 hover:text-white transition-colors cursor-pointer"
+                    className="group inline-flex items-center gap-1.5 text-xs font-medium text-white/50 hover:text-white transition-colors cursor-pointer"
                   >
-                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-white/40 group-hover:text-white" />
+                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-white/45 group-hover:text-white" />
                     <span>{currentUser ? "Back to profile" : "Back to sign in"}</span>
                   </button>
-                  <span className="text-[10px] font-mono tracking-[0.2em] text-indigo-400/80 uppercase font-semibold">
+                  <span className="text-[10px] font-mono tracking-[0.2em] text-white/60 uppercase font-semibold">
                     HYDERABAD 2026
                   </span>
                 </div>
 
                 {/* Header */}
                 <div>
-                  <span className="block mb-1 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-indigo-300/80">Select your role</span>
+                  <span className="block mb-1 text-[10px] font-mono font-medium tracking-[0.18em] uppercase text-white/60">Select your role</span>
                   <h1 id="pathway-title" className="font-sans text-2xl sm:text-[26px] font-bold tracking-tight text-white leading-tight">
                     How would you like to participate?
                   </h1>
@@ -782,22 +780,22 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     tabIndex={0}
                     onClick={() => handlePathwaySelect("delegate")}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("delegate"); } }}
-                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/20 bg-[#0a0a0a] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white hover:bg-[#141414] cursor-pointer active:scale-[0.99]"
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-semibold text-sm text-white tracking-tight">
                           Delegate
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-400/20 text-violet-300 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 border border-white/20 text-white font-medium">
                           Individual
                         </span>
                       </div>
-                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/80 transition-colors line-clamp-1">
                         Participate as an individual delegate in one committee.
                       </span>
                     </div>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/[0.04] text-white/60 group-hover:text-black group-hover:bg-white group-hover:border-white transition-all" aria-hidden="true">
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -808,22 +806,22 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     tabIndex={0}
                     onClick={() => handlePathwaySelect("delegation")}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("delegation"); } }}
-                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/20 bg-[#0a0a0a] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white hover:bg-[#141414] cursor-pointer active:scale-[0.99]"
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-semibold text-sm text-white tracking-tight">
                           Delegation
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-300 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 border border-white/20 text-white font-medium">
                           School Team
                         </span>
                       </div>
-                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/80 transition-colors line-clamp-1">
                         Register a group of delegates from your school or college.
                       </span>
                     </div>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/[0.04] text-white/60 group-hover:text-black group-hover:bg-white group-hover:border-white transition-all" aria-hidden="true">
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -834,25 +832,25 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     tabIndex={0}
                     onClick={() => handlePathwaySelect("secretariat")}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("secretariat"); } }}
-                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/20 bg-[#0a0a0a] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white hover:bg-[#141414] cursor-pointer active:scale-[0.99]"
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-semibold text-sm text-white tracking-tight">
                           Secretariat
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 border border-white/20 text-white font-medium">
                           Staff &amp; Board
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-white text-black font-bold">
                           Free
                         </span>
                       </div>
-                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/80 transition-colors line-clamp-1">
                         Apply to join the organizing team and leadership.
                       </span>
                     </div>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/[0.04] text-white/60 group-hover:text-black group-hover:bg-white group-hover:border-white transition-all" aria-hidden="true">
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -863,31 +861,31 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     tabIndex={0}
                     onClick={() => handlePathwaySelect("oc")}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handlePathwaySelect("oc"); } }}
-                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-purple-500/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+                    className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/20 bg-[#0a0a0a] px-4 py-2.5 sm:py-3 text-left transition-all duration-200 hover:border-white hover:bg-[#141414] cursor-pointer active:scale-[0.99]"
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-semibold text-sm text-white tracking-tight">
                           Organizing Committee
                         </span>
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-400/20 text-purple-300 font-medium">
-                          OC · ₹1699
+                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 border border-white/20 text-white font-medium">
+                          Salaried Role
                         </span>
                       </div>
-                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
+                      <span className="block text-xs text-white/50 leading-normal group-hover:text-white/80 transition-colors line-clamp-1">
                         Join the team that makes the conference happen.
                       </span>
                     </div>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-purple-400/40 transition-all" aria-hidden="true">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/[0.04] text-white/60 group-hover:text-black group-hover:bg-white group-hover:border-white transition-all" aria-hidden="true">
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
                 </div>
 
                 {/* Subdued Footer for Closed Tracks */}
-                <div className="pt-3.5 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-sans">
+                <div className="pt-3.5 border-t border-white/10 flex items-center justify-between text-xs text-white/40 font-sans">
                   <span>Looking for EB?</span>
-                  <span className="font-mono uppercase tracking-wider text-[10px] text-white/30">
+                  <span className="font-mono uppercase tracking-wider text-[10px] text-white/35">
                     EB Applications Closed
                   </span>
                 </div>
@@ -902,10 +900,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     <img
                       src={currentUser.photoURL}
                       alt={currentUser.displayName || "Delegate"}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.15)] mb-3"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.15)] mb-3"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-500 text-white font-bold text-xl flex items-center justify-center border-2 border-white/30 shadow-[0_0_20px_rgba(99,102,241,0.3)] mb-3 font-sans">
+                    <div className="w-16 h-16 rounded-full bg-white text-black font-bold text-xl flex items-center justify-center border-2 border-white shadow-[0_0_20px_rgba(255,255,255,0.25)] mb-3 font-sans">
                       {(currentUser.displayName || currentUser.email || "D").slice(0, 1).toUpperCase()}
                     </div>
                   )}
@@ -917,10 +915,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white/60 leading-relaxed text-left space-y-1.5 font-sans">
-                  <p className="font-semibold text-white/90">Active Delegate Session</p>
+                <div className="p-4 rounded-xl bg-[#0a0a0a] border border-white/15 text-xs text-white/65 leading-relaxed text-left space-y-1.5 font-sans">
+                  <p className="font-semibold text-white">Active Delegate Session</p>
                   <p>
-                    Your account is verified! You can now submit your application or go to your dashboard.
+                    Your account is verified! You can now select your official pass or go to your dashboard.
                   </p>
                 </div>
 
@@ -928,17 +926,17 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   {/* Clean Solid White Primary Button */}
                   <button
                     type="button"
-                    onClick={() => switchMode("pathway")}
-                    className="w-full h-11 flex items-center justify-center rounded-xl bg-white text-black font-semibold text-xs sm:text-sm tracking-tight transition-all hover:bg-white/90 active:scale-[0.99] cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                    onClick={completeAuthFlow}
+                    className="w-full h-11 flex items-center justify-center rounded-xl bg-white text-black font-semibold text-xs sm:text-sm tracking-tight transition-all hover:bg-zinc-200 active:scale-[0.99] cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                   >
-                    Proceed to Applications
+                    View Official Passes
                   </button>
 
                   {/* Clean Obsidian Secondary Button */}
                   <Link
                     href="/dashboard"
                     onClick={onClose}
-                    className="w-full h-11 flex items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs sm:text-sm font-medium tracking-tight transition-colors"
+                    className="w-full h-11 flex items-center justify-center rounded-xl border border-white/20 bg-[#0a0a0a] hover:bg-white/10 hover:border-white/40 text-white text-xs sm:text-sm font-medium tracking-tight transition-all"
                   >
                     Open Delegate Dashboard
                   </Link>
@@ -947,7 +945,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="w-full text-center py-1.5 text-xs font-medium text-white/40 hover:text-rose-300 transition-colors cursor-pointer"
+                    className="w-full text-center py-1.5 text-xs font-medium text-white/45 hover:text-white transition-colors cursor-pointer"
                   >
                     Sign out of session
                   </button>
@@ -956,7 +954,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
             )}
 
             {/* 4. SIGNUP / SIGNIN / FORGOT VIEW */}
-            {mode !== "code" && mode !== "pathway" && !(mode === "profile" && currentUser) && (
+            {mode !== "code" && mode !== "success" && mode !== "pathway" && !(mode === "profile" && currentUser) && (
               <div className="space-y-4">
                 {/* Header */}
                 <div>
@@ -967,7 +965,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   </h1>
                   
                   {/* Sleek inline mode switcher */}
-                  <div className="flex items-center gap-1.5 mt-1 text-xs text-white/50 font-normal font-sans">
+                  <div className="flex items-center gap-1.5 mt-1 text-xs text-white/55 font-normal font-sans">
                     <span>
                       {mode === "signup" && "Already have an account?"}
                       {mode === "signin" && "New to Resolve MUN?"}
@@ -976,7 +974,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     <button
                       type="button"
                       onClick={() => switchMode(mode === "signup" ? "signin" : mode === "signin" ? "signup" : "signin")}
-                      className="font-semibold text-violet-400 hover:text-violet-300 transition-colors cursor-pointer underline-offset-2 hover:underline"
+                      className="font-semibold text-white hover:text-zinc-300 transition-colors cursor-pointer underline underline-offset-4"
                     >
                       {mode === "signup" && "Sign in"}
                       {mode === "signin" && "Create account"}
@@ -991,11 +989,12 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     type="button"
                     onClick={handleSocialAuth}
                     disabled={socialLoading || loading || (mode === "signup" && (!agreeTerms || !agreePrivacy))}
-                    className={`w-full h-11 flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-[#0d0f1a] hover:bg-[#131626] hover:border-white/35 active:scale-[0.99] text-xs sm:text-sm font-semibold text-white transition-all shadow-sm ${
+                    className={cn(
+                      "w-full h-11 flex items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-[#0a0a0a] hover:bg-white hover:text-black hover:border-white active:scale-[0.99] text-xs sm:text-sm font-semibold text-white transition-all duration-200 shadow-sm",
                       mode === "signup" && (!agreeTerms || !agreePrivacy)
                         ? "opacity-40 cursor-not-allowed"
                         : "cursor-pointer disabled:opacity-60"
-                    }`}
+                    )}
                   >
                     <GoogleIcon />
                     <span>
@@ -1007,7 +1006,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                     </span>
                   </button>
                   {mode === "signup" && (!agreeTerms || !agreePrivacy) && (
-                    <p className="text-[10px] text-white/40 text-center mt-1.5 font-sans">
+                    <p className="text-[10px] text-white/45 text-center mt-1.5 font-sans">
                       * Check both agreements below to enable Google registration
                     </p>
                   )}
@@ -1015,23 +1014,23 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
 
                 {/* Divider */}
                 <div className="flex items-center justify-center gap-3">
-                  <div className="flex-1 h-px bg-white/10" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+                  <div className="flex-1 h-px bg-white/15" />
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-white/45">
                     or continue with email
                   </span>
-                  <div className="flex-1 h-px bg-white/10" />
+                  <div className="flex-1 h-px bg-white/15" />
                 </div>
 
                 {/* Alerts */}
                 {error && (
-                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs flex items-start gap-2 animate-in fade-in duration-150">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+                  <div className="p-3 rounded-xl bg-white/[0.05] border border-white/30 text-white text-xs flex items-start gap-2 animate-in fade-in duration-150">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-white mt-0.5" />
                     <span className="leading-snug">{error}</span>
                   </div>
                 )}
                 {success && (
-                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs flex items-start gap-2 animate-in fade-in duration-150">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+                  <div className="p-3 rounded-xl bg-white/[0.05] border border-white/30 text-white text-xs flex items-start gap-2 animate-in fade-in duration-150">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-white mt-0.5" />
                     <span className="leading-snug">{success}</span>
                   </div>
                 )}
@@ -1080,7 +1079,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                       <button
                         type="button"
                         onClick={() => switchMode("forgot")}
-                        className="text-[11px] text-white/45 hover:text-white transition-colors cursor-pointer"
+                        className="text-[11px] text-white/50 hover:text-white transition-colors cursor-pointer underline-offset-4 hover:underline"
                       >
                         Forgot password?
                       </button>
@@ -1091,7 +1090,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   {mode === "signup" && (
                     <div className={cn(
                       "space-y-2 pt-1 p-2.5 rounded-xl transition-colors",
-                      error && (!agreeTerms || !agreePrivacy) ? "bg-red-500/[0.06] border border-red-500/20" : ""
+                      error && (!agreeTerms || !agreePrivacy) ? "bg-white/[0.04] border border-white/30" : ""
                     )}>
                       {/* 1. Terms and Conditions */}
                       <CheckboxLine
@@ -1110,11 +1109,11 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                               window.openTermsModal("delegate");
                             }
                           }}
-                          className="font-medium text-white/90 underline underline-offset-2 hover:text-white cursor-pointer bg-transparent border-none p-0 inline"
+                          className="font-medium text-white underline underline-offset-2 hover:text-zinc-300 cursor-pointer bg-transparent border-none p-0 inline"
                         >
                           Terms &amp; Conditions
                         </button>
-                        <span className="text-red-400 font-bold ml-1" title="Compulsory">*</span>
+                        <span className="text-white font-bold ml-1" title="Compulsory">*</span>
                       </CheckboxLine>
 
                       {/* 2. Privacy Policy */}
@@ -1134,11 +1133,11 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                               window.openTermsModal("privacy");
                             }
                           }}
-                          className="font-medium text-white/90 underline underline-offset-2 hover:text-white cursor-pointer bg-transparent border-none p-0 inline"
+                          className="font-medium text-white underline underline-offset-2 hover:text-zinc-300 cursor-pointer bg-transparent border-none p-0 inline"
                         >
                           Privacy Policy
                         </button>
-                        <span className="text-red-400 font-bold ml-1" title="Compulsory">*</span>
+                        <span className="text-white font-bold ml-1" title="Compulsory">*</span>
                       </CheckboxLine>
 
                       {/* 3. Optional Updates */}
@@ -1155,7 +1154,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                   <button
                     type="submit"
                     disabled={loading || socialLoading}
-                    className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-white text-xs sm:text-sm font-bold text-black transition-all hover:bg-white/90 active:scale-[0.99] cursor-pointer shadow-[0_0_24px_rgba(255,255,255,0.22)] disabled:opacity-60"
+                    className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-white border border-white text-xs sm:text-sm font-bold text-black transition-all duration-200 hover:bg-zinc-200 active:scale-[0.99] cursor-pointer shadow-[0_0_24px_rgba(255,255,255,0.2)] disabled:opacity-60"
                   >
                     {loading ? (
                       <Loader2 className="w-4 h-4 animate-spin text-black" />
@@ -1174,7 +1173,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         </div>
 
         {/* ── RIGHT COLUMN: SHADER & BRAND VISUAL ── */}
-        <div className="relative hidden md:flex min-h-[450px] overflow-hidden rounded-xl bg-black p-6 xl:p-7 text-white flex-col justify-between m-2 border border-white/10 select-none">
+        <div className="relative hidden md:flex min-h-[450px] overflow-hidden rounded-xl bg-black p-6 xl:p-7 text-white flex-col justify-between m-2 border border-white/15 select-none">
           {/* GrainGradient Background */}
           {shaderMounted ? (
             <GrainGradient
@@ -1184,21 +1183,21 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
               offsetX={0}
               offsetY={0}
               softness={0.5}
-              intensity={0.5}
+              intensity={0.45}
               noise={0.25}
               shape="corners"
               frame={2854.5}
-              colors={["#FFFFFF", "#8B5CF6", "#3B82F6", "#FFFFFF"]}
+              colors={["#FFFFFF", "#A1A1AA", "#27272A", "#000000"]}
               colorBack="#00000000"
               className="absolute inset-0 bg-black pointer-events-none"
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-[#100726] via-[#090b1c] to-[#04050a]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black" />
           )}
 
           {/* Top Info */}
           <div className="relative z-10 flex items-center justify-start">
-            <span className="text-[10px] sm:text-[11px] font-mono tracking-[0.22em] text-white/60 font-semibold uppercase">
+            <span className="text-[10px] sm:text-[11px] font-mono tracking-[0.22em] text-white/70 font-semibold uppercase">
               EDITION 2026
             </span>
           </div>
@@ -1208,19 +1207,19 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
             <h2 className="max-w-[300px] text-2xl sm:text-[30px] font-bold tracking-[-0.04em] text-white leading-[1.05] font-sans">
               Resolve.
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-200 via-indigo-200 to-blue-200">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-300 to-zinc-500">
                 Reform.
               </span>
               <br />
               Reconcile.
             </h2>
-            <p className="mt-3 max-w-[270px] text-xs text-white/65 leading-relaxed font-sans">
-              Hyderabad's premier conference. Multilateral debate, crisis diplomacy, and strategic consensus across 6 dynamic committees.
+            <p className="mt-3 max-w-[270px] text-xs text-white/70 leading-relaxed font-sans">
+              Hyderabad&apos;s premier conference. Multilateral debate, crisis diplomacy, and strategic consensus across 6 dynamic committees.
             </p>
           </div>
 
           {/* Bottom Accent Line */}
-          <div className="relative z-10 h-0.5 w-8 bg-gradient-to-r from-violet-400 to-blue-400 rounded-full opacity-60" />
+          <div className="relative z-10 h-0.5 w-8 bg-gradient-to-r from-white to-zinc-500 rounded-full opacity-80" />
         </div>
       </div>
     </div>
@@ -1242,9 +1241,9 @@ function FieldBox({
 
   return (
     <div className={cn("flex flex-col gap-1.5 text-left", className)}>
-      <label className="text-[11px] sm:text-xs font-medium text-white/75 font-sans tracking-wide">
+      <label className="text-[11px] sm:text-xs font-medium text-white/80 font-sans tracking-wide">
         {label}
-        {required && <span className="text-violet-400 ml-0.5">*</span>}
+        {required && <span className="text-white ml-0.5">*</span>}
       </label>
       <div className="relative">
         <input
@@ -1253,13 +1252,13 @@ function FieldBox({
           onChange={onChange}
           required={required}
           placeholder={placeholder}
-          className="h-10.5 sm:h-11 w-full rounded-xl border border-white/20 bg-[#0d0f1a] px-3.5 text-xs sm:text-sm text-white placeholder-white/30 transition-all hover:border-white/35 focus:border-indigo-400 focus:bg-[#121526] focus:outline-none focus:ring-1 focus:ring-indigo-500/30 font-sans shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]"
+          className="h-10.5 sm:h-11 w-full rounded-xl border border-white/20 bg-[#0a0a0a] px-3.5 text-xs sm:text-sm text-white placeholder-white/30 transition-all duration-200 hover:border-white/40 focus:border-white focus:bg-[#121212] focus:outline-none focus:ring-1 focus:ring-white/30 font-sans shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]"
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/45 hover:text-white transition-colors cursor-pointer"
             tabIndex={-1}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
@@ -1281,7 +1280,7 @@ function CheckboxLine({ checked, onChange, children }) {
           onChange={onChange}
           className="peer sr-only"
         />
-        <div className="w-3.5 h-3.5 rounded border border-white/30 bg-white/5 transition-all peer-checked:bg-white peer-checked:border-white peer-focus-visible:ring-2 peer-focus-visible:ring-violet-400 group-hover:border-white/50" />
+        <div className="w-3.5 h-3.5 rounded border border-white/35 bg-white/5 transition-all peer-checked:bg-white peer-checked:border-white peer-focus-visible:ring-2 peer-focus-visible:ring-white/50 group-hover:border-white/60" />
         <svg
           className="absolute w-2.5 h-2.5 text-black opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
           viewBox="0 0 24 24"
@@ -1294,7 +1293,7 @@ function CheckboxLine({ checked, onChange, children }) {
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
-      <span className="text-[11px] text-white/55 leading-tight group-hover:text-white/75 transition-colors font-sans">
+      <span className="text-[11px] text-white/60 leading-tight group-hover:text-white/85 transition-colors font-sans">
         {children}
       </span>
     </label>

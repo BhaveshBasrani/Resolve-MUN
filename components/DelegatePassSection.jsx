@@ -24,9 +24,12 @@ const PASSES = [
     },
     action: () => {
       if (typeof window !== "undefined") {
-        if (window.openSelection) {
-          window.openSelection();
+        if (window.selectPathway) {
+          window.selectPathway("delegate");
+        } else if (window.openRegistration) {
+          window.openRegistration();
         } else if (window.openAuthModal) {
+          window.pendingPathway = "delegate";
           window.openAuthModal("signup");
         }
       }
@@ -50,12 +53,13 @@ const PASSES = [
     },
     action: () => {
       if (typeof window !== "undefined") {
-        if (window.openOcModal) {
-          window.openOcModal();
-        } else if (window.selectPathway) {
+        if (window.selectPathway) {
           window.selectPathway("oc");
-        } else if (window.openSelection) {
-          window.openSelection();
+        } else if (window.openOcModal) {
+          window.openOcModal();
+        } else if (window.openAuthModal) {
+          window.pendingPathway = "oc";
+          window.openAuthModal("signup");
         }
       }
     },
@@ -78,10 +82,15 @@ const PASSES = [
     },
     action: () => {
       if (typeof window !== "undefined") {
-        if (window.openEbModal) {
+        if (window.selectPathway) {
+          window.selectPathway("eb");
+        } else if (window.openEbRegistration) {
+          window.openEbRegistration();
+        } else if (window.openEbModal) {
           window.openEbModal();
-        } else if (window.showCustomAlert) {
-          window.showCustomAlert("Executive Board applications are undergoing final review.", "info");
+        } else if (window.openAuthModal) {
+          window.pendingPathway = "eb";
+          window.openAuthModal("signup");
         }
       }
     },
@@ -104,10 +113,13 @@ const PASSES = [
     },
     action: () => {
       if (typeof window !== "undefined") {
-        if (window.showCustomAlert) {
-          window.showCustomAlert("Socials Night passes are releasing soon! Stay tuned.", "info");
-        } else {
-          alert("Socials Night passes are releasing soon! Stay tuned.");
+        if (window.selectPathway) {
+          window.selectPathway("socials");
+        } else if (window.openSocialsModal) {
+          window.openSocialsModal();
+        } else if (window.openAuthModal) {
+          window.pendingPathway = "socials";
+          window.openAuthModal("signup");
         }
       }
     },
@@ -130,12 +142,13 @@ const PASSES = [
     },
     action: () => {
       if (typeof window !== "undefined") {
-        if (window.openSecModal) {
-          window.openSecModal();
-        } else if (window.selectPathway) {
+        if (window.selectPathway) {
           window.selectPathway("secretariat");
-        } else if (window.openSelection) {
-          window.openSelection();
+        } else if (window.openSecModal) {
+          window.openSecModal();
+        } else if (window.openAuthModal) {
+          window.pendingPathway = "secretariat";
+          window.openAuthModal("signup");
         }
       }
     },
@@ -263,10 +276,12 @@ export default function DelegatePassSection() {
   useEffect(() => {
     const updateSize = () => {
       const w = window.innerWidth;
-      if (w < 400) {
-        setTicketWidth(Math.max(280, w - 36));
+      if (w < 360) {
+        setTicketWidth(Math.max(260, w - 24));
+      } else if (w < 420) {
+        setTicketWidth(Math.max(280, w - 32));
       } else if (w < 640) {
-        setTicketWidth(Math.min(320, w - 48));
+        setTicketWidth(Math.min(320, w - 40));
       } else {
         setTicketWidth(328);
       }
@@ -296,25 +311,25 @@ export default function DelegatePassSection() {
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[380px] bg-indigo-600/10 blur-[150px] rounded-full"
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-left sm:text-center">
         {/* Sleek Modern Sideline Label */}
         <div
           className="section-label"
-          style={{ justifyContent: "center", margin: "0 auto 10px auto" }}
+          style={{ margin: "0 0 10px 0" }}
         >
           Resolve MUN 2.0
         </div>
 
         {/* Section Headline */}
         <h2
-          className="text-4xl sm:text-5xl md:text-6xl font-extrabold uppercase tracking-tight text-white mb-3"
+          className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase tracking-tight text-white mb-2"
           style={{ fontFamily: "'Oswald', sans-serif" }}
         >
           Official Passes
         </h2>
 
         {/* Minimal Uncluttered Description */}
-        <p className="text-sm sm:text-base text-white/60 max-w-xl mx-auto font-light leading-relaxed mb-12 sm:mb-16">
+        <p className="text-xs sm:text-sm text-white/60 max-w-xl sm:mx-auto font-light leading-relaxed mb-8 sm:mb-14">
           Select your pass below.
         </p>
 
@@ -349,11 +364,10 @@ export default function DelegatePassSection() {
                     handlePassClick();
                   }
                 }}
-                className={`group relative select-none outline-none transition-all duration-300 rounded-xl flex flex-col items-center gap-3 ${
-                  open
-                    ? "cursor-pointer hover:scale-[1.04] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/40"
-                    : "cursor-not-allowed grayscale opacity-45 contrast-75 hover:opacity-55"
-                }`}
+                className={`group relative select-none outline-none transition-all duration-300 rounded-xl flex flex-col items-center gap-3 ${open
+                  ? "cursor-pointer hover:scale-[1.04] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/40"
+                  : "cursor-not-allowed grayscale opacity-45 contrast-75 hover:opacity-55"
+                  }`}
                 title={open ? `Click to claim ${pass.label}` : `${pass.label} — Currently Closed`}
                 aria-label={open ? `Claim ${pass.label} for ${delegateName}` : `${pass.label} Closed`}
               >
@@ -376,18 +390,6 @@ export default function DelegatePassSection() {
                     layout={RESOLVE_TICKET_LAYOUT}
                     tilt={open ? { maxTilt: 11, scale: 1.02, glare: 0.16 } : { maxTilt: 0, scale: 1, glare: 0 }}
                   />
-                </div>
-
-                {/* Live Availability & Pricing Pill beneath ticket */}
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-[10px] tracking-[0.14em] uppercase font-mono">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      open ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-zinc-500"
-                    }`}
-                  />
-                  <span className={open ? "text-white/80" : "text-white/40"}>
-                    {open ? `${pass.label} · OPEN` : `${pass.label} · UNAVAILABLE`}
-                  </span>
                 </div>
               </div>
             );

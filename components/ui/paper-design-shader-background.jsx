@@ -40,16 +40,40 @@ export function GradientBackground({
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [supportsWebGL, setSupportsWebGL] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLowPower, setIsLowPower] = useState(false);
 
   useEffect(() => {
     try {
       const canvas = document.createElement("canvas");
       const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
       setSupportsWebGL(Boolean(gl));
+      // Release the probe context immediately so it doesn't count against mobile GPU limits
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
     } catch (e) {
       setSupportsWebGL(false);
     }
+    setIsLowPower(
+      Boolean(
+        window.matchMedia?.("(max-width: 768px), (pointer: coarse)").matches ||
+        (navigator.deviceMemory && navigator.deviceMemory <= 4)
+      )
+    );
     setIsMounted(true);
+
+    const checkModal = () => {
+      const active = Boolean(document.querySelector(".modal-overlay.active"));
+      setIsModalOpen((prev) => (prev !== active ? active : prev));
+    };
+    window.addEventListener("modalStateChange", checkModal);
+    const obs = new MutationObserver(checkModal);
+    if (document.body) {
+      obs.observe(document.body, { attributes: true, attributeFilter: ["style", "class"] });
+    }
+    return () => {
+      window.removeEventListener("modalStateChange", checkModal);
+      obs.disconnect();
+    };
   }, []);
 
   const fallbackGradient = (
@@ -87,8 +111,10 @@ export function GradientBackground({
           offsetY={offsetY}
           scale={scale}
           rotation={rotation}
-          speed={speed}
+          speed={isModalOpen ? 0 : speed}
           colors={colors}
+          minPixelRatio={isLowPower ? 1 : 2}
+          maxPixelCount={isLowPower ? 500000 : 1920 * 1080 * 4}
         />
       </div>
     </ShaderErrorBoundary>

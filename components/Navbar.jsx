@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  auth, signOutUser, onAuthStateChanged } from "@/lib/firebase";
+  auth, signOutUser, onAuthStateChanged
+} from "@/lib/firebase";
 import {
   NotchNav,
   NotchLeftWing,
@@ -158,9 +159,11 @@ export function Navbar() {
 
   const openModal = () => {
     if (typeof window !== "undefined") {
-      if (typeof window.openAuthModal === "function") return window.openAuthModal();
       if (typeof window.openSelectionModal === "function") return window.openSelectionModal();
-      if (typeof window.openSelection === "function") return window.openSelection();
+      if (typeof window.openAuthModal === "function") {
+        window.pendingPathway = "SCROLL_TO_PASSES";
+        return window.openAuthModal("signup");
+      }
     }
     const m = document.getElementById("selectionModal");
     if (m) {
@@ -259,10 +262,10 @@ export function Navbar() {
         />
       </div>
       <span
-        className="text-[1.28rem] tracking-[0.14em] leading-none text-white group-hover:text-zinc-200 transition-colors duration-200 font-bold whitespace-nowrap pt-0.5"
+        className="text-[1.08rem] sm:text-[1.28rem] tracking-[0.1em] sm:tracking-[0.14em] leading-none text-white group-hover:text-zinc-200 transition-colors duration-200 font-bold whitespace-nowrap pt-0.5"
         style={{ fontFamily: "'Bebas Neue', sans-serif" }}
       >
-        RESOLVE MUN 2.0
+        RESOLVE MUN <span className="hidden min-[360px]:inline">2.0</span>
       </span>
     </Link>
   );
@@ -327,7 +330,7 @@ export function Navbar() {
                 exit={{ opacity: 0, y: -6, scale: 0.96 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
                 style={{ backgroundColor: "#0d0e15" }}
-                className="absolute right-0 top-full mt-2.5 w-72 p-2.5 rounded-2xl border border-white/20 shadow-[0_30px_90px_rgba(0,0,0,0.98),0_0_0_1px_rgba(255,255,255,0.12)] z-[999999] select-none flex flex-col gap-1.5"
+                className="absolute right-0 top-full mt-2.5 w-[min(18rem,calc(100vw-24px))] p-2.5 rounded-2xl border border-white/20 shadow-[0_30px_90px_rgba(0,0,0,0.98),0_0_0_1px_rgba(255,255,255,0.12)] z-[999999] select-none flex flex-col gap-1.5"
               >
                 {/* Profile Card Header - High Contrast Solid Card */}
                 <div className="p-3 rounded-xl bg-[#161824] border border-white/10 flex items-center gap-3">
