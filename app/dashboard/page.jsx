@@ -469,6 +469,10 @@ export default function DelegateDashboard() {
       ));
   const isAllotted = isReg && Boolean(delegateRecord.allocatedCommittee);
 
+  useEffect(() => {
+    setDrafts(inspectDrafts(isReg));
+  }, [isReg]);
+
   const initials = (user?.displayName || user?.email || "D")
     .split(" ")
     .map((w) => w[0])
@@ -538,18 +542,18 @@ export default function DelegateDashboard() {
       <main className="max-w-4xl w-full mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-5 flex-1">
 
         {/* 1. IDENTITY & PROFILE CARD */}
-        <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#080808] p-6 sm:p-7 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-4 sm:gap-5">
+        <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#080808] p-4 sm:p-7 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+            <div className="flex items-center gap-3.5 sm:gap-5">
               <div className="relative shrink-0">
                 {user.photoURL ? (
                   <img
                     src={user.photoURL}
                     alt={displayName}
-                    className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl object-cover border border-white/20"
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl object-cover border border-white/20"
                   />
                 ) : (
-                  <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl bg-[#111111] border border-white/20 flex items-center justify-center text-white font-mono font-bold text-xl">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-[#111111] border border-white/20 flex items-center justify-center text-white font-mono font-bold text-lg sm:text-xl">
                     {initials}
                   </div>
                 )}

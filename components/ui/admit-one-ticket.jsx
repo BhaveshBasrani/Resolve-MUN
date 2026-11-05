@@ -1956,6 +1956,15 @@ function TicketCard({
   const height = width / geometry.aspect;
   const perfX = geometry.perforation * width;
   const reduced = usePrefersReducedMotion();
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const check = () => setIsMobileDevice(window.innerWidth <= 768 || window.matchMedia("(pointer: coarse)").matches);
+      check();
+      window.addEventListener("resize", check);
+      return () => window.removeEventListener("resize", check);
+    }
+  }, []);
   const drift = useDrift(texture.engine === "image" ? texture.speed : 0);
   const nameInfo = formatTicketNameLines(
     name,
@@ -1982,7 +1991,13 @@ function TicketCard({
       ...rest,
       children: [
         /* @__PURE__ */ jsx4("div", { className: "absolute inset-0", style: { background: texture.colorBack } }),
-        texture.engine === "image" && sourceImage ? /* @__PURE__ */ jsx4(
+        isMobileDevice ? /* @__PURE__ */ jsx4("div", {
+          className: "absolute inset-0 pointer-events-none",
+          style: {
+            background: `radial-gradient(circle at 65% 35%, ${texture.colorHighlight || texture.colorFront} 0%, ${texture.colorFront} 45%, ${texture.colorBack} 95%)`,
+            opacity: 0.88,
+          }
+        }) : texture.engine === "image" && sourceImage ? /* @__PURE__ */ jsx4(
           ImageDithering,
           {
             image: sourceImage,

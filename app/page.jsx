@@ -40,6 +40,18 @@ export default function Home() {
     currentUserRef.current = currentUser;
   }, [currentUser]);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const checkMobile = () =>
+        setIsMobile(window.innerWidth <= 768 || window.matchMedia("(pointer: coarse)").matches);
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
+    }
+  }, []);
+
   const [showWelcomeBox, setShowWelcomeBox] = useState(false);
   const [delegationInviteCode, setDelegationInviteCode] = useState(null);
 
@@ -2026,17 +2038,29 @@ export default function Home() {
           overflow: "hidden",
         }}
       >
-        {/* Immersive Shader Background */}
+        {/* Immersive Shader Background (Adaptive: Sleek CSS radial mesh on mobile, full WebGL on desktop) */}
         <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
-          <GradientBackground
-            colors={["#ffffff", "#000000", "#ffffff"]}
-            colorBack="#000000"
-            intensity={0.45}
-            softness={0.9}
-            noise={0}
-            speed={0.4}
-            style={{ position: "absolute", inset: 0, zIndex: 0 }}
-          />
+          {isMobile ? (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 0,
+                background:
+                  "radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.08) 0%, rgba(10, 10, 15, 0.95) 60%, #050508 100%)",
+              }}
+            />
+          ) : (
+            <GradientBackground
+              colors={["#ffffff", "#000000", "#ffffff"]}
+              colorBack="#000000"
+              intensity={0.45}
+              softness={0.9}
+              noise={0}
+              speed={0.4}
+              style={{ position: "absolute", inset: 0, zIndex: 0 }}
+            />
+          )}
           {/* Luminous atmospheric depth & vignette */}
           <div
             style={{
@@ -2051,12 +2075,14 @@ export default function Home() {
           <div className="hero-grid" style={{ zIndex: 2 }} />
         </div>
 
-        {/* Particles */}
-        <canvas
-          className="particles-canvas"
-          id="particles"
-          style={{ position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none" }}
-        />
+        {/* Particles (Desktop only to prevent mobile thermal GPU lag) */}
+        {!isMobile && (
+          <canvas
+            className="particles-canvas"
+            id="particles"
+            style={{ position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none" }}
+          />
+        )}
 
         {/* Foreground Content — Perfectly fitted, zero cutoff */}
         <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "900px", margin: "0 auto" }}>

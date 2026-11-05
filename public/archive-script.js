@@ -247,7 +247,7 @@
       qrImage.crossOrigin = "anonymous";
       qrImage.onerror = () => {
         qrImage.onerror = null;
-        qrImage.src = "/images/upi-qr.png";
+        qrImage.src = "/images/QR_Delegate_2599.svg";
       };
       qrImage.src = dynamicUrl;
     }

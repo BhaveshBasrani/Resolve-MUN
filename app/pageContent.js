@@ -130,10 +130,10 @@ export const homeHtml = `
       <div class="modal-pretitle">RESOLVE MUN 2.0 · PRIORITY ROUND</div>
       <h2 class="modal-title">DELEGATE REGISTRATION</h2>
       <span class="modal-subtitle">27th – 29th November 2026 · Meridian School, Kompally</span>
-      <div style="margin-top: 12px; display: flex; justify-content: center;">
-        <button type="button" onclick="closeModalById('regModal'); selectPathway('delegation');" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.22); color: #ffffff; border-radius: 9999px; padding: 6px 14px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
-          <span>Registering a School Contingent (6+ Delegates)?</span>
-          <strong style="text-decoration: underline; text-underline-offset: 3px;">Switch to Delegation Form &rarr;</strong>
+      <div style="margin-top: 10px; display: flex; justify-content: center;">
+        <button type="button" onclick="closeModalById('regModal'); selectPathway('delegation');" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.12); color: #ffffff; border-radius: 6px; padding: 5px 12px; font-size: 0.7rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+          <span style="color: rgba(255,255,255,0.6);">Registering a School Contingent (6+ Delegates)?</span>
+          <span style="font-weight: 700; text-decoration: underline; text-underline-offset: 2px;">Switch to Delegation Form &rarr;</span>
         </button>
       </div>
     </div>
@@ -322,9 +322,9 @@ export const homeHtml = `
 
               <!-- Direct UPI Launch Button for Mobile Users -->
               <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
-                <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  Pay via UPI App (GPay / PhonePe / Paytm)
+                <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
                 </a>
               </div>
 
@@ -1660,9 +1660,9 @@ export const homeHtml = `
 
               <!-- Direct UPI Launch Button for Mobile Users -->
               <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
-                <a id="ocPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=1500&cu=INR&tn=Resolve%20MUN%202026%20OC%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  Pay via UPI App (GPay / PhonePe / Paytm)
+                <a id="ocPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=1500&cu=INR&tn=Resolve%20MUN%202026%20OC%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
                 </a>
               </div>
 
@@ -2165,9 +2165,9 @@ export const homeHtml = `
 
               <!-- Direct UPI Launch Button for Mobile Users -->
               <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
-                <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  Pay via UPI App (GPay / PhonePe / Paytm)
+                <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
                 </a>
               </div>
 
@@ -2312,9 +2312,9 @@ export const homeHtml = `
 
               <!-- Direct UPI Launch Button for Mobile Users -->
               <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
-                <a id="socialsPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=999&cu=INR&tn=Resolve%20MUN%202026%20Socials%20Pass" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  Pay via UPI App (GPay / PhonePe / Paytm)
+                <a id="socialsPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=999&cu=INR&tn=Resolve%20MUN%202026%20Socials%20Pass" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
+                  <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
                 </a>
               </div>
 

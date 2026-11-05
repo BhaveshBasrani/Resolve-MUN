@@ -352,6 +352,7 @@ export default function Footer() {
     if (!ctx) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isMobile = window.innerWidth <= 640 || window.matchMedia("(pointer: coarse)").matches;
     const pal = new Uint32Array(tones.map((t) => rdfPack(rdfHex(t) || [128, 128, 128])));
     const nTones = pal.length;
 
@@ -392,9 +393,9 @@ export default function Footer() {
 
     const layout = () => {
       const rect = scene.getBoundingClientRect();
-      p = Math.max(1, Math.round(pixel));
+      p = isMobile ? 3 : Math.max(1, Math.round(pixel));
       const sceneW = rect.width || (typeof window !== "undefined" ? window.innerWidth : 1200);
-      const sceneH = Math.max(260, rect.height || 340);
+      const sceneH = isMobile ? 150 : Math.max(260, rect.height || 340);
       cols = Math.max(8, Math.ceil(sceneW / p));
       rows = Math.max(8, Math.ceil(sceneH / p));
       canvas.width = cols;
@@ -559,7 +560,9 @@ export default function Footer() {
         Math.abs((inside && o.interactive ? 1 : 0) - clear) > 0.005 ||
         Math.abs((live ? pt : 0) - pe) > 0.001 ||
         Math.abs(windV) > 0.002;
-      awake = (age >= 0 && age < 3400) || age < 0 || settling || (!reduced && o.drift > 0);
+      awake = isMobile
+        ? (age >= 0 && age < 2000)
+        : ((age >= 0 && age < 3400) || age < 0 || settling || (!reduced && o.drift > 0));
     };
 
     const busy = () => {
