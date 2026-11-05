@@ -10,7 +10,7 @@ import React, {
   useState,
 } from "react";
 import { LayoutGroup, motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function NotchLeftWing({ position = "top", className }) {
@@ -432,53 +432,43 @@ export function NotchNav({
         {/* Unified Horizontal Bar */}
         <div
           className={cn(
-            "w-full flex h-9 sm:h-10 items-center justify-between gap-1.5 sm:gap-2",
+            "w-full flex h-10 items-center justify-between gap-2",
             isBottom ? "items-baseline" : "items-center"
           )}
         >
           {/* Left Logo Slot */}
           {showLogo && logo && (
-            <div className="flex shrink-0 items-center text-white scale-[0.88] sm:scale-95 origin-left">
+            <div className="flex shrink-0 items-center text-white origin-left">
               {logo}
             </div>
           )}
 
-          {/* Center Dropdown Page Trigger */}
-          <button
-            type="button"
-            aria-expanded={isDropdownOpen}
-            aria-haspopup="listbox"
-            aria-label="Toggle navigation menu"
-            onClick={handleToggleDropdown}
-            className="group flex h-7 sm:h-8 cursor-pointer items-center justify-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white outline-none transition-colors hover:bg-zinc-850 border border-white/15 bg-white/[0.04]"
-          >
-            {activeItem?.icon && (
-              <activeItem.icon className="size-3.5 shrink-0 text-zinc-300" />
-            )}
-            <span className="leading-none">{activeItem?.label}</span>
-            {isBottom ? (
-              <ChevronUp
-                className={cn(
-                  "size-3 text-zinc-400 transition-transform duration-200",
-                  isDropdownOpen && "rotate-180"
-                )}
-              />
-            ) : (
-              <ChevronDown
-                className={cn(
-                  "size-3 text-zinc-400 transition-transform duration-200",
-                  isDropdownOpen && "rotate-180"
-                )}
-              />
-            )}
-          </button>
+          {/* Right Action & Menu Group */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Clean Mobile Menu Trigger */}
+            <button
+              type="button"
+              aria-expanded={isDropdownOpen}
+              aria-haspopup="listbox"
+              aria-label="Toggle navigation menu"
+              onClick={handleToggleDropdown}
+              className="flex h-7 px-2 sm:px-2.5 cursor-pointer items-center justify-center gap-1 sm:gap-1.5 rounded-lg border border-white/20 bg-white/[0.06] hover:bg-white/[0.12] text-[11px] font-mono font-semibold uppercase tracking-wider text-white outline-none transition-all"
+            >
+              {isDropdownOpen ? (
+                <X className="size-3.5 text-white/90" />
+              ) : (
+                <Menu className="size-3.5 text-white/90" />
+              )}
+              <span className="hidden sm:inline">Menu</span>
+            </button>
 
-          {/* Right Action Slot */}
-          {showRightContent && rightContent && (
-            <div className="flex shrink-0 items-center text-white scale-90 origin-right">
-              {rightContent}
-            </div>
-          )}
+            {/* Right Action Slot (Avatar / Register) */}
+            {showRightContent && rightContent && (
+              <div className="flex shrink-0 items-center text-white origin-right">
+                {rightContent}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Dropdown Menu */}

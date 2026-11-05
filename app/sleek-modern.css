@@ -1005,20 +1005,174 @@ body.modal-locked {
   }
 
   /* Founder's Letter (#letter / .letter-container) on mobile */
-  #letter,
-  .letter-container {
-    padding: 24px 16px !important;
+  #letter {
+    padding: 40px 14px !important;
+    scroll-margin-top: 75px !important;
+    overflow: hidden !important;
+  }
+
+  #letter .letter-inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  #letter .letter-section-title {
+    font-size: clamp(1.9rem, 7.5vw, 2.6rem) !important;
+    text-align: left !important;
+    margin: 0 0 14px !important;
+    padding-left: 2px !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+  }
+
+  #letter .letter-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 20px 14px !important;
+    box-sizing: border-box !important;
   }
 
   .letter-paper {
-    padding: 24px 16px !important;
-    border-radius: 14px !important;
+    padding: 20px 14px !important;
+    border-radius: 12px !important;
   }
 
   .letter-text,
   .letter-body p {
     font-size: 0.88rem !important;
     line-height: 1.65 !important;
+  }
+
+  /* Compact Minimal Monochrome Countdown */
+  #countdown {
+    margin: 20px auto 30px !important;
+    padding: 0 12px !important;
+  }
+
+  .countdown-label {
+    font-size: 0.65rem !important;
+    letter-spacing: 0.2em !important;
+    margin-bottom: 8px !important;
+    opacity: 0.6 !important;
+    text-align: center !important;
+  }
+
+  .countdown-units-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 6px !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+  }
+
+  .countdown-unit {
+    min-width: 56px !important;
+    max-width: 64px !important;
+    padding: 8px 4px !important;
+    border-radius: 8px !important;
+    background: #09090b !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .countdown-num {
+    font-size: 1.6rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.02em !important;
+    text-shadow: none !important;
+  }
+
+  .countdown-unit-label {
+    font-size: 0.5rem !important;
+    letter-spacing: 0.12em !important;
+    margin-top: 3px !important;
+    opacity: 0.6 !important;
+  }
+
+  .countdown-sep {
+    font-size: 1.1rem !important;
+    opacity: 0.3 !important;
+  }
+
+  /* About Section Tuning */
+  #about {
+    padding: 36px 14px !important;
+    scroll-margin-top: 75px !important;
+    overflow: hidden !important;
+  }
+
+  #about .about-inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  #about .section-title {
+    font-size: clamp(1.9rem, 7.5vw, 2.6rem) !important;
+    line-height: 1.05 !important;
+    margin-bottom: 12px !important;
+    text-align: left !important;
+    word-break: normal !important;
+  }
+
+  #about .section-title .title-accent,
+  .title-accent {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    filter: none !important;
+    text-shadow: none !important;
+  }
+
+  #about .section-body,
+  #about p.section-body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-size: 0.88rem !important;
+    font-weight: 400 !important;
+    line-height: 1.65 !important;
+    color: rgba(255, 255, 255, 0.72) !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    margin-bottom: 16px !important;
+  }
+
+  #about .about-stat-grid,
+  .about-stat-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 14px 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  #about .about-stat,
+  .about-stat {
+    padding: 10px 8px !important;
+    min-height: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Prevent any full-width carousel from bleeding off-screen */
+  .sec-carousel-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    left: auto !important;
+    right: auto !important;
+    overflow-x: auto !important;
+    box-sizing: border-box !important;
   }
 
   /* Selection Cards (track options) on mobile */

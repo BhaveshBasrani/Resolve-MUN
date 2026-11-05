@@ -300,7 +300,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="h-8 pl-1.5 pr-2.5 rounded-full bg-gradient-to-b from-white/[0.12] to-white/[0.04] hover:from-white/[0.18] hover:to-white/[0.08] border border-white/20 hover:border-white/35 flex items-center gap-2 transition-all duration-200 cursor-pointer active:scale-95 shadow-[0_4px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] text-xs text-white backdrop-blur-md"
+            className="h-7 sm:h-8 p-1 sm:pl-1.5 sm:pr-2.5 rounded-full bg-gradient-to-b from-white/[0.12] to-white/[0.04] hover:from-white/[0.18] hover:to-white/[0.08] border border-white/20 hover:border-white/35 flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer active:scale-95 shadow-[0_4px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] text-xs text-white backdrop-blur-md"
             aria-label="User menu"
             aria-expanded={userMenuOpen}
           >
@@ -315,10 +315,10 @@ export function Navbar() {
                 {getUserInitials()}
               </div>
             )}
-            <span className="text-xs font-medium text-white max-w-[85px] truncate leading-none tracking-tight">
+            <span className="hidden sm:inline text-xs font-medium text-white max-w-[85px] truncate leading-none tracking-tight">
               {user.displayName ? user.displayName.trim().split(/\s+/)[0] : "Delegate"}
             </span>
-            <ChevronDown className={`size-3 text-white/50 transition-transform duration-200 ${userMenuOpen ? "rotate-180 text-white" : ""}`} />
+            <ChevronDown className={`size-3 text-white/50 transition-transform duration-200 hidden sm:block ${userMenuOpen ? "rotate-180 text-white" : ""}`} />
           </button>
 
           {/* User Dropdown */}

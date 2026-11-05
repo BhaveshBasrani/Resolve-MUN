@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import GlassFolder from "./ui/glass-folder";
 
 const COMMITTEES = [
@@ -92,6 +92,16 @@ const COMMITTEES = [
 
 export default function CommitteesSection() {
   const [activeFolder, setActiveFolder] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const check = () => setIsMobile(window.innerWidth < 640);
+      check();
+      window.addEventListener("resize", check);
+      return () => window.removeEventListener("resize", check);
+    }
+  }, []);
 
   const handleFileSelect = (file, committeeName) => {
     if (typeof window !== "undefined" && window.showCustomAlert) {
@@ -102,8 +112,10 @@ export default function CommitteesSection() {
     }
   };
 
+  const folderWidth = isMobile ? 255 : 310;
+
   return (
-    <section id="committees" className="reveal relative py-20 px-4 sm:px-6 lg:px-8 bg-black overflow-hidden">
+    <section id="committees" className="reveal relative py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-black overflow-hidden scroll-mt-20">
       {/* Background Halftone Screen Pattern */}
       <div
         className="absolute inset-0 pointer-events-none opacity-40 z-0"
@@ -117,11 +129,11 @@ export default function CommitteesSection() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto text-left sm:text-center mb-10 sm:mb-16">
+      <div className="relative z-10 max-w-7xl mx-auto text-left sm:text-center mb-8 sm:mb-16">
         <div className="section-label" style={{ margin: "0 0 10px 0" }}>
           Official Committees
         </div>
-        <h2 className="font-['Bebas_Neue'] text-3xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-3">
+        <h2 className="font-['Bebas_Neue'] text-3xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-3 break-words">
           Where the Debate Happens
         </h2>
         <p className="font-['Oswald'] text-xs sm:text-sm font-normal text-zinc-400 max-w-2xl sm:mx-auto tracking-wide uppercase">
@@ -130,9 +142,9 @@ export default function CommitteesSection() {
       </div>
 
       {/* Glass Folder Cards Grid */}
-      <div className="relative z-10 max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-6 sm:gap-10 lg:gap-12 pb-8">
+      <div className="relative z-10 max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-5 sm:gap-10 lg:gap-12 pb-8">
         {COMMITTEES.map((comm, idx) => (
-          <div key={comm.id} className="w-full max-w-[310px] flex justify-center transition-transform duration-300 sm:hover:scale-[1.02]">
+          <div key={comm.id} className="w-full max-w-[260px] sm:max-w-[310px] flex justify-center transition-transform duration-300 sm:hover:scale-[1.02]">
             <GlassFolder
               label={comm.label}
               meta={comm.meta}
@@ -141,7 +153,7 @@ export default function CommitteesSection() {
               seed={comm.seed}
               files={comm.files}
               action="more"
-              width={310}
+              width={folderWidth}
               appear={true}
               appearDelay={idx * 80}
               open={activeFolder === comm.id}
