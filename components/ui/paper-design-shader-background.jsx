@@ -24,17 +24,17 @@ class ShaderErrorBoundary extends Component {
 }
 
 export function GradientBackground({
-  colors = ["hsl(268, 88%, 56%)", "hsl(220, 96%, 60%)", "hsl(285, 85%, 52%)"],
-  colorBack = "hsl(240, 25%, 3%)",
-  softness = 0.76,
-  intensity = 0.52,
+  colors = ["#ffffff", "#000000", "#ffffff"],
+  colorBack = "#000000",
+  softness = 0.9,
+  intensity = 0.45,
   noise = 0,
   shape = "corners",
   offsetX = 0,
   offsetY = 0,
   scale = 1,
   rotation = 0,
-  speed = 0.85,
+  speed = 0.4,
   className = "",
   style = {},
 }) {
@@ -60,7 +60,7 @@ export function GradientBackground({
         inset: 0,
         zIndex: -10,
         background:
-          "radial-gradient(ellipse at 50% 30%, rgba(99, 102, 241, 0.28) 0%, rgba(5, 5, 10, 0.95) 75%), linear-gradient(135deg, #050614 0%, #030308 100%)",
+        "radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0.95) 75%), #000000",
         ...style,
       }}
     />

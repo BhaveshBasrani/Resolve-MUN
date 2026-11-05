@@ -1,72 +1,151 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { MetalButton } from "@/components/ui/metal-button";
-import { 
-  Menu, 
-  X, 
-  ArrowUpRight, 
-  LayoutDashboard, 
-  LogOut, 
-  ChevronDown, 
-  Shield, 
-  Sparkles, 
-  FileText, 
-  MapPin, 
-  Users, 
-  FileDown, 
-  Headphones 
-} from "lucide-react";
-import { auth, signOutUser, onAuthStateChanged } from "@/lib/firebase";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  auth, signOutUser, onAuthStateChanged } from "@/lib/firebase";
+import {
+  NotchNav,
+  NotchLeftWing,
+  NotchRightWing,
+  NotchCornerLeftWing,
+  NotchCornerRightWing,
+} from "@/components/ui/adaptive-notch-navigation-bar";
+import {
+  LogOut,
+  LayoutDashboard,
+  ExternalLink,
+  ChevronDown,
+} from "lucide-react";
+
+/* Bespoke Handcrafted Navigation Icons (Custom SVG, Not Lucide) */
+function NavAboutIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="11" x2="12" y2="17" />
+      <circle cx="12" cy="7.5" r="0.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function NavLetterIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <path d="M4 4h16c.55 0 1 .45 1 1v14c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1V5c0-.55.45-1 1-1Z" />
+      <path d="m3 6 9 6 9-6" />
+      <line x1="7" y1="14" x2="11" y2="14" />
+      <line x1="7" y1="17" x2="14" y2="17" />
+    </svg>
+  );
+}
+
+function NavCommitteesIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <ellipse cx="12" cy="12" rx="4" ry="9" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="4.5" y1="7" x2="19.5" y2="7" />
+      <line x1="4.5" y1="17" x2="19.5" y2="17" />
+    </svg>
+  );
+}
+
+function NavVenueIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <path d="M12 21s-7-4.35-7-10.5a7 7 0 1 1 14 0c0 6.15-7 10.5-7 10.5Z" />
+      <circle cx="12" cy="10.5" r="2.5" />
+    </svg>
+  );
+}
+
+function NavTicketPassIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      {/* Authentic admission pass with circular cutout notches on top & bottom */}
+      <path d="M2 9a3 3 0 0 1 0 6v3.5A1.5 1.5 0 0 0 3.5 20h17a1.5 1.5 0 0 0 1.5-1.5V15a3 3 0 0 1 0-6V5.5A1.5 1.5 0 0 0 20.5 4h-17A1.5 1.5 0 0 0 2 5.5V9Z" />
+      {/* Dashed perforation stub dividing line */}
+      <line x1="15" y1="4.5" x2="15" y2="19.5" strokeDasharray="2 2" />
+      {/* Star / diplomat emblem on main pass body */}
+      <path d="m8.5 9 1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3 1-2Z" fill="currentColor" stroke="none" />
+      {/* Mini barcode lines on stub */}
+      <line x1="18" y1="9.5" x2="18" y2="14.5" />
+      <line x1="19.5" y1="10.5" x2="19.5" y2="13.5" />
+    </svg>
+  );
+}
+
+function NavBrochureIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+      <path d="M12 7v6m-3-3 3 3 3-3" />
+    </svg>
+  );
+}
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const scrollTicking = useRef(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("about");
   const userMenuRef = useRef(null);
 
+  // Auth observer
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Delegate",
+          displayName:
+            firebaseUser.displayName ||
+            firebaseUser.email?.split("@")[0] ||
+            "Delegate",
           photoURL: firebaseUser.photoURL || "",
         });
       } else {
         setUser(null);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
+  // Scrollspy to automatically synchronize active notch tab
   useEffect(() => {
-    const handleScroll = () => {
-      if (!scrollTicking.current) {
-        window.requestAnimationFrame(() => {
-          const currentY = window.scrollY;
-          setScrolled((prev) => {
-            if (currentY > 50) return true;
-            if (currentY < 18) return false;
-            return prev;
-          });
-          scrollTicking.current = false;
-        });
-        scrollTicking.current = true;
+    if (typeof window === "undefined") return;
+
+    const sectionIds = ["about", "letter", "committees", "venue", "delegate-pass"];
+    const handleScrollSpy = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const offsetThreshold = windowHeight * 0.35;
+
+      if (scrollY < 200) {
+        setActiveTab("about");
+        return;
+      }
+
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sectionIds[i]);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= offsetThreshold) {
+            setActiveTab(sectionIds[i]);
+            return;
+          }
+        }
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScrollSpy, { passive: true });
+    return () => window.removeEventListener("scroll", handleScrollSpy);
   }, []);
 
-  // Close user menu on click outside
+  // Close user menu on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
@@ -77,34 +156,7 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Prevent background scrolling when mobile menu is open
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-      document.body.style.touchAction = "none";
-    } else {
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
-    };
-  }, [mobileOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        if (mobileOpen) setMobileOpen(false);
-        if (userMenuOpen) setUserMenuOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileOpen, userMenuOpen]);
-
   const openModal = () => {
-    setMobileOpen(false);
     if (typeof window !== "undefined") {
       if (typeof window.openAuthModal === "function") return window.openAuthModal();
       if (typeof window.openSelectionModal === "function") return window.openSelectionModal();
@@ -121,7 +173,6 @@ export function Navbar() {
     try {
       await signOutUser();
       setUserMenuOpen(false);
-      setMobileOpen(false);
       if (typeof window !== "undefined" && window.showAlert) {
         window.showAlert("Signed out successfully", "info");
       }
@@ -135,412 +186,236 @@ export function Navbar() {
     const name = (user.displayName || "").trim();
     if (name) {
       const parts = name.split(/\s+/).filter(Boolean);
-      if (parts.length >= 2 && parts[0] && parts[1] && parts[0][0] && parts[1][0]) {
+      if (parts.length >= 2 && parts[0] && parts[1]) {
         return (parts[0][0] + parts[1][0]).toUpperCase();
       }
-      if (parts.length >= 1 && parts[0]) {
+      if (parts.length >= 1) {
         return parts[0].slice(0, 1).toUpperCase();
       }
     }
     if (user.email) {
-      const clean = user.email.trim();
-      return clean.slice(0, 1).toUpperCase();
+      return user.email.slice(0, 1).toUpperCase();
     }
     return "D";
   };
 
-  const navLinks = [
-    { href: "/#about", label: "About", icon: Sparkles, note: null },
-    { href: "/#letter", label: "Letter", icon: FileText, note: null },
-    { href: "/#committees", label: "Committees", icon: Shield, note: "Soon" },
-    { href: "/#venue", label: "Venue", icon: MapPin, note: "Soon" },
-    { href: "/#secretariat", label: "Secretariat", icon: Users, note: "Soon" },
+  const scrollToAnchor = useCallback((targetId) => {
+    if (typeof window === "undefined") return;
+    const target = document.getElementById(targetId);
+    if (target) {
+      const navOffset = 64;
+      const targetTop = target.getBoundingClientRect().top + window.scrollY - navOffset;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+    }
+  }, []);
+
+  const handleNavSelect = (id) => {
+    setActiveTab(id);
+    if (id === "brochure") {
+      if (typeof window !== "undefined") {
+        if (window.showCustomAlert) {
+          window.showCustomAlert("Delegate Brochure releasing soon!", "info");
+        } else if (window.showAlert) {
+          window.showAlert("Delegate Brochure releasing soon!", "info");
+        } else {
+          alert("Delegate Brochure releasing soon!");
+        }
+      }
+      return;
+    }
+    scrollToAnchor(id);
+  };
+
+  const navItems = [
+    { id: "about", label: "About", icon: NavAboutIcon },
+    { id: "letter", label: "Letter", icon: NavLetterIcon },
+    { id: "committees", label: "Committees", icon: NavCommitteesIcon },
+    { id: "venue", label: "Venue", icon: NavVenueIcon },
+    { id: "delegate-pass", label: "Passes", icon: NavTicketPassIcon },
+    { id: "brochure", label: "Brochure", icon: NavBrochureIcon, disabled: false },
   ];
 
-  return (
-    <>
-      {/* Header container */}
-      <header id="navbar" className="fixed top-0 left-0 right-0 z-[10000] flex justify-center pointer-events-none">
-        <div
-          style={{
-            willChange: "transform, background-color, border-color, box-shadow",
-            transform: "translate3d(0, 0, 0)",
+  // Brand Logo Notch Slot (Vivid UN Colors)
+  const logoSlot = (
+    <Link
+      href="/#hero"
+      onClick={(e) => {
+        if (typeof window !== "undefined" && window.location.pathname === "/") {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }}
+      className="flex items-center gap-2 group outline-none select-none !no-underline"
+      aria-label="Resolve MUN 2.0"
+    >
+      <div className="relative size-6 shrink-0 flex items-center justify-center">
+        <img
+          src="/images/Logo.svg"
+          onError={(e) => {
+            e.currentTarget.src = "https://resolvemun.in/images/Logo.svg";
           }}
-          className={[
-            "pointer-events-auto flex items-center justify-between gap-2 sm:gap-4 select-none",
-            "transition-[background-color,border-color,box-shadow] duration-300 ease-out",
-            "mt-2 sm:mt-3 md:mt-4 py-1.5 sm:py-2 px-3 sm:px-6 lg:px-7 rounded-full sm:rounded-2xl border backdrop-blur-2xl w-[95%] sm:w-[92%] lg:w-[88%] max-w-5xl",
-            scrolled
-              ? "bg-[#060814]/90 border-white/[0.12] shadow-[0_12px_36px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.06)]"
-              : "bg-[#070918]/75 border-white/[0.08] shadow-[0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04)]",
-          ].join(" ")}
-        >
-          {/* Logo & Brand */}
-          <Link
-            href="/#hero"
-            className="flex items-center gap-2 sm:gap-2.5 md:gap-3 shrink min-w-0 group"
-            style={{ textDecoration: "none" }}
+          alt="Resolve MUN"
+          className="size-full object-contain transition-transform duration-200 group-hover:scale-105"
+        />
+      </div>
+      <span
+        className="text-[1.28rem] tracking-[0.14em] leading-none text-white group-hover:text-zinc-200 transition-colors duration-200 font-bold whitespace-nowrap pt-0.5"
+        style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+      >
+        RESOLVE MUN 2.0
+      </span>
+    </Link>
+  );
+
+  // Animation variants for sleek profile dropdown
+  const dropdownContentVariants = {
+    hidden: { opacity: 0, y: -8, scale: 0.96 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        damping: 22,
+        stiffness: 320,
+        staggerChildren: 0.04,
+      },
+    },
+    exit: { opacity: 0, y: -6, scale: 0.96, transition: { duration: 0.15 } },
+  };
+
+  const dropdownItemVariants = {
+    hidden: { opacity: 0, y: 6 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+  };
+
+  // Right Action Notch Slot (Refined Luxury Glass Pill & Floating Profile Card)
+  const rightContentSlot = (
+    <div className="flex items-center gap-2" ref={userMenuRef}>
+      {user ? (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            className="h-8 pl-1.5 pr-2.5 rounded-full bg-gradient-to-b from-white/[0.12] to-white/[0.04] hover:from-white/[0.18] hover:to-white/[0.08] border border-white/20 hover:border-white/35 flex items-center gap-2 transition-all duration-200 cursor-pointer active:scale-95 shadow-[0_4px_16px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] text-xs text-white backdrop-blur-md"
+            aria-label="User menu"
+            aria-expanded={userMenuOpen}
           >
-            <div className="relative shrink-0 flex items-center justify-center">
+            {user.photoURL ? (
               <img
-                src="/images/Logo.svg"
-                onError={(e) => {
-                  e.currentTarget.src = "https://resolvemun.in/images/Logo.svg";
-                }}
-                alt="Resolve MUN 2.0"
-                className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 object-contain block transition-opacity duration-200 group-hover:opacity-85"
+                src={user.photoURL}
+                alt={user.displayName || "User"}
+                className="size-5 rounded-full object-cover shrink-0 ring-1 ring-white/40 shadow-sm"
               />
-            </div>
-            <div className="flex items-baseline gap-1.5 min-w-0">
-              <span
-                className="text-[1.15rem] sm:text-[1.25rem] md:text-[1.38rem] tracking-[0.08em] leading-none text-white/90 group-hover:text-white transition-colors duration-200 truncate"
-                style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+            ) : (
+              <div className="size-5 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0 ring-1 ring-white/30 shadow-sm">
+                {getUserInitials()}
+              </div>
+            )}
+            <span className="text-xs font-medium text-white max-w-[85px] truncate leading-none tracking-tight">
+              {user.displayName ? user.displayName.trim().split(/\s+/)[0] : "Delegate"}
+            </span>
+            <ChevronDown className={`size-3 text-white/50 transition-transform duration-200 ${userMenuOpen ? "rotate-180 text-white" : ""}`} />
+          </button>
+
+          {/* User Dropdown */}
+          <AnimatePresence>
+            {userMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                style={{ backgroundColor: "#0d0e15" }}
+                className="absolute right-0 top-full mt-2.5 w-72 p-2.5 rounded-2xl border border-white/20 shadow-[0_30px_90px_rgba(0,0,0,0.98),0_0_0_1px_rgba(255,255,255,0.12)] z-[999999] select-none flex flex-col gap-1.5"
               >
-                RESOLVE MUN 2.0
-              </span>
-            </div>
-          </Link>
-
-          {/* Desktop Nav Pills */}
-          <div role="navigation" aria-label="Main Navigation" className="hidden lg:flex items-center gap-0.5 bg-white/[0.03] border border-white/[0.07] rounded-xl px-2 py-1 backdrop-blur-xl">
-            {navLinks.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors duration-150 inline-block"
-              >
-                {l.label}
-              </a>
-            ))}
-
-            {/* Disabled Brochure Button in Navbar */}
-            <button
-              type="button"
-              disabled
-              title="Delegate Brochure Releasing Soon"
-              onClick={(e) => {
-                e.preventDefault();
-                if (typeof window !== "undefined" && window.showAlert) {
-                  window.showAlert("Delegate Brochure releasing soon!");
-                }
-              }}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-white/40 inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed select-none pointer-events-auto"
-            >
-              <span>Brochure</span>
-              <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-md bg-white/[0.06] text-white/60 border border-white/10 inline-block leading-none">
-                Soon
-              </span>
-            </button>
-          </div>
-
-          {/* Right Action: DESKTOP & MOBILE RIGHT CLUSTER */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0" ref={userMenuRef}>
-            {user ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="h-8 sm:h-9 pl-1.5 pr-2.5 sm:pr-3 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-white/20 flex items-center gap-1.5 sm:gap-2 transition-colors duration-150 cursor-pointer active:scale-[0.98] shadow-sm overflow-hidden"
-                  aria-label="User menu"
-                  aria-expanded={userMenuOpen}
-                >
+                {/* Profile Card Header - High Contrast Solid Card */}
+                <div className="p-3 rounded-xl bg-[#161824] border border-white/10 flex items-center gap-3">
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
                       alt={user.displayName || "User"}
-                      className="w-5 h-5 sm:w-6 sm:h-6 min-w-[20px] min-h-[20px] rounded-full object-cover shrink-0 border border-white/30"
+                      className="size-9 rounded-full object-cover shrink-0 ring-1 ring-white/30 shadow-md"
                     />
                   ) : (
-                    <div
-                      className="w-5 h-5 sm:w-6 sm:h-6 min-w-[20px] min-h-[20px] rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-[10px] sm:text-[11px] flex items-center justify-center border border-white/30 shrink-0 select-none overflow-hidden"
-                    >
+                    <div className="size-9 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 border border-white/20 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-md">
                       {getUserInitials()}
                     </div>
                   )}
-                  <span className="text-[11px] sm:text-xs font-semibold text-white/95 max-w-[65px] sm:max-w-[85px] truncate leading-none">
-                    {user.displayName ? user.displayName.trim().split(/\s+/)[0] : "Delegate"}
-                  </span>
-                  <ChevronDown size={12} className="text-white/60 shrink-0" />
-                </button>
-
-                {/* User Dropdown Menu - Sleek, Glassmorphic & Modern */}
-                {userMenuOpen && (
-                  <div
-                    className="absolute right-0 mt-2 sm:mt-3 w-72 p-2 rounded-2xl border border-white/10 bg-[#0a0d18]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150 z-[100000] select-none"
-                  >
-                    {/* User Profile Card */}
-                    <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] mb-1.5">
-                      <div className="flex items-center gap-3">
-                        {user.photoURL ? (
-                          <img
-                            src={user.photoURL}
-                            alt={user.displayName || "User"}
-                            className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/30 ring-2 ring-indigo-500/30 shadow-md"
-                            style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}
-                          />
-                        ) : (
-                          <div
-                            className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-white/30 ring-2 ring-indigo-500/30 shadow-md"
-                            style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}
-                          >
-                            {getUserInitials()}
-                          </div>
-                        )}
-                        <div className="overflow-hidden min-w-0 flex-1">
-                          <p className="text-[13px] font-bold text-white truncate leading-tight tracking-tight">
-                            {user.displayName || "Delegate"}
-                          </p>
-                          <p className="text-[11px] text-white/55 truncate font-sans leading-tight mt-1" title={user.email}>
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-white/[0.08]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-300 font-semibold">
-                          Delegate Account Active
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Menu Actions */}
-                    <div className="space-y-1">
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setUserMenuOpen(false)}
-                        style={{ textDecoration: 'none' }}
-                        className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-white/90 hover:text-white hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors duration-150 group !no-underline cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 transition-colors">
-                            <LayoutDashboard size={14} />
-                          </div>
-                          <div>
-                            <span className="block font-semibold text-white group-hover:text-indigo-200 transition-colors">Delegate Dashboard</span>
-                            <span className="block text-[10px] text-white/45 font-normal">View pass &amp; committee details</span>
-                          </div>
-                        </div>
-                        <ArrowUpRight size={13} className="text-white/30 group-hover:text-white/80 transition-colors" />
-                      </Link>
-
-                      <div className="h-px bg-white/[0.08] my-1 mx-1" />
-
-                      <button
-                        type="button"
-                        onClick={handleSignOut}
-                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 active:bg-rose-500/15 transition-colors duration-150 text-left cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 transition-colors">
-                            <LogOut size={13} />
-                          </div>
-                          <span>Sign Out</span>
-                        </div>
-                      </button>
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-white tracking-tight truncate leading-tight">
+                      {user.displayName || "Account"}
+                    </p>
+                    <p className="text-xs text-zinc-300 font-mono truncate mt-0.5">
+                      {user.email}
+                    </p>
                   </div>
-                )}
-              </div>
-            ) : (
-              <MetalButton
-                preset="chromatic"
-                size="xs"
-                strength={0.7}
-                onClick={openModal}
-                wrapperClassName="shrink-0"
-                className="nav-register-btn h-7 sm:h-8 px-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold tracking-wider uppercase rounded-full"
-              >
-                REGISTER
-              </MetalButton>
-            )}
-
-            {/* Mobile Navigation Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/15 text-white active:scale-95 transition-all duration-150 cursor-pointer shadow-sm shrink-0"
-              aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
-              aria-expanded={mobileOpen}
-            >
-              {mobileOpen ? <X size={16} className="text-white" /> : <Menu size={16} className="text-white" />}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Drawer Backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-[10001] bg-black/80 backdrop-blur-md lg:hidden transition-opacity duration-300"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Mobile Navigation Drawer */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-x-3.5 top-[58px] sm:top-[68px] z-[10002] p-4 rounded-2xl flex flex-col gap-2.5 lg:hidden select-none animate-in fade-in slide-in-from-top-3 duration-200 max-h-[calc(100dvh-78px)] overflow-y-auto"
-          style={{
-            background: "radial-gradient(ellipse at top right, rgba(14, 18, 42, 0.98) 0%, rgba(5, 7, 20, 0.99) 100%)",
-            backdropFilter: "blur(24px) saturate(180%)",
-            WebkitBackdropFilter: "blur(24px) saturate(180%)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-            boxShadow: "0 20px 50px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08)",
-          }}
-          role="dialog"
-          aria-label="Mobile Navigation"
-        >
-          {/* Drawer Header Badge */}
-          {user ? (
-            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/40 border border-blue-400/20">
-              <div className="flex items-center gap-2.5 min-w-0">
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.displayName || "User"}
-                    className="w-9 h-9 rounded-full object-cover shrink-0 border border-blue-400/50 shadow-sm"
-                    style={{ width: '36px', height: '36px', minWidth: '36px', minHeight: '36px' }}
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-bold text-xs flex items-center justify-center border border-white/30 shrink-0">
-                    {getUserInitials()}
-                  </div>
-                )}
-                <div className="overflow-hidden min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-white truncate">{user.displayName || "Delegate"}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
-                  </div>
-                  <p className="text-[11px] text-white/55 truncate font-mono">{user.email}</p>
                 </div>
-              </div>
 
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileOpen(false)}
-                className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-blue-300 bg-blue-500/15 border border-blue-400/30 hover:bg-blue-500/25 transition-colors"
-              >
-                <span>Portal</span>
-                <ArrowUpRight size={12} />
-              </Link>
-            </div>
-          ) : (
-            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_#34d399] animate-pulse"></span>
+                <div className="h-px bg-white/10 my-0.5 mx-1" />
+
+                {/* Delegate Dashboard */}
                 <div>
-                  <div className="text-[11px] font-bold font-mono tracking-wider text-emerald-300 uppercase">
-                    REGISTRATIONS OPEN
-                  </div>
-                  <div className="text-[10px] text-white/50 tracking-wide">
-                    Resolve MUN 2.0 • Hyderabad
-                  </div>
-                </div>
-              </div>
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-white/[0.06] border border-white/10 text-white/60 font-semibold">
-                2026
-              </span>
-            </div>
-          )}
-
-          {/* Navigation Links Grid / Stack */}
-          <div className="flex flex-col gap-1 my-1">
-            {user && (
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileOpen(false)}
-                className="group flex items-center justify-between min-h-[44px] px-3.5 rounded-xl text-sm font-bold text-blue-200 bg-blue-500/15 border border-blue-400/25 hover:bg-blue-500/25 transition-all mb-1"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-blue-300">
-                    <LayoutDashboard size={14} />
-                  </div>
-                  <span className="tracking-wide">Delegate Dashboard</span>
-                </div>
-                <ArrowUpRight size={14} className="text-blue-400" />
-              </Link>
-            )}
-
-            {navLinks.map((l) => {
-              const Icon = l.icon;
-              return (
-                <a
-                  key={l.label}
-                  href={l.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="group flex items-center justify-between min-h-[44px] px-3.5 rounded-xl text-sm font-medium text-white/80 hover:text-white hover:bg-white/[0.06] active:bg-blue-500/15 transition-all duration-150"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center text-blue-400 group-hover:text-blue-300 group-hover:border-blue-400/30 transition-colors">
-                      <Icon size={14} />
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-200 hover:text-white hover:bg-white/10 transition-all !no-underline"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-7 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-white group-hover:bg-white/20 transition-all">
+                        <LayoutDashboard className="size-3.5" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="leading-tight text-white text-[13px] font-semibold">Delegate Dashboard</span>
+                        <span className="text-[11px] text-zinc-300 font-normal">View pass & credentials</span>
+                      </div>
                     </div>
-                    <span className="font-semibold tracking-wide text-[13px]">{l.label}</span>
-                  </div>
-                  {l.note ? (
-                    <span className="text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-400/25">
-                      {l.note}
-                    </span>
-                  ) : (
-                    <ArrowUpRight size={14} className="text-white/25 group-hover:text-white/60 transition-colors" />
-                  )}
-                </a>
-              );
-            })}
-
-            {/* Delegate Brochure Link (Disabled Preview) */}
-            <div
-              className="flex items-center justify-between min-h-[44px] px-3.5 rounded-xl text-sm font-medium text-white/35 cursor-not-allowed bg-white/[0.02]"
-              title="Delegate Brochure Releasing Soon"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/30">
-                  <FileDown size={14} />
+                    <ExternalLink className="size-3 text-zinc-300 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                  </Link>
                 </div>
-                <span className="tracking-wide text-[13px]">Delegate Brochure</span>
-              </div>
-              <span className="text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-white/[0.05] text-white/40 border border-white/10">
-                Soon
-              </span>
-            </div>
-          </div>
 
-          {/* Drawer Actions CTA */}
-          <div className="pt-2 border-t border-white/[0.08] flex flex-col gap-2">
-            {user ? (
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="w-full flex items-center justify-center gap-2 min-h-[42px] rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 active:scale-98 transition-all cursor-pointer"
-              >
-                <LogOut size={14} />
-                <span>SIGN OUT</span>
-              </button>
-            ) : (
-              <MetalButton
-                preset="chromatic"
-                size="md"
-                strength={1}
-                onClick={openModal}
-                wrapperClassName="w-full"
-                className="w-full justify-center tracking-wider uppercase font-bold min-h-[46px] rounded-xl text-xs"
-              >
-                REGISTER FOR RESOLVE 2.0 &rarr;
-              </MetalButton>
+                <div className="h-px bg-white/10 my-0.5 mx-1" />
+
+                {/* Sign Out */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-200 hover:text-red-400 hover:bg-red-500/10 transition-all text-left cursor-pointer"
+                  >
+                    <div className="size-7 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-zinc-300 group-hover:text-red-400 group-hover:border-red-500/30 group-hover:bg-red-500/20 transition-all">
+                      <LogOut className="size-3.5" />
+                    </div>
+                    <span className="text-[13px] font-semibold">Sign Out</span>
+                  </button>
+                </div>
+              </motion.div>
             )}
-
-            {/* Secretariat Support Quick Note */}
-            <div className="flex items-center justify-center gap-2 text-[10px] text-white/45 font-mono pt-1">
-              <Headphones size={11} className="text-blue-400/70" />
-              <span>Questions? Call <a href="tel:+919212107797" className="text-blue-300/80 hover:underline">+91 92121 07797</a></span>
-            </div>
-          </div>
+          </AnimatePresence>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={openModal}
+          className="relative inline-flex items-center justify-center h-8 px-4 rounded-full bg-white text-black font-extrabold text-xs uppercase tracking-wider hover:bg-zinc-100 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 transition-all shadow-sm cursor-pointer"
+        >
+          Register
+        </button>
       )}
-    </>
+    </div>
+  );
+
+  return (
+    <NotchNav
+      items={navItems}
+      activeId={activeTab}
+      position="top"
+      logo={logoSlot}
+      rightContent={rightContentSlot}
+      showLogo={true}
+      showRightContent={true}
+      onActiveChange={handleNavSelect}
+    />
   );
 }
-
 export default Navbar;
-

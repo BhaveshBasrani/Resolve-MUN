@@ -12,6 +12,7 @@ import {
 } from "@/lib/firebase";
 import Link from "next/link";
 import { MetalButton } from "@/components/ui/metal-button";
+import ChromeButton from "@/components/ui/chrome-button";
 import { Sparkles, ArrowUpRight, FileText, X, Check } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
@@ -20,7 +21,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthModal } from "@/components/AuthModal";
 import ModalShaderBackdrop from "@/components/ModalShaderBackdrop";
+import CommitteesSection from "@/components/CommitteesSection";
+import DelegatePassSection from "@/components/DelegatePassSection";
 import { GradientBackground } from "@/components/ui/paper-design-shader-background";
+
+const [homePart1, homePart2] = homeHtml.split("<!-- COMMITTEES_PLACEHOLDER -->");
 
 export default function Home() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -240,31 +245,79 @@ export default function Home() {
     // Instant Countdown Initialization (Never shows -- : --)
     let cdInterval = null;
     try {
-      const countdownDate = new Date("2026-11-27T08:00:00");
+      // Resolve MUN 2.0 Dates: 27th to 29th November 2026
+      const startDate = new Date("2026-11-27T08:00:00");
+      const endDate = new Date("2026-11-29T20:00:00");
+
       const updateCd = () => {
+        const cdLabel = document.getElementById("cd-label");
         const cdDays = document.getElementById("cd-days");
         const cdHours = document.getElementById("cd-hours");
         const cdMins = document.getElementById("cd-mins");
         const cdSecs = document.getElementById("cd-secs");
+        const cdUnits = document.getElementById("cd-units");
+        const cdLiveBanner = document.getElementById("cd-live-banner");
         if (!cdDays || !cdHours || !cdMins || !cdSecs) return;
+
         const now = new Date();
-        const diff = countdownDate - now;
-        if (diff <= 0) {
-          cdDays.textContent = "00";
-          cdHours.textContent = "00";
-          cdMins.textContent = "00";
-          cdSecs.textContent = "00";
+
+        // 1. Before Conference -> Count down to startDate
+        if (now < startDate) {
+          if (cdLabel) {
+            cdLabel.textContent = "CONFERENCE OPENS IN";
+            cdLabel.style.display = "inline-block";
+          }
+          if (cdUnits) cdUnits.style.display = "flex";
+          if (cdLiveBanner) cdLiveBanner.style.display = "none";
+
+          const diff = startDate - now;
+          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+          cdDays.textContent = String(d).padStart(2, "0");
+          cdHours.textContent = String(h).padStart(2, "0");
+          cdMins.textContent = String(m).padStart(2, "0");
+          cdSecs.textContent = String(s).padStart(2, "0");
           return;
         }
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((diff % (1000 * 60)) / 1000);
-        cdDays.textContent = String(d).padStart(2, "0");
-        cdHours.textContent = String(h).padStart(2, "0");
-        cdMins.textContent = String(m).padStart(2, "0");
-        cdSecs.textContent = String(s).padStart(2, "0");
+
+        // 2. During the Three Days (Nov 27 to Nov 29) -> RESOLVE IS HAPPENING RIGHT NOW
+        if (now >= startDate && now <= endDate) {
+          if (cdLiveBanner) {
+            cdLiveBanner.style.display = "inline-flex";
+            if (cdLabel) cdLabel.style.display = "none";
+            if (cdUnits) cdUnits.style.display = "none";
+          } else if (cdLabel) {
+            cdLabel.textContent = "RESOLVE IS HAPPENING RIGHT NOW";
+            cdLabel.style.display = "inline-block";
+          }
+          return;
+        }
+
+        // 3. After the Three Days -> Count up since conclusion
+        if (now > endDate) {
+          if (cdLabel) {
+            cdLabel.textContent = "SINCE RESOLVE 2.0";
+            cdLabel.style.display = "inline-block";
+          }
+          if (cdUnits) cdUnits.style.display = "flex";
+          if (cdLiveBanner) cdLiveBanner.style.display = "none";
+
+          const diff = now - endDate;
+          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+          cdDays.textContent = String(d).padStart(2, "0");
+          cdHours.textContent = String(h).padStart(2, "0");
+          cdMins.textContent = String(m).padStart(2, "0");
+          cdSecs.textContent = String(s).padStart(2, "0");
+        }
       };
+
       updateCd();
       cdInterval = setInterval(updateCd, 1000);
     } catch (e) {
@@ -704,9 +757,30 @@ export default function Home() {
         closeModalById("commModal");
       };
 
-      window.openTermsModal = function () {
+      window.switchTermsTab = function (type, btn) {
+        document.querySelectorAll(".terms-tab-pill").forEach((b) => b.classList.remove("active"));
+        if (btn) {
+          btn.classList.add("active");
+        } else {
+          const activeBtn = document.querySelector('.terms-tab-pill[data-tab="' + type + '"]');
+          if (activeBtn) activeBtn.classList.add("active");
+        }
+        const del = document.getElementById("termsDelegateContent");
+        const oc = document.getElementById("termsOcContent");
+        const pri = document.getElementById("termsPrivacyContent");
+        if (del) del.style.display = type === "delegate" ? "block" : "none";
+        if (oc) oc.style.display = type === "oc" ? "block" : "none";
+        if (pri) pri.style.display = type === "privacy" ? "block" : "none";
+        const scrollBody = document.querySelector(".terms-scroll-body");
+        if (scrollBody) scrollBody.scrollTop = 0;
+      };
+
+      window.openTermsModal = function (initialTab) {
         const modal = document.getElementById("termsModal");
         if (modal) {
+          if (initialTab && typeof initialTab === "string") {
+            window.switchTermsTab(initialTab);
+          }
           modal.classList.add("active");
           document.body.style.overflow = "hidden";
         }
@@ -716,31 +790,14 @@ export default function Home() {
         closeModalById("termsModal");
       };
 
-      window.showCustomAlert = function (msg, type) {
-        const container = document.getElementById("custom-alert-container");
-        if (!container) {
-          alert(msg);
-          return;
+      window.showCustomAlert = function (msg, type, duration, title) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("resolve-alert", {
+              detail: { message: msg, type: type, duration: duration, title: title },
+            })
+          );
         }
-        const alertEl = document.createElement("div");
-        alertEl.className = "custom-alert " + (type || "default");
-        alertEl.innerHTML = `
-          <div class="custom-alert-content">${msg}</div>
-          <button class="custom-alert-close" aria-label="Close">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        `;
-        container.appendChild(alertEl);
-        const closeBtn = alertEl.querySelector('.custom-alert-close');
-        const dismiss = () => {
-          alertEl.classList.add("fade-out");
-          setTimeout(() => alertEl.remove(), 350);
-        };
-        if (closeBtn) closeBtn.onclick = dismiss;
-        setTimeout(dismiss, 3800);
       };
 
       window.copyUPI = function () {
@@ -1108,81 +1165,97 @@ export default function Home() {
     
     // GSAP Silky Smooth & Minimal Hero Loading Animation
     try {
-      // 1. Subtle, clean Navbar entrance
-      gsap.fromTo(
-        "#navbar > div",
-        { opacity: 0, y: -16 },
-        { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", delay: 0.05 }
-      );
-
-      // 2. Coordinated hero sequence
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.fromTo(
-        ".hero-eyebrow",
-        { opacity: 0, y: -10 },
-        { opacity: 1, y: 0, duration: 0.45, delay: 0.1 }
-      )
-      .fromTo(
-        ".hero-title span:first-child",
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
-        "-=0.3"
-      )
-      .fromTo(
-        ".hero-title .mun",
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
-        "-=0.35"
-      )
-      .fromTo(
-        ".hero-tagline",
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
-        "-=0.3"
-      )
-      .fromTo(
-        ".hero-meta-item",
-        { opacity: 0, y: 12 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.4,
-          stagger: 0.06,
-          ease: "power2.out",
-          onStart: () => {
-            // Subtle, premium counter animation for stats
-            document.querySelectorAll(".hero-meta-item .value[data-target]").forEach((el) => {
-              const target = parseFloat(el.getAttribute("data-target"));
-              if (isNaN(target)) return;
-              const obj = { val: 0 };
-              gsap.to(obj, {
-                val: target,
-                duration: 0.9,
-                ease: "power2.out",
-                onUpdate: () => {
-                  el.textContent = Math.round(obj.val);
-                },
-                onComplete: () => {
-                  el.textContent = target;
-                }
-              });
-            });
-          }
-        },
-        "-=0.25"
-      )
-      .fromTo(
-        ".hero-meta-divider",
-        { scaleY: 0, opacity: 0 },
-        { scaleY: 1, opacity: 1, duration: 0.35, stagger: 0.04, ease: "power2.out" },
-        "-=0.35"
-      )
-      .fromTo(
-        ".hero-actions",
-        { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
-        "-=0.2"
-      );
+      const hero = document.querySelector(".hero-title");
+      if (hero) {
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+        const eyebrow = document.querySelector(".hero-eyebrow");
+        if (eyebrow) {
+          tl.fromTo(
+            eyebrow,
+            { opacity: 0, y: -10 },
+            { opacity: 1, y: 0, duration: 0.45, delay: 0.1 }
+          );
+        }
+        const span1 = document.querySelector(".hero-title span:first-child");
+        if (span1) {
+          tl.fromTo(
+            span1,
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+            "-=0.3"
+          );
+        }
+        const mun = document.querySelector(".hero-title .mun");
+        if (mun) {
+          tl.fromTo(
+            mun,
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+            "-=0.35"
+          );
+        }
+        const tagline = document.querySelector(".hero-tagline");
+        if (tagline) {
+          tl.fromTo(
+            tagline,
+            { opacity: 0, y: 10 },
+            { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+            "-=0.3"
+          );
+        }
+        const metaItems = document.querySelectorAll(".hero-meta-item");
+        if (metaItems && metaItems.length > 0) {
+          tl.fromTo(
+            metaItems,
+            { opacity: 0, y: 12 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.4,
+              stagger: 0.06,
+              ease: "power2.out",
+              onStart: () => {
+                // Subtle, premium counter animation for stats
+                document.querySelectorAll(".hero-meta-item .value[data-target]").forEach((el) => {
+                  const target = parseFloat(el.getAttribute("data-target"));
+                  if (isNaN(target)) return;
+                  const obj = { val: 0 };
+                  gsap.to(obj, {
+                    val: target,
+                    duration: 0.9,
+                    ease: "power2.out",
+                    onUpdate: () => {
+                      el.textContent = Math.round(obj.val);
+                    },
+                    onComplete: () => {
+                      el.textContent = target;
+                    }
+                  });
+                });
+              }
+            },
+            "-=0.25"
+          );
+        }
+        const dividers = document.querySelectorAll(".hero-meta-divider");
+        if (dividers && dividers.length > 0) {
+          tl.fromTo(
+            dividers,
+            { scaleY: 0, opacity: 0 },
+            { scaleY: 1, opacity: 1, duration: 0.35, stagger: 0.04, ease: "power2.out" },
+            "-=0.35"
+          );
+        }
+        const actions = document.querySelector(".hero-actions");
+        if (actions) {
+          tl.fromTo(
+            actions,
+            { opacity: 0, y: 12 },
+            { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+            "-=0.2"
+          );
+        }
+      }
     } catch (e) {
       console.warn("GSAP timeline init:", e);
     }
@@ -1264,11 +1337,12 @@ export default function Home() {
         {/* Immersive Shader Background */}
         <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
           <GradientBackground
-            colors={["hsl(224, 95%, 58%)", "hsl(262, 90%, 56%)", "hsl(205, 100%, 52%)", "hsl(275, 88%, 54%)"]}
-            colorBack="hsl(232, 45%, 4%)"
-            intensity={0.82}
-            softness={0.72}
-            speed={0.85}
+            colors={["#ffffff", "#000000", "#ffffff"]}
+            colorBack="#000000"
+            intensity={0.45}
+            softness={0.9}
+            noise={0}
+            speed={0.4}
             style={{ position: "absolute", inset: 0, zIndex: 0 }}
           />
           {/* Luminous atmospheric depth & vignette */}
@@ -1278,7 +1352,7 @@ export default function Home() {
               inset: 0,
               zIndex: 1,
               background:
-                "radial-gradient(circle 900px at 50% 38%, rgba(99, 102, 241, 0.16) 0%, transparent 65%), radial-gradient(ellipse 90% 70% at 50% 20%, transparent 30%, rgba(5,5,10,0.5) 75%, #050508 100%), linear-gradient(to bottom, transparent 65%, #050508 100%)",
+                "linear-gradient(to bottom, transparent 65%, rgba(5, 5, 8, 0.75) 84%, #050508 100%)",
             }}
           />
           {/* Subtle grid overlay */}
@@ -1338,27 +1412,23 @@ export default function Home() {
 
           {/* Action Buttons: Register Now + Dotted Wrapped Releasing Soon Brochure */}
           <div className="hero-actions reveal">
-            <MetalButton
-              preset="chromatic"
-              size="md"
-              strength={1}
+            <ChromeButton
               onClick={handleOpenSelection}
-              className="adaptive-hero-btn"
             >
               REGISTER NOW
-            </MetalButton>
+            </ChromeButton>
 
-            {/* Delegate Brochure wrapped in dotted border with Releasing Soon */}
-            <div className="dotted-brochure-wrap">
-              <span className="dotted-badge">RELEASING SOON</span>
-              <button
-                type="button"
-                disabled
-                className="adaptive-hero-btn opacity-60 cursor-not-allowed pointer-events-none"
-              >
-                DELEGATE BROCHURE
-              </button>
-            </div>
+            <ChromeButton
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  if (window.showCustomAlert) window.showCustomAlert("Delegate Brochure releasing soon!", "info");
+                  else if (window.showAlert) window.showAlert("Delegate Brochure releasing soon!", "info");
+                  else alert("Delegate Brochure releasing soon!");
+                }
+              }}
+            >
+              DELEGATE BROCHURE
+            </ChromeButton>
           </div>
         </div>
       </section>
@@ -1372,19 +1442,23 @@ export default function Home() {
             <span className="ticker-sep">✦</span>
             <span className="ticker-item">27–29 NOVEMBER 2026</span>
             <span className="ticker-sep">/</span>
-            <span className="ticker-item">6 COMMITTEES</span>
+            <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>
             <span className="ticker-item">MERIDIAN SCHOOL, KOMPALLY</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">350+ DELEGATES</span>
+            <span className="ticker-item ticker-highlight">250+ DELEGATES</span>
             <span className="ticker-sep">/</span>
-            <span className="ticker-item">EXCELLENCE IN DIPLOMACY</span>
+            <span className="ticker-item ticker-highlight">YOU BETTER PULL UP</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">EDITION 2.0</span>
+            <span className="ticker-item">6 DYNAMIC COMMITTEES</span>
             <span className="ticker-sep">/</span>
-            <span className="ticker-item">CRISIS &amp; GENERAL ASSEMBLY</span>
+            <span className="ticker-item">EXECUTIVE BOARD OF DISTINCTION</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">WHERE DEBATE GETS REAL</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">DON&apos;T JUST ATTEND · DOMINATE</span>
             <span className="ticker-sep">✦</span>
           </div>
           {/* Track Group 2 (Exact duplicate for seamless 60fps infinite loop) */}
@@ -1393,31 +1467,38 @@ export default function Home() {
             <span className="ticker-sep">✦</span>
             <span className="ticker-item">27–29 NOVEMBER 2026</span>
             <span className="ticker-sep">/</span>
-            <span className="ticker-item">6 COMMITTEES</span>
+            <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>
             <span className="ticker-item">MERIDIAN SCHOOL, KOMPALLY</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">350+ DELEGATES</span>
+            <span className="ticker-item ticker-highlight">250+ DELEGATES</span>
             <span className="ticker-sep">/</span>
-            <span className="ticker-item">EXCELLENCE IN DIPLOMACY</span>
+            <span className="ticker-item ticker-highlight">YOU BETTER PULL UP</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">EDITION 2.0</span>
+            <span className="ticker-item">6 DYNAMIC COMMITTEES</span>
             <span className="ticker-sep">/</span>
-            <span className="ticker-item">CRISIS &amp; GENERAL ASSEMBLY</span>
+            <span className="ticker-item">EXECUTIVE BOARD OF DISTINCTION</span>
+            <span className="ticker-sep">✦</span>
+            <span className="ticker-item">WHERE DEBATE GETS REAL</span>
+            <span className="ticker-sep">/</span>
+            <span className="ticker-item">DON&apos;T JUST ATTEND · DOMINATE</span>
             <span className="ticker-sep">✦</span>
           </div>
         </div>
       </div>
 
-      {/* Main Page HTML Content (Countdown, About, Letter, Committees, Venue, Secretariat, Sponsors, Applications, Modals) */}
-      <div
-        id="main-container"
-        ref={containerRef}
-        dangerouslySetInnerHTML={{ __html: homeHtml }}
-      />
+      {/* Main Page HTML Content with Interactive Committees */}
+      <div id="main-container" ref={containerRef}>
+        <div dangerouslySetInnerHTML={{ __html: homePart1 || homeHtml }} />
+        <CommitteesSection />
+        {homePart2 && <div dangerouslySetInnerHTML={{ __html: homePart2 }} />}
+      </div>
       
+      {/* Interactive Delegate Pass Section (Above Footer) */}
+      <DelegatePassSection />
+
       {/* Universal Footer with Theme Toggler */}
       <Footer />
       

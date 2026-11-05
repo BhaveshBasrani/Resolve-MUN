@@ -1107,13 +1107,14 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                           onClick={(e) => {
                             e.preventDefault();
                             if (typeof window !== "undefined" && window.openTermsModal) {
-                              window.openTermsModal();
+                              window.openTermsModal("delegate");
                             }
                           }}
                           className="font-medium text-white/90 underline underline-offset-2 hover:text-white cursor-pointer bg-transparent border-none p-0 inline"
                         >
                           Terms &amp; Conditions
                         </button>
+                        <span className="text-red-400 font-bold ml-1" title="Compulsory">*</span>
                       </CheckboxLine>
 
                       {/* 2. Privacy Policy */}
@@ -1130,13 +1131,14 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
                           onClick={(e) => {
                             e.preventDefault();
                             if (typeof window !== "undefined" && window.openTermsModal) {
-                              window.openTermsModal();
+                              window.openTermsModal("privacy");
                             }
                           }}
                           className="font-medium text-white/90 underline underline-offset-2 hover:text-white cursor-pointer bg-transparent border-none p-0 inline"
                         >
                           Privacy Policy
                         </button>
+                        <span className="text-red-400 font-bold ml-1" title="Compulsory">*</span>
                       </CheckboxLine>
 
                       {/* 3. Optional Updates */}

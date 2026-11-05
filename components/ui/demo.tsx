@@ -9,7 +9,7 @@ export default function MetalButtonDemo() {
       <div className="flex flex-wrap items-center justify-center gap-5">
         <MetalButton preset="chromatic">
           <Sparkles className="size-4" />
-          Upgrade to Pro
+          Explore Passes
         </MetalButton>
         <MetalButton preset="silver">Continue</MetalButton>
         <MetalButton preset="gold" size="lg">

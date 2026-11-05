@@ -158,35 +158,16 @@
 
 
   /**
-   * CUSTOM ALERT SYSTEM
+   * CUSTOM ALERT SYSTEM - Powered by Dynamic Island & alertVariants
    */
   function showCustomAlert(message, type = 'default', duration = 4000) {
-    const container = document.getElementById('custom-alert-container');
-    if (!container) return;
-
-    const alert = document.createElement('div');
-    alert.className = `custom-alert ${type}`;
-
-    alert.innerHTML = `
-      <div class="custom-alert-content">${message}</div>
-      <button class="custom-alert-close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    `;
-
-    container.appendChild(alert);
-
-    const closeBtn = alert.querySelector('.custom-alert-close');
-    const closeAlert = () => {
-      alert.classList.add('fade-out');
-      setTimeout(() => alert.remove(), 350);
-    };
-
-    if (closeBtn) closeBtn.onclick = closeAlert;
-    setTimeout(closeAlert, duration);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('resolve-alert', {
+          detail: { message, type, duration }
+        })
+      );
+    }
   }
 
   // Override window.alert
@@ -613,9 +594,31 @@
     document.body.style.overflow = 'hidden';
   }
 
-  function openTermsModal() {
+  function switchTermsTab(type, btn) {
+    document.querySelectorAll('.terms-tab-pill').forEach(function(b) { b.classList.remove('active'); });
+    if (btn) {
+      btn.classList.add('active');
+    } else {
+      const activeBtn = document.querySelector('.terms-tab-pill[data-tab="' + type + '"]');
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+    const del = document.getElementById('termsDelegateContent');
+    const oc = document.getElementById('termsOcContent');
+    const pri = document.getElementById('termsPrivacyContent');
+    if (del) del.style.display = type === 'delegate' ? 'block' : 'none';
+    if (oc) oc.style.display = type === 'oc' ? 'block' : 'none';
+    if (pri) pri.style.display = type === 'privacy' ? 'block' : 'none';
+    const scrollBody = document.querySelector('.terms-scroll-body');
+    if (scrollBody) scrollBody.scrollTop = 0;
+  }
+  window.switchTermsTab = switchTermsTab;
+
+  function openTermsModal(initialTab) {
     const termsModal = document.getElementById('termsModal');
     if (termsModal) {
+      if (initialTab && typeof initialTab === 'string') {
+        switchTermsTab(initialTab);
+      }
       termsModal.classList.add('active');
       document.body.style.overflow = 'hidden';
     }
@@ -1218,114 +1221,12 @@
     }
   }, { passive: true });
 
-  // CINEMATIC CURSOR LOGIC
-  const cursorDot = document.getElementById('cursorDot');
-  const cursorReticle = document.getElementById('cursorReticle');
-  let mx = 0, my = 0, rx = 0, ry = 0;
-  let isMoving = false;
-
-  const hasInteractivePointer =
-    window.matchMedia('(any-pointer: fine)').matches &&
-    window.matchMedia('(any-hover: hover)').matches;
-
-  // Force hide cursor on touch interaction
-  window.addEventListener('touchstart', function onFirstTouch() {
-    document.documentElement.classList.remove('custom-cursor-enabled');
-    const dot = document.getElementById('cursorDot');
-    const reticle = document.getElementById('cursorReticle');
-    if (dot) dot.style.display = 'none';
-    if (reticle) reticle.style.display = 'none';
-    window.removeEventListener('touchstart', onFirstTouch);
-  }, { passive: true });
-
-    if (hasInteractivePointer && cursorDot && cursorReticle) {
-    // Disable old reticle in favor of the cosmic 3D pointer cursor
-    if (cursorDot) cursorDot.style.display = 'none';
-    if (cursorReticle) cursorReticle.style.display = 'none';
-    document.documentElement.classList.remove('custom-cursor-enabled');
-
-    const animateCursor = () => {
-      rx += (mx - rx) * 0.18;
-      ry += (my - ry) * 0.18;
-
-      if (cursorDot) {
-        cursorDot.style.setProperty('--mx', `${mx}px`);
-        cursorDot.style.setProperty('--my', `${my}px`);
-        cursorDot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
-      }
-
-      if (cursorReticle) {
-        cursorReticle.style.setProperty('--x', `${rx}px`);
-        cursorReticle.style.setProperty('--y', `${ry}px`);
-        cursorReticle.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
-      }
-
-      requestAnimationFrame(animateCursor);
-    };
-
-    document.addEventListener('mousemove', e => {
-      mx = e.clientX;
-      my = e.clientY;
-
-      if (!isMoving) {
-        isMoving = true;
-        if (cursorDot) cursorDot.style.opacity = '1';
-        if (cursorReticle) cursorReticle.style.opacity = '1';
-        animateCursor();
-      }
-    });
-
-    document.addEventListener('mousedown', () => {
-      if (cursorReticle) cursorReticle.classList.add('firing');
-      if (cursorDot) cursorDot.classList.add('firing');
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (cursorReticle) cursorReticle.classList.remove('firing');
-      if (cursorDot) cursorDot.classList.remove('firing');
-    });
-
-    document.addEventListener('mouseenter', () => {
-      if (cursorDot) cursorDot.classList.remove('hidden-state');
-      if (cursorReticle) cursorReticle.classList.remove('hidden-state');
-    });
-
-    document.addEventListener('mouseleave', () => {
-      if (cursorDot) cursorDot.classList.add('hidden-state');
-      if (cursorReticle) cursorReticle.classList.add('hidden-state');
-    });
-  } else {
-    if (cursorDot) cursorDot.style.display = 'none';
-    if (cursorReticle) cursorReticle.style.display = 'none';
-    document.documentElement.classList.remove('custom-cursor-enabled');
-  }
-
-  // Update HUD target interaction
-  const updateInteractables = () => {
-    const targetSelectors = 'a, button, .committee-card, input, select, textarea, label, [role="button"], .clickable, .sec-card';
-    const dot = document.getElementById('cursorDot');
-    const reticle = document.getElementById('cursorReticle');
-    if (!dot || !reticle) return;
-    document.querySelectorAll(targetSelectors).forEach(el => {
-      if (el.dataset.hasCursorListener) return;
-      el.addEventListener('mouseenter', () => {
-        if (reticle) reticle.classList.add('locked');
-        if (dot) dot.classList.add('locked');
-      });
-      el.addEventListener('mouseleave', () => {
-        if (reticle) reticle.classList.remove('locked');
-        if (dot) dot.classList.remove('locked');
-      });
-      el.dataset.hasCursorListener = 'true';
-    });
-  };
-
-  updateInteractables();
-
-  const cursorMutationObserver = new MutationObserver(updateInteractables);
-  if (document.body) {
-    cursorMutationObserver.observe(document.body, { childList: true, subtree: true });
-  }
+  // Custom cursor completely disabled - native zero-lag system cursor enabled
+  document.documentElement.classList.remove('custom-cursor-enabled');
+  const oldDot = document.getElementById('cursorDot');
+  const oldReticle = document.getElementById('cursorReticle');
+  if (oldDot) oldDot.remove();
+  if (oldReticle) oldReticle.remove();
 
   // Attach to registration triggers
   document.querySelectorAll('.nav-cta').forEach(btn => {
@@ -2248,35 +2149,7 @@
   });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // COUNTDOWN — target date: November 20, 2026 08:00
-  const countdownDate = new Date('2026-11-20T08:00:00');
-  function updateCountdown() {
-    const cdDays = document.getElementById('cd-days');
-    const cdHours = document.getElementById('cd-hours');
-    const cdMins = document.getElementById('cd-mins');
-    const cdSecs = document.getElementById('cd-secs');
-    if (!cdDays || !cdHours || !cdMins || !cdSecs) return;
-
-    const now = new Date();
-    const diff = countdownDate - now;
-    if (diff <= 0) {
-      cdDays.textContent = '00';
-      cdHours.textContent = '00';
-      cdMins.textContent = '00';
-      cdSecs.textContent = '00';
-      return;
-    }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    cdDays.textContent = String(d).padStart(2, '0');
-    cdHours.textContent = String(h).padStart(2, '0');
-    cdMins.textContent = String(m).padStart(2, '0');
-    cdSecs.textContent = String(s).padStart(2, '0');
-  }
-  updateCountdown();
-  setInterval(updateCountdown, 1000);
+    // Countdown managed authoritatively by app/page.jsx (Nov 27-29, 2026)
 
   // PARTICLES
   const canvas = document.getElementById('particles');
@@ -3009,4 +2882,186 @@
     window.generateDynamicQR = typeof generateDynamicQR !== 'undefined' ? generateDynamicQR : () => { };
   }
 
+})();
+
+
+// ==========================================================================
+// FOUNDER'S LETTER: MONOCHROME WAVE SHADER ENGINE
+// ==========================================================================
+(function initLetterWaveShader() {
+  function start() {
+    const canvas = document.getElementById('letterShaderCanvas');
+    if (!canvas) return;
+    const gl = canvas.getContext('webgl', { alpha: true, antialias: true }) || 
+               canvas.getContext('experimental-webgl', { alpha: true });
+    if (!gl) return;
+
+    const vsSource = `
+      attribute vec2 position;
+      varying vec2 vUv;
+      void main() {
+        vUv = position * 0.5 + 0.5;
+        gl_Position = vec4(position, 0.0, 1.0);
+      }
+    `;
+
+    const fsSource = `
+      precision highp float;
+      uniform float uTime;
+      uniform vec3 uColorA;
+      uniform vec3 uColorB;
+      uniform vec2 uMouse;
+      uniform vec2 uResolution;
+      varying vec2 vUv;
+      
+      float noise(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+      }
+      
+      float fbm(vec2 st) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        for (int i = 0; i < 4; i++) {
+          value += amplitude * noise(st);
+          st *= 2.0;
+          amplitude *= 0.5;
+        }
+        return value;
+      }
+      
+      float smoothNoise(vec2 st) {
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        float a = noise(i);
+        float b = noise(i + vec2(1.0, 0.0));
+        float c = noise(i + vec2(0.0, 1.0));
+        float d = noise(i + vec2(1.0, 1.0));
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+      }
+      
+      void main() {
+        vec2 st = vUv;
+        float wave1 = sin(st.x * 6.0 + uTime * 1.2) * 0.12;
+        float wave2 = sin(st.y * 5.0 + uTime * 1.0) * 0.12;
+        float wave3 = sin((st.x + st.y) * 3.5 + uTime * 2.0) * 0.06;
+        vec2 mouseInfluence = (uMouse - 0.5) * 0.25;
+        st += mouseInfluence;
+        float waves = wave1 + wave2 + wave3;
+        float noiseValue = smoothNoise(st * 2.5 + uTime * 0.35);
+        float fbmNoise = fbm(st * 1.8 + uTime * 0.25);
+        float combinedNoise = mix(noiseValue, fbmNoise, 0.6);
+        float mixFactor = (waves + combinedNoise + 1.0) * 0.5;
+        mixFactor = smoothstep(0.2, 0.8, mixFactor);
+        vec3 color = mix(uColorA, uColorB, mixFactor);
+        float glow = 1.0 - distance(st, vec2(0.5)) * 1.2;
+        glow = smoothstep(0.0, 1.0, glow);
+        glow += combinedNoise * 0.2;
+        color += glow * 0.15;
+        float brightness = 0.9 + sin(uTime * 0.8) * 0.1;
+        color *= brightness;
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    function createShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    }
+
+    const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    const quadBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,
+       1, -1,
+      -1,  1,
+      -1,  1,
+       1, -1,
+       1,  1
+    ]), gl.STATIC_DRAW);
+
+    const posLoc = gl.getAttribLocation(prog, 'position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+    const uTimeLoc = gl.getUniformLocation(prog, 'uTime');
+    const uColorALoc = gl.getUniformLocation(prog, 'uColorA');
+    const uColorBLoc = gl.getUniformLocation(prog, 'uColorB');
+    const uMouseLoc = gl.getUniformLocation(prog, 'uMouse');
+    const uResLoc = gl.getUniformLocation(prog, 'uResolution');
+
+    gl.uniform3f(uColorALoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(uColorBLoc, 0.0, 0.0, 0.0);
+
+    let mouseX = 0.5, mouseY = 0.5;
+    let targetMouseX = 0.5, targetMouseY = 0.5;
+
+    window.addEventListener('mousemove', function(e) {
+      targetMouseX = e.clientX / window.innerWidth;
+      targetMouseY = 1.0 - (e.clientY / window.innerHeight);
+    }, { passive: true });
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.floor(rect.width * 0.5) || 300;
+      const h = Math.floor(rect.height * 0.5) || 300;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        gl.viewport(0, 0, w, h);
+        gl.uniform2f(uResLoc, w, h);
+      }
+    }
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
+
+    let isVisible = false;
+    let animId = null;
+    let startTime = performance.now();
+
+    function render() {
+      if (!isVisible) {
+        animId = null;
+        return;
+      }
+      const time = (performance.now() - startTime) * 0.001;
+      mouseX += (targetMouseX - mouseX) * 0.05;
+      mouseY += (targetMouseY - mouseY) * 0.05;
+      gl.uniform1f(uTimeLoc, time);
+      gl.uniform2f(uMouseLoc, mouseX, mouseY);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      animId = requestAnimationFrame(render);
+    }
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          isVisible = entry.isIntersecting;
+          if (isVisible && !animId) {
+            animId = requestAnimationFrame(render);
+          }
+        });
+      }, { threshold: 0.05 });
+      observer.observe(canvas);
+    } else {
+      isVisible = true;
+      animId = requestAnimationFrame(render);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    setTimeout(start, 50);
+  }
 })();

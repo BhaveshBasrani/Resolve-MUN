@@ -1,6 +1,8 @@
 import "./globals.css";
 import "./sleek-modern.css";
 import Script from "next/script";
+import SmoothScroll from "@/components/SmoothScroll";
+import DynamicIslandAlert from "@/components/DynamicIslandAlert";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://resolvemun.in";
 const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LesB7gtAAAAAPTHA-4HMMhWytZLAV0yE4Jd7OcJ";
@@ -98,6 +100,8 @@ export default function RootLayout({ children }) {
         />
         </head>
       <body className="loaded" suppressHydrationWarning>
+        <DynamicIslandAlert />
+        <SmoothScroll />
         {children}
         <Script src="/archive-script.js" strategy="afterInteractive" />
       </body>
