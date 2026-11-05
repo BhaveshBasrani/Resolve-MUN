@@ -95,8 +95,15 @@ export default function SuperAdminPage() {
   const [leadStepFilter, setLeadStepFilter] = useState('ALL');
   const [leadSendingState, setLeadSendingState] = useState({});
 
-  // Applications sub-view: 'ALL' | 'SEC' | 'EB'
+  // Applications sub-view: 'ALL' | 'OC' | 'SEC' | 'EB'
   const [appSubView, setAppSubView] = useState('ALL');
+
+  // Custom CRM Mailer state
+  const [crmRecipientMode, setCrmRecipientMode] = useState('SINGLE'); // 'SINGLE' | 'ALL_DELEGATES' | 'UNASSIGNED_DELEGATES' | 'OC_APPLICANTS' | 'SEC_APPLICANTS'
+  const [crmEmailTo, setCrmEmailTo] = useState('');
+  const [crmSubject, setCrmSubject] = useState('Official Update — Resolve MUN 2.0');
+  const [crmMessageBody, setCrmMessageBody] = useState('');
+  const [crmSending, setCrmSending] = useState(false);
 
   // Settings State
   const [siteSettings, setSiteSettings] = useState({
@@ -105,10 +112,16 @@ export default function SuperAdminPage() {
     delegationOpen: true,
     ocOpen: true,
     ebOpen: false,
+    socialsOpen: false,
     secretariatOpen: true,
-    roundName: 'Round 1 Priority Applications',
-    delegateFee: '2199',
-    delegationFee: '2199'
+    roundName: 'Priority Round Applications',
+    delegateFee: '2500',
+    delegationFee: '2200',
+    ocFeeFull: '1500',
+    ocFeeNoTransport: '1000',
+    ocFeeBasic: '750',
+    socialsFee: '999',
+    upiId: '6301550628@nyes'
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -118,6 +131,7 @@ export default function SuperAdminPage() {
   const [addDelegateModalOpen, setAddDelegateModalOpen] = useState(false);
   const [reassignDelegationModalData, setReassignDelegationModalData] = useState(null);
   const [secCandidateModalData, setSecCandidateModalData] = useState(null);
+  const [ocCandidateModalData, setOcCandidateModalData] = useState(null);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,8 +231,53 @@ export default function SuperAdminPage() {
             timestamp: s.timestamp || s.Timestamp || ''
           }));
 
+          const rawOc = json.ocApplicants || [];
+          const normalizedOc = rawOc.map((o, idx) => ({
+            ...o,
+            appId: o.appId || o.AppID || o.regId || o.id || `RM26-OC-${1000 + idx}`,
+            fullName: o.fullName || o.FullName || o.name || o.Name || 'OC Applicant',
+            email: o.email || o.Email || '',
+            phone: String(o.phone || o.Phone || ''),
+            institution: o.institution || o.Institution || o.schoolCollege || '',
+            grade: o.grade || o.Grade || '',
+            dob: o.dob || o.DOB || '',
+            residentialAddress: o.residentialAddress || o.ResidentialAddress || o.address || '',
+            instagram: o.instagram || o.Instagram || '',
+            transportNeeded: o.transportNeeded || o.TransportNeeded || '',
+            previousExperience: o.previousExperience || o.PreviousExperience || o.whyJoin || '',
+            feeTier: o.feeTier || o.FeeTier || '₹1,500',
+            paymentUTR: o.paymentUTR || o.PaymentUTR || '',
+            paymentScreenshotURL: o.paymentScreenshotURL || o.PaymentScreenshotURL || '',
+            resumeUrl: o.resumeUrl || o.ResumeURL || o.cvUrl || '',
+            portfolioUrl: o.portfolioUrl || o.PortfolioURL || '',
+            status: o.status || o.Status || 'Under_Review',
+            timestamp: o.timestamp || o.Timestamp || ''
+          }));
+
+          if (json.settings) {
+            const s = json.settings;
+            setSiteSettings(prev => ({
+              ...prev,
+              registrationsOpen: s.registrationsOpen !== false && s.registrations_open !== false,
+              delegateOpen: s.delegateOpen !== false && s.delegate_open !== false,
+              delegationOpen: s.delegationOpen !== false && s.delegation_open !== false,
+              ocOpen: s.ocOpen !== false && s.oc_open !== false,
+              ebOpen: Boolean(s.ebOpen ?? s.eb_open ?? false),
+              socialsOpen: Boolean(s.socialsOpen ?? s.socials_open ?? false),
+              secretariatOpen: s.secretariatOpen !== false && s.secretariat_open !== false,
+              roundName: s.roundName || s.round_name || prev.roundName,
+              delegateFee: String(s.delegateFee || s.delegate_fee || s.delegatePrice || prev.delegateFee),
+              delegationFee: String(s.delegationFee || s.delegation_fee || s.delegationPrice || prev.delegationFee),
+              ocFeeFull: String(s.ocFeeFull || s.oc_fee_full || prev.ocFeeFull),
+              ocFeeNoTransport: String(s.ocFeeNoTransport || s.oc_fee_no_transport || prev.ocFeeNoTransport),
+              ocFeeBasic: String(s.ocFeeBasic || s.oc_fee_basic || prev.ocFeeBasic),
+              socialsFee: String(s.socialsFee || s.socials_fee || prev.socialsFee),
+              upiId: String(s.upiId || s.upi_id || prev.upiId),
+            }));
+          }
+
           setEbApplications(json.ebApplicants || []);
-            setOcApplications(json.ocApplicants || []);
+          setOcApplications(normalizedOc);
           setSecApplications(normalizedSec);
           setSiteUsers(Object.values(usersByEmail));
           setLastSyncTime(new Date().toLocaleTimeString());
@@ -731,7 +790,7 @@ export default function SuperAdminPage() {
 
   // Save Settings
   const handleSaveSettings = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setSettingsSaving(true);
     try {
       await fetch('/api/admin/', {
@@ -745,17 +804,121 @@ export default function SuperAdminPage() {
           delegationOpen: siteSettings.delegationOpen,
           ocOpen: siteSettings.ocOpen,
           ebOpen: siteSettings.ebOpen,
+          socialsOpen: siteSettings.socialsOpen,
           secretariatOpen: siteSettings.secretariatOpen,
           roundName: siteSettings.roundName,
+          delegateFee: siteSettings.delegateFee,
           delegatePrice: siteSettings.delegateFee,
-          delegationPrice: siteSettings.delegationFee
+          delegationFee: siteSettings.delegationFee,
+          delegationPrice: siteSettings.delegationFee,
+          ocFeeFull: siteSettings.ocFeeFull,
+          ocFeeNoTransport: siteSettings.ocFeeNoTransport,
+          ocFeeBasic: siteSettings.ocFeeBasic,
+          socialsFee: siteSettings.socialsFee,
+          upiId: siteSettings.upiId
         })
       });
-      notify('Settings saved successfully!');
+      if (typeof window !== 'undefined') {
+        window.__siteSettings = siteSettings;
+        window.dispatchEvent(new CustomEvent('siteSettingsUpdated', { detail: siteSettings }));
+      }
+      notify('Settings saved & live passes updated!');
     } catch (err) {
       notify('Failed to save settings: ' + err.message, 'error');
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  // Accept OC / Secretariat / EB Applicant & Dispatch Email
+  const handleAcceptApplicant = async (app, roleType = 'OC') => {
+    const appId = app.appId || app.regId || app.id;
+    const email = app.email;
+    const fullName = app.fullName || app.name;
+    const position = app.position || (roleType === 'OC' ? `Organizing Committee (${app.feeTier || 'Member'})` : 'Secretariat');
+
+    if (roleType === 'OC') {
+      setOcApplications(prev => prev.map(o => (o.appId === appId ? { ...o, status: 'Accepted' } : o)));
+    } else if (roleType === 'SEC') {
+      setSecApplications(prev => prev.map(s => (s.appId === appId ? { ...s, status: 'Accepted' } : s)));
+    } else {
+      setEbApplications(prev => prev.map(e => (e.appId === appId ? { ...e, status: 'Accepted' } : e)));
+    }
+
+    notify(`Approving ${fullName} & dispatching email...`, 'info');
+    try {
+      await fetch('/api/admin/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ADMIN_ACCEPT_APPLICANT',
+          adminKey: DEFAULT_ADMIN_KEY,
+          appId,
+          email,
+          fullName,
+          roleType,
+          position
+        })
+      });
+      notify(`Approved ${fullName} & sent confirmation email!`, 'success');
+    } catch (err) {
+      notify('Failed to approve applicant: ' + err.message, 'error');
+    }
+  };
+
+  // Send Custom or Bulk CRM Email via Apps Script
+  const handleSendCrmEmail = async (e) => {
+    e.preventDefault();
+    if (!crmSubject.trim() || !crmMessageBody.trim()) {
+      notify('Please enter both subject and message body.', 'error');
+      return;
+    }
+
+    let recipients = [];
+    if (crmRecipientMode === 'SINGLE') {
+      if (!crmEmailTo.trim()) {
+        notify('Please enter a recipient email address.', 'error');
+        return;
+      }
+      recipients = [{ email: crmEmailTo.trim(), name: 'Delegate' }];
+    } else if (crmRecipientMode === 'ALL_DELEGATES') {
+      recipients = registrations.filter(r => r.email).map(r => ({ email: r.email, name: r.name || r.fullName }));
+    } else if (crmRecipientMode === 'UNASSIGNED_DELEGATES') {
+      recipients = registrations.filter(r => r.email && !r.allocatedCommittee).map(r => ({ email: r.email, name: r.name || r.fullName }));
+    } else if (crmRecipientMode === 'OC_APPLICANTS') {
+      recipients = ocApplications.filter(o => o.email).map(o => ({ email: o.email, name: o.fullName || o.name }));
+    } else if (crmRecipientMode === 'SEC_APPLICANTS') {
+      recipients = secApplications.filter(s => s.email).map(s => ({ email: s.email, name: s.fullName || s.name }));
+    }
+
+    if (recipients.length === 0) {
+      notify('No recipients found for the selected group.', 'error');
+      return;
+    }
+
+    setCrmSending(true);
+    notify(`Dispatching email to ${recipients.length} recipient(s)...`, 'info');
+    try {
+      await fetch('/api/admin/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ADMIN_SEND_CUSTOM_EMAIL',
+          adminKey: DEFAULT_ADMIN_KEY,
+          recipientMode: crmRecipientMode,
+          recipients,
+          email: recipients[0]?.email || crmEmailTo,
+          subject: crmSubject,
+          messageBody: crmMessageBody
+        })
+      });
+      notify(`Email dispatched to ${recipients.length} recipient(s)!`, 'success');
+      if (crmRecipientMode === 'SINGLE') setCrmEmailTo('');
+      setCrmMessageBody('');
+    } catch (err) {
+      notify('Error dispatching email: ' + err.message, 'error');
+    } finally {
+      setCrmSending(false);
     }
   };
 
@@ -817,9 +980,10 @@ export default function SuperAdminPage() {
     { id: 'delegations', label: 'School Teams', icon: Building2, badge: delegations.length, badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30' },
     { id: 'leads', label: 'Incomplete Signups', icon: AlertCircle, badge: activeAbandonedLeads.length, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/30' },
     { id: 'users', label: 'All Accounts', icon: UserCheck, badge: siteUsers.length, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30', liveDot: true },
-    { id: 'applications', label: 'Team Applications', icon: Award, badge: ebApplications.length + secApplications.length, badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-400/30' },
+    { id: 'applications', label: 'Team Applications', icon: Award, badge: ocApplications.length + ebApplications.length + secApplications.length, badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-400/30' },
     { id: 'logins', label: 'Signed Up, Not Applied', icon: LogIn, badge: loggedInNotApplied.length, badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/30' },
-    { id: 'settings', label: 'Settings', icon: Settings, badge: null }
+    { id: 'mailer', label: 'CRM Mailer', icon: Mail, badge: 'AUTO', badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-400/30' },
+    { id: 'settings', label: 'Pass & Price Controls', icon: Settings, badge: null }
   ];
 
   return (
@@ -1509,8 +1673,12 @@ export default function SuperAdminPage() {
                                       regId: r.regId,
                                       name: r.name || r.fullName,
                                       email: r.email,
-                                      committee: r.allocatedCommittee || r.committeePref1 || 'UNSC',
-                                      country: r.allocatedCountry || ''
+                                      committee: r.allocatedCommittee || r.committeePref1 || 'DISEC',
+                                      country: r.allocatedCountry || '',
+                                      committeePref1: r.committeePref1 || '',
+                                      committeePref2: r.committeePref2 || '',
+                                      committeePref3: r.committeePref3 || '',
+                                      experience: r.experience || ''
                                     })}
                                     className="p-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/20 text-purple-300 transition-colors cursor-pointer"
                                     title="Assign Committee & Country"
@@ -1921,10 +2089,10 @@ export default function SuperAdminPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-bold text-white">Team Applications</h2>
-                    <p className="text-xs text-white/50">Applications for Executive Board and Secretariat.</p>
+                    <h2 className="text-lg font-bold text-white">Team Applications (OC, Secretariat & EB)</h2>
+                    <p className="text-xs text-white/50">Review Organizing Committee (Salaried Role), Secretariat, and Executive Board applications.</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setAppSubView('ALL')}
@@ -1932,7 +2100,16 @@ export default function SuperAdminPage() {
                         appSubView === 'ALL' ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-white/60'
                       }`}
                     >
-                      All ({ebApplications.length + secApplications.length})
+                      All ({ocApplications.length + secApplications.length + ebApplications.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAppSubView('OC')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
+                        appSubView === 'OC' ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-white/60'
+                      }`}
+                    >
+                      Organizing Committee ({ocApplications.length})
                     </button>
                     <button
                       type="button"
@@ -1955,10 +2132,10 @@ export default function SuperAdminPage() {
                   </div>
                 </div>
 
-                {ebApplications.length === 0 && secApplications.length === 0 ? (
+                {ocApplications.length === 0 && ebApplications.length === 0 && secApplications.length === 0 ? (
                   <div className="p-12 rounded-2xl border border-dashed border-white/10 text-center text-white/40 space-y-2">
                     <Award className="w-8 h-8 mx-auto opacity-40" />
-                    <p className="text-xs font-semibold">No applications yet.</p>
+                    <p className="text-xs font-semibold">No team applications yet.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070914] shadow-xl">
@@ -1967,15 +2144,28 @@ export default function SuperAdminPage() {
                         <tr>
                           <th className="py-3 px-4">Applicant ID</th>
                           <th className="py-3 px-4">Applicant</th>
-                          <th className="py-3 px-4">Position</th>
-                          <th className="py-3 px-4">Links</th>
+                          <th className="py-3 px-4">Role / Tier</th>
+                          <th className="py-3 px-4">Attachments / Receipt</th>
                           <th className="py-3 px-4">Status</th>
-                          <th className="py-3 px-4 text-right">Action</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04]">
-                        {(appSubView === 'EB' ? ebApplications : appSubView === 'SEC' ? secApplications : [...secApplications, ...ebApplications]).map((app, idx) => {
-                          const isSec = Boolean(app.position || app.whyJoin || app.schoolCollege);
+                        {(appSubView === 'OC'
+                          ? ocApplications.map(a => ({ ...a, _track: 'OC' }))
+                          : appSubView === 'EB'
+                          ? ebApplications.map(a => ({ ...a, _track: 'EB' }))
+                          : appSubView === 'SEC'
+                          ? secApplications.map(a => ({ ...a, _track: 'SEC' }))
+                          : [
+                              ...ocApplications.map(a => ({ ...a, _track: 'OC' })),
+                              ...secApplications.map(a => ({ ...a, _track: 'SEC' })),
+                              ...ebApplications.map(a => ({ ...a, _track: 'EB' }))
+                            ]
+                        ).map((app, idx) => {
+                          const isOc = app._track === 'OC' || String(app.appId || '').includes('-OC-');
+                          const isSec = app._track === 'SEC' || (!isOc && Boolean(app.position || app.whyJoin || app.schoolCollege));
+                          const isApproved = app.status === 'Accepted' || app.status === 'Approved' || app.status === 'Confirmed';
                           return (
                             <tr key={`app-row-${app.appId || app.UID || idx}`} className="hover:bg-white/[0.015] transition-colors">
                               <td className="py-3.5 px-4 font-mono font-bold text-purple-300">
@@ -1985,21 +2175,33 @@ export default function SuperAdminPage() {
                               <td className="py-3.5 px-4">
                                 <p className="font-semibold text-white">{app.fullName || app.name}</p>
                                 <p className="text-[11px] text-white/50">{app.email} | {app.phone}</p>
+                                {(app.institution || app.schoolCollege) && (
+                                  <p className="text-[10px] text-white/40 mt-0.5">{app.institution || app.schoolCollege}</p>
+                                )}
                               </td>
 
                               <td className="py-3.5 px-4">
-                                <p className="text-white/90 font-medium">{app.position || app.portfolio1 || app.pref1 || 'Leadership'}</p>
-                                <p className="text-[10px] text-white/40">{isSec ? 'Secretariat' : 'Executive Board'}</p>
+                                {isOc ? (
+                                  <>
+                                    <p className="text-white/90 font-medium">Organizing Committee</p>
+                                    <p className="text-[10px] text-purple-300 font-mono">{app.feeTier || 'Salaried OC'}</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-white/90 font-medium">{app.position || app.portfolio1 || app.pref1 || 'Leadership'}</p>
+                                    <p className="text-[10px] text-white/40">{isSec ? 'Secretariat (Free)' : 'Executive Board'}</p>
+                                  </>
+                                )}
                               </td>
 
                               <td className="py-3.5 px-4">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-1.5">
                                   {(app.resumeUrl || app.cvUrl || app.CV_URL) && (
                                     <a
                                       href={app.resumeUrl || app.cvUrl || app.CV_URL}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/20 text-purple-300 text-[11px] font-medium transition-colors"
+                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-400/20 text-purple-300 text-[11px] font-medium transition-colors"
                                     >
                                       <FileText className="w-3 h-3" />
                                       <span>CV</span>
@@ -2011,39 +2213,83 @@ export default function SuperAdminPage() {
                                       href={app.portfolioUrl || app.PortfolioURL}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-400/20 text-indigo-300 text-[11px] font-medium transition-colors"
+                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-400/20 text-indigo-300 text-[11px] font-medium transition-colors"
                                     >
                                       <span>Portfolio</span>
                                       <ExternalLink className="w-2.5 h-2.5" />
                                     </a>
                                   )}
+                                  {app.paymentScreenshotURL && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setScreenshotModalData({
+                                        url: app.paymentScreenshotURL,
+                                        rawUrl: app.paymentScreenshotURL,
+                                        name: app.fullName || app.name,
+                                        regId: app.appId,
+                                        utr: app.paymentUTR
+                                      })}
+                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 text-emerald-300 text-[11px] font-medium transition-colors cursor-pointer"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      <span>Receipt</span>
+                                    </button>
+                                  )}
+                                  {app.paymentUTR && (
+                                    <span className="text-[10px] font-mono text-white/50">UTR: {app.paymentUTR}</span>
+                                  )}
                                 </div>
                               </td>
 
                               <td className="py-3.5 px-4">
-                                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 text-[10px] font-semibold">
-                                  {app.status || 'In Review'}
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                  isApproved
+                                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                    : 'bg-amber-500/10 text-amber-300 border-amber-400/20'
+                                }`}>
+                                  {app.status || 'Under Review'}
                                 </span>
                               </td>
 
                               <td className="py-3.5 px-4 text-right">
-                                {isSec ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => setSecCandidateModalData(app)}
-                                    className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold transition-colors cursor-pointer"
-                                  >
-                                    View Details
-                                  </button>
-                                ) : (
-                                  <a
-                                    href={`mailto:${app.email}?subject=Resolve MUN 2026 Executive Board Application`}
-                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white text-[11px] font-semibold transition-colors"
-                                  >
-                                    <Mail className="w-3 h-3" />
-                                    <span>Email</span>
-                                  </a>
-                                )}
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {!isApproved && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAcceptApplicant(app, isOc ? 'OC' : isSec ? 'SEC' : 'EB')}
+                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                      title="Approve & Send Appointment Email"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                      <span>Approve</span>
+                                    </button>
+                                  )}
+                                  {isSec ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setSecCandidateModalData(app)}
+                                      className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold transition-colors cursor-pointer"
+                                    >
+                                      View
+                                    </button>
+                                  ) : isOc ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setOcCandidateModalData(app)}
+                                      className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold transition-colors cursor-pointer"
+                                    >
+                                      View
+                                    </button>
+                                  ) : (
+                                    <a
+                                      href={`mailto:${app.email}?subject=Resolve MUN 2026 Application`}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white text-[11px] font-semibold transition-colors"
+                                    >
+                                      <Mail className="w-3 h-3" />
+                                      <span>Email</span>
+                                    </a>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -2117,34 +2363,140 @@ export default function SuperAdminPage() {
               </div>
             )}
 
+            {/* CRM MAILER PANEL */}
+            {activeSubTab === 'mailer' && (
+              <div className="space-y-6 animate-in fade-in duration-200 max-w-3xl">
+                <div>
+                  <h2 className="text-lg font-bold text-white">CRM Email Dispatcher</h2>
+                  <p className="text-xs text-white/50">Send official HTML emails or bulk announcements via Google Apps Script ($0 cost).</p>
+                </div>
+
+                <form onSubmit={handleSendCrmEmail} className="p-6 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-5 shadow-xl">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-mono uppercase text-purple-300 mb-1.5">Recipient Audience</label>
+                      <select
+                        value={crmRecipientMode}
+                        onChange={(e) => setCrmRecipientMode(e.target.value)}
+                        className="w-full h-10 px-3 rounded-xl bg-[#0c0e18] border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                      >
+                        <option value="SINGLE">Single Recipient (Custom Email)</option>
+                        <option value="ALL_DELEGATES">All Registered Delegates ({registrations.length})</option>
+                        <option value="UNASSIGNED_DELEGATES">Unassigned Delegates ({registrations.filter(r => !r.allocatedCommittee).length})</option>
+                        <option value="OC_APPLICANTS">Organizing Committee Applicants ({ocApplications.length})</option>
+                        <option value="SEC_APPLICANTS">Secretariat Applicants ({secApplications.length})</option>
+                      </select>
+                    </div>
+
+                    {crmRecipientMode === 'SINGLE' && (
+                      <div>
+                        <label className="block text-[11px] font-mono uppercase text-white/60 mb-1.5">Recipient Email Address</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="delegate@example.com"
+                          value={crmEmailTo}
+                          onChange={(e) => setCrmEmailTo(e.target.value)}
+                          className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-white/60 mb-1.5">Email Subject Line</label>
+                    <input
+                      type="text"
+                      required
+                      value={crmSubject}
+                      onChange={(e) => setCrmSubject(e.target.value)}
+                      placeholder="Official Update — Resolve MUN 2.0"
+                      className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-white/60 mb-1.5">Message Body (Supports Paragraphs & Bullet Points)</label>
+                    <textarea
+                      rows={6}
+                      required
+                      value={crmMessageBody}
+                      onChange={(e) => setCrmMessageBody(e.target.value)}
+                      placeholder="Dear Delegate,&#10;&#10;We are pleased to share an official update regarding Resolve MUN 2.0 (27–29 November 2026 at Meridian School, Kompally)..."
+                      className="w-full p-3.5 rounded-xl bg-black/40 border border-white/15 text-white text-xs leading-relaxed focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCrmSubject('Background Guides & Committee Matrix — Resolve MUN 2.0');
+                        setCrmMessageBody('Dear Delegate,\n\nThe official Background Guides and Committee Matrix for Resolve MUN 2.0 (27–29 November 2026 at Meridian School, Kompally) are now available on your Delegate Dashboard.\n\nPlease sign in at https://resolvemun.in/dashboard to view your committee assignment and download your entry pass.\n\nWarm regards,\nSecretariat, Resolve MUN 2.0');
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[11px] text-white/70 hover:text-white cursor-pointer"
+                    >
+                      Template: Background Guides Released
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCrmSubject('Reporting Instructions & Dress Code — Resolve MUN 2.0');
+                        setCrmMessageBody('Dear Delegate,\n\nWe look forward to welcoming you to Resolve MUN 2.0 on 27–29 November 2026 at Meridian School, Kompally.\n\n• Reporting Time: 8:00 AM sharp\n• Dress Code: Day 1 & Day 2 Western Formals | Day 3 Traditional / Formals\n• Entry Requirement: Keep your digital QR Pass ready on your phone at the Secretariat Check-In Desk.\n\nWarm regards,\nSecretariat, Resolve MUN 2.0');
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[11px] text-white/70 hover:text-white cursor-pointer"
+                    >
+                      Template: Reporting & QR Pass Reminder
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={crmSending}
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25 disabled:opacity-50"
+                  >
+                    {crmSending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    <span>{crmSending ? 'Dispatching Emails...' : 'Dispatch Official Email'}</span>
+                  </button>
+                </form>
+              </div>
+            )}
+
             {/* SETTINGS PANEL */}
             {activeSubTab === 'settings' && (
-              <div className="space-y-6 animate-in fade-in duration-200 max-w-2xl">
+              <div className="space-y-6 animate-in fade-in duration-200 max-w-3xl">
                 <div>
-                  <h2 className="text-lg font-bold text-white">Settings</h2>
-                  <p className="text-xs text-white/50">Turn registrations on or off and update pricing.</p>
+                  <h2 className="text-lg font-bold text-white">Pass Availability & Live Pricing Controls</h2>
+                  <p className="text-xs text-white/50">Closed passes are automatically greyed out with an UNAVAILABLE badge on the website.</p>
                 </div>
 
                 <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#070914] space-y-6">
                   {/* Gates */}
                   <div className="space-y-4">
                     <h3 className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
-                      Registration Status
+                      Pass Availability (Open / Greyed Out)
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
-                        { key: 'registrationsOpen', label: 'All Registrations' },
-                        { key: 'delegateOpen', label: 'Individual Delegates' },
-                        { key: 'delegationOpen', label: 'School Teams' },
-                        { key: 'secretariatOpen', label: 'Secretariat Applications' },
-                        { key: 'ebOpen', label: 'Executive Board Applications' }
+                        { key: 'registrationsOpen', label: 'Master Switch (All Registrations)' },
+                        { key: 'delegateOpen', label: 'Priority Delegate Pass' },
+                        { key: 'delegationOpen', label: 'School Delegation Pass (Min 6)' },
+                        { key: 'ocOpen', label: 'Organizing Committee (Salaried OC)' },
+                        { key: 'secretariatOpen', label: 'Secretariat Applications (Free)' },
+                        { key: 'ebOpen', label: 'Executive Board (EB) Pass' },
+                        { key: 'socialsOpen', label: 'Socials Night Pass' }
                       ].map((item) => (
                         <label
                           key={item.key}
                           className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] cursor-pointer hover:bg-white/[0.04] transition-colors"
                         >
-                          <span className="text-xs font-medium text-white">{item.label}</span>
+                          <div>
+                            <span className="text-xs font-medium text-white block">{item.label}</span>
+                            <span className={`text-[10px] font-mono ${siteSettings[item.key] ? 'text-emerald-400' : 'text-white/40'}`}>
+                              {siteSettings[item.key] ? 'OPEN ON SITE' : 'GREYED OUT (UNAVAILABLE)'}
+                            </span>
+                          </div>
                           <input
                             type="checkbox"
                             checked={Boolean(siteSettings[item.key])}
@@ -2159,21 +2511,32 @@ export default function SuperAdminPage() {
                   {/* Pricing and Round Name */}
                   <div className="space-y-4 pt-4 border-t border-white/[0.06]">
                     <h3 className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
-                      Pricing & Round Name
+                      Live Pass Pricing & UPI Configuration
                     </h3>
 
                     <div className="space-y-3">
-                      <div>
-                        <label className="block text-[11px] text-white/50 uppercase mb-1">Round Name</label>
-                        <input
-                          type="text"
-                          value={siteSettings.roundName}
-                          onChange={(e) => setSiteSettings(p => ({ ...p, roundName: e.target.value }))}
-                          className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] text-white/50 uppercase mb-1">Active Round Name</label>
+                          <input
+                            type="text"
+                            value={siteSettings.roundName}
+                            onChange={(e) => setSiteSettings(p => ({ ...p, roundName: e.target.value }))}
+                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-white/50 uppercase mb-1">Official UPI ID (Navi QR)</label>
+                          <input
+                            type="text"
+                            value={siteSettings.upiId}
+                            onChange={(e) => setSiteSettings(p => ({ ...p, upiId: e.target.value }))}
+                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="block text-[11px] text-white/50 uppercase mb-1">Delegate Fee (₹)</label>
                           <input
@@ -2184,11 +2547,50 @@ export default function SuperAdminPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] text-white/50 uppercase mb-1">School Team Fee (₹)</label>
+                          <label className="block text-[11px] text-white/50 uppercase mb-1">Delegation / Member (₹)</label>
                           <input
                             type="text"
                             value={siteSettings.delegationFee}
                             onChange={(e) => setSiteSettings(p => ({ ...p, delegationFee: e.target.value }))}
+                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-white/50 uppercase mb-1">Socials Pass Fee (₹)</label>
+                          <input
+                            type="text"
+                            value={siteSettings.socialsFee}
+                            onChange={(e) => setSiteSettings(p => ({ ...p, socialsFee: e.target.value }))}
+                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[11px] text-white/50 uppercase mb-1">OC Tier 1 (Full · ₹)</label>
+                          <input
+                            type="text"
+                            value={siteSettings.ocFeeFull}
+                            onChange={(e) => setSiteSettings(p => ({ ...p, ocFeeFull: e.target.value }))}
+                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-white/50 uppercase mb-1">OC Tier 2 (No Trans · ₹)</label>
+                          <input
+                            type="text"
+                            value={siteSettings.ocFeeNoTransport}
+                            onChange={(e) => setSiteSettings(p => ({ ...p, ocFeeNoTransport: e.target.value }))}
+                            className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-white/50 uppercase mb-1">OC Tier 3 (Basic · ₹)</label>
+                          <input
+                            type="text"
+                            value={siteSettings.ocFeeBasic}
+                            onChange={(e) => setSiteSettings(p => ({ ...p, ocFeeBasic: e.target.value }))}
                             className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-purple-400"
                           />
                         </div>
@@ -2203,7 +2605,7 @@ export default function SuperAdminPage() {
                     className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25"
                   >
                     {settingsSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    <span>Save Changes</span>
+                    <span>Save Pass & Price Settings</span>
                   </button>
                 </div>
               </div>
@@ -2311,6 +2713,16 @@ export default function SuperAdminPage() {
               </button>
             </div>
 
+            {(allotmentModalData.committeePref1 || allotmentModalData.committeePref2 || allotmentModalData.committeePref3) && (
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-1 text-[11px]">
+                <span className="text-[10px] font-mono uppercase text-purple-300 font-bold block">Submitted Preferences</span>
+                {allotmentModalData.committeePref1 && <p className="text-white/80"><strong className="text-white">Pref 1:</strong> {allotmentModalData.committeePref1}</p>}
+                {allotmentModalData.committeePref2 && <p className="text-white/80"><strong className="text-white">Pref 2:</strong> {allotmentModalData.committeePref2}</p>}
+                {allotmentModalData.committeePref3 && <p className="text-white/80"><strong className="text-white">Pref 3:</strong> {allotmentModalData.committeePref3}</p>}
+                {allotmentModalData.experience && <p className="text-white/60 pt-1 border-t border-white/[0.06]"><strong className="text-white/80">Experience:</strong> {allotmentModalData.experience}</p>}
+              </div>
+            )}
+
             <form onSubmit={submitAllotment} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1">Committee</label>
@@ -2319,12 +2731,14 @@ export default function SuperAdminPage() {
                   onChange={(e) => setAllotmentModalData(prev => ({ ...prev, committee: e.target.value }))}
                   className="w-full h-10 px-2.5 rounded-xl bg-[#0c0e18] border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
                 >
+                  <option value="DISEC">DISEC (Disarmament & International Security)</option>
+                  <option value="UNHRC">UNHRC (United Nations Human Rights Council)</option>
                   <option value="UNSC">UNSC (United Nations Security Council)</option>
-                  <option value="UNGA (DISEC)">UNGA (Disarmament & International Security)</option>
-                  <option value="UNHRC">UNHRC (Human Rights Council)</option>
-                  <option value="AIPPM">AIPPM (All India Political Parties Meet)</option>
-                  <option value="CCC">Continuous Crisis Committee (CCC)</option>
-                  <option value="IP">International Press</option>
+                  <option value="LOK SABHA">Lok Sabha (Indian Parliamentary Committee)</option>
+                  <option value="IP">IP (International Press)</option>
+                  <option value="COMMITTEE X">Committee X (Crisis / Special Committee)</option>
+                  <option value="CCC">CCC (Continuous Crisis Committee)</option>
+                  <option value="UNCSW">UNCSW (Commission on Status of Women)</option>
                 </select>
               </div>
 
@@ -2332,7 +2746,7 @@ export default function SuperAdminPage() {
                 <label className="block text-xs font-medium text-white/70 mb-1">Country or Portfolio</label>
                 <input
                   type="text"
-                  placeholder="e.g. United States, India, France..."
+                  placeholder="e.g. United States, India, France, Reuters..."
                   value={allotmentModalData.country}
                   onChange={(e) => setAllotmentModalData(prev => ({ ...prev, country: e.target.value }))}
                   className="w-full h-10 px-3 rounded-xl bg-black/40 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
@@ -2341,7 +2755,7 @@ export default function SuperAdminPage() {
               </div>
 
               <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-xs text-purple-200/80 leading-relaxed">
-                Saving will update the delegate's digital pass and send a confirmation email to <b>{allotmentModalData.email}</b>.
+                Saving will update the delegate's digital QR pass and automatically send an official Allotment Decree email to <b>{allotmentModalData.email}</b>.
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -2350,7 +2764,7 @@ export default function SuperAdminPage() {
                   className="flex-1 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Save & Send Email</span>
+                  <span>Save & Auto-Email Decree</span>
                 </button>
                 <button
                   type="button"
@@ -2642,6 +3056,17 @@ export default function SuperAdminPage() {
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => {
+                  handleAcceptApplicant(secCandidateModalData, 'SEC');
+                  setSecCandidateModalData(null);
+                }}
+                className="px-4 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Approve & Send Appointment Email</span>
+              </button>
               <a
                 href={`mailto:${secCandidateModalData.email}?subject=Resolve MUN 2026 Secretariat Interview`}
                 className="px-4 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -2652,6 +3077,96 @@ export default function SuperAdminPage() {
               <button
                 type="button"
                 onClick={() => setSecCandidateModalData(null)}
+                className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OC CANDIDATE APPLICATION MODAL */}
+      {ocCandidateModalData && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-purple-500/30 bg-[#070914] shadow-2xl space-y-5">
+            <div className="flex items-start justify-between border-b border-white/[0.08] pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-300 text-[10px] font-mono font-bold">
+                    {ocCandidateModalData.appId}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-[10px] font-bold">
+                    Salaried Role · {ocCandidateModalData.feeTier || 'OC'}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1.5">{ocCandidateModalData.fullName}</h3>
+                <p className="text-xs text-indigo-300 font-semibold mt-0.5">Organizing Committee Applicant</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOcCandidateModalData(null)}
+                className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs">
+              <div>
+                <span className="text-[10px] text-white/40 block">Email</span>
+                <span className="text-white font-medium break-all">{ocCandidateModalData.email}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block">Phone</span>
+                <span className="text-white font-mono">{ocCandidateModalData.phone}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block">Instagram</span>
+                <span className="text-pink-400 font-mono">{ocCandidateModalData.instagram || '—'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block">School / College</span>
+                <span className="text-white">{ocCandidateModalData.institution || '—'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block">Grade / Year</span>
+                <span className="text-white">{ocCandidateModalData.grade || '—'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 block">Transport Needed</span>
+                <span className="text-white font-mono">{ocCandidateModalData.transportNeeded || '—'}</span>
+              </div>
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-[10px] text-white/40 block">Residential Address</span>
+                <span className="text-white/80">{ocCandidateModalData.residentialAddress || '—'}</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06]">
+              <span className="text-xs font-bold text-purple-300 block mb-1">
+                Previous Experiences
+              </span>
+              <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">
+                {ocCandidateModalData.previousExperience || 'No response.'}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => {
+                  handleAcceptApplicant(ocCandidateModalData, 'OC');
+                  setOcCandidateModalData(null);
+                }}
+                className="px-4 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Approve OC & Send Email</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOcCandidateModalData(null)}
                 className="px-4 h-9 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white text-xs font-medium cursor-pointer"
               >
                 Close

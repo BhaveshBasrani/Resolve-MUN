@@ -1,19 +1,180 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, setDoc, query, where, limit } from 'firebase/firestore';
+import { supabase, DEFAULT_SITE_SETTINGS, normalizeSettings } from '@/lib/supabase';
+import {
+  collection,
+  getDocs,
+  getDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  addDoc,
+  setDoc,
+  query,
+  where,
+  limit,
+} from 'firebase/firestore';
 
-const APPS_SCRIPT_URL = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+const APPS_SCRIPT_URL =
+  process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
+  "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
 const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY || "ResolveMUNAdmin2026@Secure";
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('adminKey');
+    const isPublicSettingsOnly = searchParams.get('mode') === 'settings';
+
+    // Public settings endpoint for landing page pass availability & pricing
+    if (isPublicSettingsOnly) {
+      let settings = { ...DEFAULT_SITE_SETTINGS };
+      if (supabase) {
+        try {
+          const { data } = await supabase
+            .from('site_settings')
+            .select('*')
+            .eq('id', 'global')
+            .maybeSingle();
+          if (data) settings = normalizeSettings(data);
+        } catch (_) {}
+      }
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'global'));
+        if (snap.exists()) {
+          settings = normalizeSettings({ ...settings, ...snap.data() });
+        }
+      } catch (_) {}
+      return NextResponse.json({ status: 'success', settings });
+    }
+
     if (key !== ADMIN_KEY && key !== 'admin2026' && key !== 'Resolve2026') {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
 
-    // 1. Fetch from Firestore collections
+    // 0. Fetch Site Settings
+    let liveSettings = { ...DEFAULT_SITE_SETTINGS };
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('site_settings')
+          .select('*')
+          .eq('id', 'global')
+          .maybeSingle();
+        if (data) liveSettings = normalizeSettings(data);
+      } catch (_) {}
+    }
+    try {
+      const snap = await getDoc(doc(db, 'settings', 'global'));
+      if (snap.exists()) {
+        liveSettings = normalizeSettings({ ...liveSettings, ...snap.data() });
+      }
+    } catch (_) {}
+
+    // 1. Fetch from Supabase tables
+    let sbDelegates = [];
+    let sbDelegations = [];
+    let sbOc = [];
+    let sbEb = [];
+    let sbSec = [];
+
+    if (supabase) {
+      try {
+        const [delRes, delegRes, ocRes, ebRes, secRes] = await Promise.all([
+          supabase.from('delegates').select('*').order('created_at', { ascending: false }),
+          supabase.from('delegations').select('*').order('created_at', { ascending: false }),
+          supabase.from('oc_applications').select('*').order('created_at', { ascending: false }),
+          supabase.from('eb_applications').select('*').order('created_at', { ascending: false }),
+          supabase.from('secretariat_applications').select('*').order('created_at', { ascending: false }),
+        ]);
+
+        if (delRes.data) {
+          sbDelegates = delRes.data.map(d => ({
+            ...d,
+            id: d.id,
+            _id: d.id,
+            regId: d.delegate_id || d.id,
+            delegateId: d.delegate_id || d.id,
+            fullName: d.full_name,
+            name: d.full_name,
+            institution: d.school,
+            paymentUTR: d.payment_utr,
+            paymentStatus: d.payment_status,
+            paymentVerified: d.payment_status === 'VERIFIED' ? 'verified' : 'Pending',
+            allocatedCommittee: d.allocated_committee,
+            allocatedCountry: d.allocated_country,
+            delegationCode: d.delegation_code,
+            checkInDay1: d.check_in_day1 || 'Absent',
+            checkInDay2: d.check_in_day2 || 'Absent',
+            checkInDay3: d.check_in_day3 || 'Absent',
+            pref1_country: [d.pref1_portfolio1, d.pref1_portfolio2].filter(Boolean).join(' / '),
+            pref2_country: [d.pref2_portfolio1, d.pref2_portfolio2].filter(Boolean).join(' / '),
+            pref3_country: [d.pref3_portfolio1, d.pref3_portfolio2].filter(Boolean).join(' / '),
+          }));
+        }
+        if (delegRes.data) {
+          sbDelegations = delegRes.data.map(d => ({
+            ...d,
+            id: d.id,
+            _id: d.id,
+            delegationId: d.delegation_id,
+            instName: d.inst_name || d.delegation_name,
+            adviserName: d.head_delegate_name || d.adviser_name,
+            adviserEmail: d.adviser_email,
+            adviserPhone: d.adviser_phone,
+            totalAmount: d.total_amount,
+            utr: d.payment_utr,
+            payment_screenshot_link: d.payment_screenshot_url,
+          }));
+        }
+        if (ocRes.data) {
+          sbOc = ocRes.data.map(o => ({
+            ...o,
+            id: o.id,
+            _id: o.id,
+            appId: o.app_id || o.id,
+            name: o.full_name,
+            fullName: o.full_name,
+            institute: o.school,
+            payment_utr: o.payment_utr,
+            payment_screenshot_link: o.payment_screenshot_url,
+          }));
+        }
+        if (ebRes.data) {
+          sbEb = ebRes.data.map(e => ({
+            ...e,
+            id: e.id,
+            _id: e.id,
+            appId: e.app_id || e.id,
+            name: e.full_name,
+            fullName: e.full_name,
+            position: e.role_preference,
+            why: e.why_join,
+            cv_file: e.cv_url,
+          }));
+        }
+        if (secRes.data) {
+          sbSec = secRes.data.map(s => ({
+            ...s,
+            id: s.id,
+            _id: s.id,
+            appId: s.app_id || s.id,
+            fullName: s.full_name,
+            schoolCollege: s.school_college,
+            residentialAddress: s.residential_address,
+            previousExperiences: s.previous_experiences,
+            whyJoin: s.why_join,
+            dailyCommitment: s.daily_commitment,
+            portfolioUrl: s.portfolio_url,
+            resumeUrl: s.resume_url,
+          }));
+        }
+      } catch (sbErr) {
+        console.warn("Supabase fetch in admin route notice:", sbErr.message);
+      }
+    }
+
+    // 2. Fetch from Firestore collections
     let fsDelegates = [];
     let fsDelegations = [];
     let fsOc = [];
@@ -35,25 +196,25 @@ export async function GET(request) {
         id: d.id,
         _id: d.id,
         regId: d.data().delegateId || d.id,
-        ...d.data()
+        ...d.data(),
       }));
       fsDelegations = delegSnap.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
       fsOc = ocSnap.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
       fsEb = ebSnap.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
-      fsSec = secSnap.docs.map(d => ({ id: d.id, _id: d.id, appId: d.id, ...d.data() }));
+      fsSec = secSnap.docs.map(d => ({ id: d.id, _id: d.id, appId: d.data().appId || d.id, ...d.data() }));
       fsWaitlist = wlSnap.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
     } catch (fsErr) {
       console.warn("Firestore fetch in admin route notice:", fsErr.message);
     }
 
-    // 2. Fetch from Apps Script (for any legacy data or leads)
+    // 3. Fetch from Apps Script (for any legacy data or leads)
     let asData = {};
     try {
       const targetUrl = `${APPS_SCRIPT_URL}?action=ADMIN_GET_ALL&adminKey=${encodeURIComponent(ADMIN_KEY)}`;
       const res = await fetch(targetUrl, {
         method: 'GET',
         redirect: 'follow',
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {
         asData = await res.json();
@@ -71,45 +232,31 @@ export async function GET(request) {
     const asWaitlist = asData.waitlist || asData.Waitlist || [];
     const siteUsers = asData.siteUsers || asData.Users || [];
 
-    // Merge: Firestore is primary, sheet entries supplement if not duplicate
-    const seenEmails = new Set(fsDelegates.map(d => (d.email || '').toLowerCase()).filter(Boolean));
-    const mergedRegistrations = [
-      ...fsDelegates,
-      ...asRegistrations.filter(r => !seenEmails.has((r.email || '').toLowerCase()))
-    ];
+    // Deduplicate & merge across Supabase -> Firestore -> Apps Script
+    const dedupeByEmailOrId = (lists, idKey = 'regId') => {
+      const seen = new Set();
+      const out = [];
+      for (const list of lists) {
+        for (const item of list) {
+          const k = ((item[idKey] || item.email || item.id || '') + '').toLowerCase().trim();
+          if (k && seen.has(k)) continue;
+          if (k) seen.add(k);
+          out.push(item);
+        }
+      }
+      return out;
+    };
 
-    const seenDelInst = new Set(fsDelegations.map(d => (d.instName || '').toLowerCase()).filter(Boolean));
-    const mergedDelegations = [
-      ...fsDelegations,
-      ...asDelegations.filter(d => !seenDelInst.has((d.instName || '').toLowerCase()))
-    ];
-
-    const seenOc = new Set(fsOc.map(o => (o.email || '').toLowerCase()).filter(Boolean));
-    const mergedOc = [
-      ...fsOc,
-      ...asOcApplicants.filter(o => !seenOc.has((o.email || '').toLowerCase()))
-    ];
-
-    const seenEb = new Set(fsEb.map(e => (e.email || '').toLowerCase()).filter(Boolean));
-    const mergedEb = [
-      ...fsEb,
-      ...asEbApplicants.filter(e => !seenEb.has((e.email || '').toLowerCase()))
-    ];
-
-    const seenSec = new Set(fsSec.map(s => (s.email || '').toLowerCase()).filter(Boolean));
-    const mergedSec = [
-      ...fsSec,
-      ...asSecApplicants.filter(s => !seenSec.has((s.email || '').toLowerCase()))
-    ];
-
-    const seenWl = new Set(fsWaitlist.map(w => (w.email || '').toLowerCase()).filter(Boolean));
-    const mergedWaitlist = [
-      ...fsWaitlist,
-      ...asWaitlist.filter(w => !seenWl.has((w.email || '').toLowerCase()))
-    ];
+    const mergedRegistrations = dedupeByEmailOrId([sbDelegates, fsDelegates, asRegistrations], 'email');
+    const mergedDelegations = dedupeByEmailOrId([sbDelegations, fsDelegations, asDelegations], 'delegationId');
+    const mergedOc = dedupeByEmailOrId([sbOc, fsOc, asOcApplicants], 'email');
+    const mergedEb = dedupeByEmailOrId([sbEb, fsEb, asEbApplicants], 'email');
+    const mergedSec = dedupeByEmailOrId([sbSec, fsSec, asSecApplicants], 'email');
+    const mergedWaitlist = dedupeByEmailOrId([fsWaitlist, asWaitlist], 'email');
 
     return NextResponse.json({
       status: 'success',
+      siteSettings: liveSettings,
       registrations: mergedRegistrations,
       delegations: mergedDelegations,
       abandonedLeads,
@@ -118,7 +265,7 @@ export async function GET(request) {
       secretariatApplicants: mergedSec,
       waitlist: mergedWaitlist,
       siteUsers,
-      raw: asData
+      raw: asData,
     });
   } catch (err) {
     return NextResponse.json({ status: 'error', message: err.message }, { status: 500 });
@@ -135,9 +282,75 @@ export async function POST(request) {
 
     const action = body.action;
 
-    // Direct Firestore updates for admin actions
+    // 1. ADMIN_UPDATE_SETTINGS (Pass open/close toggles + dynamic prices)
+    if (action === 'ADMIN_UPDATE_SETTINGS') {
+      const normalized = normalizeSettings(body.settings || body);
+
+      // Update Supabase
+      if (supabase) {
+        try {
+          await supabase.from('site_settings').upsert({
+            id: 'global',
+            registrations_open: normalized.registrationsOpen,
+            delegate_open: normalized.delegateOpen,
+            delegation_open: normalized.delegationOpen,
+            oc_open: normalized.ocOpen,
+            eb_open: normalized.ebOpen,
+            socials_open: normalized.socialsOpen,
+            secretariat_open: normalized.secretariatOpen,
+            round_name: normalized.roundName,
+            delegate_fee: normalized.delegateFee,
+            delegation_fee: normalized.delegationFee,
+            oc_fee_full: normalized.ocFeeFull,
+            oc_fee_no_transport: normalized.ocFeeNoTransport,
+            oc_fee_basic: normalized.ocFeeBasic,
+            socials_fee: normalized.socialsFee,
+            upi_id: normalized.upiId,
+            upi_payee: normalized.upiPayee,
+            updated_at: new Date().toISOString(),
+          });
+        } catch (sbErr) {
+          console.warn("Supabase settings update notice:", sbErr.message);
+        }
+      }
+
+      // Update Firestore
+      try {
+        await setDoc(doc(db, 'settings', 'global'), {
+          ...normalized,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+      } catch (fsErr) {
+        console.warn("Firestore settings update notice:", fsErr.message);
+      }
+
+      // Sync to Apps Script non-blocking
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ ...body, adminKey: ADMIN_KEY }),
+      }).catch(() => {});
+
+      return NextResponse.json({ status: 'success', settings: normalized });
+    }
+
+    // 2. Direct Supabase + Firestore updates for admin actions
     try {
       if (action === 'ADMIN_VERIFY_PAYMENT' && (body.regId || body.email)) {
+        if (supabase) {
+          if (body.regId) {
+            await supabase
+              .from('delegates')
+              .update({ payment_status: 'VERIFIED', status: 'Confirmed' })
+              .eq('delegate_id', body.regId);
+          } else if (body.email) {
+            await supabase
+              .from('delegates')
+              .update({ payment_status: 'VERIFIED', status: 'Confirmed' })
+              .ilike('email', body.email);
+          }
+        }
+
         let q = body.regId
           ? query(collection(db, 'delegates'), where('delegateId', '==', body.regId), limit(1))
           : query(collection(db, 'delegates'), where('email', '==', body.email), limit(1));
@@ -147,10 +360,24 @@ export async function POST(request) {
             paymentVerified: 'verified',
             'Payment Verified': 'verified',
             payment_status: 'VERIFIED',
-            status: 'Confirmed'
+            status: 'Confirmed',
           });
         }
       } else if ((action === 'ADMIN_ALLOT_COMMITTEE' || action === 'ADMIN_CONFIRM_ALLOTMENT') && (body.regId || body.email)) {
+        if (supabase) {
+          const patch = {
+            allocated_committee: body.committee,
+            allocated_country: body.country,
+            allotment_email_sent: true,
+            status: 'Confirmed',
+          };
+          if (body.regId) {
+            await supabase.from('delegates').update(patch).eq('delegate_id', body.regId);
+          } else if (body.email) {
+            await supabase.from('delegates').update(patch).ilike('email', body.email);
+          }
+        }
+
         let q = body.regId
           ? query(collection(db, 'delegates'), where('delegateId', '==', body.regId), limit(1))
           : query(collection(db, 'delegates'), where('email', '==', body.email), limit(1));
@@ -164,48 +391,122 @@ export async function POST(request) {
             allocatedCountry: body.country,
             'Allocation Country': body.country,
             applicationStatus: 'allocated',
-            'Application Status': 'allocated'
+            'Application Status': 'allocated',
           });
         }
+      } else if ((action === 'ADMIN_ACCEPT_APPLICANT' || action === 'ADMIN_UPDATE_APPLICANT_STATUS') && (body.appId || body.email)) {
+        const newStatus = body.status || 'Accepted';
+        const track = (body.role || body.track || 'SECRETARIAT').toUpperCase();
+        const supaTable = track.includes('OC')
+          ? 'oc_applications'
+          : track.includes('EB')
+          ? 'eb_applications'
+          : 'secretariat_applications';
+        const fsCol = track.includes('OC')
+          ? 'oc_applications'
+          : track.includes('EB')
+          ? 'eb_applications'
+          : 'secretariat_applications';
+
+        if (supabase) {
+          if (body.appId) {
+            await supabase.from(supaTable).update({ status: newStatus }).eq('app_id', body.appId);
+          } else if (body.email) {
+            await supabase.from(supaTable).update({ status: newStatus }).ilike('email', body.email);
+          }
+        }
+
+        try {
+          if (body.appId) {
+            await updateDoc(doc(db, fsCol, body.appId), { status: newStatus });
+          }
+        } catch (_) {
+          if (body.email) {
+            const snap = await getDocs(query(collection(db, fsCol), where('email', '==', body.email), limit(1)));
+            if (!snap.empty) {
+              await updateDoc(doc(db, fsCol, snap.docs[0].id), { status: newStatus });
+            }
+          }
+        }
       } else if (action === 'ADMIN_UPDATE_DELEGATION' && body.regId) {
+        if (supabase) {
+          await supabase
+            .from('delegates')
+            .update({ delegation_code: body.delegationCode || 'Independent' })
+            .eq('delegate_id', body.regId);
+        }
         let q = query(collection(db, 'delegates'), where('delegateId', '==', body.regId), limit(1));
         let snap = await getDocs(q);
         if (!snap.empty) {
           await updateDoc(doc(db, 'delegates', snap.docs[0].id), {
-            delegationCode: body.delegationCode || 'Independent'
+            delegationCode: body.delegationCode || 'Independent',
           });
         }
         return NextResponse.json({ status: 'success', message: 'Delegation updated' });
       } else if (action === 'ADMIN_ADD_DELEGATE') {
+        const genId = body.regId || `RM26-DEL-${Math.floor(1000 + Math.random() * 9000)}`;
         const delegateDoc = {
-          delegateId: body.regId || `RM26-DEL-${Math.floor(1000 + Math.random() * 9000)}`,
+          delegateId: genId,
           fullName: body.fullName || body.name || 'Delegate',
           name: body.fullName || body.name || 'Delegate',
-          email: body.email || '',
+          email: (body.email || '').trim().toLowerCase(),
           phone: body.phone || '',
           institution: body.institution || 'Individual',
+          school: body.institution || 'Individual',
           delegationCode: body.delegationCode || 'Independent',
           allocatedCommittee: body.allocatedCommittee || '',
           allocatedCountry: body.allocatedCountry || '',
           status: 'Confirmed',
           paymentStatus: 'VERIFIED',
-          created_at: new Date().toISOString()
+          payment_status: 'VERIFIED',
+          checkInDay1: 'Absent',
+          checkInDay2: 'Absent',
+          checkInDay3: 'Absent',
+          created_at: new Date().toISOString(),
         };
+
+        if (supabase) {
+          try {
+            await supabase.from('delegates').insert({
+              delegate_id: genId,
+              full_name: delegateDoc.fullName,
+              email: delegateDoc.email,
+              phone: delegateDoc.phone,
+              school: delegateDoc.school,
+              delegation_code: delegateDoc.delegationCode,
+              allocated_committee: delegateDoc.allocatedCommittee,
+              allocated_country: delegateDoc.allocatedCountry,
+              payment_status: 'VERIFIED',
+              status: 'Confirmed',
+            });
+          } catch (_) {}
+        }
+
         await addDoc(collection(db, 'delegates'), delegateDoc);
         return NextResponse.json({ status: 'success', message: 'Delegate added', delegate: delegateDoc });
       } else if ((action === 'ADMIN_DELETE_REGISTRATION' || action === 'ADMIN_DELETE_RECORD') && (body.regId || body.recordId || body.id)) {
         const targetId = body.regId || body.recordId || body.id;
         const colName = body.sheetName === 'Abandoned_Leads' ? 'waitlist'
           : body.sheetName === 'Secretariat_Applications' ? 'secretariat_applications'
+          : body.sheetName === 'OC_Applications' ? 'oc_applications'
           : body.sheetName === 'EB_Applications' ? 'eb_applications'
           : 'delegates';
+
+        if (supabase) {
+          try {
+            if (colName === 'delegates') {
+              await supabase.from('delegates').delete().eq('delegate_id', targetId);
+            } else {
+              await supabase.from(colName).delete().eq('app_id', targetId);
+            }
+          } catch (_) {}
+        }
 
         let q = query(collection(db, colName), where('delegateId', '==', targetId), limit(1));
         let snap = await getDocs(q);
         if (!snap.empty) {
           await deleteDoc(doc(db, colName, snap.docs[0].id));
         } else {
-          // Try deleting by document id
           try {
             await deleteDoc(doc(db, colName, targetId));
           } catch (_) {}
@@ -213,12 +514,41 @@ export async function POST(request) {
         return NextResponse.json({ status: 'success', message: 'Record deleted' });
       } else if (action === 'RECORD_CHECK_IN') {
         const targetId = body.delegateId;
+        const dayStr = body.day || 'Day 1';
+        const isEntry = (body.actionType || 'ENTRY') === 'ENTRY';
+        const statusValue = isEntry ? 'Present' : 'Checked Out';
+
+        const dayColSupabase =
+          dayStr === 'Day 2' ? 'check_in_day2' : dayStr === 'Day 3' ? 'check_in_day3' : 'check_in_day1';
+        const dayColFirestore =
+          dayStr === 'Day 2' ? 'checkInDay2' : dayStr === 'Day 3' ? 'checkInDay3' : 'checkInDay1';
+
+        if (supabase) {
+          try {
+            await supabase.from('check_in_logs').insert({
+              delegate_id: targetId,
+              full_name: body.fullName || '',
+              email: body.email || '',
+              day: dayStr,
+              action_type: body.actionType || 'ENTRY',
+              verified_by: body.verifiedBy || 'Secretariat Check-In',
+            });
+            await supabase
+              .from('delegates')
+              .update({
+                [dayColSupabase]: statusValue,
+                last_check_in: new Date().toISOString(),
+              })
+              .eq('delegate_id', targetId);
+          } catch (_) {}
+        }
+
         await addDoc(collection(db, 'check_ins'), {
           delegateId: targetId,
           actionType: body.actionType || 'ENTRY',
-          day: body.day || 'Day 1',
+          day: dayStr,
           verifiedBy: body.verifiedBy || 'Secretariat Check-In',
-          timestamp: body.timestamp || new Date().toISOString()
+          timestamp: body.timestamp || new Date().toISOString(),
         });
 
         if (targetId) {
@@ -226,38 +556,43 @@ export async function POST(request) {
           let snap = await getDocs(q);
           if (!snap.empty) {
             await updateDoc(doc(db, 'delegates', snap.docs[0].id), {
+              [dayColFirestore]: statusValue,
               last_check_in: new Date().toISOString(),
-              checked_in: body.actionType === 'ENTRY'
+              checked_in: isEntry,
             });
           }
         }
-        return NextResponse.json({ status: 'success', message: 'Check-in recorded' });
+        return NextResponse.json({
+          status: 'success',
+          message: `Check-in (${dayStr}: ${statusValue}) recorded`,
+          day: dayStr,
+          checkInStatus: statusValue,
+        });
       }
     } catch (fsErr) {
-      console.warn("Firestore admin action notice:", fsErr.message);
+      console.warn("Admin DB action notice:", fsErr.message);
     }
 
-    // If it was a dedicated internal action, don't forward to Apps Script
     if (action === 'RECORD_CHECK_IN' || action === 'ADMIN_UPDATE_DELEGATION' || action === 'ADMIN_ADD_DELEGATE') {
       return NextResponse.json({ status: 'success', message: `${action} processed` });
     }
 
-    // Forward to Apps Script for transactional emails and sheet synchronization
+    // Forward to Apps Script for transactional emails (Allotment Email, Payment Verified Email, Custom CRM Broadcast)
     body.adminKey = ADMIN_KEY;
     try {
       const res = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         redirect: 'follow',
         headers: {
-          'Content-Type': 'text/plain'
+          'Content-Type': 'text/plain',
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
 
       const data = await res.json().catch(() => ({ status: 'success' }));
       return NextResponse.json(data);
     } catch (asErr) {
-      return NextResponse.json({ status: 'success', notice: 'Synced with Firestore' });
+      return NextResponse.json({ status: 'success', notice: 'Synced with Database' });
     }
   } catch (err) {
     return NextResponse.json({ status: 'error', message: err.message }, { status: 500 });

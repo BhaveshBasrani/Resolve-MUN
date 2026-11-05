@@ -8,6 +8,7 @@ import {
   submitEbApplication,
   submitSecretariatApplication,
   submitWaitlistEntry,
+  fetchSystemSettingsCached,
   onAuthStateChanged,
 } from "@/lib/firebase";
 import Link from "next/link";
@@ -176,27 +177,82 @@ export default function Home() {
     window.handleOcSubmit = async (e) => {
       e.preventDefault();
       const form = e.target;
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-      
-      // Add extra fields not in simple FormData if needed
-      data.munCount = document.getElementById('ocMunCount')?.value;
-      
-      try {
-        document.getElementById('submitSpinner').style.display = 'flex';
-        await window.submitOcToFirebase(data);
+      const tierSelect = document.getElementById("ocFeeTier");
+      const feeTier = tierSelect?.value || "₹1,500 — Transport & T-Shirt Included";
+      const isPayLater = feeTier.toLowerCase().includes("later");
+      const selectedOpt = tierSelect?.options?.[tierSelect.selectedIndex];
+      const feeAmount = isPayLater ? 0 : Number(selectedOpt?.getAttribute("data-amount") || 1500);
+
+      const txnId = document.getElementById("ocTxnID")?.value?.trim() || "";
+      const fileInput = document.getElementById("ocDriveLink");
+      const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+      if (!isPayLater && (!txnId || !hasFile)) {
         if (window.showCustomAlert) {
-          window.showCustomAlert('OC Application submitted successfully!', 'success');
-        } else {
-          alert('OC Application submitted successfully!');
+          window.showCustomAlert("Please enter your UPI Transaction ID and upload your payment screenshot, or select 'Pay Later'.", "warning");
+        }
+        return;
+      }
+
+      let screenshotBase64 = "";
+      if (hasFile) {
+        screenshotBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result || "");
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(fileInput.files[0]);
+        });
+      }
+
+      const nameVal = document.getElementById("ocName")?.value?.trim() || "";
+      const emailVal = document.getElementById("ocEmail")?.value?.trim() || "";
+
+      const data = {
+        action: "SUBMIT_OC",
+        name: nameVal,
+        fullName: nameVal,
+        phone: document.getElementById("ocPhone")?.value?.trim() || "",
+        email: emailVal,
+        institute: document.getElementById("ocInst")?.value?.trim() || "",
+        dob: document.getElementById("ocDob")?.value || "",
+        grade: document.getElementById("ocGrade")?.value || "",
+        address: document.getElementById("ocAddress")?.value?.trim() || "",
+        instagram: document.getElementById("ocInsta")?.value?.trim() || "",
+        munCount: document.getElementById("ocMunCount")?.value || "",
+        why: document.getElementById("ocWhy")?.value?.trim() || "",
+        attributes: document.getElementById("ocAttributes")?.value?.trim() || "",
+        feeTier,
+        feeAmount,
+        payment_utr: isPayLater ? "PAY_LATER" : txnId,
+        payment_screenshot_link: screenshotBase64,
+        referral: document.getElementById("ocReferral")?.value?.trim() || "",
+        additionalInfo: document.getElementById("ocAdditionalInfo")?.value?.trim() || "",
+      };
+
+      const spinner = document.getElementById("submitSpinner");
+      try {
+        if (spinner) spinner.style.display = "flex";
+        await window.submitOcToFirebase(data);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("resolve_user_registered", "true");
+          if (emailVal) localStorage.setItem("resolve_user_email", emailVal);
+          if (nameVal) localStorage.setItem("resolve_user_name", nameVal);
+        }
+        if (window.showCustomAlert) {
+          window.showCustomAlert("OC Application submitted! Redirecting to your dashboard...", "success");
         }
         form.reset();
-        window.closeModalById('ocModal');
+        if (window.closeModalById) window.closeModalById("ocModal");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 1200);
       } catch (err) {
-        console.error('OC Submit Error:', err);
-        alert('Submission failed. Please try again.');
+        console.error("OC Submit Error:", err);
+        if (window.showCustomAlert) {
+          window.showCustomAlert("Submission Error: " + (err?.message || "Please try again."), "error");
+        }
       } finally {
-        document.getElementById('submitSpinner').style.display = 'none';
+        if (spinner) spinner.style.display = "none";
       }
     };
 
@@ -564,7 +620,130 @@ export default function Home() {
       window.autofillAllKnownFields = autofillAllKnownFields;
 
 
+      // Sync live siteSettings to window.__siteSettings and update modal UI & greyed-out cards
+      const applyLiveSettingsToDOM = (settings) => {
+        if (!settings) return;
+        window.__siteSettings = settings;
+        const delFee = Number(settings.delegateFee || 2500);
+        const delgFee = Number(settings.delegationFee || 2200);
+        const upi = settings.upiId || "6301550628@nyes";
+
+        const regFeeEl = document.getElementById("regFeeDisplay");
+        if (regFeeEl) regFeeEl.innerText = `Registration Fee: ₹${delFee.toLocaleString("en-IN")}`;
+        const scanLbl = document.getElementById("paymentQRScanLabel");
+        if (scanLbl) scanLbl.innerText = `SCAN & PAY ₹${delFee.toLocaleString("en-IN")}`;
+        const badgeDel = document.getElementById("pathwayBadgeDelegate");
+        if (badgeDel) {
+          badgeDel.innerText =
+            settings.delegateOpen !== false && settings.registrationsOpen !== false
+              ? `PRIORITY ROUND · ₹${delFee.toLocaleString("en-IN")}`
+              : "CLOSED";
+        }
+        const badgeDelg = document.getElementById("pathwayBadgeDelegation");
+        if (badgeDelg) {
+          badgeDelg.innerText =
+            settings.delegationOpen !== false && settings.registrationsOpen !== false
+              ? `₹${delgFee.toLocaleString("en-IN")} / DEL · MIN 6`
+              : "CLOSED";
+        }
+        const perDelNote = document.getElementById("delPerDelegateNote");
+        if (perDelNote) {
+          perDelNote.innerText = `(₹${delgFee.toLocaleString("en-IN")} per enrolled delegate · Minimum 6 delegates)`;
+        }
+
+        // Grey out any closed pathway cards in #selectionModal
+        const cardMap = [
+          { id: "pathwayCardDelegate", open: settings.registrationsOpen !== false && settings.delegateOpen !== false },
+          { id: "pathwayCardDelegation", open: settings.registrationsOpen !== false && settings.delegationOpen !== false },
+          { id: "pathwayCardOc", open: settings.registrationsOpen !== false && settings.ocOpen !== false },
+          { id: "pathwayCardSecretariat", open: settings.registrationsOpen !== false && settings.secretariatOpen !== false },
+          { id: "pathwayCardEb", open: settings.registrationsOpen !== false && Boolean(settings.ebOpen) },
+        ];
+        cardMap.forEach(({ id, open }) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (open) {
+            el.classList.remove("selection-card--closed");
+            el.style.opacity = "1";
+            el.style.filter = "none";
+            el.style.cursor = "pointer";
+          } else {
+            el.classList.add("selection-card--closed");
+            el.style.opacity = "0.45";
+            el.style.filter = "grayscale(1)";
+            el.style.cursor = "not-allowed";
+          }
+        });
+
+        ["upiID", "delUpiID", "ocUpiID"].forEach((id) => {
+          const uEl = document.getElementById(id);
+          if (uEl) uEl.innerText = upi;
+        });
+
+        if (window.generateDynamicQR) {
+          window.generateDynamicQR(String(delFee), "paymentQRImage", "upiID");
+          const size = parseInt(document.getElementById("delSize")?.value || "6", 10) || 6;
+          window.generateDynamicQR(String(size * delgFee), "delPaymentQRImage", "delUpiID");
+        }
+      };
+
+      fetchSystemSettingsCached(false)
+        .then((s) => applyLiveSettingsToDOM(s))
+        .catch(() => {});
+
+      window.addEventListener("siteSettingsUpdated", (ev) => {
+        if (ev?.detail) applyLiveSettingsToDOM(ev.detail);
+      });
+
+      window.updateOcFeeTierUI = function (tierValue) {
+        const wrapper = document.getElementById("ocPaymentCardWrapper");
+        const txnInput = document.getElementById("ocTxnID");
+        const fileInput = document.getElementById("ocDriveLink");
+        const scanLabel = document.getElementById("ocQRScanLabel");
+        const selectEl = document.getElementById("ocFeeTier");
+        const isPayLater = String(tierValue || "").toLowerCase().includes("later");
+
+        if (isPayLater) {
+          if (wrapper) wrapper.style.display = "none";
+          if (txnInput) txnInput.removeAttribute("required");
+          if (fileInput) fileInput.removeAttribute("required");
+        } else {
+          if (wrapper) wrapper.style.display = "block";
+          let amount = 1500;
+          if (selectEl && selectEl.selectedIndex >= 0) {
+            amount = Number(selectEl.options[selectEl.selectedIndex].getAttribute("data-amount") || 1500);
+          }
+          if (scanLabel) scanLabel.innerText = `SCAN & PAY ₹${amount.toLocaleString("en-IN")}`;
+          if (window.generateDynamicQR) {
+            window.generateDynamicQR(String(amount), "ocPaymentQRImage", "ocUpiID");
+          }
+        }
+      };
+
       window.selectPathway = function (type) {
+        const s = window.__siteSettings || {};
+        if (s.registrationsOpen === false) {
+          if (window.showCustomAlert) {
+            window.showCustomAlert("Registrations for Resolve MUN 2.0 are currently paused.", "info");
+          }
+          return;
+        }
+
+        const openCheck = {
+          delegate: s.delegateOpen !== false,
+          delegation: s.delegationOpen !== false,
+          oc: s.ocOpen !== false,
+          secretariat: s.secretariatOpen !== false,
+          eb: Boolean(s.ebOpen),
+        };
+
+        if (openCheck[type] === false) {
+          if (window.showCustomAlert) {
+            window.showCustomAlert(`${type.toUpperCase()} registrations are currently closed.`, "info");
+          }
+          return;
+        }
+
         if (typeof window !== "undefined" && localStorage.getItem("resolve_user_registered") === "true" && (type === "delegate" || type === "delegation")) {
           window.location.href = "/dashboard";
           return;
@@ -585,19 +764,17 @@ export default function Home() {
           return;
         }
 
-        if (type === "delegate" || type === "delegation") {
-          if (window.showCustomAlert) {
-            window.showCustomAlert("Delegate and Delegation registrations are currently closed. Only Secretariat Applications are open.", "info");
-          } else {
-            alert("Delegate and Delegation registrations are currently closed. Only Secretariat Applications are open.");
-          }
+        if (type === "delegate") {
+          window.openRegistration();
+          return;
+        } else if (type === "delegation") {
+          window.openDelRegistration();
           return;
         } else if (type === "oc") {
           const ocModal = document.getElementById("ocModal");
           if (ocModal) {
             ocModal.classList.add("active");
             document.body.style.overflow = "hidden";
-            // Pre-fill user data if authenticated
             if (auth.currentUser) {
               const nameEl = document.getElementById("ocName");
               const emailEl = document.getElementById("ocEmail");
@@ -607,10 +784,10 @@ export default function Home() {
           }
           return;
         } else if (type === "eb") {
-          if (window.showCustomAlert) {
-            window.showCustomAlert("EB applications are closed. Please apply for OC or Secretariat.", "info");
-          } else {
-            alert("EB applications are closed. Please apply for OC or Secretariat.");
+          const ebModal = document.getElementById("ebModal");
+          if (ebModal) {
+            ebModal.classList.add("active");
+            document.body.style.overflow = "hidden";
           }
           return;
         } else if (type === "secretariat") {
@@ -618,7 +795,6 @@ export default function Home() {
           if (secModal) {
             secModal.classList.add("active");
             document.body.style.overflow = "hidden";
-            // Pre-fill user data if authenticated
             if (auth.currentUser) {
               const nameEl = document.getElementById("secName");
               const emailEl = document.getElementById("secEmail");
@@ -803,7 +979,8 @@ export default function Home() {
       window.copyUPI = function () {
         const upi =
           document.getElementById("upiID")?.innerText ||
-          "bhoomianilbasrani@okhdfcbank";
+          window.__siteSettings?.upiId ||
+          "6301550628@nyes";
         navigator.clipboard?.writeText(upi);
         const copyBtn = document.getElementById("copyUpiBtn");
         if (copyBtn) {
@@ -826,7 +1003,8 @@ export default function Home() {
       window.copyDelUPI = function () {
         const upi =
           document.getElementById("delUpiID")?.innerText ||
-          "bhoomianilbasrani@okhdfcbank";
+          window.__siteSettings?.upiId ||
+          "6301550628@nyes";
         navigator.clipboard?.writeText(upi);
         if (window.showCustomAlert)
           window.showCustomAlert("UPI ID copied: " + upi, "success");
@@ -835,29 +1013,31 @@ export default function Home() {
       window.copyOcUPI = function () {
         const upi =
           document.getElementById("ocUpiID")?.innerText ||
-          "bhoomianilbasrani@okhdfcbank";
+          window.__siteSettings?.upiId ||
+          "6301550628@nyes";
         navigator.clipboard?.writeText(upi);
         if (window.showCustomAlert)
           window.showCustomAlert("UPI ID copied: " + upi, "success");
       };
 
       window.generateDynamicQR = function (amountStr, imgElementId, upiTextElementId) {
-        let cleanAmount = "2799";
+        const defaultFee = String(window.__siteSettings?.delegateFee || 2500);
+        let cleanAmount = defaultFee;
         if (amountStr) {
-          cleanAmount = String(amountStr).replace(/[^0-9.]/g, "") || "2799";
+          cleanAmount = String(amountStr).replace(/[^0-9.]/g, "") || defaultFee;
         }
         const currentPayee = {
-          pa: "bhoomianilbasrani@okhdfcbank",
-          pn: "Bhoomi Basrani",
+          pa: window.__siteSettings?.upiId || "6301550628@nyes",
+          pn: "Bejugam Aditya",
         };
         const upiText = document.getElementById(upiTextElementId);
         if (upiText) upiText.innerText = currentPayee.pa;
 
-        const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&tn=${encodeURIComponent("Resolve MUN 2026 Delegate Fee")}`;
+        const upiString = `upi://pay?pa=${currentPayee.pa}&pn=${encodeURIComponent(currentPayee.pn)}&am=${cleanAmount}&cu=INR&tn=${encodeURIComponent("Resolve MUN 2026 Fee")}`;
         
         // Update direct mobile link if element exists
         const mobileLink = document.getElementById("payUpiMobileLink");
-        if (mobileLink) {
+        if (mobileLink && imgElementId === "paymentQRImage") {
           mobileLink.href = upiString;
         }
 
@@ -872,9 +1052,10 @@ export default function Home() {
       };
 
       window.refreshDelegatePaymentQR = function () {
-        window.generateDynamicQR("2799", "paymentQRImage", "upiID");
+        const fee = String(window.__siteSettings?.delegateFee || 2500);
+        window.generateDynamicQR(fee, "paymentQRImage", "upiID");
         if (window.showCustomAlert) {
-          window.showCustomAlert("UPI QR code refreshed for ₹2799", "info");
+          window.showCustomAlert(`UPI QR code refreshed for ₹${Number(fee).toLocaleString("en-IN")}`, "info");
         }
       };
 

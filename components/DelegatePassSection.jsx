@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import AdmitOneTicket, { TICKET_LAYOUT } from "./ui/admit-one-ticket";
-import { auth, onAuthStateChanged } from "@/lib/firebase";
+import { auth, onAuthStateChanged, fetchSystemSettingsCached } from "@/lib/firebase";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/supabase";
 
 const PASSES = [
   {
@@ -162,6 +163,71 @@ const RESOLVE_TICKET_LAYOUT = {
 export default function DelegatePassSection() {
   const [ticketWidth, setTicketWidth] = useState(328);
   const [delegateName, setDelegateName] = useState("YOUR NAME");
+  const [siteSettings, setSiteSettings] = useState(DEFAULT_SITE_SETTINGS);
+
+  // Sync live ticket availability & dynamic pricing from Supabase / Admin Settings
+  useEffect(() => {
+    let mounted = true;
+    const loadSettings = async (force = false) => {
+      try {
+        const s = await fetchSystemSettingsCached(force);
+        if (mounted && s) {
+          setSiteSettings((prev) => ({ ...prev, ...s }));
+        }
+      } catch (e) {
+        // Keep defaults
+      }
+    };
+    loadSettings(false);
+
+    const onSettingsUpdated = (e) => {
+      if (e?.detail) {
+        setSiteSettings((prev) => ({ ...prev, ...e.detail }));
+      } else {
+        loadSettings(true);
+      }
+    };
+    window.addEventListener("siteSettingsUpdated", onSettingsUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("siteSettingsUpdated", onSettingsUpdated);
+    };
+  }, []);
+
+  const isPassOpen = (passId) => {
+    if (siteSettings.registrationsOpen === false) return false;
+    switch (passId) {
+      case "delegate":
+        return siteSettings.delegateOpen !== false;
+      case "oc":
+        return siteSettings.ocOpen !== false;
+      case "eb":
+        return Boolean(siteSettings.ebOpen);
+      case "socials":
+        return Boolean(siteSettings.socialsOpen);
+      case "secretariat":
+        return siteSettings.secretariatOpen !== false;
+      default:
+        return true;
+    }
+  };
+
+  const getPassPriceTag = (passId) => {
+    switch (passId) {
+      case "delegate":
+        return `₹${Number(siteSettings.delegateFee || 2500).toLocaleString("en-IN")} · PRIORITY ROUND`;
+      case "oc":
+        return `FROM ₹${Number(siteSettings.ocFeeBasic || 750).toLocaleString("en-IN")} · SALARIED ROLE`;
+      case "eb":
+        return "EXECUTIVE BOARD";
+      case "socials":
+        return `₹${Number(siteSettings.socialsFee || 999).toLocaleString("en-IN")} · SOCIALS NIGHT`;
+      case "secretariat":
+        return "FREE APPLICATION · INTERVIEW";
+      default:
+        return "";
+    }
+  };
 
   // Auth sync: Personalize passes with user's name if logged in
   useEffect(() => {
@@ -254,44 +320,78 @@ export default function DelegatePassSection() {
 
         {/* All 5 Passes Laid Out (Grid / Flex-Wrap like the folder cards) */}
         <div className="flex flex-wrap items-center justify-center gap-7 sm:gap-9 lg:gap-10">
-          {PASSES.map((pass) => (
-            <div
-              key={pass.id}
-              role="button"
-              tabIndex={0}
-              onClick={pass.action}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  pass.action();
+          {PASSES.map((pass) => {
+            const open = isPassOpen(pass.id);
+            const priceTag = getPassPriceTag(pass.id);
+            const handlePassClick = () => {
+              if (!open) {
+                if (typeof window !== "undefined" && window.showCustomAlert) {
+                  window.showCustomAlert(
+                    `${pass.label} registrations are currently unavailable / closed.`,
+                    "info"
+                  );
                 }
-              }}
-              className="group cursor-pointer select-none outline-none transition-all duration-300 hover:scale-[1.04] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/40 rounded-xl"
-              title={`Click to claim ${pass.label}`}
-              aria-label={`Claim ${pass.label} for ${delegateName}`}
-            >
+                return;
+              }
+              pass.action();
+            };
+
+            return (
               <div
-                className="perspective-[1200px] drop-shadow-[0_12px_32px_rgba(0,0,0,0.85)] group-hover:drop-shadow-[0_20px_45px_rgba(0,0,0,0.95)] transition-all duration-300"
-                style={{
-                  filter: `drop-shadow(0 0 16px ${pass.glow})`,
+                key={pass.id}
+                role="button"
+                tabIndex={0}
+                aria-disabled={!open}
+                onClick={handlePassClick}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handlePassClick();
+                  }
                 }}
+                className={`group relative select-none outline-none transition-all duration-300 rounded-xl flex flex-col items-center gap-3 ${
+                  open
+                    ? "cursor-pointer hover:scale-[1.04] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/40"
+                    : "cursor-not-allowed grayscale opacity-45 contrast-75 hover:opacity-55"
+                }`}
+                title={open ? `Click to claim ${pass.label}` : `${pass.label} — Currently Closed`}
+                aria-label={open ? `Claim ${pass.label} for ${delegateName}` : `${pass.label} Closed`}
               >
-                <AdmitOneTicket
-                  name={delegateName}
-                  presenter="RESOLVE MODEL UNITED NATIONS 2.0"
-                  event="DIPLOMACY · REFORM · RECONCILE"
-                  venue="MERIDIAN SCHOOL, KOMPALLY"
-                  dates="27–29 NOVEMBER 2026"
-                  stubText={pass.stub}
-                  watermark="2026"
-                  width={ticketWidth}
-                  texture={pass.texture}
-                  layout={RESOLVE_TICKET_LAYOUT}
-                  tilt={{ maxTilt: 11, scale: 1.02, glare: 0.16 }}
-                />
+                <div
+                  className="relative perspective-[1200px] drop-shadow-[0_12px_32px_rgba(0,0,0,0.85)] group-hover:drop-shadow-[0_20px_45px_rgba(0,0,0,0.95)] transition-all duration-300"
+                  style={{
+                    filter: open ? `drop-shadow(0 0 16px ${pass.glow})` : "none",
+                  }}
+                >
+                  <AdmitOneTicket
+                    name={delegateName}
+                    presenter="RESOLVE MODEL UNITED NATIONS 2.0"
+                    event={open ? priceTag || "DIPLOMACY · REFORM · RECONCILE" : "REGISTRATIONS CLOSED"}
+                    venue="MERIDIAN SCHOOL, KOMPALLY"
+                    dates="27–29 NOVEMBER 2026"
+                    stubText={open ? pass.stub : "UNAVAILABLE"}
+                    watermark="2026"
+                    width={ticketWidth}
+                    texture={pass.texture}
+                    layout={RESOLVE_TICKET_LAYOUT}
+                    tilt={open ? { maxTilt: 11, scale: 1.02, glare: 0.16 } : { maxTilt: 0, scale: 1, glare: 0 }}
+                  />
+                </div>
+
+                {/* Live Availability & Pricing Pill beneath ticket */}
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-[10px] tracking-[0.14em] uppercase font-mono">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      open ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-zinc-500"
+                    }`}
+                  />
+                  <span className={open ? "text-white/80" : "text-white/40"}>
+                    {open ? `${pass.label} · OPEN` : `${pass.label} · UNAVAILABLE`}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

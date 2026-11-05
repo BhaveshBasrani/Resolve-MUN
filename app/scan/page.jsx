@@ -42,6 +42,7 @@ export default function AttendanceScanner() {
   const [searchStatus, setSearchStatus] = useState(null); // { type: 'success' | 'error', message: '' }
 
   // Attendance recording
+  const [selectedDay, setSelectedDay] = useState("Day 1");
   const [recordingAction, setRecordingAction] = useState(false);
   const [sessionLogs, setSessionLogs] = useState([]);
 
@@ -131,7 +132,7 @@ export default function AttendanceScanner() {
         osc.start();
         osc.stop(audioCtx.currentTime + 0.2);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Instant In-Memory Lookup
@@ -140,10 +141,15 @@ export default function AttendanceScanner() {
       let q = String(rawQuery || searchQuery || "").trim();
       if (!q) return;
 
-      // Clean raw QR formats (e.g., RESOLVE_PASS:RM26-DEL-1049:...)
-      if (q.includes("RESOLVE_PASS:")) {
+      // Clean raw QR formats (e.g., RESOLVE_PASS:RM26-DEL-1049:... or RESOLVE_PASS:DELEGATE:RM26-DEL-1049:email)
+      if (q.includes("RESOLVE_PASS:") || q.includes("RESOLVE26:")) {
         const parts = q.split(":");
-        if (parts.length >= 2) q = parts[1].trim();
+        const idPart = parts.find((p) => p.trim().startsWith("RM26-"));
+        if (idPart) {
+          q = idPart.trim();
+        } else if (parts.length >= 2) {
+          q = parts[1].trim();
+        }
       }
 
       const qLower = q.toLowerCase();
@@ -167,6 +173,8 @@ export default function AttendanceScanner() {
       });
 
       if (match) {
+        const dayKey = selectedDay === "Day 2" ? "checkInDay2" : selectedDay === "Day 3" ? "checkInDay3" : "checkInDay1";
+        const alreadyChecked = Boolean(match[dayKey] || match[dayKey.replace(/([A-Z])/g, "_$1").toLowerCase()]);
         setSelectedDelegate({
           regId: match.regId || match.RegID || match.id || match.delegateId || "RM26-DEL",
           name: match.fullName || match.name || match.FullName || "Delegate",
@@ -177,10 +185,18 @@ export default function AttendanceScanner() {
           country: match.allocatedCountry || match.AllocatedCountry || "Unassigned",
           status: match.status || match.Status || "Confirmed",
           delegationCode: match.delegationCode || match.DelegationCode || "Independent",
-          paymentUTR: match.paymentUTR || match.PaymentUTR || ""
+          paymentUTR: match.paymentUTR || match.PaymentUTR || "",
+          checkInDay1: Boolean(match.checkInDay1 || match.check_in_day1),
+          checkInDay2: Boolean(match.checkInDay2 || match.check_in_day2),
+          checkInDay3: Boolean(match.checkInDay3 || match.check_in_day3),
         });
-        setSearchStatus({ type: "success", message: "Delegate credentials verified." });
-        playBeep("success");
+        setSearchStatus({
+          type: alreadyChecked ? "error" : "success",
+          message: alreadyChecked
+            ? `Notice: ${match.fullName || match.name} is already checked in for ${selectedDay}!`
+            : "Delegate credentials verified."
+        });
+        playBeep(alreadyChecked ? "error" : "success");
       } else {
         setSelectedDelegate(null);
         setSearchStatus({ type: "error", message: `No delegate record found for "${q}".` });
@@ -282,9 +298,10 @@ export default function AttendanceScanner() {
     setRecordingAction(true);
 
     const delegateId = selectedDelegate.regId || selectedDelegate.email;
+    const dayProp = selectedDay === "Day 2" ? "checkInDay2" : selectedDay === "Day 3" ? "checkInDay3" : "checkInDay1";
 
     try {
-      const res = await fetch("/api/admin/", {
+      await fetch("/api/admin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -292,17 +309,30 @@ export default function AttendanceScanner() {
           adminKey: ADMIN_KEY,
           delegateId: delegateId,
           actionType: actionType, // 'ENTRY' or 'EXIT'
-          day: "Day 1",
+          day: selectedDay,
           verifiedBy: "Secretariat Scanner Station",
           timestamp: new Date().toISOString()
         })
       });
+
+      // Optimistically update local state so duplicate scan alert works immediately
+      setSelectedDelegate((prev) => prev ? { ...prev, [dayProp]: actionType === "ENTRY" } : prev);
+      setDelegatesList((prev) =>
+        prev.map((d) => {
+          const id = d.regId || d.RegID || d.id || d.delegateId;
+          if (id === delegateId) {
+            return { ...d, [dayProp]: actionType === "ENTRY" };
+          }
+          return d;
+        })
+      );
 
       const newLog = {
         id: delegateId,
         name: selectedDelegate.name,
         committee: selectedDelegate.committee,
         country: selectedDelegate.country,
+        day: selectedDay,
         actionType: actionType,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
       };
@@ -310,7 +340,7 @@ export default function AttendanceScanner() {
       setSessionLogs((prev) => [newLog, ...prev]);
       setSearchStatus({
         type: "success",
-        message: `Successfully logged ${actionType === "ENTRY" ? "Check-In (Entry)" : "Check-Out (Exit)"} for ${selectedDelegate.name}.`
+        message: `Successfully logged ${selectedDay} ${actionType === "ENTRY" ? "Check-In (Entry)" : "Check-Out (Exit)"} for ${selectedDelegate.name}.`
       });
       playBeep("success");
     } catch (err) {
@@ -432,6 +462,28 @@ export default function AttendanceScanner() {
 
       {/* Main Container */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        {/* Conference Day Selector */}
+        <div className="grid grid-cols-3 gap-2.5 p-1.5 rounded-2xl bg-[#0b0e17] border border-white/[0.08]">
+          {[
+            { id: "Day 1", date: "27 Nov 2026" },
+            { id: "Day 2", date: "28 Nov 2026" },
+            { id: "Day 3", date: "29 Nov 2026" },
+          ].map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setSelectedDay(d.id)}
+              className={`py-2.5 px-3 rounded-xl font-mono text-xs transition-all cursor-pointer flex flex-col items-center justify-center ${selectedDay === d.id
+                ? "bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/25"
+                : "text-white/50 hover:text-white hover:bg-white/[0.03]"
+                }`}
+            >
+              <span>{d.id}</span>
+              <span className="text-[10px] opacity-75">{d.date}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Scanner Box */}
         <section className="p-5 rounded-2xl border border-white/[0.08] bg-[#0b0e17] space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
@@ -441,11 +493,10 @@ export default function AttendanceScanner() {
             <button
               type="button"
               onClick={toggleCamera}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                cameraActive
-                  ? "bg-red-500/20 text-red-300 border border-red-500/30 shadow-lg shadow-red-500/10"
-                  : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20"
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${cameraActive
+                ? "bg-red-500/20 text-red-300 border border-red-500/30 shadow-lg shadow-red-500/10"
+                : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20"
+                }`}
             >
               {cameraActive ? <CameraOff className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" />}
               <span>{cameraActive ? "Stop Camera" : "Open Camera Scanner"}</span>
@@ -513,11 +564,10 @@ export default function AttendanceScanner() {
 
           {searchStatus && (
             <div
-              className={`p-3 rounded-xl text-xs font-mono flex items-center gap-2 ${
-                searchStatus.type === "success"
-                  ? "bg-emerald-950/40 border border-emerald-500/30 text-emerald-300"
-                  : "bg-red-950/40 border border-red-500/30 text-red-300"
-              }`}
+              className={`p-3 rounded-xl text-xs font-mono flex items-center gap-2 ${searchStatus.type === "success"
+                ? "bg-emerald-950/40 border border-emerald-500/30 text-emerald-300"
+                : "bg-red-950/40 border border-red-500/30 text-red-300"
+                }`}
             >
               {searchStatus.type === "success" ? (
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -574,6 +624,26 @@ export default function AttendanceScanner() {
               </div>
             </div>
 
+            {/* 3-Day Attendance Status Row */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Day 1 (27 Nov)", checked: selectedDelegate.checkInDay1 },
+                { label: "Day 2 (28 Nov)", checked: selectedDelegate.checkInDay2 },
+                { label: "Day 3 (29 Nov)", checked: selectedDelegate.checkInDay3 },
+              ].map((d) => (
+                <div
+                  key={d.label}
+                  className={`p-2.5 rounded-xl border text-center font-mono text-xs ${d.checked
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300 font-bold"
+                    : "bg-black/40 border-white/[0.06] text-white/40"
+                    }`}
+                >
+                  <span className="block text-[10px]">{d.label}</span>
+                  <span className="block mt-0.5">{d.checked ? "✓ Checked In" : "Not Checked In"}</span>
+                </div>
+              ))}
+            </div>
+
             {/* Check-In / Check-Out Action Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <button
@@ -583,7 +653,7 @@ export default function AttendanceScanner() {
                 className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
               >
                 <BadgeCheck className="w-4 h-4" />
-                <span>Check In (Entry)</span>
+                <span>Check In ({selectedDay} Entry)</span>
               </button>
 
               <button
@@ -593,7 +663,7 @@ export default function AttendanceScanner() {
                 className="h-12 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
               >
                 <Clock className="w-4 h-4 text-amber-300" />
-                <span>Check Out (Exit)</span>
+                <span>Check Out ({selectedDay} Exit)</span>
               </button>
             </div>
           </section>
@@ -618,11 +688,10 @@ export default function AttendanceScanner() {
                 <div key={`log-${idx}`} className="py-2.5 flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-2.5">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        log.actionType === "ENTRY"
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                          : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${log.actionType === "ENTRY"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                        }`}
                     >
                       {log.actionType}
                     </span>

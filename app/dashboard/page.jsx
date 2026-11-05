@@ -59,8 +59,16 @@ function DataTile({ label, value, accent, sub }) {
 /**
  * EXACT CHOOSE PATHWAY COMPONENT MATCHING THE AUTH MODAL
  */
-function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
-  const handleSelect = (pathway) => {
+function ChoosePathwayBlock({ onSelect, isModal = false, onClose, settings = {} }) {
+  const masterOpen = settings.registrationsOpen !== false;
+  const delOpen = masterOpen && settings.delegateOpen !== false;
+  const teamOpen = masterOpen && settings.delegationOpen !== false;
+  const secOpen = masterOpen && settings.secretariatOpen !== false;
+  const ocOpen = masterOpen && settings.ocOpen !== false;
+  const ebOpen = masterOpen && Boolean(settings.ebOpen);
+
+  const handleSelect = (pathway, isOpen) => {
+    if (!isOpen) return;
     if (onSelect) {
       onSelect(pathway);
     } else {
@@ -89,28 +97,32 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
           How would you like to participate?
         </h2>
         <p className="mt-1 text-xs text-white/50 leading-relaxed font-sans max-w-[42ch]">
-          Choose an option below to register for Resolve MUN 2026.
+          Choose an option below to register for Resolve MUN 2026. Unavailable passes are greyed out.
         </p>
       </div>
 
-      {/* 3 Pathway Cards with Thin Borders */}
+      {/* Pathway Cards */}
       <div className="space-y-2.5 pt-1" aria-label="Participation pathways">
         
         {/* 1. Delegate */}
         <div
           role="button"
           tabIndex={0}
-          onClick={() => handleSelect("delegate")}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegate"); } }}
-          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+          onClick={() => handleSelect("delegate", delOpen)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegate", delOpen); } }}
+          className={`group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 ${
+            delOpen
+              ? "hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+              : "grayscale opacity-45 contrast-75 cursor-not-allowed"
+          }`}
         >
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-sans font-semibold text-sm text-white tracking-tight">
-                Delegate
+                Priority Delegate
               </span>
               <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-400/20 text-violet-300 font-medium">
-                Individual
+                {delOpen ? `₹${settings.delegateFee || "2,500"}` : "Unavailable"}
               </span>
             </div>
             <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
@@ -126,21 +138,25 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
         <div
           role="button"
           tabIndex={0}
-          onClick={() => handleSelect("delegation")}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegation"); } }}
-          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+          onClick={() => handleSelect("delegation", teamOpen)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("delegation", teamOpen); } }}
+          className={`group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 ${
+            teamOpen
+              ? "hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+              : "grayscale opacity-45 contrast-75 cursor-not-allowed"
+          }`}
         >
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-sans font-semibold text-sm text-white tracking-tight">
-                Delegation
+                School Delegation
               </span>
               <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-400/20 text-sky-300 font-medium">
-                School Team
+                {teamOpen ? `₹${settings.delegationFee || "2,200"}/del · Min 6` : "Unavailable"}
               </span>
             </div>
             <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
-              Register a group of delegates from your school or college.
+              Register a group of 6+ delegates from your school or college.
             </span>
           </div>
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
@@ -152,9 +168,13 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
         <div
           role="button"
           tabIndex={0}
-          onClick={() => handleSelect("secretariat")}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("secretariat"); } }}
-          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+          onClick={() => handleSelect("secretariat", secOpen)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("secretariat", secOpen); } }}
+          className={`group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 ${
+            secOpen
+              ? "hover:border-white/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+              : "grayscale opacity-45 contrast-75 cursor-not-allowed"
+          }`}
         >
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -162,14 +182,14 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
                 Secretariat
               </span>
               <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 font-medium">
-                Staff &amp; Board
+                Leadership
               </span>
               <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 font-medium">
-                Free
+                {secOpen ? "Free" : "Unavailable"}
               </span>
             </div>
             <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
-              Apply to join the organizing team and leadership.
+              Apply for USG & leadership positions on the Secretariat.
             </span>
           </div>
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-white/40 transition-all" aria-hidden="true">
@@ -181,9 +201,13 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
         <div
           role="button"
           tabIndex={0}
-          onClick={() => handleSelect("oc")}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("oc"); } }}
-          className="group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 hover:border-purple-500/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+          onClick={() => handleSelect("oc", ocOpen)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect("oc", ocOpen); } }}
+          className={`group relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#090b14] px-4 py-3 text-left transition-all duration-200 ${
+            ocOpen
+              ? "hover:border-purple-500/40 hover:bg-[#0f111e] hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] cursor-pointer active:scale-[0.99]"
+              : "grayscale opacity-45 contrast-75 cursor-not-allowed"
+          }`}
         >
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -191,11 +215,11 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
                 Organizing Committee
               </span>
               <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-400/20 text-purple-300 font-medium">
-                OC · ₹1699
+                {ocOpen ? `Salaried Role · From ₹${settings.ocFeeBasic || "750"}` : "Unavailable"}
               </span>
             </div>
             <span className="block text-xs text-white/50 leading-normal group-hover:text-white/70 transition-colors line-clamp-1">
-              Join the team that makes the conference happen.
+              Join the Organizing Committee that executes Resolve MUN 2.0.
             </span>
           </div>
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.03] text-white/40 group-hover:text-white group-hover:border-purple-400/40 transition-all" aria-hidden="true">
@@ -207,9 +231,9 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
 
       {/* Subdued Footer for Closed Tracks */}
       <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-sans">
-        <span>Looking for EB?</span>
+        <span>Looking for Executive Board?</span>
         <span className="font-mono uppercase tracking-wider text-[10px] text-white/30">
-          EB Applications Closed
+          {ebOpen ? "EB Applications Open" : "EB Applications Unavailable"}
         </span>
       </div>
     </section>
@@ -219,7 +243,7 @@ function ChoosePathwayBlock({ onSelect, isModal = false, onClose }) {
 /**
  * EXACT CHOOSE PATHWAY MODAL (Matching Auth Modal Chassis)
  */
-function ChoiceModal({ user, onClose }) {
+function ChoiceModal({ user, onClose, settings }) {
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
@@ -242,7 +266,7 @@ function ChoiceModal({ user, onClose }) {
           <X className="w-4 h-4 text-white/90" strokeWidth={2.2} />
         </button>
 
-        <ChoosePathwayBlock onClose={onClose} isModal={true} />
+        <ChoosePathwayBlock onClose={onClose} isModal={true} settings={settings} />
 
         <div className="pt-4 text-center">
           <span className="text-[10px] font-mono text-white/35">
@@ -294,20 +318,25 @@ export default function DelegateDashboard() {
       ]);
 
       if (record && record.found !== false) {
-        const delegateId = record.regId || record.delegateId || (record.id ? `RM26-DEL-${String(record.id).slice(0, 4).toUpperCase()}` : "RM26-DEL-CONFIRMED");
-        const fullName = record.fullName || record.name || (user?.displayName || "Delegate");
-        const paymentUTR = record.paymentUTR || record.payment_utr || "BANK-CONFIRMED";
+        const roleType = record.roleType || (String(record.appId || record.regId || "").includes("-OC-") ? "OC" : String(record.appId || record.regId || "").includes("-SEC-") ? "SECRETARIAT" : record.delId ? "DELEGATION" : "DELEGATE");
+        const delegateId = record.regId || record.appId || record.delId || record.delegateId || (record.id ? `RM26-DEL-${String(record.id).slice(0, 4).toUpperCase()}` : "RM26-DEL-CONFIRMED");
+        const fullName = record.fullName || record.name || record.headDelegateName || (user?.displayName || "Participant");
+        const paymentUTR = record.paymentUTR || record.payment_utr || (roleType === "SECRETARIAT" ? "FREE-TRACK" : "BANK-CONFIRMED");
         const status = record.status || "Confirmed";
         const isPaymentOk = (
+          roleType === "SECRETARIAT" ||
           status === "Confirmed" ||
           status === "Payment_Verified" ||
           status === "Manual_Approved" ||
           status === "APPROVED" ||
+          status === "Accepted" ||
+          status === "Allocated" ||
           (paymentUTR && String(paymentUTR).trim().length > 3)
         );
 
         setDelegateRecord({
           ...record,
+          roleType,
           delegateId,
           fullName,
           email: record.email || email,
@@ -316,19 +345,21 @@ export default function DelegateDashboard() {
           paymentUTR,
           paymentStatus: isPaymentOk ? "VERIFIED" : "PENDING_VERIFICATION",
           status,
-          allocatedCommittee: record.allocatedCommittee || record.allocated_committee || record['Allocated Committee'] || "",
-          allocatedCountry: record.allocatedCountry || record.allocated_country || record['Allocated Country'] || "",
-          institution: record.institution || record.institute || record['School / Institution'] || "Individual Delegate",
-          // Always prefer computed pref strings over raw stored value (which may be blank)
+          allocatedCommittee: record.allocatedCommittee || record.allocated_committee || record['Allocated Committee'] || (roleType === "OC" ? "Organizing Committee" : roleType === "SECRETARIAT" ? "Secretariat" : ""),
+          allocatedCountry: record.allocatedCountry || record.allocated_country || record['Allocated Country'] || (roleType === "OC" ? (record.feeTier || "OC Member") : roleType === "SECRETARIAT" ? (record.position || "USG Applicant") : ""),
+          institution: record.institution || record.institute || record.schoolCollege || record.institutionName || record['School / Institution'] || "Individual Delegate",
+          checkInDay1: Boolean(record.checkInDay1 || record.check_in_day1),
+          checkInDay2: Boolean(record.checkInDay2 || record.check_in_day2),
+          checkInDay3: Boolean(record.checkInDay3 || record.check_in_day3),
           pref1: (record.pref1_committee
             ? `${record.pref1_committee} · ${record.pref1_country || 'General'}`
-            : record.pref1 || null),
+            : record.committeePref1 || record.pref1 || null),
           pref2: (record.pref2_committee
             ? `${record.pref2_committee} · ${record.pref2_country || 'General'}`
-            : record.pref2 || null),
+            : record.committeePref2 || record.pref2 || null),
           pref3: (record.pref3_committee
             ? `${record.pref3_committee} · ${record.pref3_country || 'General'}`
-            : record.pref3 || null),
+            : record.committeePref3 || record.pref3 || null),
         });
 
       } else {
@@ -354,8 +385,9 @@ export default function DelegateDashboard() {
 
       if (settings) {
         setSystemSettings({
-          registrationsOpen: settings.registrations_open !== false,
-          roundName: settings.round_name || "Round 1 Priority Applications",
+          ...settings,
+          registrationsOpen: settings.registrationsOpen !== false && settings.registrations_open !== false,
+          roundName: settings.roundName || settings.round_name || "Priority Round Applications",
         });
       }
       setSynced(true);
@@ -559,7 +591,7 @@ export default function DelegateDashboard() {
         {/* UNREGISTERED STATE */}
         {!isReg && (
           <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#07080e] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-            <ChoosePathwayBlock onSelect={(track) => { window.location.href = `/?open=${track}`; }} />
+            <ChoosePathwayBlock settings={systemSettings} onSelect={(track) => { window.location.href = `/?open=${track}`; }} />
           </section>
         )}
 
@@ -668,13 +700,16 @@ export default function DelegateDashboard() {
                       <div className="p-5 flex flex-col items-center gap-4">
                         <div className="p-3 rounded-xl bg-white border border-neutral-200 shadow-inner">
                           <img
-                            src={`https://quickchart.io/qr?size=220&text=${encodeURIComponent("RESOLVE_PASS:" + delegateRecord.delegateId + ":" + delegateRecord.email)}`}
+                            src={`https://quickchart.io/qr?size=220&text=${encodeURIComponent("RESOLVE_PASS:" + (delegateRecord.roleType || "DELEGATE") + ":" + delegateRecord.delegateId + ":" + delegateRecord.email)}`}
                             alt="QR Pass"
                             className="w-40 h-40 block"
                           />
                         </div>
 
                         <div className="text-center space-y-1 w-full">
+                          <span className="inline-block px-2 py-0.5 rounded bg-indigo-500/15 border border-indigo-400/25 text-[10px] font-mono font-bold text-indigo-300 uppercase">
+                            {delegateRecord.roleType || "DELEGATE"} PASS
+                          </span>
                           <p className="text-sm font-bold text-white">
                             {delegateRecord.fullName || user.displayName}
                           </p>
@@ -686,14 +721,35 @@ export default function DelegateDashboard() {
                               <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/25 text-xs font-bold text-emerald-300 font-mono">
                                 {delegateRecord.allocatedCommittee}
                               </span>
-                              <span className="text-xs text-white/70 truncate max-w-[120px]">
+                              <span className="text-xs text-white/70 truncate max-w-[140px]">
                                 {delegateRecord.allocatedCountry}
                               </span>
                             </div>
                           )}
                         </div>
 
-                        <div className="w-full flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+                        {/* 3-Day Conference Attendance Tracker */}
+                        <div className="w-full grid grid-cols-3 gap-1.5 pt-2 border-t border-white/10">
+                          {[
+                            { day: "Day 1", date: "27 Nov", checked: delegateRecord.checkInDay1 },
+                            { day: "Day 2", date: "28 Nov", checked: delegateRecord.checkInDay2 },
+                            { day: "Day 3", date: "29 Nov", checked: delegateRecord.checkInDay3 },
+                          ].map((d) => (
+                            <div
+                              key={d.day}
+                              className={`p-2 rounded-lg border text-center ${
+                                d.checked
+                                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                                  : "bg-white/[0.02] border-white/10 text-white/40"
+                              }`}
+                            >
+                              <span className="text-[10px] font-mono font-bold block">{d.day}</span>
+                              <span className="text-[9px] block">{d.checked ? "Checked In" : d.date}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="w-full flex items-center justify-between pt-2 border-t border-white/10 text-xs">
                           <span className="text-white/40">Meridian Kompally</span>
                           <span className="flex items-center gap-1 text-emerald-400 font-semibold">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />Verified
@@ -782,7 +838,7 @@ export default function DelegateDashboard() {
         </section>
       </main>
 
-      {choiceModalOpen && <ChoiceModal user={user} onClose={() => setChoiceModalOpen(false)} />}
+      {choiceModalOpen && <ChoiceModal user={user} settings={systemSettings} onClose={() => setChoiceModalOpen(false)} />}
       <Footer />
     </div>
   );

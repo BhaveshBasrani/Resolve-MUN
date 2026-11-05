@@ -330,6 +330,16 @@ function doPost(e) {
         result = adminDeleteRecord(payload);
         break;
 
+      case "ADMIN_ACCEPT_APPLICANT":
+        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        result = adminAcceptApplicantAndSendEmail(payload);
+        break;
+
+      case "ADMIN_SEND_CUSTOM_EMAIL":
+        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        result = adminSendCustomCrmEmail(payload);
+        break;
+
       default:
         if (targetEmail && targetEmail.includes("@")) {
           result = sendApplicationReceivedEmail(targetEmail, recipientName, "Conference Registration", "RM26-IN-" + Math.floor(1000 + Math.random() * 9000));
@@ -1572,6 +1582,83 @@ function logAudit(action, actor, status, details) {
     const sheet = ss.getSheetByName("Audit_Logs");
     if (sheet) sheet.appendRow([new Date().toISOString(), action, actor, status, details]);
   } catch (_) {}
+}
+
+function adminAcceptApplicantAndSendEmail(data) {
+  const email = (data.email || "").trim();
+  const fullName = data.fullName || data.name || "Applicant";
+  const roleType = data.roleType || "OC";
+  const position = data.position || (roleType === "OC" ? "Organizing Committee" : "Secretariat");
+  const appId = data.appId || "RM26-TEAM";
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetName = roleType === "OC" ? "OC_Applications" : roleType === "SEC" ? "Secretariat_Applications" : "EB_Applications";
+    const sheet = ss.getSheetByName(sheetName);
+    if (sheet) {
+      const rows = sheet.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][1]).trim() === String(appId).trim() || String(rows[i][4]).trim().toLowerCase() === email.toLowerCase()) {
+          sheet.getRange(i + 1, rows[0].length).setValue("Accepted");
+          break;
+        }
+      }
+    }
+  } catch (_) {}
+
+  if (email) {
+    const subject = "Official Appointment Offer — " + position + " | Resolve MUN 2.0";
+    const htmlBody = "<div style='font-family:Inter,Arial,sans-serif;background:#070914;color:#ffffff;padding:32px;border-radius:16px;max-width:600px;margin:0 auto;border:1px solid rgba(255,255,255,0.12)'>" +
+      "<p style='font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#a855f7;margin:0 0 8px;font-weight:700'>RESOLVE MUN 2.0 · SECRETARIAT DISPATCH</p>" +
+      "<h2 style='font-size:22px;margin:0 0 16px;color:#ffffff'>Congratulations, " + fullName + "!</h2>" +
+      "<p style='font-size:14px;line-height:1.6;color:#cbd5e1'>We are pleased to inform you that your application (<b>" + appId + "</b>) for <b>" + position + "</b> at <b>Resolve Model United Nations 2.0</b> (27–29 November 2026 at Meridian School, Kompally) has been <b>approved</b>.</p>" +
+      "<div style='background:#0f1326;border:1px solid rgba(168,85,247,0.3);padding:16px;border-radius:12px;margin:20px 0'>" +
+      "<p style='margin:0 0 6px;font-size:12px;color:#94a3b8'>ASSIGNED ROLE</p>" +
+      "<p style='margin:0;font-size:16px;font-weight:700;color:#e9d5ff'>" + position + "</p>" +
+      "<p style='margin:8px 0 0;font-size:12px;color:#94a3b8'>Application ID: <b style='color:#fff'>" + appId + "</b></p>" +
+      "</div>" +
+      "<p style='font-size:13px;line-height:1.6;color:#94a3b8'>Your digital entry pass is now active on your Resolve MUN Dashboard. Our leadership team will reach out shortly with onboarding details.</p>" +
+      "<p style='font-size:12px;color:#64748b;margin-top:24px'>Warm regards,<br><b style='color:#fff'>Secretariat, Resolve MUN 2.0</b></p>" +
+      "</div>";
+    try {
+      MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody, name: CONFIG.SENDER_NAME, replyTo: CONFIG.REPLY_TO });
+      tryLogEmailToSheet("ADMIN_ACCEPT_APPLICANT", email, fullName, "SENT");
+    } catch (e) {
+      tryLogEmailToSheet("ADMIN_ACCEPT_APPLICANT", email, fullName, "ERROR: " + e.message);
+    }
+  }
+  return { status: "success", appId: appId, email: email };
+}
+
+function adminSendCustomCrmEmail(data) {
+  const subject = data.subject || "Official Update — Resolve MUN 2.0";
+  const bodyText = data.messageBody || "";
+  const recipients = Array.isArray(data.recipients) && data.recipients.length > 0
+    ? data.recipients
+    : (data.email ? [{ email: data.email, name: data.name || "Delegate" }] : []);
+
+  let sentCount = 0;
+  const formattedBody = bodyText.replace(/\n/g, "<br>");
+
+  recipients.forEach(function(r) {
+    const toEmail = (r.email || "").trim();
+    if (!toEmail || !toEmail.includes("@")) return;
+    const htmlBody = "<div style='font-family:Inter,Arial,sans-serif;background:#070914;color:#ffffff;padding:32px;border-radius:16px;max-width:600px;margin:0 auto;border:1px solid rgba(255,255,255,0.12)'>" +
+      "<p style='font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#818cf8;margin:0 0 12px;font-weight:700'>RESOLVE MUN 2.0 · OFFICIAL DISPATCH</p>" +
+      "<div style='font-size:14px;line-height:1.7;color:#e2e8f0'>" + formattedBody + "</div>" +
+      "<hr style='border:0;border-top:1px solid rgba(255,255,255,0.1);margin:24px 0'>" +
+      "<p style='font-size:11px;color:#64748b;margin:0'>Resolve Model United Nations 2.0 · 27–29 November 2026 · Meridian School, Kompally</p>" +
+      "</div>";
+    try {
+      MailApp.sendEmail({ to: toEmail, subject: subject, htmlBody: htmlBody, name: CONFIG.SENDER_NAME, replyTo: CONFIG.REPLY_TO });
+      sentCount++;
+      tryLogEmailToSheet("CRM_CUSTOM_EMAIL", toEmail, r.name || "Delegate", "SENT");
+    } catch (e) {
+      tryLogEmailToSheet("CRM_CUSTOM_EMAIL", toEmail, r.name || "Delegate", "ERROR: " + e.message);
+    }
+  });
+
+  return { status: "success", sentCount: sentCount };
 }
 
 function jsonResponse(obj) {
