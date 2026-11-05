@@ -2155,15 +2155,13 @@ export default function Home() {
 
           {/* Action Buttons: Register Now + Dotted Wrapped Releasing Soon Brochure */}
           <div className="hero-actions reveal">
-            <button
+            <ChromeButton
               onClick={handleOpenSelection}
-              type="button"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white text-black font-bold text-xs tracking-widest uppercase transition-all duration-200 hover:bg-neutral-200 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:shadow-[0_0_35px_rgba(255,255,255,0.35)] cursor-pointer"
             >
               REGISTER NOW
-            </button>
+            </ChromeButton>
 
-            <button
+            <ChromeButton
               onClick={() => {
                 if (typeof window !== "undefined") {
                   if (window.showCustomAlert) window.showCustomAlert("Delegate Brochure releasing soon!", "info");
@@ -2171,11 +2169,9 @@ export default function Home() {
                   else alert("Delegate Brochure releasing soon!");
                 }
               }}
-              type="button"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white/[0.06] border border-white/20 text-white font-medium text-xs tracking-widest uppercase transition-all duration-200 hover:bg-white/[0.12] hover:border-white/35 active:scale-95 cursor-pointer backdrop-blur-sm"
             >
               DELEGATE BROCHURE
-            </button>
+            </ChromeButton>
           </div>
         </div>
       </section>

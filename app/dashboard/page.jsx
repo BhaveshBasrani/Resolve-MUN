@@ -429,6 +429,100 @@ export default function DelegateDashboard() {
     }
   };
 
+  const handlePrintPass = () => {
+    const container = document.getElementById("printable-pass-container");
+    if (!container) {
+      window.print();
+      return;
+    }
+
+    const existingIframe = document.getElementById("print-pass-iframe");
+    if (existingIframe) existingIframe.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "print-pass-iframe";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    // Collect all stylesheets and fonts from the parent document
+    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map((el) => el.outerHTML)
+      .join("\n");
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${delegateRecord?.fullName || "Delegate"} Entry Pass - Resolve MUN 2.0</title>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          ${styleTags}
+          <style>
+            @page {
+              size: portrait;
+              margin: 10mm;
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+              color: #000000 !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              min-height: 100vh !important;
+              height: 100vh !important;
+              overflow: hidden !important;
+            }
+            .print-pass-shell {
+              width: 100%;
+              max-width: 440px;
+              margin: auto;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .print-pass-shell * {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            /* Remove 3D perspective transforms in print so card is flat and crisp */
+            [style*="perspective"] {
+              perspective: none !important;
+              transform: none !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-pass-shell">
+            ${container.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }, 300);
+  };
+
   const handleDiscardDraft = (storageKey) => {
     if (typeof window === "undefined") return;
     try {
@@ -868,7 +962,7 @@ export default function DelegateDashboard() {
 
                     <button
                       type="button"
-                      onClick={() => window.print()}
+                      onClick={handlePrintPass}
                       className="h-7 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" />
