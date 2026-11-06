@@ -167,7 +167,7 @@ export default function SuperAdminPage() {
       if (savedAuth === "true") {
         setIsAdminUnlocked(true);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -300,7 +300,7 @@ export default function SuperAdminPage() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-    } catch (_) {}
+    } catch (_) { }
     sessionStorage.removeItem("resolve_admin_unlocked");
     setIsAdminUnlocked(false);
     setAuthenticatedUser(null);

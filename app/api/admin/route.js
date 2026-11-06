@@ -23,7 +23,7 @@ export async function GET(request) {
             .eq('id', 'global')
             .maybeSingle();
           if (data) settings = normalizeSettings(data);
-        } catch (_) {}
+        } catch (_) { }
       }
       return NextResponse.json({ status: 'success', settings });
     }
@@ -42,7 +42,7 @@ export async function GET(request) {
           .eq('id', 'global')
           .maybeSingle();
         if (data) liveSettings = normalizeSettings(data);
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // 1. Fetch from Supabase tables
@@ -258,7 +258,7 @@ export async function POST(request) {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ ...body, adminKey: ADMIN_KEY }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return NextResponse.json({ status: 'success', settings: normalized });
     }
@@ -299,8 +299,8 @@ export async function POST(request) {
         const supaTable = track.includes('OC')
           ? 'oc_applications'
           : track.includes('EB')
-          ? 'eb_applications'
-          : 'secretariat_applications';
+            ? 'eb_applications'
+            : 'secretariat_applications';
 
         if (supabase) {
           if (body.appId) {
@@ -353,7 +353,7 @@ export async function POST(request) {
               payment_status: 'VERIFIED',
               status: 'Confirmed',
             });
-          } catch (_) {}
+          } catch (_) { }
         }
 
         return NextResponse.json({ status: 'success', message: 'Delegate added', delegate: delegateDoc });
@@ -361,8 +361,8 @@ export async function POST(request) {
         const targetId = body.regId || body.recordId || body.id;
         const colName = body.sheetName === 'Secretariat_Applications' ? 'secretariat_applications'
           : body.sheetName === 'OC_Applications' ? 'oc_applications'
-          : body.sheetName === 'EB_Applications' ? 'eb_applications'
-          : 'delegates';
+            : body.sheetName === 'EB_Applications' ? 'eb_applications'
+              : 'delegates';
 
         if (supabase) {
           try {
@@ -371,7 +371,7 @@ export async function POST(request) {
             } else {
               await supabase.from(colName).delete().eq('app_id', targetId);
             }
-          } catch (_) {}
+          } catch (_) { }
         }
         return NextResponse.json({ status: 'success', message: 'Record deleted' });
       } else if (action === 'RECORD_CHECK_IN') {
@@ -400,7 +400,7 @@ export async function POST(request) {
                 last_check_in: new Date().toISOString(),
               })
               .eq('delegate_id', targetId);
-          } catch (_) {}
+          } catch (_) { }
         }
 
         return NextResponse.json({

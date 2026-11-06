@@ -735,22 +735,6 @@ body.modal-locked {
   color: #ffffff !important;
   font-weight: 600 !important;
 }
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  text-decoration: none !important;
-  transition: all 0.15s ease !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-}
-
-.upi-mobile-pay-btn:hover {
-  background: #e2e8f0 !important;
-  transform: translateY(-1px) !important;
-}
-
-.upi-mobile-pay-btn:active {
-  transform: translateY(0) !important;
-}
 
 .copy-btn {
   background: transparent !important;
@@ -2049,145 +2033,72 @@ body.modal-locked {
 @media print {
   @page {
     size: portrait;
-    margin: 0;
+    margin: 8mm;
   }
 
   html,
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    max-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* 1. Hide all non-dashboard chrome & UI elements */
-  nav,
-  footer,
-  header,
-  button,
-  a,
-  .no-print,
-  .modal-overlay,
-  #print-pass-iframe {
-    display: none !important;
+  /* When printing the pass, isolate pass container cleanly on 1 page */
+  body.print-pass-active * {
     visibility: hidden !important;
   }
 
-    /* 2. Hide everything under body EXCEPT #dashboard-root */
-    body>*:not(#dashboard-root) {
-      display: none !important;
-    }
+  body.print-pass-active #printable-pass-container,
+  body.print-pass-active #printable-pass-container * {
+    visibility: visible !important;
+  }
 
-    /* 3. Setup #dashboard-root as 100vh viewport container */
-    #dashboard-root {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      max-height: 100vh !important;
-      min-height: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      background: #ffffff !important;
-      border: none !important;
-      overflow: hidden !important;
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-    }
+  body.print-pass-active #printable-pass-container {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 20px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    transform: scale(0.9) !important;
+    transform-origin: top center !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    z-index: 999999 !important;
+  }
 
+  /* Fallback if user uses browser Ctrl+P directly */
+  body:not(.print-pass-active) nav,
+  body:not(.print-pass-active) footer,
+  body:not(.print-pass-active) header,
+  body:not(.print-pass-active) button,
+  body:not(.print-pass-active) a,
+  body:not(.print-pass-active) .no-print,
+  body:not(.print-pass-active) .modal-overlay {
+    display: none !important;
+  }
 
-      /* 4. Hide all children of #dashboard-root EXCEPT #dashboard-main */
-      #dashboard-root>*:not(#dashboard-main) {
-        display: none !important;
-      }
-
-
-        /* 5. Setup #dashboard-main */
-        #dashboard-main {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          width: 100% !important;
-          height: 100% !important;
-          max-height: 100% !important;
-          min-height: 0 !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          background: transparent !important;
-          border: none !important;
-          overflow: hidden !important;
-        }
-
-
-          /* 6. Hide all sections of #dashboard-main EXCEPT #digital-pass-card */
-          #dashboard-main>*:not(#digital-pass-card) {
-            display: none !important;
-          }
-
-
-            /* 7. Setup #digital-pass-card */
-            #digital-pass-card {
-              display: flex !important;
-              align-items: center !important;
-              justify-content: center !important;
-              width: 100% !important;
-              height: 100% !important;
-              max-height: 100% !important;
-              min-height: 0 !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              background: transparent !important;
-              border: none !important;
-              box-shadow: none !important;
-              overflow: hidden !important;
-            }
-
-            /* 8. Inside #digital-pass-card, hide header, format switcher, buttons. ONLY show #printable-pass-container */
-            #digital-pass-card>*:not(#printable-pass-container) {
-              display: none !important;
-            }
-
-            /* 9. Ticket container: perfectly centered on EXACTLY ONE PAGE */
-            #printable-pass-container {
-              display: flex !important;
-              visibility: visible !important;
-              align-items: center !important;
-              justify-content: center !important;
-              width: 100% !important;
-              max-width: 360px !important;
-              max-height: 88vh !important;
-              margin: auto !important;
-              padding: 0 !important;
-              background: transparent !important;
-              box-shadow: none !important;
-              border: none !important;
-              transform: scale(0.88) !important;
-              transform-origin: center center !important;
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-              page-break-after: avoid !important;
-              break-after: avoid !important;
-              page-break-before: avoid !important;
-              break-before: avoid !important;
-            }
-
-            #printable-pass-container * {
-              visibility: visible !important;
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
-
-            #printable-pass-container [style*="perspective"] {
-              perspective: none !important;
-              transform: none !important;
-            }
-          }
+  #printable-pass-container [style*="perspective"] {
+    perspective: none !important;
+  }
+}

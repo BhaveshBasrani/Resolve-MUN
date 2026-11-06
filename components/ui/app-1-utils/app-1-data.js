@@ -104,3 +104,4 @@ export const app1Activity = [
     time: "1h ago",
   },
 ];
+
