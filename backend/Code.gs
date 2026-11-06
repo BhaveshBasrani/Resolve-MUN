@@ -288,7 +288,16 @@ function doPost(e) {
         break;
 
       case "AUTH_SYNC":
+      case "SYNC_USER":
         result = syncUserAccount(payload);
+        break;
+
+      case "UPDATE_COMMITTEE_CAPACITIES":
+        result = updateCommitteeCapacities(payload);
+        break;
+
+      case "UPLOAD_COMMITTEE_FILE":
+        result = uploadCommitteeFileToDrive(payload);
         break;
 
       case "CHECK_IN_QR":
