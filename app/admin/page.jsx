@@ -30,7 +30,21 @@ import {
   Send,
   AlertCircle,
   Copy,
-  ChevronDown
+  ChevronDown,
+  Edit3,
+  Trash2,
+  Layers,
+  QrCode,
+  Camera,
+  Volume2,
+  Plus,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
+  FolderPlus,
+  FileUp,
+  Sparkles
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -74,6 +88,8 @@ const DEFAULT_ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY || "ResolveMUNAdmin2
 
 // Authorized admin accounts
 const ADMIN_EMAILS = [
+  "bhaveshkumarbasrani@gmail.com",
+  "adityabejugam@gmail.com",
   "resolve.mun@gmail.com",
   "munresolve@gmail.com",
   "ruthwikreddy@gmail.com",
@@ -95,6 +111,15 @@ const COMMITTEES = [
   "LOK SABHA",
   "COMMITTEE X",
   "IP",
+];
+
+const COMMITTEES_CONFIG = [
+  { id: "DISEC", name: "Disarmament & International Security", totalSeats: 80, type: "Security & Disarmament" },
+  { id: "UNHRC", name: "United Nations Human Rights Council", totalSeats: 70, type: "Human Rights & Global Law" },
+  { id: "UNSC", name: "United Nations Security Council", totalSeats: 40, type: "Flagship Crisis & Global Security" },
+  { id: "LOK SABHA", name: "Lok Sabha (Indian Parliament)", totalSeats: 85, type: "National Parliamentary Crisis" },
+  { id: "COMMITTEE X", name: "Committee X (Classified / Specialized)", totalSeats: 45, type: "Specialized Historical / Crisis" },
+  { id: "IP", name: "International Press Corps", totalSeats: 30, type: "Journalism & Media Oversight" },
 ];
 
 export default function SuperAdminPage() {
@@ -128,8 +153,56 @@ export default function SuperAdminPage() {
   const [leadFilter, setLeadFilter] = useState("ALL");
   const [appTypeFilter, setAppTypeFilter] = useState("ALL");
 
-  // Image Modal
+  // Delegate Mutation Modals State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    institution: "",
+    grade: "11",
+    dob: "",
+    allocatedCommittee: "DISEC",
+    allocatedCountry: "",
+    paymentStatus: "VERIFIED",
+    paymentUTR: "OFFLINE-MANUAL",
+  });
+  const [editingDelegate, setEditingDelegate] = useState(null);
+  const [allottingDelegate, setAllottingDelegate] = useState(null);
+  const [allotForm, setAllotForm] = useState({
+    committee: "DISEC",
+    country: "",
+    sendEmail: false,
+  });
+
+  // Committee Capacities & Dossier Files
+  const [committeeCapacities, setCommitteeCapacities] = useState({
+    "DISEC": 80,
+    "UNHRC": 70,
+    "UNSC": 40,
+    "LOK SABHA": 85,
+    "COMMITTEE X": 45,
+    "IP": 30,
+  });
+  const [committeeDocuments, setCommitteeDocuments] = useState({});
+  const [capacitiesSaving, setCapacitiesSaving] = useState(false);
+  const [newDossierFile, setNewDossierFile] = useState({ committee: "DISEC", title: "", url: "", type: "pdf" });
+
+  // Ultra-Fast Pass Scanner State (2 scans/sec throughput)
+  const [scannerActive, setScannerActive] = useState(false);
+  const [scannerDay, setScannerDay] = useState("Day 1");
+  const [scannerActionType, setScannerActionType] = useState("ENTRY");
+  const [scannerInput, setScannerInput] = useState("");
+  const [scanResult, setScanResult] = useState(null);
+  const [scanHistory, setScanHistory] = useState([]);
+  const scannerVideoRef = useRef(null);
+  const scannerInputRef = useRef(null);
+
+  // In-Site Payment Screenshot Lightbox
   const [viewingImage, setViewingImage] = useState(null);
+  const [viewingDelegate, setViewingDelegate] = useState(null);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imageRotation, setImageRotation] = useState(0);
 
   // CRM Mailer State
   const [crmRecipientMode, setCrmRecipientMode] = useState("ALL_DELEGATES");
@@ -183,11 +256,12 @@ export default function SuperAdminPage() {
     return () => unsubscribe();
   }, []);
 
-  // Fetch live admin data
-  const fetchAdminData = async () => {
+  // Fetch live admin data with 10s SWR bypass support
+  const fetchAdminData = async (force = false) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/admin?adminKey=abhilashisgoat`, {
+      const refreshParam = force ? "&refresh=true" : "";
+      const res = await fetch(`/api/admin/?adminKey=abhilashisgoat${refreshParam}`, {
         cache: "no-store",
       });
       if (res.ok) {
@@ -227,19 +301,39 @@ export default function SuperAdminPage() {
             timestamp: d.timestamp || d.created_at || "",
           }));
 
+          const rawUsers = json.siteUsers || [];
+          const normalizedUsers = rawUsers.map((u, idx) => ({
+            ...u,
+            id: u.id || u.uid || `usr_${idx}`,
+            name: u.fullName || u.name || (u.email ? u.email.split("@")[0] : "User"),
+            fullName: u.fullName || u.name || (u.email ? u.email.split("@")[0] : "User"),
+            email: u.email || "",
+            role: (u.role || (ADMIN_EMAILS.includes((u.email || "").toLowerCase()) ? "ADMIN" : "DELEGATE")).toUpperCase(),
+            avatarUrl: u.avatarUrl || u.avatar || "",
+            lastActive: u.lastActive || u.updated_at || u.timestamp || new Date().toISOString(),
+          }));
+
           setRegistrations(normalizedDels);
           setDelegations(normalizedDelegations);
-          setAbandonedLeads(json.abandonedLeads || []);
+          // Filter ghost leads
+          const validLeads = (json.abandonedLeads || []).filter(l => Boolean(l.email && l.email.includes("@")));
+          setAbandonedLeads(validLeads);
           setOcApplications(json.ocApplicants || []);
           setSecApplications(json.secretariatApplicants || []);
           setEbApplications(json.ebApplicants || []);
-          setSiteUsers(json.siteUsers || []);
+          setSiteUsers(normalizedUsers);
 
           if (json.settings) {
             setSiteSettings((prev) => ({
               ...prev,
               ...json.settings,
             }));
+            if (json.settings.committeeCapacities) {
+              setCommitteeCapacities(json.settings.committeeCapacities);
+            }
+            if (json.settings.committeeDocuments) {
+              setCommitteeDocuments(json.settings.committeeDocuments);
+            }
           }
 
           setLastSyncTime(new Date().toLocaleTimeString());
@@ -307,39 +401,228 @@ export default function SuperAdminPage() {
     setAuthenticatedUser(null);
   };
 
-  // Delegate Mutation: Allocate Committee & Portfolio
-  const handleUpdateAllocation = async (regId, comm, port) => {
+  // Web Audio Synthesizer Chime for Scanner Feedback
+  const playSuccessChime = () => {
     try {
-      const res = await fetch("/api/admin", {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1); // A5
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    } catch (_) {}
+  };
+
+  // Delegate Mutation: Allocate Committee & Portfolio (Optimistic)
+  const handleUpdateAllocation = async (regId, comm, port) => {
+    // 1. Optimistic update
+    setRegistrations((prev) =>
+      prev.map((d) =>
+        d.regId === regId
+          ? { ...d, allocatedCommittee: comm, allocatedCountry: port, status: "ALLOTTED" }
+          : d
+      )
+    );
+    notify(`Allocated ${comm} · ${port} to ${regId}`);
+
+    try {
+      await fetch("/api/admin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           adminKey: "abhilashisgoat",
-          action: "UPDATE_DELEGATE",
+          action: "ADMIN_ALLOT_COMMITTEE",
           regId,
-          allocatedCommittee: comm,
-          allocatedCountry: port,
+          committee: comm,
+          country: port,
         }),
       });
-      if (res.ok) {
-        setRegistrations((prev) =>
-          prev.map((d) =>
-            d.regId === regId
-              ? { ...d, allocatedCommittee: comm, allocatedCountry: port }
-              : d
-          )
-        );
-        notify(`Allocated ${comm} · ${port} to ${regId}`);
-      }
     } catch (err) {
-      notify("Failed to update allocation", "error");
+      notify("Failed to sync allocation to cloud", "error");
     }
   };
 
-  // Delegate Mutation: Verify Payment
-  const handleVerifyPayment = async (regId, email) => {
+  // Add Delegate (Optimistic & Zero Lag)
+  const handleAddDelegateSubmit = async (e) => {
+    e.preventDefault();
+    if (!addForm.fullName.trim() || !addForm.email.trim()) {
+      notify("Full Name and Email are required", "error");
+      return;
+    }
+
+    const genId = `RM26-DEL-${Math.floor(1000 + Math.random() * 9000)}`;
+    const optimisticDel = {
+      ...addForm,
+      id: genId,
+      _id: genId,
+      regId: genId,
+      delegateId: genId,
+      name: addForm.fullName,
+      status: addForm.allocatedCountry ? "ALLOTTED" : "Confirmed",
+      paymentVerified: addForm.paymentStatus === "VERIFIED" ? "verified" : "Pending",
+      checkInDay1: "Absent",
+      checkInDay2: "Absent",
+      checkInDay3: "Absent",
+      timestamp: new Date().toISOString(),
+    };
+
+    // 1. Optimistic prepend to state
+    setRegistrations((prev) => [optimisticDel, ...prev]);
+    setIsAddModalOpen(false);
+    notify(`Delegate ${addForm.fullName} added successfully!`);
+    setAddForm({
+      fullName: "",
+      email: "",
+      phone: "",
+      institution: "",
+      grade: "11",
+      dob: "",
+      allocatedCommittee: "DISEC",
+      allocatedCountry: "",
+      paymentStatus: "VERIFIED",
+      paymentUTR: "OFFLINE-MANUAL",
+    });
+
+    // 2. Background sync
     try {
-      const res = await fetch("/api/admin", {
+      const res = await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADMIN_ADD_DELEGATE",
+          adminKey: "abhilashisgoat",
+          regId: genId,
+          ...optimisticDel,
+        }),
+      });
+      const data = await res.json();
+      if (data.status !== "success") {
+        notify(data.message || "Failed to persist delegate to cloud", "error");
+      }
+    } catch (err) {
+      console.warn("Cloud delegate save error:", err);
+    }
+  };
+
+  // Edit Delegate (Optimistic & Zero Lag)
+  const handleEditDelegateSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingDelegate) return;
+
+    const targetId = editingDelegate.regId || editingDelegate.id;
+    const updated = {
+      ...editingDelegate,
+      paymentVerified: editingDelegate.paymentStatus === "VERIFIED" ? "verified" : "Pending",
+      updated_at: new Date().toISOString(),
+    };
+
+    // 1. Optimistic in-place update
+    setRegistrations((prev) =>
+      prev.map((d) => (d.regId === targetId || d.id === targetId ? updated : d))
+    );
+    notify(`Updated record for ${editingDelegate.fullName}`);
+    setEditingDelegate(null);
+
+    // 2. Background sync
+    try {
+      const res = await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADMIN_UPDATE_DELEGATE",
+          adminKey: "abhilashisgoat",
+          regId: targetId,
+          id: targetId,
+          ...updated,
+        }),
+      });
+      const data = await res.json();
+      if (data.status !== "success") {
+        notify(data.message || "Cloud update notice", "error");
+      }
+    } catch (err) {
+      console.warn("Cloud update error:", err);
+    }
+  };
+
+  // Quick Allot Modal Submit
+  const handleQuickAllotSubmit = async (e) => {
+    e.preventDefault();
+    if (!allottingDelegate) return;
+    const targetId = allottingDelegate.regId || allottingDelegate.id;
+
+    // 1. Optimistic update
+    setRegistrations((prev) =>
+      prev.map((d) =>
+        d.regId === targetId || d.id === targetId
+          ? { ...d, allocatedCommittee: allotForm.committee, allocatedCountry: allotForm.country, status: "ALLOTTED" }
+          : d
+      )
+    );
+    notify(`Allotted ${allotForm.country || "Delegate"} in ${allotForm.committee}`);
+    setAllottingDelegate(null);
+
+    // 2. Background sync
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADMIN_ALLOT_COMMITTEE",
+          adminKey: "abhilashisgoat",
+          regId: targetId,
+          email: allottingDelegate.email,
+          committee: allotForm.committee,
+          country: allotForm.country,
+          sendEmail: allotForm.sendEmail,
+        }),
+      });
+    } catch (_) {}
+  };
+
+  // Delete Delegate (Optimistic & Zero Lag)
+  const handleDeleteDelegate = async (regId, fullName) => {
+    if (!window.confirm(`Are you sure you want to permanently delete ${fullName || regId}?`)) return;
+
+    // 1. Optimistic filter
+    setRegistrations((prev) => prev.filter((d) => d.regId !== regId && d.id !== regId));
+    notify(`Deleted ${fullName || regId}`);
+
+    // 2. Background sync
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADMIN_DELETE_RECORD",
+          adminKey: "abhilashisgoat",
+          recordId: regId,
+          sheetName: "Registrations",
+        }),
+      });
+    } catch (_) {}
+  };
+
+  // Delegate Mutation: Verify Payment (Optimistic)
+  const handleVerifyPayment = async (regId, email, newStatus = "VERIFIED") => {
+    // 1. Optimistic update
+    setRegistrations((prev) =>
+      prev.map((d) =>
+        d.regId === regId ? { ...d, paymentStatus: newStatus, paymentVerified: newStatus === "VERIFIED" ? "verified" : "Pending" } : d
+      )
+    );
+    notify(`Payment marked as ${newStatus} for ${regId}`);
+
+    try {
+      await fetch("/api/admin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -347,18 +630,11 @@ export default function SuperAdminPage() {
           action: "ADMIN_VERIFY_PAYMENT",
           regId,
           email,
+          paymentStatus: newStatus,
         }),
       });
-      if (res.ok) {
-        setRegistrations((prev) =>
-          prev.map((d) =>
-            d.regId === regId ? { ...d, paymentStatus: "VERIFIED" } : d
-          )
-        );
-        notify(`Payment verified for ${regId}`);
-      }
     } catch (err) {
-      notify("Failed to verify payment", "error");
+      notify("Failed to verify payment in cloud", "error");
     }
   };
 
@@ -366,7 +642,7 @@ export default function SuperAdminPage() {
   const handleSaveSettings = async () => {
     setSettingsSaving(true);
     try {
-      const res = await fetch("/api/admin", {
+      const res = await fetch("/api/admin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -385,6 +661,141 @@ export default function SuperAdminPage() {
     }
   };
 
+  // Save Committee Capacities
+  const handleSaveCapacities = async () => {
+    setCapacitiesSaving(true);
+    try {
+      const res = await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPDATE_COMMITTEE_CAPACITIES",
+          adminKey: "abhilashisgoat",
+          capacities: committeeCapacities,
+        }),
+      });
+      if (res.ok) {
+        notify("Official committee capacities updated live!");
+      }
+    } catch (_) {
+      notify("Failed to save capacities", "error");
+    } finally {
+      setCapacitiesSaving(false);
+    }
+  };
+
+  // Upload Committee Resource Dossier
+  const handleUploadDossier = async (e) => {
+    e.preventDefault();
+    if (!newDossierFile.title.trim() || !newDossierFile.url.trim()) {
+      notify("Title and URL are required", "error");
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPLOAD_COMMITTEE_FILE",
+          adminKey: "abhilashisgoat",
+          ...newDossierFile,
+        }),
+      });
+      if (res.ok) {
+        notify(`Added resource to ${newDossierFile.committee}`);
+        setCommitteeDocuments((prev) => {
+          const list = prev[newDossierFile.committee] ? [...prev[newDossierFile.committee]] : [];
+          list.push({ ...newDossierFile, id: `doc_${Date.now()}` });
+          return { ...prev, [newDossierFile.committee]: list };
+        });
+        setNewDossierFile({ committee: "DISEC", title: "", url: "", type: "pdf" });
+      }
+    } catch (_) {
+      notify("Failed to add resource document", "error");
+    }
+  };
+
+  // Promote / Demote User Role
+  const handleUpdateUserRole = async (email, newRole, id) => {
+    setSiteUsers((prev) =>
+      prev.map((u) => (u.email === email || u.id === id ? { ...u, role: newRole } : u))
+    );
+    notify(`Updated role to ${newRole} for ${email}`);
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADMIN_UPDATE_USER_ROLE",
+          adminKey: "abhilashisgoat",
+          email,
+          role: newRole,
+          id,
+        }),
+      });
+    } catch (_) {}
+  };
+
+  // Ultra-Fast QR / Barcode Scanner Check-In (Target: 2 scans/sec)
+  const handleExecuteScanCheckIn = async (scannedRaw) => {
+    if (!scannedRaw || !scannedRaw.trim()) return;
+    const clean = scannedRaw.trim();
+
+    // Parse potential RESOLVE_PASS:DELEGATE:RM26-DEL-1001:email format
+    let targetId = clean;
+    if (clean.includes("RESOLVE_PASS:")) {
+      const parts = clean.split(":");
+      targetId = parts[2] || parts[1] || clean;
+    } else if (clean.includes(":")) {
+      targetId = clean.split(":")[0];
+    }
+
+    const matched = registrations.find(
+      (r) =>
+        r.regId?.toLowerCase() === targetId.toLowerCase() ||
+        r.id?.toLowerCase() === targetId.toLowerCase() ||
+        r.email?.toLowerCase() === targetId.toLowerCase()
+    );
+
+    const nowStr = new Date().toLocaleTimeString();
+    playSuccessChime();
+
+    const scanEntry = {
+      id: `scan_${Date.now()}`,
+      time: nowStr,
+      code: targetId,
+      delegate: matched || null,
+      day: scannerDay,
+      action: scannerActionType,
+      status: matched ? "VALID" : "UNREGISTERED",
+    };
+
+    setScanResult(scanEntry);
+    setScanHistory((prev) => [scanEntry, ...prev.slice(0, 19)]);
+    setScannerInput("");
+
+    // Optimistically update attendance in state
+    if (matched) {
+      const dayKey = scannerDay === "Day 2" ? "checkInDay2" : scannerDay === "Day 3" ? "checkInDay3" : "checkInDay1";
+      setRegistrations((prev) =>
+        prev.map((d) => (d.regId === matched.regId ? { ...d, [dayKey]: "Present" } : d))
+      );
+    }
+
+    // Async cloud dispatch (non-blocking)
+    fetch("/api/admin/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "RECORD_CHECK_IN",
+        adminKey: "abhilashisgoat",
+        delegateId: targetId,
+        day: scannerDay,
+        actionType: scannerActionType,
+      }),
+    }).catch(() => {});
+  };
+
   // Send CRM Broadcast
   const handleSendCrm = async (e) => {
     e.preventDefault();
@@ -394,7 +805,7 @@ export default function SuperAdminPage() {
     }
     setCrmSending(true);
     try {
-      const res = await fetch("/api/admin", {
+      const res = await fetch("/api/admin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -914,10 +1325,19 @@ export default function SuperAdminPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="h-8 gap-1.5 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Delegate
+                    </Button>
+                    <Button
                       variant="outline"
                       size="sm"
                       onClick={() => exportCsv(filteredDelegates, "delegates")}
-                      className="h-8 gap-1.5 text-xs border-white/15"
+                      className="h-8 gap-1.5 text-xs border-white/15 cursor-pointer"
                     >
                       <Download className="h-3.5 w-3.5" />
                       Export CSV
@@ -1017,45 +1437,42 @@ export default function SuperAdminPage() {
                             </td>
 
                             <td className="px-4 py-3">
-                              <div className="flex flex-col gap-1">
-                                <select
-                                  value={d.allocatedCommittee || ""}
-                                  onChange={(e) =>
-                                    handleUpdateAllocation(d.regId, e.target.value, d.allocatedCountry || "Delegate")
-                                  }
-                                  className="h-7 px-2 rounded border border-white/10 bg-zinc-900 text-xs text-white focus:outline-none"
-                                >
-                                  <option value="">Unassigned Committee</option>
-                                  {COMMITTEES.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
-                                  ))}
-                                </select>
-                                <input
-                                  type="text"
-                                  placeholder="Portfolio / Country"
-                                  defaultValue={d.allocatedCountry || ""}
-                                  onBlur={(e) =>
-                                    handleUpdateAllocation(d.regId, d.allocatedCommittee || "DISEC", e.target.value)
-                                  }
-                                  className="h-6 px-2 rounded border border-white/10 bg-zinc-900 text-[11px] text-zinc-200 focus:outline-none"
-                                />
-                              </div>
+                              {d.allocatedCommittee ? (
+                                <div className="space-y-1">
+                                  <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-white bg-white/[0.04]">
+                                    {d.allocatedCommittee}
+                                  </Badge>
+                                  <span className="block text-xs font-semibold text-zinc-200 truncate max-w-[180px]">
+                                    {d.allocatedCountry || "General Delegate"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-zinc-500 italic">Unassigned</span>
+                              )}
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="font-mono text-xs text-zinc-300 block">
-                                {d.paymentUTR || "None Provided"}
+                                {d.paymentUTR || "OFFLINE / MANUAL"}
                               </span>
                               <div className="flex items-center gap-1.5 mt-1">
                                 <Badge
-                                  variant={d.paymentStatus === "VERIFIED" ? "success" : "secondary"}
-                                  className="text-[9px] py-0 uppercase font-mono"
+                                  variant={d.paymentStatus === "VERIFIED" ? "default" : "secondary"}
+                                  className={cn(
+                                    "text-[9px] py-0 uppercase font-mono",
+                                    d.paymentStatus === "VERIFIED" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                                  )}
                                 >
-                                  {d.paymentStatus}
+                                  {d.paymentStatus || "PENDING"}
                                 </Badge>
                                 {d.paymentScreenshotURL && (
                                   <button
-                                    onClick={() => setViewingImage(d.paymentScreenshotURL)}
+                                    onClick={() => {
+                                      setViewingImage(d.paymentScreenshotURL);
+                                      setViewingDelegate(d);
+                                      setImageZoom(1);
+                                      setImageRotation(0);
+                                    }}
                                     className="text-[10px] text-zinc-400 hover:text-white underline inline-flex items-center gap-0.5 cursor-pointer"
                                   >
                                     <Eye className="h-3 w-3" />
@@ -1066,28 +1483,63 @@ export default function SuperAdminPage() {
                             </td>
 
                             <td className="px-4 py-3 text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1.5">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setEditingDelegate(d)}
+                                  className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                                  title="Edit Delegate Details"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setAllottingDelegate(d);
+                                    setAllotForm({
+                                      committee: d.allocatedCommittee || "DISEC",
+                                      country: d.allocatedCountry || "",
+                                      sendEmail: false,
+                                    });
+                                  }}
+                                  className="h-7 w-7 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-950/30 cursor-pointer"
+                                  title="Allot Committee & Portfolio"
+                                >
+                                  <Layers className="h-3.5 w-3.5" />
+                                </Button>
                                 {d.paymentStatus !== "VERIFIED" && (
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleVerifyPayment(d.regId, d.email)}
+                                    onClick={() => handleVerifyPayment(d.regId, d.email, "VERIFIED")}
                                     className="h-7 px-2 text-[10px] uppercase font-semibold text-emerald-400 border-emerald-500/30 hover:bg-emerald-950/40 cursor-pointer"
                                   >
                                     Verify
                                   </Button>
                                 )}
                                 <Button
-                                  variant="outline"
-                                  size="sm"
+                                  variant="ghost"
+                                  size="icon"
                                   onClick={() => {
                                     setCrmEmailTo(d.email);
                                     setCrmRecipientMode("SINGLE");
                                     setActiveTab("crm");
                                   }}
-                                  className="h-7 px-2 text-[10px] text-zinc-300 hover:text-white border-white/10 cursor-pointer"
+                                  className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                                  title="Send Email"
                                 >
-                                  Email
+                                  <Mail className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteDelegate(d.regId, d.fullName)}
+                                  className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-950/30 cursor-pointer"
+                                  title="Delete Delegate"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
                             </td>
@@ -1641,58 +2093,491 @@ export default function SuperAdminPage() {
           )}
 
           {/* ===============================================================
-              TAB: USERS (AUTH ACCOUNTS)
+              TAB: ALLOCATIONS MATRIX & SEAT CAPACITIES
+              =============================================================== */}
+          {activeTab === "allocations" && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base font-semibold">
+                        Committee Capacities &amp; Allocation Matrix
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                        Configure official committee seat caps, monitor portfolio distribution, and upload dossiers
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSaveCapacities}
+                      disabled={capacitiesSaving}
+                      className="h-8 gap-1.5 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      {capacitiesSaving ? "Saving..." : "Save Seat Capacities"}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* 6 Official Committees Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {COMMITTEES_CONFIG.map((comm) => {
+                      const maxCapacity = committeeCapacities[comm.id] ?? comm.totalSeats;
+                      const occupied = registrations.filter(
+                        (d) => (d.allocatedCommittee || "").toUpperCase() === comm.id
+                      ).length;
+                      const percent = Math.min(100, Math.round((occupied / maxCapacity) * 100));
+                      const docs = committeeDocuments[comm.id] || [];
+
+                      return (
+                        <div
+                          key={comm.id}
+                          className="rounded-xl border border-white/10 bg-zinc-900/60 p-4 space-y-3 flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <Badge variant="outline" className="text-xs font-mono border-white/20 text-white font-bold">
+                                {comm.id}
+                              </Badge>
+                              <span className="text-[10px] font-mono text-zinc-400">
+                                {occupied} / {maxCapacity} seats ({percent}%)
+                              </span>
+                            </div>
+                            <h3 className="text-sm font-semibold text-white mt-1.5 line-clamp-1">
+                              {comm.name}
+                            </h3>
+                            <p className="text-[11px] text-zinc-400 mt-0.5">{comm.type}</p>
+                            <Progress value={percent} className="h-1.5 mt-3" />
+                          </div>
+
+                          <div className="space-y-2 pt-2 border-t border-white/10">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-zinc-400">Total Seat Limit:</span>
+                              <input
+                                type="number"
+                                min={5}
+                                max={300}
+                                value={maxCapacity}
+                                onChange={(e) =>
+                                  setCommitteeCapacities((prev) => ({
+                                    ...prev,
+                                    [comm.id]: parseInt(e.target.value) || 0,
+                                  }))
+                                }
+                                className="w-20 h-7 px-2 rounded border border-white/15 bg-black text-right text-xs font-mono text-white focus:outline-none"
+                              />
+                            </div>
+
+                            {/* Dossiers / Background Guides */}
+                            <div className="text-[11px] space-y-1">
+                              <span className="text-zinc-500 font-mono block">Dossiers &amp; Resources:</span>
+                              {docs.length === 0 ? (
+                                <span className="text-zinc-600 italic block">No resources attached</span>
+                              ) : (
+                                docs.map((doc, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-cyan-400 hover:underline flex items-center gap-1 truncate"
+                                  >
+                                    <FileText className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">{doc.title}</span>
+                                  </a>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Add Committee Resource Folder / Link */}
+                  <div className="rounded-xl border border-white/10 bg-black/60 p-4 space-y-3">
+                    <h4 className="text-xs font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+                      <FolderPlus className="h-4 w-4 text-cyan-400" />
+                      Attach Dossier / Background Guide to Committee
+                    </h4>
+                    <form onSubmit={handleUploadDossier} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1">Committee</label>
+                        <select
+                          value={newDossierFile.committee}
+                          onChange={(e) => setNewDossierFile({ ...newDossierFile, committee: e.target.value })}
+                          className="w-full h-8 px-2 rounded border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none"
+                        >
+                          {COMMITTEES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1">Document Title</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. DISEC Background Guide 2026"
+                          value={newDossierFile.title}
+                          onChange={(e) => setNewDossierFile({ ...newDossierFile, title: e.target.value })}
+                          className="w-full h-8 px-2.5 rounded border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1">Google Drive / File URL</label>
+                        <input
+                          type="url"
+                          placeholder="https://drive.google.com/..."
+                          value={newDossierFile.url}
+                          onChange={(e) => setNewDossierFile({ ...newDossierFile, url: e.target.value })}
+                          className="w-full h-8 px-2.5 rounded border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none font-mono"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        className="h-8 bg-white hover:bg-zinc-200 text-black text-xs font-semibold cursor-pointer"
+                      >
+                        <FileUp className="h-3.5 w-3.5 mr-1" />
+                        Attach Dossier
+                      </Button>
+                    </form>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* ===============================================================
+              TAB: ULTRA-FAST GATEKEEPER PASS SCANNER (2 SCANS/SEC)
+              =============================================================== */}
+          {activeTab === "scanner" && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base font-semibold flex items-center gap-2">
+                        <QrCode className="h-5 w-5 text-emerald-400" />
+                        Ultra-Fast Entry Pass Scanner &amp; Gatekeeper
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                        Target throughput: 2 passes/sec with instant Web Audio synthesizer chime and zero-lag check-in
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={scannerDay}
+                        onChange={(e) => setScannerDay(e.target.value)}
+                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white font-mono focus:outline-none"
+                      >
+                        <option value="Day 1">Day 1 · 27 Nov</option>
+                        <option value="Day 2">Day 2 · 28 Nov</option>
+                        <option value="Day 3">Day 3 · 29 Nov</option>
+                      </select>
+                      <select
+                        value={scannerActionType}
+                        onChange={(e) => setScannerActionType(e.target.value)}
+                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white font-mono focus:outline-none"
+                      >
+                        <option value="ENTRY">ENTRY (Check-In)</option>
+                        <option value="EXIT">EXIT (Check-Out)</option>
+                      </select>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Scanner Console Controls */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Left: Instant Barcode / Handheld Scanner Input */}
+                    <div className="rounded-xl border border-white/10 bg-zinc-900/60 p-5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+                          Handheld / Hardware Scanner
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded">
+                          Continuous Mode Active
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-zinc-400">
+                        Scan directly with any USB/Bluetooth 2D barcode gun, or paste / type Registration ID below. Auto-submits on Enter.
+                      </p>
+
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleExecuteScanCheckIn(scannerInput);
+                        }}
+                        className="space-y-3"
+                      >
+                        <input
+                          ref={scannerInputRef}
+                          type="text"
+                          placeholder="Point barcode scanner here or enter RM26-DEL-1001..."
+                          value={scannerInput}
+                          onChange={(e) => setScannerInput(e.target.value)}
+                          autoFocus
+                          className="w-full h-12 px-4 rounded-xl border border-emerald-500/40 bg-black text-sm text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-emerald-400 transition-colors shadow-inner"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="submit"
+                            className="flex-1 h-9 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-wider cursor-pointer"
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                            Confirm Check-In
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => playSuccessChime()}
+                            className="h-9 px-3 text-xs border-white/15 text-zinc-300 cursor-pointer"
+                            title="Test Chime Audio"
+                          >
+                            <Volume2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* Right: Live Feedback Display */}
+                    <div className="rounded-xl border border-white/10 bg-zinc-900/60 p-5 flex flex-col justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+                        Immediate Gatekeeper Verification
+                      </span>
+
+                      {scanResult ? (
+                        <div className="my-auto py-3 space-y-2 text-center animate-in fade-in zoom-in-95 duration-150">
+                          <div
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase",
+                              scanResult.status === "VALID"
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                : "bg-red-500/20 text-red-300 border border-red-500/40"
+                            )}
+                          >
+                            {scanResult.status === "VALID" ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                            {scanResult.status === "VALID" ? "ADMISSION AUTHORIZED" : "UNRECOGNIZED PASS"}
+                          </div>
+
+                          <h3 className="text-xl font-bold text-white">
+                            {scanResult.delegate?.fullName || scanResult.code}
+                          </h3>
+
+                          {scanResult.delegate && (
+                            <div className="space-y-1 text-xs text-zinc-300 font-mono">
+                              <p>
+                                <strong className="text-white">{scanResult.delegate.allocatedCommittee || "DISEC"}</strong> ·{" "}
+                                {scanResult.delegate.allocatedCountry || "Delegate"}
+                              </p>
+                              <p className="text-zinc-500">{scanResult.delegate.institution || "Individual"}</p>
+                              <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-400">
+                                {scanResult.day} · {scanResult.action} RECORDED AT {scanResult.time}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="my-auto py-8 text-center text-zinc-500 text-xs font-mono">
+                          Awaiting first entry scan...
+                        </div>
+                      )}
+
+                      <div className="text-[10px] font-mono text-zinc-500 text-right">
+                        Session Check-ins: {scanHistory.length}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scan Log History Table */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                      Recent Entry Audits ({scanHistory.length})
+                    </h4>
+                    <div className="rounded-xl border border-white/10 overflow-hidden">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/10 bg-black text-zinc-400 font-mono text-[10px] uppercase">
+                            <th className="px-4 py-2.5">Time</th>
+                            <th className="px-4 py-2.5">ID / Code</th>
+                            <th className="px-4 py-2.5">Delegate Name</th>
+                            <th className="px-4 py-2.5">Committee &amp; Country</th>
+                            <th className="px-4 py-2.5 text-right">Gate Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 font-mono">
+                          {scanHistory.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-6 text-center text-zinc-600 text-xs">
+                                No scan history recorded in this session.
+                              </td>
+                            </tr>
+                          ) : (
+                            scanHistory.map((s) => (
+                              <tr key={s.id} className="hover:bg-zinc-900/40">
+                                <td className="px-4 py-2 text-zinc-400 text-[11px]">{s.time}</td>
+                                <td className="px-4 py-2 text-white font-semibold">{s.code}</td>
+                                <td className="px-4 py-2 font-sans font-medium text-zinc-200">
+                                  {s.delegate?.fullName || "Walk-In"}
+                                </td>
+                                <td className="px-4 py-2 text-zinc-400 text-[11px]">
+                                  {s.delegate?.allocatedCommittee || "—"} / {s.delegate?.allocatedCountry || "—"}
+                                </td>
+                                <td className="px-4 py-2 text-right">
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "text-[9px] py-0",
+                                      s.status === "VALID" ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400"
+                                    )}
+                                  >
+                                    {s.status}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* ===============================================================
+              TAB: USERS (SITE ACCOUNTS & ROLES)
               =============================================================== */}
           {activeTab === "users" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-semibold">
-                  Authenticated User Accounts ({siteUsers.length})
-                </CardTitle>
-                <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                  Accounts created via Google sign-in telemetry
-                </CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-base font-semibold">
+                      Site User Accounts &amp; Access Roles ({siteUsers.length})
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                      Accounts authenticated via Google Auth with real-time role elevation &amp; pass linkage
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchAdminData(true)}
+                    className="h-8 gap-1.5 text-xs border-white/15 cursor-pointer"
+                  >
+                    <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
+                    Refresh Accounts
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
-                        <th className="px-4 py-3">Account Name</th>
-                        <th className="px-4 py-3">Email</th>
-                        <th className="px-4 py-3">Role / Whitelist</th>
-                        <th className="px-4 py-3 text-right">Registered</th>
+                        <th className="px-4 py-3">User</th>
+                        <th className="px-4 py-3">Email Address</th>
+                        <th className="px-4 py-3">Registered Delegate Pass</th>
+                        <th className="px-4 py-3">Role</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-white/5 font-sans">
                       {siteUsers.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="py-8 text-center text-zinc-500 text-xs">
-                            No user records loaded.
+                          <td colSpan={5} className="py-8 text-center text-zinc-500 text-xs">
+                            No authenticated user records found.
                           </td>
                         </tr>
                       ) : (
-                        siteUsers.map((u, idx) => (
-                          <tr key={idx} className="hover:bg-zinc-900/40 transition-colors">
-                            <td className="px-4 py-3 font-semibold text-white">
-                              {u.displayName || u.name || "User"}
-                            </td>
-                            <td className="px-4 py-3 font-mono text-zinc-300">
-                              {u.email}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge
-                                variant={ADMIN_EMAILS.includes((u.email || "").toLowerCase()) ? "default" : "secondary"}
-                                className="text-[10px] font-mono"
-                              >
-                                {ADMIN_EMAILS.includes((u.email || "").toLowerCase()) ? "Admin" : "Delegate"}
-                              </Badge>
-                            </td>
-                            <td className="px-4 py-3 text-right font-mono text-[11px] text-zinc-500">
-                              {u.metadata?.creationTime ? new Date(u.metadata.creationTime).toLocaleDateString() : "Active"}
-                            </td>
-                          </tr>
-                        ))
+                        siteUsers.map((u, idx) => {
+                          const linkedDel = registrations.find(
+                            (r) => r.email?.toLowerCase() === u.email?.toLowerCase()
+                          );
+                          const isAdmin = (u.role || "").toUpperCase() === "ADMIN";
+
+                          return (
+                            <tr key={u.id || idx} className="hover:bg-zinc-900/40 transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <Avatar className="h-8 w-8 border border-white/15">
+                                    <AvatarImage src={u.avatarUrl || u.avatar} alt={u.fullName} />
+                                    <AvatarFallback className="text-[10px] bg-zinc-800 text-white font-mono">
+                                      {(u.fullName || u.email || "U").slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <span className="font-semibold text-white block">
+                                      {u.fullName || u.name || "User"}
+                                    </span>
+                                    <span className="text-[10px] text-zinc-500 font-mono">
+                                      {u.phone || "No phone linked"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="px-4 py-3 font-mono text-zinc-300">
+                                {u.email}
+                              </td>
+
+                              <td className="px-4 py-3">
+                                {linkedDel ? (
+                                  <div className="space-y-0.5">
+                                    <Badge variant="outline" className="text-[10px] font-mono border-emerald-500/40 text-emerald-400">
+                                      {linkedDel.regId}
+                                    </Badge>
+                                    <span className="block text-[11px] text-zinc-400 truncate max-w-[150px]">
+                                      {linkedDel.allocatedCommittee || "Pending"} · {linkedDel.paymentStatus}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[11px] text-zinc-500 italic">No registration linked</span>
+                                )}
+                              </td>
+
+                              <td className="px-4 py-3">
+                                <Badge
+                                  variant={isAdmin ? "default" : "secondary"}
+                                  className={cn(
+                                    "text-[10px] font-mono font-bold uppercase",
+                                    isAdmin ? "bg-white text-black" : "bg-zinc-800 text-zinc-400 border border-white/10"
+                                  )}
+                                >
+                                  {u.role || "DELEGATE"}
+                                </Badge>
+                              </td>
+
+                              <td className="px-4 py-3 text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {!isAdmin ? (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleUpdateUserRole(u.email, "ADMIN", u.id)}
+                                      className="h-7 px-2 text-[10px] text-zinc-300 hover:text-white border-white/15 cursor-pointer"
+                                    >
+                                      Make Admin
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleUpdateUserRole(u.email, "DELEGATE", u.id)}
+                                      className="h-7 px-2 text-[10px] text-zinc-500 hover:text-red-400 border-white/10 cursor-pointer"
+                                    >
+                                      Demote
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -1703,36 +2588,495 @@ export default function SuperAdminPage() {
         </main>
       </SidebarInset>
 
-      {/* Proof Image Viewer Lightbox Modal */}
+      {/* =========================================================================
+          MODAL: ADD MANUAL / WALK-IN DELEGATE
+          ========================================================================= */}
+      {isAddModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setIsAddModalOpen(false)}
+        >
+          <div
+            className="relative max-w-lg w-full rounded-2xl border border-white/15 bg-zinc-950 p-6 shadow-2xl space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-tight">
+                  Add Individual Delegate
+                </h3>
+                <p className="text-xs text-zinc-400">Manual Walk-In &amp; Secretariat Override</p>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="h-8 w-8 rounded-lg border border-white/15 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddDelegateSubmit} className="space-y-4 text-xs font-sans">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Candidate full name"
+                    value={addForm.fullName}
+                    onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="delegate@gmail.com"
+                    value={addForm.email}
+                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">WhatsApp Phone *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="10-digit mobile"
+                    value={addForm.phone}
+                    onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">School / Institution</label>
+                  <input
+                    type="text"
+                    placeholder="Institution name"
+                    value={addForm.institution}
+                    onChange={(e) => setAddForm({ ...addForm, institution: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Allocated Committee</label>
+                  <select
+                    value={addForm.allocatedCommittee}
+                    onChange={(e) => setAddForm({ ...addForm, allocatedCommittee: e.target.value })}
+                    className="w-full h-8 px-2 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  >
+                    {COMMITTEES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Country / Portfolio</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. France, Delegate, IP"
+                    value={addForm.allocatedCountry}
+                    onChange={(e) => setAddForm({ ...addForm, allocatedCountry: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Payment Status</label>
+                  <select
+                    value={addForm.paymentStatus}
+                    onChange={(e) => setAddForm({ ...addForm, paymentStatus: e.target.value })}
+                    className="w-full h-8 px-2 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  >
+                    <option value="VERIFIED">VERIFIED (Activated Pass)</option>
+                    <option value="PENDING">PENDING (Unverified)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Payment UTR / Txn ID</label>
+                  <input
+                    type="text"
+                    placeholder="OFFLINE-CASH, UPI UTR..."
+                    value={addForm.paymentUTR}
+                    onChange={(e) => setAddForm({ ...addForm, paymentUTR: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="h-9 px-5 bg-white hover:bg-zinc-200 text-black font-semibold text-xs cursor-pointer"
+                >
+                  Create Delegate Record
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: EDIT DELEGATE DETAILS
+          ========================================================================= */}
+      {editingDelegate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setEditingDelegate(null)}
+        >
+          <div
+            className="relative max-w-lg w-full rounded-2xl border border-white/15 bg-zinc-950 p-6 shadow-2xl space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-tight">
+                  Edit Delegate Information
+                </h3>
+                <p className="text-xs text-zinc-400 font-mono">{editingDelegate.regId || editingDelegate.id}</p>
+              </div>
+              <button
+                onClick={() => setEditingDelegate(null)}
+                className="h-8 w-8 rounded-lg border border-white/15 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditDelegateSubmit} className="space-y-4 text-xs font-sans">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={editingDelegate.fullName || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, fullName: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editingDelegate.email || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, email: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={editingDelegate.phone || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, phone: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">School / Institution</label>
+                  <input
+                    type="text"
+                    value={editingDelegate.institution || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, institution: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Allocated Committee</label>
+                  <select
+                    value={editingDelegate.allocatedCommittee || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, allocatedCommittee: e.target.value })}
+                    className="w-full h-8 px-2 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  >
+                    <option value="">Unassigned</option>
+                    {COMMITTEES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Country / Portfolio</label>
+                  <input
+                    type="text"
+                    value={editingDelegate.allocatedCountry || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, allocatedCountry: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Payment Status</label>
+                  <select
+                    value={editingDelegate.paymentStatus || "PENDING"}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, paymentStatus: e.target.value })}
+                    className="w-full h-8 px-2 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  >
+                    <option value="VERIFIED">VERIFIED</option>
+                    <option value="PENDING">PENDING</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Payment UTR</label>
+                  <input
+                    type="text"
+                    value={editingDelegate.paymentUTR || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, paymentUTR: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingDelegate(null)}
+                  className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="h-9 px-5 bg-white hover:bg-zinc-200 text-black font-semibold text-xs cursor-pointer"
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: QUICK ALLOT COMMITTEE & PORTFOLIO
+          ========================================================================= */}
+      {allottingDelegate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setAllottingDelegate(null)}
+        >
+          <div
+            className="relative max-w-md w-full rounded-2xl border border-white/15 bg-zinc-950 p-6 shadow-2xl space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-tight">
+                  Portfolio Allotment
+                </h3>
+                <p className="text-xs text-zinc-400">{allottingDelegate.fullName} ({allottingDelegate.regId})</p>
+              </div>
+              <button
+                onClick={() => setAllottingDelegate(null)}
+                className="h-8 w-8 rounded-lg border border-white/15 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickAllotSubmit} className="space-y-4 text-xs font-sans">
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Committee</label>
+                <select
+                  value={allotForm.committee}
+                  onChange={(e) => setAllotForm({ ...allotForm, committee: e.target.value })}
+                  className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                >
+                  {COMMITTEES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Portfolio / Country Assignment</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. United States of America, Narendra Modi..."
+                  value={allotForm.country}
+                  onChange={(e) => setAllotForm({ ...allotForm, country: e.target.value })}
+                  className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="sendEmailCheckbox"
+                  checked={allotForm.sendEmail}
+                  onChange={(e) => setAllotForm({ ...allotForm, sendEmail: e.target.checked })}
+                  className="rounded border-white/20 bg-zinc-900"
+                />
+                <label htmlFor="sendEmailCheckbox" className="text-xs text-zinc-300">
+                  Dispatch official allotment communiqué to delegate email
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAllottingDelegate(null)}
+                  className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="h-9 px-5 bg-white hover:bg-zinc-200 text-black font-semibold text-xs cursor-pointer"
+                >
+                  Confirm Allotment
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          IN-SITE PAYMENT SCREENSHOT LIGHTBOX VIEWER WITH ZOOM & 1-CLICK APPROVAL
+          ========================================================================= */}
       {viewingImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
-          onClick={() => setViewingImage(null)}
+          onClick={() => {
+            setViewingImage(null);
+            setViewingDelegate(null);
+          }}
         >
           <div
-            className="relative max-w-xl max-h-[85vh] w-full rounded-xl border border-white/20 bg-zinc-950 p-2 overflow-hidden flex flex-col items-center"
+            className="relative max-w-2xl max-h-[90vh] w-full rounded-2xl border border-white/20 bg-zinc-950 p-4 overflow-hidden flex flex-col items-center gap-3 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={() => setViewingImage(null)}
-              className="absolute top-4 right-4 z-10 h-8 w-8 rounded-lg bg-black/80 border border-white/20 text-white flex items-center justify-center cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <img
-              src={viewingImage}
-              alt="Payment Screenshot Proof"
-              className="w-full h-auto max-h-[75vh] object-contain rounded-lg"
-            />
-            <div className="w-full p-2 text-center">
+            {/* Header Controls */}
+            <div className="w-full flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white uppercase font-sans">Payment Verification Lightbox</span>
+                {viewingDelegate && (
+                  <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-zinc-300">
+                    {viewingDelegate.regId} · UTR: {viewingDelegate.paymentUTR || "None"}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setImageZoom((z) => Math.max(0.5, z - 0.25))}
+                  className="h-8 w-8 text-zinc-400 hover:text-white"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setImageZoom((z) => Math.min(3, z + 0.25))}
+                  className="h-8 w-8 text-zinc-400 hover:text-white"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setImageRotation((r) => (r + 90) % 360)}
+                  className="h-8 w-8 text-zinc-400 hover:text-white"
+                  title="Rotate Image"
+                >
+                  <RotateCw className="h-4 w-4" />
+                </Button>
+                <button
+                  onClick={() => {
+                    setViewingImage(null);
+                    setViewingDelegate(null);
+                  }}
+                  className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer ml-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Image Canvas */}
+            <div className="w-full flex-1 min-h-[350px] max-h-[60vh] overflow-auto flex items-center justify-center bg-black/60 rounded-xl p-2 border border-white/10">
+              <img
+                src={viewingImage}
+                alt="Payment Screenshot Proof"
+                style={{
+                  transform: `scale(${imageZoom}) rotate(${imageRotation}deg)`,
+                  transition: "transform 0.15s ease-out",
+                }}
+                className="max-h-[55vh] max-w-full object-contain rounded"
+              />
+            </div>
+
+            {/* Quick Actions Footer */}
+            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 border-t border-white/10">
               <a
                 href={viewingImage}
                 target="_blank"
                 rel="noreferrer"
                 className="text-xs text-zinc-400 hover:text-white underline inline-flex items-center gap-1"
               >
-                Open Original in New Tab <ExternalLink className="h-3 w-3" />
+                Open Original File <ExternalLink className="h-3 w-3" />
               </a>
+
+              {viewingDelegate && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleVerifyPayment(viewingDelegate.regId, viewingDelegate.email, "FAILED");
+                      setViewingImage(null);
+                    }}
+                    className="h-8 px-3 text-xs text-red-400 border-red-500/30 hover:bg-red-950/40 cursor-pointer"
+                  >
+                    Reject Payment
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      handleVerifyPayment(viewingDelegate.regId, viewingDelegate.email, "VERIFIED");
+                      setViewingImage(null);
+                    }}
+                    className="h-8 px-4 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-bold cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                    Approve &amp; Activate Pass
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

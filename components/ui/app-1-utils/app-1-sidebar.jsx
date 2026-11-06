@@ -13,7 +13,9 @@ import {
   LogOut,
   ExternalLink,
   ChevronRight,
-  Database
+  Database,
+  Layers,
+  QrCode
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar";
@@ -34,6 +36,18 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
       icon: Users,
       count: counts.delegates || 0,
       hint: "Allocations & Passes",
+    },
+    {
+      id: "allocations",
+      label: "Allocations Matrix",
+      icon: Layers,
+      hint: "Seat Capacities & Dossiers",
+    },
+    {
+      id: "scanner",
+      label: "Pass Scanner",
+      icon: QrCode,
+      hint: "Ultra-Fast Check-In",
     },
     {
       id: "delegations",

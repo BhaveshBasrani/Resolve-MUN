@@ -1036,6 +1036,19 @@ export default function Home() {
           // Apply delegation lock
           applyPermanentDelegationLock();
 
+          // Synchronize subtitle with currently active step
+          const activeStep = regModal.querySelector(".form-step.active");
+          const subtitle = regModal.querySelector(".modal-subtitle");
+          if (activeStep && subtitle) {
+            const stepNum = activeStep.id.replace("step", "");
+            const stepMap = {
+              "1": "Step 1 of 3 · Personal Details",
+              "2": "Step 2 of 3 · Committee Preferences",
+              "3": "Step 3 of 3 · Payment & Submission",
+            };
+            if (stepMap[stepNum]) subtitle.textContent = stepMap[stepNum];
+          }
+
           // Attach phone validation and draft lead beacon
           const nextBtn1 = regModal.querySelector('.btn-next');
           if (nextBtn1 && !nextBtn1.dataset.leadAttached) {
@@ -1771,6 +1784,17 @@ export default function Home() {
               if (target) {
                 modal.querySelectorAll(".form-step").forEach((s) => s.classList.remove("active"));
                 target.classList.add("active");
+                const subtitle = modal.querySelector(".modal-subtitle");
+                if (subtitle) {
+                  const stepMap = {
+                    1: "Step 1 of 3 · Personal Details",
+                    2: "Step 2 of 3 · Committee Preferences",
+                    3: "Step 3 of 3 · Payment & Submission",
+                  };
+                  if (stepMap[saved._activeStep]) {
+                    subtitle.textContent = stepMap[saved._activeStep];
+                  }
+                }
               }
             }
           }

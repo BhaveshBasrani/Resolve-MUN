@@ -336,6 +336,11 @@ function doPost(e) {
         result = adminAddDelegate(payload);
         break;
 
+      case "ADMIN_UPDATE_DELEGATE":
+        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        result = adminUpdateDelegate(payload);
+        break;
+
       case "ADMIN_UPDATE_SETTINGS":
         if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
         result = updateSiteSettings(payload);
@@ -1623,30 +1628,86 @@ function adminUpdateDelegation(data) {
 
 function adminAddDelegate(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Registrations");
+  let sheet = ss.getSheetByName("Registrations");
+  if (!sheet) {
+    repairAndInitDatabase();
+    sheet = ss.getSheetByName("Registrations");
+  }
   if (!sheet) return { status: "error", message: "Sheet not found" };
-  const regId = "RM26-MAN-" + Math.floor(1000 + Math.random() * 9000);
+
+  const regId = String(data.regId || data.delegateId || ("RM26-DEL-" + Math.floor(1000 + Math.random() * 9000))).trim();
+  const name = data.fullName || data.name || "Delegate";
+  const email = (data.email || "").trim().toLowerCase();
+  const phone = data.phone || "";
+  const school = data.institution || data.school || "Individual";
+  const committee = data.allocatedCommittee || data.committee || "DISEC";
+  const country = data.allocatedCountry || data.country || "";
+  const utr = data.paymentUTR || data.utr || "OFFLINE-MANUAL";
+  const payStatus = (data.paymentStatus || "VERIFIED").toUpperCase();
+
   sheet.appendRow([
     new Date().toISOString(),
     regId,
     data.uid || "",
-    data.fullName || "",
-    data.email || "",
-    data.phone || "",
-    data.institution || "",
-    data.pref1 || "",
+    name,
+    email,
+    phone,
+    school,
+    committee, // Col 8
     data.pref2 || "",
     data.pref3 || "",
-    data.experience || "",
-    data.paymentUTR || "MANUAL-ENTRY",
-    data.screenshotUrl || "",
-    "Manual_Approved",
-    data.committee || "",
-    data.country || "",
-    data.delegationCode || data.referral || data.referralCode || "",
+    data.experience || "Manual Walk-In Entry",
+    utr,
+    data.screenshotUrl || data.paymentScreenshotURL || "",
+    payStatus === "VERIFIED" ? "Verified" : "Pending_Verification",
+    committee, // Col 15 AllocatedCommittee
+    country,   // Col 16 AllocatedCountry
+    data.delegationCode || data.referral || "",
     "No"
   ]);
-  return { status: "success", regId: regId };
+  return { status: "success", regId: regId, message: "Delegate " + name + " added successfully" };
+}
+
+function adminUpdateDelegate(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Registrations");
+  if (!sheet) return { status: "error", message: "Registrations sheet not found" };
+
+  const targetId = String(data.regId || data.delegateId || data.id || "").trim();
+  const targetEmail = String(data.email || "").trim().toLowerCase();
+
+  if (!targetId && !targetEmail) {
+    return { status: "error", message: "No regId or email provided for update" };
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    const rowId = String(rows[i][1] || "").trim();
+    const rowEmail = String(rows[i][4] || "").trim().toLowerCase();
+
+    if ((targetId && rowId === targetId) || (targetEmail && rowEmail === targetEmail)) {
+      const rowIdx = i + 1;
+      if (data.fullName || data.name) sheet.getRange(rowIdx, 4).setValue(data.fullName || data.name);
+      if (data.email) sheet.getRange(rowIdx, 5).setValue(data.email);
+      if (data.phone) sheet.getRange(rowIdx, 6).setValue(data.phone);
+      if (data.institution || data.school) sheet.getRange(rowIdx, 7).setValue(data.institution || data.school);
+      if (data.paymentUTR || data.utr) sheet.getRange(rowIdx, 12).setValue(data.paymentUTR || data.utr);
+      if (data.paymentStatus) {
+        const s = String(data.paymentStatus).toUpperCase();
+        sheet.getRange(rowIdx, 14).setValue(s === "VERIFIED" ? "Verified" : "Pending_Verification");
+      }
+      if (data.allocatedCommittee !== undefined) sheet.getRange(rowIdx, 15).setValue(data.allocatedCommittee);
+      if (data.allocatedCountry !== undefined) sheet.getRange(rowIdx, 16).setValue(data.allocatedCountry);
+
+      return {
+        status: "success",
+        regId: rowId,
+        message: "Delegate " + (data.fullName || rowId) + " successfully updated",
+      };
+    }
+  }
+
+  return { status: "error", message: "Delegate not found: " + (targetId || targetEmail) };
 }
 
 function adminDeleteRecord(data) {
