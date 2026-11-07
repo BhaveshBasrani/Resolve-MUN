@@ -73,7 +73,16 @@ const SCHEMAS = {
     "Timestamp", "WaitlistID", "FullName", "Email", "Phone", "Status", "PriorityScore"
   ],
   "Abandoned_Leads": [
-    "Timestamp", "LeadID", "FullName", "Email", "Phone", "FormType", "LastStep", "Status"
+    "Timestamp", "LeadID", "FullName", "Email", "Phone", "FormType", "LastStep", "Status", "School", "Preferences", "DraftData"
+  ],
+  "Users": [
+    "Timestamp", "UID", "FullName", "Email", "Role", "AvatarURL", "LastActive"
+  ],
+  "Committee_Capacities": [
+    "Timestamp", "CommitteeID", "CommitteeName", "MaxCapacity", "UpdatedBy"
+  ],
+  "Committee_Files": [
+    "Timestamp", "FileID", "CommitteeID", "Title", "DriveURL", "FileType", "UploadedBy"
   ],
   "Site_Settings": [
     "SettingKey", "SettingValue", "LastUpdated", "UpdatedBy"
@@ -809,15 +818,19 @@ function recordAbandonedLead(data) {
     }
 
     const targetEmail = (data.email || "").trim().toLowerCase();
-    if (!targetEmail) return { status: "ignored", message: "Email required for lead capture" };
+    const targetPhone = (data.phone || "").trim();
+    const targetName = (data.fullName || data.name || "").trim();
+    if (!targetEmail && !targetPhone && !targetName) return { status: "ignored", message: "Name or contact required for lead capture" };
 
     // Check if user already registered in Registrations sheet
-    const regSheet = ss.getSheetByName("Registrations");
-    if (regSheet && regSheet.getLastRow() > 1) {
-      const regRows = regSheet.getDataRange().getValues();
-      for (let r = 1; r < regRows.length; r++) {
-        if (String(regRows[r][4]).trim().toLowerCase() === targetEmail) {
-          return { status: "success", converted: true, message: "User is already a confirmed registered delegate." };
+    if (targetEmail) {
+      const regSheet = ss.getSheetByName("Registrations");
+      if (regSheet && regSheet.getLastRow() > 1) {
+        const regRows = regSheet.getDataRange().getValues();
+        for (let r = 1; r < regRows.length; r++) {
+          if (String(regRows[r][4]).trim().toLowerCase() === targetEmail) {
+            return { status: "success", converted: true, message: "User is already a confirmed registered delegate." };
+          }
         }
       }
     }
@@ -825,12 +838,18 @@ function recordAbandonedLead(data) {
     // Check if lead already exists in Abandoned_Leads to update instead of duplicating
     const rows = sheet.getDataRange().getValues();
     for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][3]).trim().toLowerCase() === targetEmail) {
+      const rowEmail = String(rows[i][3]).trim().toLowerCase();
+      const rowPhone = String(rows[i][4]).trim();
+      if ((targetEmail && rowEmail === targetEmail) || (targetPhone && rowPhone === targetPhone)) {
         sheet.getRange(i + 1, 1).setValue(new Date().toISOString());
-        if (data.fullName) sheet.getRange(i + 1, 3).setValue(data.fullName);
-        if (data.phone) sheet.getRange(i + 1, 5).setValue(data.phone);
+        if (targetName) sheet.getRange(i + 1, 3).setValue(targetName);
+        if (targetEmail && !rowEmail) sheet.getRange(i + 1, 4).setValue(targetEmail);
+        if (targetPhone) sheet.getRange(i + 1, 5).setValue(targetPhone);
         if (data.formType) sheet.getRange(i + 1, 6).setValue(data.formType);
         if (data.step) sheet.getRange(i + 1, 7).setValue(data.step);
+        if (data.institution) sheet.getRange(i + 1, 9).setValue(data.institution);
+        if (data.preferences) sheet.getRange(i + 1, 10).setValue(data.preferences);
+        if (data.draftData) sheet.getRange(i + 1, 11).setValue(typeof data.draftData === 'object' ? JSON.stringify(data.draftData) : String(data.draftData));
         return { status: "success", leadId: rows[i][1], updated: true, message: "Lead step updated." };
       }
     }
@@ -839,12 +858,15 @@ function recordAbandonedLead(data) {
     sheet.appendRow([
       new Date().toISOString(),
       leadId,
-      data.fullName || "Prospect",
-      data.email || "",
-      data.phone || "",
+      targetName || "Prospect",
+      targetEmail || "",
+      targetPhone || "",
       data.formType || "Individual Delegate",
       data.step || "Step 1: Personal Details",
-      "Pending"
+      "Pending",
+      data.institution || "",
+      data.preferences || "",
+      data.draftData ? (typeof data.draftData === 'object' ? JSON.stringify(data.draftData) : String(data.draftData)) : ""
     ]);
     return { status: "success", leadId: leadId, message: "Lead captured." };
   } catch (err) {
@@ -1882,6 +1904,166 @@ function adminSendCustomCrmEmail(data) {
   });
 
   return { status: "success", sentCount: sentCount };
+}
+
+/**
+ * Auto-Heal: Verifies all sheets in SCHEMAS exist, creates missing ones, formats headers.
+ */
+function autoHealSheets() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    for (const sheetName in SCHEMAS) {
+      let sheet = ss.getSheetByName(sheetName);
+      if (!sheet) {
+        sheet = ss.insertSheet(sheetName);
+        sheet.appendRow(SCHEMAS[sheetName]);
+        sheet.setFrozenRows(1);
+        const headerRange = sheet.getRange(1, 1, 1, SCHEMAS[sheetName].length);
+        headerRange.setBackground("#0f172a");
+        headerRange.setFontColor("#f8fafc");
+        headerRange.setFontWeight("bold");
+        headerRange.setFontFamily("Roboto Mono");
+      }
+    }
+    return { status: "success", message: "All sheets verified and auto-healed." };
+  } catch (err) {
+    return { status: "error", message: err.message };
+  }
+}
+
+/**
+ * Synchronize User Account from Firebase Auth / Site Logins
+ */
+function syncUserAccount(data) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Users");
+    if (!sheet) {
+      sheet = ss.insertSheet("Users");
+      sheet.appendRow(SCHEMAS.Users);
+      sheet.setFrozenRows(1);
+    }
+    const uid = String(data.uid || data.id || "").trim();
+    const email = String(data.email || "").trim().toLowerCase();
+    const name = String(data.name || data.fullName || "").trim();
+    const adminList = [
+      "bhaveshkumarbasrani@gmail.com",
+      "adityabejugam@gmail.com",
+      "support@resolvemun.in",
+      "admin@resolvemun.in",
+      "resolve.mun@gmail.com",
+      "munresolve@gmail.com"
+    ];
+    const role = (data.role || (adminList.includes(email) ? "ADMIN" : "DELEGATE")).toUpperCase();
+    const avatar = String(data.avatarUrl || data.avatar || "").trim();
+    const now = new Date().toISOString();
+
+    if (!email) return { status: "error", message: "Missing email" };
+
+    const rows = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      const rowEmail = String(rows[i][3]).trim().toLowerCase();
+      if (rowEmail === email) {
+        sheet.getRange(i + 1, 1, 1, 7).setValues([[
+          now, uid || rows[i][1], name || rows[i][2], email, role, avatar || rows[i][5], now
+        ]]);
+        return { status: "success", message: "User account updated", email: email, role: role };
+      }
+    }
+
+    sheet.appendRow([now, uid, name, email, role, avatar, now]);
+    return { status: "success", message: "User account created", email: email, role: role };
+  } catch (err) {
+    return { status: "error", message: err.message };
+  }
+}
+
+/**
+ * Update Committee Seat Capacities
+ */
+function updateCommitteeCapacities(data) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Committee_Capacities");
+    if (!sheet) {
+      sheet = ss.insertSheet("Committee_Capacities");
+      sheet.appendRow(SCHEMAS.Committee_Capacities);
+      sheet.setFrozenRows(1);
+    }
+    const capacities = data.capacities || {};
+    const now = new Date().toISOString();
+    const committeeNames = {
+      "DISEC": "Disarmament & International Security",
+      "UNHRC": "United Nations Human Rights Council",
+      "UNSC": "United Nations Security Council",
+      "LOK SABHA": "Lok Sabha (Indian Parliament)",
+      "COMMITTEE X": "Crisis Directorate / Committee X",
+      "IP": "International Press Corps"
+    };
+
+    const existingRows = sheet.getDataRange().getValues();
+    for (const commId in capacities) {
+      const cap = parseInt(capacities[commId], 10) || 50;
+      let found = false;
+      for (let i = 1; i < existingRows.length; i++) {
+        if (String(existingRows[i][1]).trim().toUpperCase() === commId.toUpperCase()) {
+          sheet.getRange(i + 1, 1, 1, 5).setValues([[
+            now, commId.toUpperCase(), committeeNames[commId] || commId, cap, "ADMIN"
+          ]]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        sheet.appendRow([now, commId.toUpperCase(), committeeNames[commId] || commId, cap, "ADMIN"]);
+      }
+    }
+
+    return { status: "success", capacities: capacities };
+  } catch (err) {
+    return { status: "error", message: err.message };
+  }
+}
+
+/**
+ * Attach and Upload Committee Dossier / File to Google Drive
+ */
+function uploadCommitteeFileToDrive(data) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Committee_Files");
+    if (!sheet) {
+      sheet = ss.insertSheet("Committee_Files");
+      sheet.appendRow(SCHEMAS.Committee_Files);
+      sheet.setFrozenRows(1);
+    }
+
+    const committee = String(data.committee || "DISEC").toUpperCase();
+    const title = String(data.title || "Background Guide").trim();
+    let fileUrl = String(data.url || "").trim();
+    const fileId = "DOC-" + Math.floor(1000 + Math.random() * 9000);
+    const now = new Date().toISOString();
+
+    if (data.base64Data && data.fileName) {
+      const folders = DriveApp.getFoldersByName("Resolve MUN 2026 - Committee Dossiers");
+      let folder;
+      if (folders.hasNext()) {
+        folder = folders.next();
+      } else {
+        folder = DriveApp.createFolder("Resolve MUN 2026 - Committee Dossiers");
+      }
+      const decoded = Utilities.base64Decode(data.base64Data);
+      const blob = Utilities.newBlob(decoded, data.mimeType || "application/pdf", data.fileName);
+      const createdFile = folder.createFile(blob);
+      createdFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      fileUrl = createdFile.getUrl();
+    }
+
+    sheet.appendRow([now, fileId, committee, title, fileUrl, data.type || "pdf", "ADMIN"]);
+    return { status: "success", file: { id: fileId, committee: committee, title: title, url: fileUrl } };
+  } catch (err) {
+    return { status: "error", message: err.message };
+  }
 }
 
 function jsonResponse(obj) {

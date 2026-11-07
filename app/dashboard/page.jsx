@@ -429,15 +429,16 @@ export default function DelegateDashboard() {
   };
 
   const handlePrintPass = () => {
-      document.body.classList.add("print-pass-active");
-      const cleanup = () => {
-        document.body.classList.remove("print-pass-active");
-        window.removeEventListener("afterprint", cleanup);
-      };
-      window.addEventListener("afterprint", cleanup);
-      setTimeout(() => {
-        window.print();
-    }, 50);
+    document.body.classList.add("print-pass-active");
+    const cleanup = () => {
+      document.body.classList.remove("print-pass-active");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanup, 3000);
+    }, 100);
   };
 
   const handleDiscardDraft = (storageKey) => {

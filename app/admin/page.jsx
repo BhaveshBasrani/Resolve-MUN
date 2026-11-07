@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   BarChart3,
@@ -44,7 +45,10 @@ import {
   Maximize2,
   FolderPlus,
   FileUp,
-  Sparkles
+  Sparkles,
+  MessageSquare,
+  Phone,
+  UserPlus
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -169,6 +173,8 @@ export default function SuperAdminPage() {
   });
   const [editingDelegate, setEditingDelegate] = useState(null);
   const [allottingDelegate, setAllottingDelegate] = useState(null);
+  const [viewingDraftLead, setViewingDraftLead] = useState(null);
+  const [leadsFilter, setLeadsFilter] = useState("ALL");
   const [allotForm, setAllotForm] = useState({
     committee: "DISEC",
     country: "",
@@ -315,8 +321,10 @@ export default function SuperAdminPage() {
 
           setRegistrations(normalizedDels);
           setDelegations(normalizedDelegations);
-          // Filter ghost leads
-          const validLeads = (json.abandonedLeads || []).filter(l => Boolean(l.email && l.email.includes("@")));
+          // Retain all leads with valid contact credentials (email, phone, or name)
+          const validLeads = (json.abandonedLeads || []).filter(
+            (l) => Boolean((l.email && l.email.includes("@")) || l.phone || l.name || l.fullName)
+          );
           setAbandonedLeads(validLeads);
           setOcApplications(json.ocApplicants || []);
           setSecApplications(json.secretariatApplicants || []);
@@ -866,7 +874,14 @@ export default function SuperAdminPage() {
 
   // Dynamic Chart Data based on live registrations
   const dynamicChartData = useMemo(() => {
-    if (!registrations.length) return app1Chart;
+    if (!registrations.length) {
+      return [
+        { week: "W1", opened: 0, completed: 0 },
+        { week: "W2", opened: 0, completed: 0 },
+        { week: "W3", opened: 0, completed: 0 },
+        { week: "W4", opened: 0, completed: 0 },
+      ];
+    }
     const weeks = ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8"];
     const total = registrations.length;
     const verified = registrations.filter((r) => r.paymentStatus === "VERIFIED").length;
@@ -874,40 +889,42 @@ export default function SuperAdminPage() {
       const factor = (i + 1) / weeks.length;
       return {
         week: w,
-        opened: Math.max(1, Math.round(total * factor)),
-        completed: Math.max(1, Math.round(verified * factor)),
+        opened: Math.round(total * factor),
+        completed: Math.round(verified * factor),
       };
     });
   }, [registrations]);
 
-  // Overview Stats
+  // Overview Stats (100% Real Live Metrics)
   const liveStats = useMemo(() => {
+    const totalCount = registrations.length;
     const verifiedCount = registrations.filter((r) => r.paymentStatus === "VERIFIED").length;
-    const rate = registrations.length ? Math.round((verifiedCount / registrations.length) * 100) : 87;
+    const pendingCount = registrations.filter((r) => r.paymentStatus !== "VERIFIED").length;
+    const rate = totalCount ? Math.round((verifiedCount / totalCount) * 100) : 0;
 
     return [
       {
         label: "Total Registrations",
-        value: String(registrations.length || "254"),
-        hint: `+${registrations.length > 5 ? 12 : 2} this week`,
+        value: String(totalCount),
+        hint: `${pendingCount} awaiting approval`,
         icon: FileText,
       },
       {
         label: "Verified Delegates",
-        value: String(verifiedCount || "231"),
+        value: String(verifiedCount),
         hint: "Paid & QR Pass Issued",
         icon: ClipboardList,
       },
       {
         label: "School Contingents",
-        value: String(delegations.length || "16"),
+        value: String(delegations.length),
         hint: "Institutional Roster",
         icon: Building2,
       },
       {
         label: "Settlement Rate",
         value: `${rate}%`,
-        hint: "+4% from last week",
+        hint: `${verifiedCount} of ${totalCount} confirmed`,
         icon: BarChart3,
       },
     ];
@@ -1231,77 +1248,120 @@ export default function SuperAdminPage() {
                 </CardContent>
               </Card>
 
-              {/* Conference Tracks & Live Feed */}
+              {/* Conversion Funnel & Committee Capacity Matrix (100% Real Live State) */}
               <div className="grid gap-6 lg:grid-cols-2">
+                {/* 1. Delegate Intake & Settlement Funnel */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm font-semibold">
-                      Core Operations Progress
-                    </CardTitle>
-                    <CardDescription className="text-xs text-zinc-400">
-                      Active milestone readiness for 27–29 November 2026
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-sm font-semibold">
+                          Intake & Conversion Funnel
+                        </CardTitle>
+                        <CardDescription className="text-xs text-zinc-400">
+                          Live candidate journey from initial form keystroke to venue check-in
+                        </CardDescription>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-mono border-white/15">
+                        Live Telemetry
+                      </Badge>
+                    </div>
                   </CardHeader>
-                  <CardContent className="flex flex-col gap-4">
-                    {app1Projects.map((project) => (
-                      <div key={project.id} className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="truncate text-xs font-medium text-white">
-                            {project.name}
-                          </h3>
-                          <Badge variant="outline" className="text-[10px] font-mono py-0">
-                            {project.status}
-                          </Badge>
-                        </div>
-                        <p className="text-[11px] text-zinc-400">
-                          {project.description}
-                        </p>
-                        <div className="flex items-center gap-3">
-                          <Progress
-                            value={project.progress}
-                            aria-label={`${project.name} progress`}
-                          />
-                          <span className="shrink-0 text-xs text-zinc-400 tabular-nums font-mono">
-                            {project.progress}%
+                  <CardContent className="space-y-4">
+                    {[
+                      {
+                        stage: "1. Website Form Drafts Started",
+                        count: abandonedLeads.length + registrations.length,
+                        pct: 100,
+                        desc: "Candidates actively entering data into registration modals",
+                        color: "bg-zinc-700",
+                      },
+                      {
+                        stage: "2. Completed Registrations Submitted",
+                        count: registrations.length,
+                        pct: (abandonedLeads.length + registrations.length) ? Math.round((registrations.length / (abandonedLeads.length + registrations.length)) * 100) : 0,
+                        desc: "Full applications received in database",
+                        color: "bg-zinc-500",
+                      },
+                      {
+                        stage: "3. Payments Verified & Credentials Issued",
+                        count: registrations.filter((r) => r.paymentStatus === "VERIFIED").length,
+                        pct: registrations.length ? Math.round((registrations.filter((r) => r.paymentStatus === "VERIFIED").length / registrations.length) * 100) : 0,
+                        desc: "Payment UTR verified, scannable QR ticket live",
+                        color: "bg-emerald-500",
+                      },
+                      {
+                        stage: "4. Gatekeeper Venue Check-Ins",
+                        count: registrations.filter((r) => r.checkInDay1 === "Present" || r.checkInDay2 === "Present" || r.checkInDay3 === "Present").length,
+                        pct: registrations.length ? Math.round((registrations.filter((r) => r.checkInDay1 === "Present" || r.checkInDay2 === "Present" || r.checkInDay3 === "Present").length / registrations.length) * 100) : 0,
+                        desc: "Scanned at Meridian Kompally registration desk",
+                        color: "bg-cyan-500",
+                      },
+                    ].map((step, idx) => (
+                      <div key={idx} className="space-y-1.5 p-2.5 rounded-lg border border-white/5 bg-zinc-900/30">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-white">{step.stage}</span>
+                          <span className="font-mono font-bold text-zinc-300">
+                            {step.count} ({step.pct}%)
                           </span>
                         </div>
+                        <Progress value={step.pct} className="h-1.5" />
+                        <p className="text-[10px] text-zinc-500 font-sans">{step.desc}</p>
                       </div>
                     ))}
                   </CardContent>
                 </Card>
 
+                {/* 2. Official 6 Committees Seat Roster */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm font-semibold">
-                      System Activity & Ledger
-                    </CardTitle>
-                    <CardDescription className="text-xs text-zinc-400">
-                      Recent operations recorded across the platform
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-sm font-semibold">
+                          Committee Seat Matrix (6 Official Committees)
+                        </CardTitle>
+                        <CardDescription className="text-xs text-zinc-400">
+                          Real-time seat occupancy and capacity thresholds
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveTab("allocations")}
+                        className="h-7 text-[11px] gap-1 border-white/15 cursor-pointer"
+                      >
+                        <span>Manage Caps</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <ol className="flex flex-col gap-3.5">
-                      {app1Activity.map((entry) => (
-                        <li key={entry.id} className="flex items-start gap-3">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-[10px] font-mono text-zinc-300">
-                            {entry.person.initials}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs leading-snug text-zinc-200">
-                              <span className="font-semibold text-white">
-                                {entry.person.name}
-                              </span>{" "}
-                              <span className="text-zinc-400">
-                                {entry.action}
+                  <CardContent className="space-y-3">
+                    {COMMITTEES_CONFIG.map((comm) => {
+                      const maxCapacity = committeeCapacities[comm.id] ?? comm.totalSeats;
+                      const occupied = registrations.filter(
+                        (d) => (d.allocatedCommittee || "").toUpperCase() === comm.id
+                      ).length;
+                      const pct = Math.min(100, Math.round((occupied / maxCapacity) * 100));
+
+                      return (
+                        <div key={comm.id} className="p-2.5 rounded-lg border border-white/5 bg-zinc-900/30 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-white font-bold">
+                                {comm.id}
+                              </Badge>
+                              <span className="text-xs text-zinc-200 font-medium truncate max-w-[180px]">
+                                {comm.name}
                               </span>
-                            </p>
-                            <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                              {entry.time}
-                            </p>
+                            </div>
+                            <span className="text-[11px] font-mono text-zinc-400">
+                              {occupied} / {maxCapacity} ({pct}%)
+                            </span>
                           </div>
-                        </li>
-                      ))}
-                    </ol>
+                          <Progress value={pct} className="h-1.5" />
+                        </div>
+                      );
+                    })}
                   </CardContent>
                 </Card>
               </div>
@@ -1652,29 +1712,32 @@ export default function SuperAdminPage() {
           )}
 
           {/* ===============================================================
-              TAB: ABANDONED LEADS (TELEMETRY)
+              TAB: ABANDONED LEADS & REAL-TIME DRAFT TELEMETRY
               =============================================================== */}
           {activeTab === "leads" && (
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="text-base font-semibold">
-                      Abandoned Draft Leads ({abandonedLeads.length})
+                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-cyan-400" />
+                      Abandoned Draft Leads &amp; Live Telemetry ({abandonedLeads.length})
                     </CardTitle>
                     <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                      Real-time drop-off beacon capturing candidates who paused mid-form
+                      Real-time drop-off beacon capturing candidates typing in forms before submission. Click Inspect to view all typed fields.
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => exportCsv(abandonedLeads, "abandoned_leads")}
-                    className="h-8 gap-1.5 text-xs border-white/15"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Export CSV
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportCsv(abandonedLeads, "abandoned_leads")}
+                      className="h-8 gap-1.5 text-xs border-white/15"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Export CSV
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -1682,55 +1745,156 @@ export default function SuperAdminPage() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
-                        <th className="px-4 py-3">Lead / Candidate</th>
-                        <th className="px-4 py-3">Contact</th>
-                        <th className="px-4 py-3">Last Recorded Step</th>
+                        <th className="px-4 py-3">Candidate / Form</th>
+                        <th className="px-4 py-3">Contact Credentials</th>
+                        <th className="px-4 py-3">School &amp; Grade</th>
+                        <th className="px-4 py-3">Committee Preferences</th>
+                        <th className="px-4 py-3">Progress</th>
                         <th className="px-4 py-3">Timestamp</th>
-                        <th className="px-4 py-3 text-right">Recovery Action</th>
+                        <th className="px-4 py-3 text-right">Recovery Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {abandonedLeads.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-zinc-500 text-xs">
-                            No abandoned leads captured at this time.
+                          <td colSpan={7} className="py-8 text-center text-zinc-500 text-xs">
+                            No active draft leads or drop-offs recorded at this time.
                           </td>
                         </tr>
                       ) : (
                         abandonedLeads.map((l, idx) => (
-                          <tr key={idx} className="hover:bg-zinc-900/40 transition-colors">
-                            <td className="px-4 py-3 font-semibold text-white">
-                              {l.name || l.fullName || "Prospective Delegate"}
-                            </td>
+                          <tr key={l.id || idx} className="hover:bg-zinc-900/40 transition-colors">
                             <td className="px-4 py-3">
-                              <span className="font-mono text-zinc-300 block">{l.email || "No email"}</span>
-                              <span className="font-mono text-zinc-500 text-[11px] block">{l.phone}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge variant="outline" className="text-[10px] font-mono">
-                                {l.step || l.lastStep || "Step 1"}
+                              <span className="font-semibold text-white block">
+                                {l.fullName || l.name || "Prospective Candidate"}
+                              </span>
+                              <Badge variant="outline" className="text-[9px] font-mono mt-0.5 border-white/15 text-zinc-400">
+                                {l.formType || "Individual Delegate"}
                               </Badge>
                             </td>
-                            <td className="px-4 py-3 text-[11px] font-mono text-zinc-500">
-                              {l.timestamp ? new Date(l.timestamp).toLocaleString() : "Recent"}
+                            <td className="px-4 py-3">
+                              {l.email ? (
+                                <a
+                                  href={`mailto:${l.email}`}
+                                  className="font-mono text-zinc-300 hover:text-white hover:underline block"
+                                >
+                                  {l.email}
+                                </a>
+                              ) : (
+                                <span className="text-zinc-500 font-mono text-[11px] block italic">No email entered</span>
+                              )}
+                              {l.phone ? (
+                                <span className="font-mono text-zinc-400 text-[11px] block mt-0.5">
+                                  {l.phone}
+                                </span>
+                              ) : null}
                             </td>
-                            <td className="px-4 py-3 text-right">
-                              {l.email && (
+                            <td className="px-4 py-3">
+                              <span className="text-zinc-200 block truncate max-w-[150px]">
+                                {l.institution || "Individual"}
+                              </span>
+                              {l.grade && (
+                                <span className="text-[10px] text-zinc-500 font-mono block">
+                                  Grade {l.grade}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-zinc-300 font-mono text-[11px] block truncate max-w-[180px]">
+                                {l.preferences || "Awaiting Selection"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-zinc-300">
+                                {l.lastStep || l.step || "Step 1"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-[11px] font-mono text-zinc-500 whitespace-nowrap">
+                              {l.timestamp ? new Date(l.timestamp).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recent"}
+                            </td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setViewingDraftLead(l)}
+                                  className="h-7 px-2.5 text-xs border-white/15 gap-1 text-zinc-200 hover:text-white cursor-pointer"
+                                  title="Inspect all fields filled by candidate"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-cyan-400" />
+                                  <span>Inspect</span>
+                                </Button>
+
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    setCrmEmailTo(l.email);
-                                    setCrmSubject("Complete Your Resolve MUN 2.0 Registration");
-                                    setCrmMessageBody(`Dear ${l.name || "Delegate"},\n\nWe noticed you began your delegate registration for Resolve MUN 2.0 but didn't finish submitting your committee preferences.\n\nSlots across DISEC, UNHRC, UNSC, and Lok Sabha are moving quickly. You can resume your application directly at https://resolvemun.in/?open=delegate\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`);
-                                    setCrmRecipientMode("SINGLE");
-                                    setActiveTab("crm");
+                                    setAddForm({
+                                      fullName: l.fullName || l.name || "",
+                                      email: l.email || "",
+                                      phone: l.phone || "",
+                                      institution: l.institution || "Individual",
+                                      grade: l.grade || "11",
+                                      dob: "",
+                                      allocatedCommittee: (l.preferences || "DISEC").split(" · ")[0] || "DISEC",
+                                      allocatedCountry: "",
+                                      paymentStatus: "VERIFIED",
+                                      paymentUTR: "PROMOTED-LEAD",
+                                    });
+                                    setIsAddModalOpen(true);
                                   }}
-                                  className="h-7 text-xs border-white/15 cursor-pointer"
+                                  className="h-7 px-2.5 text-xs border-emerald-500/30 bg-emerald-950/20 hover:bg-emerald-950/40 text-emerald-400 gap-1 cursor-pointer"
+                                  title="Convert draft into official delegate"
                                 >
-                                  Send Reminder
+                                  <UserPlus className="h-3.5 w-3.5" />
+                                  <span>Allot</span>
                                 </Button>
-                              )}
+
+                                {l.phone && (
+                                  <a
+                                    href={`https://wa.me/91${l.phone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
+                                      `Hi ${l.fullName || l.name || "Delegate"}! We noticed you began your Resolve MUN 2.0 registration for ${
+                                        l.preferences || "our committees"
+                                      }. Would you like assistance securing your portfolio before seats fill up?`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="h-7 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs flex items-center gap-1 font-mono transition-colors"
+                                    title="Open WhatsApp chat with prefilled message"
+                                  >
+                                    <MessageSquare className="h-3 w-3" />
+                                    <span>WA</span>
+                                  </a>
+                                )}
+
+                                {l.email && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setCrmEmailTo(l.email);
+                                      setCrmSubject("Complete Your Resolve MUN 2.0 Registration");
+                                      setCrmMessageBody(`Dear ${l.fullName || l.name || "Delegate"},\n\nWe noticed you began your delegate registration for Resolve MUN 2.0 but didn't finish submitting your committee preferences.\n\nSlots across DISEC, UNHRC, UNSC, Lok Sabha, Committee X, and IP are moving quickly. You can resume your application directly at https://resolvemun.in/?open=delegate\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`);
+                                      setCrmRecipientMode("SINGLE");
+                                      setActiveTab("crm");
+                                    }}
+                                    className="h-7 w-7 text-zinc-400 hover:text-white cursor-pointer"
+                                    title="Send CRM Email"
+                                  >
+                                    <Mail className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteRecord(l.id || l.leadId, "Abandoned_Leads")}
+                                  className="h-7 w-7 text-zinc-500 hover:text-red-400 cursor-pointer"
+                                  title="Dismiss Lead"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -2266,7 +2430,17 @@ export default function SuperAdminPage() {
                         Target throughput: 2 passes/sec with instant Web Audio synthesizer chime and zero-lag check-in
                       </CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href="/scan/"
+                        target="_blank"
+                        className="h-8 px-3 rounded-lg border border-emerald-500/30 bg-emerald-950/20 hover:bg-emerald-950/40 text-emerald-400 text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Camera className="h-3.5 w-3.5" />
+                        <span>Launch Camera Scanner</span>
+                        <ExternalLink className="h-3 w-3 ml-0.5 opacity-60" />
+                      </Link>
+
                       <select
                         value={scannerDay}
                         onChange={(e) => setScannerDay(e.target.value)}
@@ -3077,6 +3251,168 @@ export default function SuperAdminPage() {
                   </Button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: INSPECT ABANDONED DRAFT LEAD (ALL RAW TYPED INPUTS)
+          ========================================================================= */}
+      {viewingDraftLead && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setViewingDraftLead(null)}
+        >
+          <div
+            className="relative max-w-xl w-full rounded-2xl border border-white/20 bg-zinc-950 p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-white uppercase tracking-tight">
+                    Candidate Form Telemetry &amp; Draft
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] font-mono border-cyan-500/40 text-cyan-400">
+                    {viewingDraftLead.formType || "Individual Delegate"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-zinc-400 font-mono mt-0.5">
+                  Captured at: {viewingDraftLead.timestamp ? new Date(viewingDraftLead.timestamp).toLocaleString() : "Recent"}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingDraftLead(null)}
+                className="h-8 w-8 rounded-lg border border-white/15 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Candidate Identity Card */}
+            <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-bold text-white">
+                    {viewingDraftLead.fullName || viewingDraftLead.name || "Prospective Candidate"}
+                  </h4>
+                  <p className="text-xs text-zinc-400">
+                    {viewingDraftLead.institution || "Individual"} {viewingDraftLead.grade ? `· Grade ${viewingDraftLead.grade}` : ""}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-zinc-300">
+                  {viewingDraftLead.lastStep || viewingDraftLead.step || "Step 1"}
+                </Badge>
+              </div>
+
+              {/* Contact Links */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-white/10 text-xs font-mono">
+                <div>
+                  <span className="text-zinc-500 block text-[10px] uppercase">Email</span>
+                  {viewingDraftLead.email ? (
+                    <a href={`mailto:${viewingDraftLead.email}`} className="text-zinc-200 hover:underline">
+                      {viewingDraftLead.email}
+                    </a>
+                  ) : (
+                    <span className="text-zinc-500 italic">Not entered</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-zinc-500 block text-[10px] uppercase">Phone</span>
+                  {viewingDraftLead.phone ? (
+                    <div className="flex items-center gap-2">
+                      <a href={`tel:${viewingDraftLead.phone}`} className="text-zinc-200 hover:underline">
+                        {viewingDraftLead.phone}
+                      </a>
+                      <a
+                        href={`https://wa.me/91${viewingDraftLead.phone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
+                          `Hi ${viewingDraftLead.fullName || viewingDraftLead.name || "Delegate"}! We noticed you began your Resolve MUN 2.0 registration for ${
+                            viewingDraftLead.preferences || "our committees"
+                          }. Would you like assistance completing your allotment?`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-emerald-400 font-bold hover:underline"
+                      >
+                        [WhatsApp]
+                      </a>
+                    </div>
+                  ) : (
+                    <span className="text-zinc-500 italic">Not entered</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Committee Preferences & Stated Intent */}
+            <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-2 text-xs">
+              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block font-semibold">
+                Committee &amp; Portfolio Selections
+              </span>
+              <p className="text-sm font-semibold text-white font-mono">
+                {viewingDraftLead.preferences || "No committee preferences chosen yet"}
+              </p>
+            </div>
+
+            {/* Detailed Form Fields Captured */}
+            {viewingDraftLead.draftData && Object.keys(viewingDraftLead.draftData).length > 0 && (
+              <div className="p-4 rounded-xl border border-white/10 bg-black/60 space-y-3">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block font-semibold">
+                  All Raw Fields Captured In Progress ({Object.keys(viewingDraftLead.draftData).length} fields)
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {Object.entries(viewingDraftLead.draftData).map(([k, v]) => {
+                    if (k.startsWith("_") || !v) return null;
+                    return (
+                      <div key={k} className="p-2 rounded border border-white/5 bg-zinc-900/40">
+                        <span className="text-[10px] font-mono text-zinc-500 block truncate">{k}</span>
+                        <span className="text-white font-sans text-xs block truncate">{String(v)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-white/10">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewingDraftLead(null)}
+                className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
+              >
+                Close Inspector
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    setAddForm({
+                      fullName: viewingDraftLead.fullName || viewingDraftLead.name || "",
+                      email: viewingDraftLead.email || "",
+                      phone: viewingDraftLead.phone || "",
+                      institution: viewingDraftLead.institution || "Individual",
+                      grade: viewingDraftLead.grade || "11",
+                      dob: "",
+                      allocatedCommittee: (viewingDraftLead.preferences || "DISEC").split(" · ")[0] || "DISEC",
+                      allocatedCountry: "",
+                      paymentStatus: "VERIFIED",
+                      paymentUTR: "PROMOTED-LEAD",
+                    });
+                    setViewingDraftLead(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="h-9 px-4 bg-white hover:bg-zinc-200 text-black font-semibold text-xs cursor-pointer gap-1.5"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span>Convert to Official Delegate</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

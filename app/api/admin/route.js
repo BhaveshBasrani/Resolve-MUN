@@ -6,6 +6,15 @@ const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
 const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY || "ResolveMUNAdmin2026@Secure";
 
+const ADMIN_EMAILS = [
+  'bhaveshkumarbasrani@gmail.com',
+  'adityabejugam@gmail.com',
+  'support@resolvemun.in',
+  'admin@resolvemun.in',
+  'resolve.mun@gmail.com',
+  'munresolve@gmail.com'
+];
+
 // In-Memory SWR Cache for blazing fast 10ms loads (500-600 delegates capacity)
 let adminDataCache = null;
 let adminDataCacheTime = 0;
@@ -15,6 +24,7 @@ const CACHE_TTL_MS = 10000; // 10 seconds
 const memoryAddedDelegates = new Map();
 const memoryUpdatedDelegates = new Map();
 const memoryDeletedIds = new Set();
+const inMemoryDraftLeads = new Map();
 
 const isAuthorizedKey = (k) =>
   k === ADMIN_KEY ||
@@ -297,22 +307,76 @@ export async function GET(request) {
       timestamp: d.Timestamp || d.timestamp || new Date().toISOString(),
     }));
 
-    // Filter Abandoned Leads: exclude ghost rows that have no real email address!
+    // Filter and normalize Abandoned Draft Leads
     const rawLeads = asData.abandonedLeads || asData.Abandoned_Leads || [];
-    const normalizedLeads = rawLeads
-      .filter(l => Boolean(l.Email || l.email) && String(l.Email || l.email).includes('@'))
-      .map((l, i) => ({
+    const normalizedLeadsMap = new Map();
+
+    // 1. Populate from live in-memory telemetry draft beacons
+    inMemoryDraftLeads.forEach((lead, key) => {
+      normalizedLeadsMap.set(key.toLowerCase(), lead);
+    });
+
+    // 2. Merge from Google Sheets
+    rawLeads.forEach((l, i) => {
+      const email = (l.Email || l.email || "").trim().toLowerCase();
+      const phone = (l.Phone && l.Phone !== "#ERROR!" ? String(l.Phone) : "").trim();
+      const name = (l.FullName || l.fullName || l.name || "").trim();
+
+      // Skip ghost rows with literally no identifying data
+      if (!email && !phone && !name) return;
+
+      const key = email || phone || `lead_${i}`;
+      let parsedDraft = {};
+      if (l.DraftData || l.draftData) {
+        try {
+          parsedDraft =
+            typeof (l.DraftData || l.draftData) === "string"
+              ? JSON.parse(l.DraftData || l.draftData)
+              : l.DraftData || l.draftData;
+        } catch (_) {}
+      }
+
+      const leadObj = {
         id: l.LeadID || l.id || l.leadId || `LEAD-${10000 + i}`,
         leadId: l.LeadID || l.id || l.leadId || `LEAD-${10000 + i}`,
-        fullName: l.FullName || l.fullName || l.name || "Candidate",
-        name: l.FullName || l.fullName || l.name || "Candidate",
-        email: l.Email || l.email || "",
-        phone: l.Phone && l.Phone !== "#ERROR!" ? String(l.Phone) : "",
+        fullName: name || "Prospective Candidate",
+        name: name || "Prospective Candidate",
+        email: email,
+        phone: phone,
         formType: l.FormType || l.formType || "Individual Delegate",
-        lastStep: l.LastStep || l.lastStep || "Step 1",
-        status: l.Status || l.status || "Incomplete",
+        lastStep: l.LastStep || l.lastStep || "Step 1: Personal Details",
+        status: l.Status || l.status || "Draft In Progress",
+        institution:
+          l.School ||
+          l.Institution ||
+          l.institution ||
+          parsedDraft.regInstitute ||
+          parsedDraft.delInstName ||
+          "Individual",
+        preferences:
+          l.Preferences ||
+          l.preferences ||
+          [
+            parsedDraft.pref1_committee,
+            parsedDraft.pref2_committee,
+            parsedDraft.pref3_committee,
+          ]
+            .filter(Boolean)
+            .join(" · ") ||
+          "Pending Selection",
+        grade: l.Grade || l.grade || parsedDraft.regGrade || "",
         timestamp: l.Timestamp || l.timestamp || new Date().toISOString(),
-      }));
+        draftData: parsedDraft,
+      };
+
+      if (!normalizedLeadsMap.has(key)) {
+        normalizedLeadsMap.set(key, leadObj);
+      }
+    });
+
+    const normalizedLeads = Array.from(normalizedLeadsMap.values())
+      .filter((l) => !memoryDeletedIds.has(l.id) && !memoryDeletedIds.has(l.leadId))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     const rawOc = asData.ocApplicants || asData.OC_Applications || [];
     const asOcApplicants = rawOc.map(o => ({
@@ -416,6 +480,46 @@ export async function GET(request) {
     const mergedSec = dedupeByEmailOrId([sbSec, asSecApplicants], 'email');
     const mergedUsers = dedupeByEmailOrId([sbProfiles, siteUsers], 'email');
 
+    // Also synthesize site user profiles from confirmed delegate registrations so all registered accounts show up
+    mergedRegistrations.forEach((r, idx) => {
+      const email = (r.email || '').toLowerCase().trim();
+      if (!email) return;
+      const exists = mergedUsers.some(u => (u.email || '').toLowerCase() === email);
+      if (!exists) {
+        mergedUsers.push({
+          id: `usr_del_${r.regId || idx}`,
+          uid: `usr_del_${r.regId || idx}`,
+          name: r.fullName || r.name || 'Delegate',
+          fullName: r.fullName || r.name || 'Delegate',
+          email: email,
+          phone: r.phone || '',
+          role: ADMIN_EMAILS.includes(email) ? 'ADMIN' : 'DELEGATE',
+          avatarUrl: '',
+          lastActive: r.timestamp || new Date().toISOString(),
+          delegateId: r.regId,
+        });
+      }
+    });
+
+    // Seed Bhavesh Basrani as default elevated Administrator if not present
+    const hasBhavesh = mergedUsers.some(
+      u => (u.email || '').toLowerCase() === 'bhaveshkumarbasrani@gmail.com'
+    );
+    if (!hasBhavesh) {
+      mergedUsers.unshift({
+        id: '00000000-0000-0000-0000-000000000001',
+        uid: '00000000-0000-0000-0000-000000000001',
+        name: 'Bhavesh Basrani',
+        fullName: 'Bhavesh Basrani',
+        email: 'bhaveshkumarbasrani@gmail.com',
+        role: 'ADMIN',
+        avatarUrl: 'https://lh3.googleusercontent.com/a/default-user',
+        avatar: 'https://lh3.googleusercontent.com/a/default-user',
+        phone: '9212107797',
+        lastActive: new Date().toISOString(),
+      });
+    }
+
     const resultPayload = {
       status: 'success',
       settings: liveSettings,
@@ -444,18 +548,58 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const key = body.adminKey;
-    if (!isAuthorizedKey(key)) {
-      return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Bust SWR cache on any mutation
-    adminDataCache = null;
-    adminDataCacheTime = 0;
-
     const action = body.action;
 
-    // 0. AUTH SYNC: SYNC_USER (Firebase Auth -> Supabase profiles)
+    // 0a. PUBLIC TELEMETRY: SAVE_DRAFT_LEAD
+    if (action === 'SAVE_DRAFT_LEAD') {
+      const leadId = body.leadId || `LEAD-${Date.now().toString(36).toUpperCase()}`;
+      const targetEmail = (body.email || '').trim().toLowerCase();
+      const targetPhone = (body.phone || '').trim();
+      const targetName = (body.fullName || body.name || '').trim();
+      const formType = body.formType || 'Individual Delegate';
+      const lastStep = body.step || 'Step 1: Personal Details';
+      const preferences = body.preferences || '';
+      const institution = body.institution || body.school || 'Individual';
+      const grade = body.grade || '';
+      const draftData = body.draftData || {};
+
+      const leadObj = {
+        id: leadId,
+        leadId: leadId,
+        fullName: targetName || 'Prospective Candidate',
+        name: targetName || 'Prospective Candidate',
+        email: targetEmail,
+        phone: targetPhone,
+        formType,
+        lastStep,
+        preferences,
+        institution,
+        grade,
+        status: 'Draft In Progress',
+        timestamp: new Date().toISOString(),
+        draftData,
+      };
+
+      const key = targetEmail || targetPhone || leadId;
+      if (key) {
+        inMemoryDraftLeads.set(key, leadObj);
+      }
+
+      adminDataCache = null;
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'SAVE_DRAFT_LEAD',
+          ...body,
+        }),
+      }).catch(() => {});
+
+      return NextResponse.json({ status: 'success', lead: leadObj });
+    }
+
+    // 0b. AUTH SYNC: SYNC_USER (Firebase Auth -> Supabase profiles)
     if (action === 'SYNC_USER') {
       const user = body.user || body;
       const uid = user.uid || user.id || `usr_${Date.now()}`;
@@ -503,6 +647,15 @@ export async function POST(request) {
 
       return NextResponse.json({ status: 'success', message: 'User synced successfully' });
     }
+
+    const key = body.adminKey;
+    if (!isAuthorizedKey(key)) {
+      return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Bust SWR cache on any mutation
+    adminDataCache = null;
+    adminDataCacheTime = 0;
 
     // 0b. COMMITTEE CAPACITIES: UPDATE_COMMITTEE_CAPACITIES
     if (action === 'UPDATE_COMMITTEE_CAPACITIES') {

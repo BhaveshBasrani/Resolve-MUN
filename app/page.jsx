@@ -634,19 +634,26 @@ export default function Home() {
       // Helper: Send abandoned draft lead on Step transition
       function sendStep1DraftLead(type, step) {
         try {
-          const scriptUrl = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
           const name = (document.getElementById("regName") || document.getElementById("delHeadName") || document.getElementById("delAdviserName"))?.value || "";
           const email = (document.getElementById("regEmail") || document.getElementById("delHeadEmail") || document.getElementById("delAdviserEmail"))?.value || "";
           const phone = (document.getElementById("regPhone") || document.getElementById("delHeadPhone") || document.getElementById("delAdviserPhone"))?.value || "";
-          if (email && email.includes('@')) {
-            fetch(scriptUrl, {
+          const institute = (document.getElementById("regInstitute") || document.getElementById("delInstName"))?.value || "";
+          const p1 = document.getElementById("pref1_committee")?.value || "";
+          const p2 = document.getElementById("pref2_committee")?.value || "";
+          const p3 = document.getElementById("pref3_committee")?.value || "";
+          const prefs = [p1, p2, p3].filter(Boolean).join(" · ");
+
+          if (name || (email && email.includes('@')) || phone) {
+            fetch('/api/admin/', {
               method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 action: 'SAVE_DRAFT_LEAD',
-                fullName: name || 'Prospect',
+                fullName: name || 'Prospective Candidate',
                 email: email,
                 phone: phone,
+                institution: institute,
+                preferences: prefs,
                 formType: type === 'delegation' ? 'Delegation Registration' : 'Delegate Registration',
                 step: step || 'Step 1: Personal Details'
               })
@@ -1733,6 +1740,49 @@ export default function Home() {
         }
       };
 
+      let liveDraftTimeout = null;
+      const scheduleLiveDraftBeacon = (modalId, saved) => {
+        if (typeof window === "undefined") return;
+        if (liveDraftTimeout) clearTimeout(liveDraftTimeout);
+        liveDraftTimeout = setTimeout(() => {
+          try {
+            const formTypeMap = {
+              regModal: "Individual Delegate",
+              delModal: "Delegation Registration",
+              ocModal: "Organizing Committee",
+              ebModal: "Executive Board",
+              secModal: "Secretariat Application",
+            };
+            const fullName = saved.regName || saved.delHeadName || saved.ocFullName || saved.ebFullName || saved.secFullName || "";
+            const email = saved.regEmail || saved.delHeadEmail || saved.ocEmail || saved.ebEmail || saved.secEmail || "";
+            const phone = saved.regPhone || saved.delHeadPhone || saved.ocPhone || saved.ebPhone || saved.secPhone || "";
+            const institution = saved.regInstitute || saved.delInstName || saved.ocInstitute || saved.ebInstitute || saved.secInstitute || "";
+            const grade = saved.regGrade || saved.ocGrade || saved.ebGrade || "";
+            const prefList = [saved.pref1_committee, saved.pref2_committee, saved.pref3_committee].filter(Boolean);
+            const preferences = prefList.length > 0 ? prefList.join(" · ") : (saved.ebRolePref || saved.secRolePref || "");
+
+            if (fullName || (email && email.includes("@")) || phone) {
+              fetch("/api/admin/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "SAVE_DRAFT_LEAD",
+                  fullName: fullName || "Prospective Candidate",
+                  email: email || "",
+                  phone: phone || "",
+                  institution: institution || "Individual",
+                  grade: grade || "",
+                  preferences: preferences || "Awaiting Selection",
+                  step: `Step ${saved._activeStep || 1}`,
+                  formType: formTypeMap[modalId] || "Delegate Registration",
+                  draftData: saved,
+                }),
+              }).catch(() => {});
+            }
+          } catch (_) {}
+        }, 1200);
+      };
+
       const saveModalDraft = (modalId) => {
         const cfg = MODAL_STORAGE_CONFIG[modalId];
         if (!cfg || typeof window === "undefined") return;
@@ -1755,6 +1805,7 @@ export default function Home() {
             saved._activeStep = parseInt(activeStep.id.replace(cfg.stepPrefix, ""), 10) || 1;
           }
           localStorage.setItem(cfg.key, JSON.stringify(saved));
+          scheduleLiveDraftBeacon(modalId, saved);
         } catch (_) {}
       };
 

@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Database,
   Layers,
-  QrCode
+  QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar";

@@ -11479,3 +11479,112 @@ select:-webkit-autofill {
     letter-spacing: 0.16em !important;
   }
 }
+
+
+/* =========================================================================
+   OFFICIAL CREDENTIAL PASS & TICKET PRINT MEDIA STYLES
+   Ensures single-page, non-broken, high-contrast admission pass rendering
+   ========================================================================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  /* Reset layout defaults and force exact color reproduction */
+  html, body {
+    background: #000000 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide all dashboard chrome, headers, navigation, buttons, and footers */
+  header, nav, footer, .no-print, [data-no-print="true"],
+  button, .sidebar, [data-sidebar], .print\:hidden {
+    display: none !important;
+  }
+
+  /* When printing the credential pass specifically */
+  body.print-pass-active * {
+    visibility: hidden;
+  }
+
+  body.print-pass-active #printable-pass-container,
+  body.print-pass-active #printable-pass-container * {
+    visibility: visible;
+  }
+
+  body.print-pass-active #printable-pass-container {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 20px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 780px !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Neutralize 3D perspective & rotation that break browser pagination */
+  #printable-pass-container [style*="perspective"] {
+    perspective: none !important;
+  }
+
+  #printable-pass-container [style*="transform"],
+  #printable-pass-container [style*="rotate"] {
+    transform: none !important;
+  }
+
+  #printable-pass-container .select-none {
+    max-width: 740px !important;
+    margin: 0 auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  #printable-pass-container .rounded-2xl {
+    box-shadow: none !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Ensure Ticket Stub layout remains horizontal side-by-side on single page */
+  #printable-pass-container .flex-col.md\:flex-row {
+    flex-direction: row !important;
+    display: flex !important;
+  }
+
+  #printable-pass-container .md\:w-\[320px\] {
+    width: 250px !important;
+    flex-shrink: 0 !important;
+    border-bottom: none !important;
+    border-right: 1.5px dashed rgba(255, 255, 255, 0.3) !important;
+    padding: 16px !important;
+  }
+
+  #printable-pass-container img {
+    max-width: 170px !important;
+    max-height: 170px !important;
+    display: block !important;
+    margin: 0 auto !important;
+    image-rendering: pixelated !important;
+  }
+
+  /* Hide decorative canvas to prevent rendering artifacts on paper */
+  #printable-pass-container canvas {
+    opacity: 0.15 !important;
+  }
+}
