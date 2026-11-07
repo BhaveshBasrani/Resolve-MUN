@@ -765,6 +765,9 @@ const GF_CSS = `
   inset: 0;
   transform: perspective(1400px) rotateX(calc(var(--gf-py) * -3deg)) rotateY(calc(var(--gf-px) * 4deg));
   transition: transform .9s var(--gf-ease);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .gf-shadow {
@@ -958,6 +961,9 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
   transform-origin: 50% 100%;
   transform: perspective(760px) rotateX(var(--gf-hinge));
   transition: transform .8s var(--gf-spring), translate 1s var(--gf-ease), opacity 1s var(--gf-ease);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  isolation: isolate;
 }
 .gf-front--bump { animation: gf-bump .7s var(--gf-ease) .38s both; }
 @keyframes gf-bump {

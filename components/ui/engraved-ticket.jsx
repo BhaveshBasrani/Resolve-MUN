@@ -422,8 +422,11 @@ export default function EngravedTicket({
       vx += ((inp.hover ? inp.tx : 0) - vx) * k;
       vy += ((inp.hover ? inp.ty : 0) - vy) * k;
       const press = inp.holding ? 0.985 : 1;
-      card.style.transform =
+      const nextTransform =
         "rotateX(" + (-vy * cfg.tilt).toFixed(2) + "deg) rotateY(" + (vx * cfg.tilt).toFixed(2) + "deg) scale(" + press + ")";
+      if (card.style.transform !== nextTransform) {
+        card.style.transform = nextTransform;
+      }
 
       const glare = glareRef.current;
       if (glare) {
@@ -436,7 +439,7 @@ export default function EngravedTicket({
           "%, rgba(255,255,255,0.25), rgba(255,255,255,0) 50%)";
       }
 
-      if (manual || cfg.breathe || inp.hover || Math.abs(vx) > 1e-3) {
+      if (manual || cfg.breathe || inp.hover || Math.abs(vx) > 1e-3 || Math.abs(vy) > 1e-3) {
         raf = requestAnimationFrame(frame);
       }
     };
@@ -476,6 +479,9 @@ export default function EngravedTicket({
             border: `1.5px solid ${borderColor}`,
             boxShadow: "0 25px 50px -12px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3)",
             willChange: "transform",
+            WebkitBackfaceVisibility: "hidden",
+            backfaceVisibility: "hidden",
+            transform: "translateZ(0)",
           }}
           onPointerEnter={(e) => {
             input.current.hover = true;
@@ -654,6 +660,9 @@ export default function EngravedTicket({
           border: `1.5px solid ${borderColor}`,
           boxShadow: "0 25px 50px -12px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3)",
           willChange: "transform",
+          WebkitBackfaceVisibility: "hidden",
+          backfaceVisibility: "hidden",
+          transform: "translateZ(0)",
         }}
         onPointerEnter={(e) => {
           input.current.hover = true;

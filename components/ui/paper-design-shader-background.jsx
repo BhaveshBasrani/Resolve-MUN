@@ -111,10 +111,10 @@ export function GradientBackground({
           offsetY={offsetY}
           scale={scale}
           rotation={rotation}
-          speed={isModalOpen ? 0 : speed}
+          speed={isModalOpen ? 0 : (isLowPower ? 0.35 : speed)}
           colors={colors}
           minPixelRatio={isLowPower ? 1 : 2}
-          maxPixelCount={isLowPower ? 500000 : 1920 * 1080 * 4}
+          maxPixelCount={isLowPower ? 250000 : 1920 * 1080 * 4}
         />
       </div>
     </ShaderErrorBoundary>
