@@ -305,6 +305,17 @@ export default function Footer() {
 
   const columns = [
     {
+      title: "Registrations",
+      links: [
+        { label: "Delegate Registration", href: "/register/delegate" },
+        { label: "Delegation Registration", href: "/register/delegation" },
+        { label: "Organizing Committee", href: "/register/oc" },
+        { label: "Secretariat High Command", href: "/register/secretariat" },
+        { label: "Socials Night Pass", href: "/register/socials" },
+        { label: "All Application Pathways", href: "/register" },
+      ],
+    },
+    {
       title: "Conference",
       links: [
         { label: "About", href: "/#about" },

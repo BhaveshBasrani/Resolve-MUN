@@ -89,6 +89,49 @@ export default function Home() {
           }
         }, 600);
       }
+
+      // ── Direct Link / Query Param / Hash Gateway ──────────────────────────
+      const rawTarget = (
+        params.get('open') ||
+        params.get('register') ||
+        params.get('apply') ||
+        params.get('track') ||
+        params.get('pathway') ||
+        (typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '')
+      )?.trim().toLowerCase();
+
+      if (rawTarget && !del) {
+        let normalized = null;
+        if (['del', 'delegate', 'individual', 'register-delegate', 'apply-delegate'].includes(rawTarget)) {
+          normalized = 'delegate';
+        } else if (['delegation', 'school', 'contingent', 'register-delegation', 'apply-delegation'].includes(rawTarget)) {
+          normalized = 'delegation';
+        } else if (['oc', 'organizing-committee', 'register-oc', 'apply-oc'].includes(rawTarget)) {
+          normalized = 'oc';
+        } else if (['sec', 'secretariat', 'register-sec', 'register-secretariat', 'apply-sec', 'apply-secretariat'].includes(rawTarget)) {
+          normalized = 'secretariat';
+        } else if (['eb', 'executive-board', 'register-eb', 'apply-eb'].includes(rawTarget)) {
+          normalized = 'eb';
+        } else if (['social', 'socials', 'party', 'socials-pass'].includes(rawTarget)) {
+          normalized = 'socials';
+        } else if (['pathway', 'selection', 'choose', 'all', 'tracks'].includes(rawTarget)) {
+          normalized = 'selectionModal';
+        } else if (['passes', 'pass', 'ticket', 'tickets'].includes(rawTarget)) {
+          normalized = 'SCROLL_TO_PASSES';
+        }
+
+        if (normalized) {
+          setTimeout(() => {
+            if (normalized === 'selectionModal') {
+              if (window.openSelectionModal) window.openSelectionModal();
+            } else if (normalized === 'SCROLL_TO_PASSES') {
+              if (window.scrollToPassesSection) window.scrollToPassesSection();
+            } else if (window.selectPathway) {
+              window.selectPathway(normalized);
+            }
+          }, 650);
+        }
+      }
     }
 
     const syncUser = (rawUser) => {
@@ -552,6 +595,15 @@ export default function Home() {
         if (!anyActive) {
           document.body.style.overflow = "";
           document.body.classList.remove("modal-locked");
+          try {
+            const u = new URL(window.location.href);
+            if (u.searchParams.has("open") || u.searchParams.has("register") || u.searchParams.has("apply")) {
+              u.searchParams.delete("open");
+              u.searchParams.delete("register");
+              u.searchParams.delete("apply");
+              window.history.replaceState(null, "", u.pathname + (u.search ? u.search : ""));
+            }
+          } catch (_) {}
         }
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("modalStateChange"));
@@ -900,6 +952,13 @@ export default function Home() {
           setAuthOpen(true);
           return;
         }
+
+        // Sync active pathway to URL so user can share direct link immediately
+        try {
+          const u = new URL(window.location.href);
+          u.searchParams.set("open", type);
+          window.history.replaceState(null, "", u.pathname + u.search);
+        } catch (_) {}
 
         if (type === "delegate") {
           window.openRegistration();

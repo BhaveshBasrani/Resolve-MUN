@@ -48,7 +48,8 @@ import {
   Sparkles,
   MessageSquare,
   Phone,
-  UserPlus
+  UserPlus,
+  Link2
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -1362,6 +1363,138 @@ export default function SuperAdminPage() {
                         </div>
                       );
                     })}
+                  </CardContent>
+                </Card>
+
+                {/* DIRECT REGISTRATION & APPLICATION OUTREACH LINKS */}
+                <Card className="col-span-full border border-purple-500/20 bg-gradient-to-r from-purple-950/20 via-zinc-950 to-blue-950/20">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div>
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2 text-white">
+                          <Link2 className="size-4 text-purple-400" />
+                          Direct Registration & Application Links
+                        </CardTitle>
+                        <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                          Shareable one-click direct links. Anyone opening these URLs lands directly inside that specific registration pathway.
+                        </CardDescription>
+                      </div>
+                      <Badge variant="outline" className="w-fit text-[10px] font-mono border-purple-500/30 text-purple-300">
+                        Universal Direct Gateways Active
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {[
+                        {
+                          title: "Individual Delegate",
+                          badge: "Delegate",
+                          path: "/register/delegate",
+                          badgeColor: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+                          desc: "Direct individual registration modal with committee preferences & study guides",
+                          whatsappText: "Hi! Register as an official Delegate for Resolve MUN 2.0 (27th-29th Nov 2026 at Meridian School, Hyderabad) here: https://resolvemun.in/register/delegate",
+                        },
+                        {
+                          title: "School / Delegation",
+                          badge: "Contingent",
+                          path: "/register/delegation",
+                          badgeColor: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+                          desc: "Institutional delegation roster registration (min 6 delegates, institutional perks)",
+                          whatsappText: "Register your school / institutional contingent for Resolve MUN 2.0 with institutional perks here: https://resolvemun.in/register/delegation",
+                        },
+                        {
+                          title: "Organizing Committee",
+                          badge: "OC Role",
+                          path: "/register/oc",
+                          badgeColor: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
+                          desc: "Direct application for logistics, hospitality, PR, and delegate affairs",
+                          whatsappText: "Apply for the Organizing Committee (OC) at Resolve MUN 2.0 here: https://resolvemun.in/register/oc",
+                        },
+                        {
+                          title: "Secretariat High Command",
+                          badge: "Leadership",
+                          path: "/register/secretariat",
+                          badgeColor: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+                          desc: "Application for conference leadership & procedural directorship",
+                          whatsappText: "Apply for Secretariat High Command at Resolve MUN 2.0 here: https://resolvemun.in/register/secretariat",
+                        },
+                        {
+                          title: "Socials Night Pass",
+                          badge: "Socials Pass",
+                          path: "/register/socials",
+                          badgeColor: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+                          desc: "Direct pass ticket for music, networking & socials night banquet",
+                          whatsappText: "Grab your official Resolve MUN 2026 Socials Night entry pass here: https://resolvemun.in/register/socials",
+                        },
+                        {
+                          title: "Universal Pathway Chooser",
+                          badge: "All Tracks",
+                          path: "/register",
+                          badgeColor: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
+                          desc: "Main pathway selection screen letting applicants browse and pick any track",
+                          whatsappText: "Choose your registration pathway for Resolve MUN 2.0: https://resolvemun.in/register",
+                        },
+                      ].map((linkItem) => {
+                        const fullUrl = `https://resolvemun.in${linkItem.path}`;
+                        return (
+                          <div
+                            key={linkItem.path}
+                            className="p-3 rounded-xl border border-white/10 bg-zinc-900/60 hover:border-white/20 transition-all flex flex-col justify-between space-y-2.5"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between gap-1.5 mb-1">
+                                <span className="text-xs font-semibold text-white tracking-wide">
+                                  {linkItem.title}
+                                </span>
+                                <Badge variant="outline" className={`text-[9px] font-mono px-1.5 py-0 border ${linkItem.badgeColor}`}>
+                                  {linkItem.badge}
+                                </Badge>
+                              </div>
+                              <p className="text-[11px] text-zinc-400 leading-snug line-clamp-2">
+                                {linkItem.desc}
+                              </p>
+                            </div>
+                            <div className="space-y-1.5 pt-1 border-t border-white/5">
+                              <div className="text-[10px] font-mono text-zinc-300 truncate bg-black/50 px-2 py-1 rounded border border-white/5 select-all">
+                                {fullUrl}
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 flex-1 text-[11px] border-white/10 bg-zinc-950 hover:bg-zinc-800 text-zinc-200 cursor-pointer"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(fullUrl);
+                                    if (typeof window !== "undefined" && window.showCustomAlert) {
+                                      window.showCustomAlert(`Copied ${linkItem.title} link!`, "success");
+                                    } else {
+                                      alert(`Copied: ${fullUrl}`);
+                                    }
+                                  }}
+                                >
+                                  <Copy className="size-3 mr-1" />
+                                  Copy Link
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2.5 text-[11px] border-emerald-500/20 bg-emerald-950/30 hover:bg-emerald-900/40 text-emerald-300 cursor-pointer"
+                                  onClick={() => {
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(linkItem.whatsappText)}`, "_blank");
+                                  }}
+                                  title="Share on WhatsApp"
+                                >
+                                  <ExternalLink className="size-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
