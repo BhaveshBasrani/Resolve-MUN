@@ -22,7 +22,7 @@ const CONFIG = {
   REPLY_TO: "resolve.mun@gmail.com",
   CONFERENCE_DATES: "27th – 29th November 2026",
   VENUE: "Meridian School, Kompally, Hyderabad",
-  PORTAL_URL: "https://resolvemun.com/auth",
+  PORTAL_URL: "https://resolvemun.in/auth",
   RECAPTCHA_SECRET_KEY: PropertiesService.getScriptProperties().getProperty("RECAPTCHA_SECRET_KEY") || "6LesB7gtAAAAAL5lax4c0NxE6GWWanZrcgjkwISQ",
   ADMIN_KEY: PropertiesService.getScriptProperties().getProperty("ADMIN_KEY") || "ResolveMUNAdmin2026@Secure",
   MAX_REQUESTS_PER_MINUTE: 30,
@@ -43,7 +43,7 @@ const CONFIG = {
 // SCHEMAS FOR AUTO-HEALING SPREADSHEETS
 const SCHEMAS = {
   "Users": [
-    "Timestamp", "UID", "DisplayName", "Email", "PhotoURL", "Role", "Status", "LastLogin"
+    "Timestamp", "UID", "FullName", "Email", "Role", "AvatarURL", "LastActive"
   ],
   "Registrations": [
     "Timestamp", "RegID", "UID", "FullName", "Email", "Phone", "Institution", 
@@ -74,9 +74,6 @@ const SCHEMAS = {
   ],
   "Abandoned_Leads": [
     "Timestamp", "LeadID", "FullName", "Email", "Phone", "FormType", "LastStep", "Status", "School", "Preferences", "DraftData"
-  ],
-  "Users": [
-    "Timestamp", "UID", "FullName", "Email", "Role", "AvatarURL", "LastActive"
   ],
   "Committee_Capacities": [
     "Timestamp", "CommitteeID", "CommitteeName", "MaxCapacity", "UpdatedBy"
@@ -872,33 +869,6 @@ function recordAbandonedLead(data) {
   } catch (err) {
     return { status: "success", note: err.message };
   }
-}
-
-/**
- * 7. User Sync
- */
-function syncUserAccount(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName("Users");
-  if (!sheet) {
-    repairAndInitDatabase();
-    sheet = ss.getSheetByName("Users");
-  }
-  const email = data.email || "";
-  const uid = data.uid || "";
-  if (!email && !uid) return { status: "error", message: "Identifier required" };
-
-  sheet.appendRow([
-    new Date().toISOString(),
-    uid,
-    data.displayName || "Delegate",
-    email,
-    data.photoURL || "",
-    data.role || "Delegate",
-    "Active",
-    new Date().toISOString()
-  ]);
-  return { status: "success", message: "Account profile synced." };
 }
 
 /**
