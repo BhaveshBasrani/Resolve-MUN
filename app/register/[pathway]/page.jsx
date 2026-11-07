@@ -82,3 +82,4 @@ export default async function RegisterPathwayPage({ params, searchParams }) {
   query.set("open", normalized);
   redirect(`/?${query.toString()}`);
 }
+

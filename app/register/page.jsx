@@ -24,3 +24,4 @@ export default async function RegisterIndexPage({ searchParams }) {
   }
   redirect(`/?${query.toString()}`);
 }
+

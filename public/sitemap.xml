@@ -1,15 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://resolvemun.in/</loc>
-    <lastmod>2026-09-05</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://resolvemun.in/images/OG.jpg</image:loc>
+      <image:title>Resolve MUN 2.0 — 27–29 November 2026 at Meridian School, Kompally</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://resolvemun.in/images/Venue.svg</image:loc>
+      <image:title>Meridian School, Kompally — Official Host Campus for Resolve MUN 2.0</image:title>
+    </image:image>
   </url>
   <url>
-    <loc>https://resolvemun.in/portal</loc>
-    <lastmod>2026-09-05</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://resolvemun.in/register</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://resolvemun.in/register/delegate</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://resolvemun.in/register/delegation</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://resolvemun.in/register/oc</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://resolvemun.in/register/secretariat</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://resolvemun.in/register/socials</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://resolvemun.in/dashboard</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
 </urlset>

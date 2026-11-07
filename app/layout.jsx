@@ -9,19 +9,24 @@ const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LesB7gt
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Resolve MUN 2.0 | Hyderabad's Premier Model United Nations",
+  title: "Resolve MUN 2.0 | 27–29 November 2026 · Meridian School, Kompally",
   description:
-    "Resolve MUN 2.0 — Hyderabad's premier Model United Nations conference returns bigger and bolder. Secretariat Applications now open. Join the next evolution of diplomacy.",
+    "Resolve MUN 2.0 convenes on 27th–29th November 2026 at Meridian School, Kompally, Hyderabad. Register as an individual delegate, school delegation, Organizing Committee, or Secretariat High Command.",
   keywords: [
     "Resolve MUN 2.0",
-    "resolve mun",
-    "mun hyderabad",
-    "model united nations hyderabad",
-    "hyderabad mun",
-    "MUN India",
-    "student diplomacy",
-    "Secretariat Applications",
-    "Edition 2.0",
+    "Resolve MUN",
+    "Resolve MUN 2026",
+    "Resolve MUN dates",
+    "Resolve MUN venue",
+    "Meridian School Kompally MUN",
+    "Meridian School Kompally",
+    "Hyderabad MUN November 2026",
+    "Model United Nations Hyderabad 2026",
+    "MUN conferences in Hyderabad",
+    "Best MUN in Telangana",
+    "Delegate Registration Resolve MUN",
+    "DISEC UNHRC UNSC Lok Sabha Committee X IP",
+    "student diplomacy India",
   ],
   icons: {
     icon: [
@@ -37,31 +42,42 @@ export const metadata = {
     ],
   },
   openGraph: {
-    title: "Resolve MUN 2.0 | Premier Model United Nations in Hyderabad",
+    title: "Resolve MUN 2.0 | 27–29 Nov 2026 · Meridian School, Kompally",
     description:
-      "Experience the next evolution of diplomacy at Resolve MUN 2.0. Secretariat Applications open now.",
+      "Join Hyderabad's premier Model United Nations conference on 27th–29th November 2026 at Meridian School, Kompally. Registrations open for Delegates, Delegations, OC & Secretariat.",
     url: siteUrl,
-    siteName: "Resolve MUN",
+    siteName: "Resolve MUN 2026",
     images: [
       {
         url: "/images/OG.jpg",
         width: 1200,
         height: 630,
+        alt: "Resolve MUN 2.0 — 27–29 November 2026 at Meridian School, Kompally, Hyderabad",
       },
     ],
-    locale: "en_US",
+    locale: "en_IN",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Resolve MUN 2.0 | Hyderabad's Premier Model United Nations",
+    title: "Resolve MUN 2.0 | 27–29 Nov 2026 · Meridian School, Kompally",
     description:
-      "Secretariat Applications open for Resolve MUN 2.0. Join student leaders in Hyderabad.",
+      "Hyderabad's flagship MUN returns on 27–29 November 2026 at Meridian School, Kompally. 6 elite committees, ₹2.5 Lakhs in cash rewards. Register now.",
     images: ["/images/OG.jpg"],
+  },
+  alternates: {
+    canonical: siteUrl,
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -84,13 +100,71 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "Resolve MUN",
-              url: siteUrl,
-              logo: `${siteUrl}/images/L1.png`,
-              sameAs: ["https://www.instagram.com/mun.resolve/"],
-              description:
-                "Hyderabad's premier Model United Nations conference — Resolve MUN 2.0",
+              "@graph": [
+                {
+                  "@type": "Event",
+                  "@id": `${siteUrl}/#event`,
+                  name: "Resolve MUN 2.0 — Hyderabad's Flagship Model United Nations",
+                  description:
+                    "Resolve MUN 2.0 convenes on 27th–29th November 2026 at Meridian School, Kompally, Hyderabad. 6 elite committees (DISEC, UNHRC, UNSC, Lok Sabha, Committee X, IP), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
+                  startDate: "2026-11-27T08:30:00+05:30",
+                  endDate: "2026-11-29T18:30:00+05:30",
+                  eventStatus: "https://schema.org/EventScheduled",
+                  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+                  location: {
+                    "@type": "Place",
+                    name: "Meridian School, Kompally",
+                    sameAs: "https://meridianschool.edu.in",
+                    address: {
+                      "@type": "PostalAddress",
+                      streetAddress: "Kompally, Near Medchal Highway",
+                      addressLocality: "Hyderabad",
+                      addressRegion: "Telangana",
+                      postalCode: "500014",
+                      addressCountry: "IN",
+                    },
+                  },
+                  image: [
+                    `${siteUrl}/images/OG.jpg`,
+                    `${siteUrl}/images/L1.png`,
+                    `${siteUrl}/images/Venue.svg`,
+                  ],
+                  organizer: {
+                    "@type": "Organization",
+                    name: "Resolve MUN Secretariat",
+                    url: siteUrl,
+                    logo: `${siteUrl}/images/L1.png`,
+                  },
+                  offers: {
+                    "@type": "AggregateOffer",
+                    lowPrice: "1500",
+                    highPrice: "2500",
+                    priceCurrency: "INR",
+                    availability: "https://schema.org/InStock",
+                    validFrom: "2026-01-01",
+                    url: `${siteUrl}/register`,
+                  },
+                },
+                {
+                  "@type": "Organization",
+                  "@id": `${siteUrl}/#organization`,
+                  name: "Resolve MUN",
+                  url: siteUrl,
+                  logo: `${siteUrl}/images/L1.png`,
+                  sameAs: ["https://www.instagram.com/mun.resolve/"],
+                  description:
+                    "Hyderabad's premier student-led Model United Nations conference organization.",
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": `${siteUrl}/#website`,
+                  url: siteUrl,
+                  name: "Resolve MUN 2026",
+                  publisher: {
+                    "@id": `${siteUrl}/#organization`,
+                  },
+                },
+              ],
             }),
           }}
         />

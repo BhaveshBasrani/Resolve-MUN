@@ -42,3 +42,4 @@ export default async function ApplyPathwayPage({ params, searchParams }) {
   query.set("open", normalized);
   redirect(`/?${query.toString()}`);
 }
+
