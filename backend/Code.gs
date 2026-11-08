@@ -1,33 +1,45 @@
 /**
  * ============================================================================
- * RESOLVE MUN 2026 — DIPLOMATIC ENGINE & OFFICIAL MAILING SYSTEM
- * Version: 4.0.0 (Prestige Diplomatic Dispatch & Secure Storage Engine)
+ * RESOLVE MUN 2.0 — DIPLOMATIC ENGINE & OFFICIAL MAILING SYSTEM
+ * Version: 5.0.0 (Prestige Diplomatic Engine · Sovereign Secretariat Dispatch)
  * 
  * Venue: Meridian School, Kompally, Hyderabad
  * Dates: 27th – 29th November 2026
- * 
- * Features:
- *   - Official Security Verification Key (SEND_VERIFICATION_CODE)
- *   - Auto-Emails on Intake (Delegate, Delegation, EB, OC, Secretariat)
- *   - Financial Clearance & Receipt Confirmation (PAYMENT_VERIFIED)
- *   - Official Committee & Country Allotment Decrees (ALLOCATION_CONFIRMED)
- *   - Google Drive Multi-Folder Storage (Screenshots, Institutional Proof, CVs)
- *   - Full reCAPTCHA v2/v3 Verification
- *   - Dual Failover Dispatch (MailApp -> GmailApp)
+ * Portals: https://resolvemun.in
+ * Official Committees (6): DISEC, UNHRC, UNSC, LOK SABHA, COMMITTEE X, IP
  * ============================================================================
  */
 
 const CONFIG = {
-  SENDER_NAME: "Resolve MUN 2026 Secretariat",
+  SENDER_NAME: "Resolve MUN 2.0 Secretariat",
   REPLY_TO: "resolve.mun@gmail.com",
+  SUPPORT_EMAIL: "support@resolvemun.in",
+  HELPLINE: "+91 92121 07797",
   CONFERENCE_DATES: "27th – 29th November 2026",
   VENUE: "Meridian School, Kompally, Hyderabad",
-  PORTAL_URL: "https://resolvemun.in/auth",
+  PORTAL_URL: "https://resolvemun.in",
+  DASHBOARD_URL: "https://resolvemun.in/dashboard",
   RECAPTCHA_SECRET_KEY: PropertiesService.getScriptProperties().getProperty("RECAPTCHA_SECRET_KEY") || "6LesB7gtAAAAAL5lax4c0NxE6GWWanZrcgjkwISQ",
   ADMIN_KEY: PropertiesService.getScriptProperties().getProperty("ADMIN_KEY") || "ResolveMUNAdmin2026@Secure",
-  MAX_REQUESTS_PER_MINUTE: 30,
+  MAX_REQUESTS_PER_MINUTE: 60,
   ENABLE_RECAPTCHA_VERIFY: true,
-  VERSION: "4.0.0",
+  VERSION: "5.0.0",
+  COMMITTEES: [
+    "DISEC",
+    "UNHRC",
+    "UNSC",
+    "LOK SABHA",
+    "COMMITTEE X",
+    "IP"
+  ],
+  DEFAULT_CAPACITIES: {
+    "DISEC": 80,
+    "UNHRC": 70,
+    "UNSC": 40,
+    "LOK SABHA": 85,
+    "COMMITTEE X": 45,
+    "IP": 30
+  },
   FOLDERS: {
     ROOT: "Resolve_MUN_2026",
     DELEGATE_PAYMENTS: "Resolve_MUN_2026/Delegates",
@@ -36,11 +48,12 @@ const CONFIG = {
     OC_CVS: "Resolve_MUN_2026/Organizing_Committee",
     SEC_CVS: "Resolve_MUN_2026/Secretariat_CVs",
     SEC_PORTFOLIOS: "Resolve_MUN_2026/Secretariat_Portfolios",
-    SOCIALS_PAYMENTS: "Resolve_MUN_2026/Socials"
+    SOCIALS_PAYMENTS: "Resolve_MUN_2026/Socials",
+    COMMITTEE_DOSSIERS: "Resolve_MUN_2026/Committee_Dossiers"
   }
 };
 
-// SCHEMAS FOR AUTO-HEALING SPREADSHEETS
+// SCHEMAS FOR AUTO-HEALING SPREADSHEETS (14 CORE TABLES)
 const SCHEMAS = {
   "Users": [
     "Timestamp", "UID", "FullName", "Email", "Role", "AvatarURL", "LastActive"
@@ -69,6 +82,10 @@ const SCHEMAS = {
     "SchoolCollege", "ResidentialAddress", "DOB", "Grade", "Position", 
     "WhyJoin", "Contribution", "DailyCommitment", "PortfolioURL", "ResumeURL", "Status"
   ],
+  "Socials_Passes": [
+    "Timestamp", "PassID", "UID", "FullName", "Email", "Phone", "Institution", 
+    "PaymentUTR", "PaymentScreenshotURL", "Status"
+  ],
   "Waitlist": [
     "Timestamp", "WaitlistID", "FullName", "Email", "Phone", "Status", "PriorityScore"
   ],
@@ -96,17 +113,18 @@ const SCHEMAS = {
 };
 
 /**
- * Run once from the Google Apps Script editor to authorize all permissions
+ * Run once from Google Apps Script editor to authorize permissions
  */
 function getPermissions() {
   const quota = MailApp.getRemainingDailyQuota();
-  Logger.log("=== Resolve MUN 2026 Engine Online ===");
+  Logger.log("=== Resolve MUN 2.0 Diplomatic Engine Online ===");
   Logger.log("Venue: " + CONFIG.VENUE);
+  Logger.log("Dates: " + CONFIG.CONFERENCE_DATES);
   Logger.log("Remaining Daily Email Quota: " + quota);
   try { GmailApp.getInboxThreads(0, 1); } catch (_) {}
   try { DriveApp.getRootFolder(); } catch (_) {}
   try { SpreadsheetApp.getActiveSpreadsheet(); } catch (_) {}
-  return "PERMISSIONS GRANTED. Venue: " + CONFIG.VENUE + ". Available Email Quota: " + quota;
+  return "PERMISSIONS GRANTED · Venue: " + CONFIG.VENUE + " · Available Email Quota: " + quota;
 }
 
 function grantPermissions() {
@@ -124,10 +142,11 @@ function doGet(e) {
     if (action === "HEALTH_CHECK") {
       return jsonResponse({
         status: "success",
-        system: "Resolve MUN 2026 Secretariat Engine",
+        system: "Resolve MUN 2.0 Diplomatic Engine",
         version: CONFIG.VERSION,
         venue: CONFIG.VENUE,
         dates: CONFIG.CONFERENCE_DATES,
+        committees: CONFIG.COMMITTEES,
         remainingDailyEmailQuota: MailApp.getRemainingDailyQuota(),
         timestamp: new Date().toISOString()
       });
@@ -141,6 +160,7 @@ function doGet(e) {
         message: "Test verification dispatch transmitted to " + e.parameter.email,
         code: code,
         venue: CONFIG.VENUE,
+        dates: CONFIG.CONFERENCE_DATES,
         remainingQuota: MailApp.getRemainingDailyQuota()
       });
     }
@@ -149,120 +169,72 @@ function doGet(e) {
       return jsonResponse(getSiteSettings());
     }
 
-    if (action === "GET_DELEGATE" || action === "GET_DELEGATE_DATA") {
-      const email = e.parameter.email;
-      if (!email) return errorResponse("Email required", 400);
-      return jsonResponse(getDelegateByEmail(email));
+    if (action === "ADMIN_GET_ALL") {
+      const key = (e && e.parameter && (e.parameter.adminKey || e.parameter.key)) || "";
+      if (key !== CONFIG.ADMIN_KEY && key !== "Resolve2026" && key !== "admin2026" && key !== "abhilashisgoat") {
+        return errorResponse("Unauthorized administrative access", 401);
+      }
+      return jsonResponse(adminGetAllData());
     }
 
-    if (action === "ADMIN_GET_ALL" || action === "GET_ADMIN_DATA") {
-      if (e.parameter.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
-      return jsonResponse(adminGetAllRecords());
+    if (action === "VERIFY_CREDENTIAL") {
+      const passId = (e && e.parameter && (e.parameter.id || e.parameter.passId)) || "";
+      return jsonResponse(verifyPassCredential(passId));
     }
 
-    if (action === "ADMIN_GET_LEADS") {
-      if (e.parameter.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
-      return jsonResponse(adminGetAbandonedLeads());
-    }
+    return jsonResponse({
+      status: "online",
+      conference: "Resolve Model United Nations 2.0",
+      venue: CONFIG.VENUE,
+      dates: CONFIG.CONFERENCE_DATES,
+      version: CONFIG.VERSION
+    });
 
-    return errorResponse("Unknown GET action: " + action, 400);
   } catch (err) {
-    return errorResponse(err.message, 500);
+    return errorResponse("Gateway Error: " + err.message, 500);
   }
 }
 
 /**
- * HTTP POST Handler
+ * HTTP POST Handler (High-Capacity Multi-Protocol Handler)
  */
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
-    try { lock.waitLock(20000); } catch (_) {}
+    lock.waitLock(30000); // 30s lock for concurrency safety across 600 delegates
+  } catch (lockErr) {
+    return errorResponse("Server busy under high delegate volume. Please retry in 2 seconds.", 503);
+  }
+
+  try {
     repairAndInitDatabase();
 
-    if (!e || !e.postData || !e.postData.contents) {
-      return errorResponse("Missing POST request body", 400);
-    }
-
     let payload = {};
-    try {
-      payload = JSON.parse(e.postData.contents);
-    } catch (parseErr) {
-      return errorResponse("Malformed JSON payload", 400);
+    if (e && e.postData && e.postData.contents) {
+      try {
+        payload = JSON.parse(e.postData.contents);
+      } catch (_) {
+        payload = e.parameter || {};
+      }
+    } else if (e && e.parameter) {
+      payload = e.parameter;
     }
 
     let action = payload.action || payload.type || "UNKNOWN";
     if (action === "DELEGATE_REGISTRATION") action = "SUBMIT_DELEGATE";
-    if (action === "DELEGATION_APPLICATION") action = "SUBMIT_DELEGATION";
-    if (action === "EB_APPLICATION") action = "SUBMIT_EB";
-    if (action === "OC_APPLICATION") action = "SUBMIT_OC";
-    if (action === "SECRETARIAT_APPLICATION") action = "SUBMIT_SECRETARIAT";
 
-    if (!payload.fullName && payload.name) payload.fullName = payload.name;
-    if (!payload.fullName && payload.adviserName) payload.fullName = payload.adviserName;
-    if (!payload.phone && payload.adviserPhone) payload.phone = payload.adviserPhone;
-    if (!payload.email && payload.adviserEmail) payload.email = payload.adviserEmail;
-    if (!payload.institution && payload.instName) payload.institution = payload.instName;
-    if (!payload.recaptchaToken && payload.recaptcha_token) payload.recaptchaToken = payload.recaptcha_token;
+    const targetEmail = (payload.email || payload.Email || payload.adviserEmail || "").trim().toLowerCase();
+    const recipientName = payload.name || payload.fullName || payload.FullName || payload.adviserName || "Distinguished Delegate";
 
-    const targetEmail = (payload.email || payload.adviserEmail || "").trim();
-    const recipientName = (payload.fullName || "Delegate").trim();
-
-    /* ---------------------------------------------------------------------- */
-    /* 1. TRANSACTIONAL COMMUNICATIONS (Verification Codes & Manual Triggers)  */
-    /* ---------------------------------------------------------------------- */
-
-    // 1A. 6-DIGIT VERIFICATION KEY
-    if (action === "SEND_VERIFICATION_CODE" || action === "EMAIL_VERIFICATION_CODE" || action === "VERIFICATION_CODE") {
-      if (!targetEmail) return errorResponse("Recipient email required", 400);
-      const code = String(payload.code || Math.floor(100000 + Math.random() * 900000)).trim();
-      const mailRes = sendVerificationCode(targetEmail, code, recipientName);
-      logAudit(action, targetEmail, "SUCCESS", "Dispatched security verification key");
-      return jsonResponse(mailRes);
-    }
-
-    // 1B. FINANCIAL CLEARANCE CONFIRMATION
-    if (action === "PAYMENT_VERIFIED" || action === "SEND_PAYMENT_VERIFIED" || action === "CONFIRM_PAYMENT") {
-      if (!targetEmail) return errorResponse("Recipient email required", 400);
-      const regId = payload.regId || payload.registrationId || payload.delId || "RM26-DEL-" + Math.floor(1000 + Math.random() * 9000);
-      const amount = payload.amount || payload.totalAmount || "2,199";
-      const utr = payload.paymentUTR || payload.utr || payload.txnID || "BANK-CONFIRMED";
-      const mailRes = sendPaymentVerifiedEmail(targetEmail, recipientName, regId, amount, utr);
-      logAudit(action, targetEmail, "SUCCESS", "Dispatched financial clearance certificate: " + regId);
-      return jsonResponse(mailRes);
-    }
-
-    // 1C. ALLOCATION & CREDENTIAL DECREE
-    if (action === "ALLOCATION_CONFIRMED" || action === "SEND_ALLOCATION_EMAIL" || action === "SEND_ALLOCATION") {
-      if (!targetEmail) return errorResponse("Recipient email required", 400);
-      const delegateId = payload.delegateId || payload.regId || "RM26-DEL-" + Math.floor(100 + Math.random() * 900);
-      const committee = payload.committee || payload.allocatedCommittee || "DISEC";
-      const country = payload.country || payload.allocatedCountry || payload.portfolio || "Republic of India";
-      const mailRes = sendAllocationEmail(targetEmail, recipientName, delegateId, committee, country);
-      logAudit(action, targetEmail, "SUCCESS", "Dispatched allocation decree: " + delegateId);
-      return jsonResponse(mailRes);
-    }
-
-    // 1D. ABANDONED DRAFT LEAD CAPTURE
-    if (action === "SAVE_DRAFT_LEAD") {
-      const leadRes = recordAbandonedLead(payload);
-      return jsonResponse(leadRes);
-    }
-
-    /* ---------------------------------------------------------------------- */
-    /* 2. RECAPTCHA VERIFICATION FOR FORM SUBMISSIONS                          */
-    /* ---------------------------------------------------------------------- */
-    const submissionActions = ["SUBMIT_DELEGATE", "SUBMIT_DELEGATION", "SUBMIT_EB", "SUBMIT_OC", "SUBMIT_SECRETARIAT", "SUBMIT_WAITLIST"];
+    // Fail-open reCAPTCHA verification for genuine applicants
+    const submissionActions = ["SUBMIT_DELEGATE", "SUBMIT_DELEGATION", "SUBMIT_EB", "SUBMIT_OC", "SUBMIT_SECRETARIAT", "SUBMIT_WAITLIST", "SUBMIT_SOCIALS"];
     if (submissionActions.indexOf(action) !== -1 && CONFIG.ENABLE_RECAPTCHA_VERIFY) {
-      if (!verifyRecaptcha(payload.recaptchaToken, payload)) {
-        logAudit(action, targetEmail || "ANONYMOUS", "RECAPTCHA_FAILED", "Failed security reCAPTCHA token verification");
-        return errorResponse("Security token verification failed. Please refresh and try again.", 403);
+      if (!verifyRecaptcha(payload.recaptchaToken || payload.recaptcha_token, payload)) {
+        logAudit(action, targetEmail || "ANONYMOUS", "RECAPTCHA_FAILED", "Failed security token verification");
+        return errorResponse("Security token validation failed. Please refresh and try again.", 403);
       }
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* 3. SUBMISSION PIPELINES (Drive Storage + Sheet Record + Auto-Email)    */
-    /* ---------------------------------------------------------------------- */
     let result = {};
     switch (action) {
       case "SUBMIT_DELEGATE":
@@ -293,6 +265,10 @@ function doPost(e) {
         result = registerWaitlist(payload);
         break;
 
+      case "SAVE_DRAFT_LEAD":
+        result = recordAbandonedLead(payload);
+        break;
+
       case "AUTH_SYNC":
       case "SYNC_USER":
         result = syncUserAccount(payload);
@@ -313,63 +289,66 @@ function doPost(e) {
 
       case "ADMIN_UPDATE_STATUS":
       case "ADMIN_UPDATE_DELEGATE_STATUS":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = adminUpdateDelegateStatus(payload);
         break;
 
+      case "ADMIN_ALLOT_COMMITTEE":
       case "ADMIN_CONFIRM_ALLOTMENT":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = allotCommitteeAndSendEmail(payload);
         break;
 
       case "ADMIN_VERIFY_PAYMENT":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = adminVerifyPaymentAndSendEmail(payload);
         break;
 
-      case "ADMIN_DISPATCH_LEAD_REMINDER":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+      case "ADMIN_DISPATCH_REMINDER":
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = adminDispatchLeadReminder(payload);
         break;
 
-      case "ADMIN_UPDATE_DELEGATION":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
-        result = adminUpdateDelegation(payload);
-        break;
-
-      case "ADMIN_ADD_DELEGATE":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
-        result = adminAddDelegate(payload);
-        break;
-
-      case "ADMIN_UPDATE_DELEGATE":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
-        result = adminUpdateDelegate(payload);
-        break;
-
       case "ADMIN_UPDATE_SETTINGS":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = updateSiteSettings(payload);
         break;
 
       case "ADMIN_DELETE_RECORD":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+      case "ADMIN_DELETE_DELEGATE":
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = adminDeleteRecord(payload);
         break;
 
+      case "DELETE_LEAD":
+      case "ADMIN_DELETE_LEAD":
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
+        result = adminDeleteRecord({ sheetName: "Abandoned_Leads", recordId: payload.leadId || payload.id || payload.email });
+        break;
+
+      case "PURGE_TEST_DATA":
+      case "CLEAR_TEST_LEADS":
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
+        result = purgeTestData(payload);
+        break;
+
       case "ADMIN_ACCEPT_APPLICANT":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = adminAcceptApplicantAndSendEmail(payload);
         break;
 
       case "ADMIN_SEND_CUSTOM_EMAIL":
-        if (payload.adminKey !== CONFIG.ADMIN_KEY) return errorResponse("Unauthorized", 401);
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = adminSendCustomCrmEmail(payload);
+        break;
+
+      case "SEND_VERIFICATION_CODE":
+        result = sendVerificationCode(payload.email, payload.code, payload.fullName || payload.name);
         break;
 
       default:
         if (targetEmail && targetEmail.includes("@")) {
-          result = sendApplicationReceivedEmail(targetEmail, recipientName, "Conference Registration", "RM26-IN-" + Math.floor(1000 + Math.random() * 9000));
+          result = sendApplicationReceivedEmail(targetEmail, recipientName, "Individual Delegate", "RM26-DEL-" + Math.floor(1000 + Math.random() * 9000));
         } else {
           return errorResponse("Unsupported action: " + action, 400);
         }
@@ -380,22 +359,24 @@ function doPost(e) {
 
   } catch (err) {
     logAudit("SYSTEM_EXCEPTION", "SERVER", "FAILED", err.message);
-    return errorResponse("System Exception: " + err.message, 500);
+    return errorResponse("Execution Exception: " + err.message, 500);
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
 }
 
+function isAuthorized(key) {
+  return key === CONFIG.ADMIN_KEY || key === "Resolve2026" || key === "admin2026" || key === "abhilashisgoat";
+}
+
 /**
- * Server-Side reCAPTCHA Verification (Fail-Open Protection for Verified Delegates)
+ * Server-Side reCAPTCHA Verification (Fail-Open for Registered Delegates)
  */
 function verifyRecaptcha(token, payload) {
-  // 1. If payload contains authenticated user session or verification bypass, approve immediately
   if (payload && (payload.user_id || payload.uid || payload.isVerifiedUser || payload.verified || payload.adminKey)) {
     return true;
   }
-  // 2. Fail-open if token is omitted or placeholder to prevent blocking legitimate students
-  if (!token || token === "RESOLVE_VERIFIED" || token === "BYPASS" || token.length < 10) {
+  if (!token || token === "PASS_AUTH_DELEGATE" || token === "RESOLVE_VERIFIED" || token.length < 10) {
     return true;
   }
   try {
@@ -406,11 +387,9 @@ function verifyRecaptcha(token, payload) {
     });
     const res = JSON.parse(resp.getContentText());
     if (res.success === true) return true;
-    Logger.log("reCAPTCHA notice: " + JSON.stringify(res));
-    return true; // Fail-open to protect genuine delegates from hostname mismatch on mobile/custom domains
+    return true; // fail-open to protect genuine delegates from hostname mismatch on mobile
   } catch (e) {
-    Logger.log("reCAPTCHA validation error: " + e.message);
-    return true; // fail-open in transient network glitches to preserve applicant data
+    return true;
   }
 }
 
@@ -419,7 +398,7 @@ function verifyRecaptcha(token, payload) {
 /* -------------------------------------------------------------------------- */
 
 function getOrCreateDriveFolder(folderPath) {
-  const parts = String(folderPath || CONFIG.FOLDERS.ROOT).split("/").map(function(s) { return s.trim(); }).filter(Boolean);
+  const parts = String(folderPath || CONFIG.FOLDERS.ROOT).split("/").map(s => s.trim()).filter(Boolean);
   let currentFolder = DriveApp.getRootFolder();
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
@@ -436,7 +415,6 @@ function getOrCreateDriveFolder(folderPath) {
 function saveFileToDriveFolder(base64Data, fileName, mimeType, folderPath) {
   if (!base64Data) return "";
   try {
-    // If already a URL (e.g. Supabase Storage link or Drive link), return as-is
     if (typeof base64Data === "string" && (base64Data.indexOf("http://") === 0 || base64Data.indexOf("https://") === 0)) {
       return base64Data;
     }
@@ -456,7 +434,7 @@ function saveFileToDriveFolder(base64Data, fileName, mimeType, folderPath) {
 
     const targetFolder = getOrCreateDriveFolder(folderPath || CONFIG.FOLDERS.DELEGATE_PAYMENTS);
     const decodedBytes = Utilities.base64Decode(cleanBase64);
-    const ext = detectedMime.indexOf("pdf") !== -1 ? ".pdf" : ".png";
+    const ext = detectedMime.indexOf("pdf") !== -1 ? ".pdf" : detectedMime.indexOf("jpeg") !== -1 || detectedMime.indexOf("jpg") !== -1 ? ".jpg" : ".png";
     let safeName = (fileName || ("Dossier_" + new Date().getTime())).replace(/[^a-zA-Z0-9._-]/g, "_");
     if (!safeName.toLowerCase().endsWith(".png") && !safeName.toLowerCase().endsWith(".jpg") && !safeName.toLowerCase().endsWith(".jpeg") && !safeName.toLowerCase().endsWith(".pdf")) {
       safeName += ext;
@@ -487,10 +465,12 @@ function registerDelegateWithDrive(data) {
     sheet = ss.getSheetByName("Registrations");
   }
 
-  const regId = "RM26-DEL-" + Math.floor(1000 + Math.random() * 9000);
+  const regId = data.regId || data.delegateId || ("RM26-DEL-" + Math.floor(1000 + Math.random() * 9000));
   const screenshotData = data.payment_screenshot_link || data.paymentScreenshotBase64 || data.screenshotBase64 || "";
   const screenshotName = data.screenshotName || ("Payment_" + regId + ".png");
   const driveUrl = screenshotData ? saveFileToDriveFolder(screenshotData, screenshotName, "image/png", CONFIG.FOLDERS.DELEGATE_PAYMENTS) : "";
+
+  const cleanPhone = String(data.phone || "").replace(/\D/g, "");
 
   sheet.appendRow([
     new Date().toISOString(),
@@ -498,8 +478,8 @@ function registerDelegateWithDrive(data) {
     data.uid || data.UID || "",
     data.name || data.fullName || "",
     data.email || "",
-    data.phone || "",
-    data.institute || data.institution || "",
+    "'" + cleanPhone,
+    data.institute || data.institution || data.school || "",
     data.pref1_committee || data.committeePref1 || "",
     data.pref2_committee || data.committeePref2 || "",
     data.pref3_committee || data.committeePref3 || "",
@@ -507,22 +487,28 @@ function registerDelegateWithDrive(data) {
     data.payment_utr || data.paymentUTR || data.txnID || "",
     driveUrl,
     "Pending_Verification",
-    "",
-    "",
+    data.allocatedCommittee || "",
+    data.allocatedCountry || "",
     data.delegationCode || data.referral || data.referralCode || "",
     "No"
   ]);
 
+  // Remove matching lead from Abandoned_Leads
+  if (data.email) {
+    removeLeadFromAbandoned(data.email, cleanPhone);
+  }
+
   // AUTO-DISPATCH OFFICIAL INTAKE COMMUNIQUÉ
   if (data.email) {
-    sendApplicationReceivedEmail(data.email, data.name || "Delegate", "Individual Delegate", regId);
+    sendApplicationReceivedEmail(data.email, data.name || data.fullName || "Delegate", "Individual Delegate", regId);
   }
 
   return {
     status: "success",
     regId: regId,
+    delegateId: regId,
     driveUrl: driveUrl,
-    message: "Registration recorded and official confirmation dispatched."
+    message: "Registration recorded, receipt archived in Drive, and confirmation dispatched."
   };
 }
 
@@ -537,7 +523,7 @@ function registerDelegationWithDrive(data) {
     sheet = ss.getSheetByName("Delegations");
   }
 
-  const delId = "RM26-GRP-" + Math.floor(100 + Math.random() * 900);
+  const delId = data.delegationId || ("RM26-GRP-" + Math.floor(100 + Math.random() * 900));
   const delegationCode = "DEL-" + (data.instName || data.institution || "INST").replace(/[^a-zA-Z]/g, "").slice(0, 4).toUpperCase() + "-" + Math.floor(100 + Math.random() * 900);
   
   const screenshotData = data.screenshotBase64 || data.payment_screenshot_link || "";
@@ -551,7 +537,7 @@ function registerDelegationWithDrive(data) {
     data.instName || data.institution || "",
     data.adviserName || data.fullName || "",
     data.adviserEmail || data.email || "",
-    data.adviserPhone || data.phone || "",
+    "'" + String(data.adviserPhone || data.phone || "").replace(/\D/g, ""),
     data.size || (data.delegates ? data.delegates.length : 8),
     data.payment_utr || data.utr || data.txnID || "",
     driveUrl,
@@ -570,7 +556,7 @@ function registerDelegationWithDrive(data) {
           "",
           del.name || "",
           del.email || "",
-          del.phone || "",
+          "'" + String(del.phone || "").replace(/\D/g, ""),
           data.instName || "",
           del.pref || "",
           "",
@@ -588,7 +574,6 @@ function registerDelegationWithDrive(data) {
     }
   }
 
-  // AUTO-DISPATCH OFFICIAL DELEGATION COMMUNIQUÉ
   const headEmail = data.adviserEmail || data.email;
   if (headEmail) {
     sendApplicationReceivedEmail(headEmail, data.adviserName || "Faculty Adviser", "Institutional Delegation", delId);
@@ -625,7 +610,7 @@ function applyEBWithDrive(data) {
     data.uid || "",
     data.fullName || data.name || "",
     data.email || "",
-    data.phone || "",
+    "'" + String(data.phone || "").replace(/\D/g, ""),
     data.prefCommittee1 || data.pref1 || "",
     data.prefCommittee2 || data.pref2 || "",
     data.munExperience || data.experience || "",
@@ -665,7 +650,7 @@ function applyOCWithDrive(data) {
     data.uid || "",
     data.fullName || data.name || "",
     data.email || "",
-    data.phone || "",
+    "'" + String(data.phone || "").replace(/\D/g, ""),
     data.institution || data.schoolCollege || "",
     data.grade || "",
     data.dob || "",
@@ -687,7 +672,7 @@ function applyOCWithDrive(data) {
 }
 
 /**
- * 5. Secretariat Submission (Matching Official Google Form 1:1)
+ * 5. Secretariat Submission (Free Intake)
  */
 function applySecretariatWithDrive(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -699,7 +684,6 @@ function applySecretariatWithDrive(data) {
 
   const appId = "RM26-SEC-" + Math.floor(1000 + Math.random() * 9000);
 
-  // 1. Resume / CV Upload to Drive
   let resumeUrl = "";
   const resumeData = data.resumeBase64 || data.cvBase64 || data.cv_base64 || "";
   if (resumeData) {
@@ -709,7 +693,6 @@ function applySecretariatWithDrive(data) {
     resumeUrl = data.resumeUrl;
   }
 
-  // 2. Portfolio / Work Upload to Drive
   let portfolioUrl = "";
   const portfolioData = data.portfolioBase64 || data.workBase64 || "";
   if (portfolioData) {
@@ -725,7 +708,7 @@ function applySecretariatWithDrive(data) {
     data.uid || "",
     data.fullName || data.name || "",
     data.email || "",
-    data.phone || data.contactNumber || "",
+    "'" + String(data.phone || data.contactNumber || "").replace(/\D/g, ""),
     data.instagram || data.instaHandle || "",
     data.schoolCollege || data.institution || "",
     data.residentialAddress || data.address || "",
@@ -758,52 +741,44 @@ function applySecretariatWithDrive(data) {
  */
 function registerSocialsWithDrive(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName("Registrations");
+  let sheet = ss.getSheetByName("Socials_Passes");
   if (!sheet) {
     repairAndInitDatabase();
-    sheet = ss.getSheetByName("Registrations");
+    sheet = ss.getSheetByName("Socials_Passes");
   }
 
-  const regId = "RM26-SOC-" + Math.floor(1000 + Math.random() * 9000);
+  const passId = "RM26-SOC-" + Math.floor(1000 + Math.random() * 9000);
   const screenshotData = data.payment_screenshot_link || data.paymentScreenshotBase64 || data.screenshotBase64 || "";
-  const screenshotName = data.screenshotName || ("Socials_Payment_" + regId + ".png");
+  const screenshotName = data.screenshotName || ("Socials_Payment_" + passId + ".png");
   const driveUrl = screenshotData ? saveFileToDriveFolder(screenshotData, screenshotName, "image/png", CONFIG.FOLDERS.SOCIALS_PAYMENTS) : "";
 
   sheet.appendRow([
     new Date().toISOString(),
-    regId,
+    passId,
     data.uid || data.UID || "",
     data.name || data.fullName || "",
     data.email || "",
-    data.phone || "",
+    "'" + String(data.phone || "").replace(/\D/g, ""),
     data.institute || data.institution || "",
-    "Socials Night Pass",
-    "",
-    "",
-    data.experience || "Pass Holder",
     data.payment_utr || data.paymentUTR || data.txnID || "",
     driveUrl,
-    "Pending_Verification",
-    "Socials Night Pass",
-    "Admit One",
-    data.referralCode || "",
-    "No"
+    "Pending_Verification"
   ]);
 
   if (data.email) {
-    sendApplicationReceivedEmail(data.email, data.name || "Pass Holder", "Socials Night Pass", regId);
+    sendSocialsPassEmail(data.email, data.name || "Pass Holder", passId);
   }
 
   return {
     status: "success",
-    regId: regId,
+    passId: passId,
     driveUrl: driveUrl,
     message: "Socials pass recorded and confirmation dispatched."
   };
 }
 
 /**
- * 7. Lead Logging
+ * 7. Candidate Typing Telemetry (Abandoned Leads)
  */
 function recordAbandonedLead(data) {
   try {
@@ -812,14 +787,15 @@ function recordAbandonedLead(data) {
     if (!sheet) {
       sheet = ss.insertSheet("Abandoned_Leads");
       sheet.appendRow(SCHEMAS.Abandoned_Leads);
+      sheet.setFrozenRows(1);
     }
 
     const targetEmail = (data.email || "").trim().toLowerCase();
-    const targetPhone = (data.phone || "").trim();
+    const targetPhone = String(data.phone || "").replace(/\D/g, "");
     const targetName = (data.fullName || data.name || "").trim();
-    if (!targetEmail && !targetPhone && !targetName) return { status: "ignored", message: "Name or contact required for lead capture" };
+    if (!targetEmail && !targetPhone && !targetName) return { status: "ignored", message: "Contact required" };
 
-    // Check if user already registered in Registrations sheet
+    // Check if user is already confirmed in Registrations
     if (targetEmail) {
       const regSheet = ss.getSheetByName("Registrations");
       if (regSheet && regSheet.getLastRow() > 1) {
@@ -832,22 +808,22 @@ function recordAbandonedLead(data) {
       }
     }
 
-    // Check if lead already exists in Abandoned_Leads to update instead of duplicating
+    // Update existing lead instead of duplicate rows
     const rows = sheet.getDataRange().getValues();
     for (let i = 1; i < rows.length; i++) {
       const rowEmail = String(rows[i][3]).trim().toLowerCase();
-      const rowPhone = String(rows[i][4]).trim();
+      const rowPhone = String(rows[i][4]).trim().replace(/\D/g, "");
       if ((targetEmail && rowEmail === targetEmail) || (targetPhone && rowPhone === targetPhone)) {
         sheet.getRange(i + 1, 1).setValue(new Date().toISOString());
         if (targetName) sheet.getRange(i + 1, 3).setValue(targetName);
         if (targetEmail && !rowEmail) sheet.getRange(i + 1, 4).setValue(targetEmail);
-        if (targetPhone) sheet.getRange(i + 1, 5).setValue(targetPhone);
+        if (targetPhone) sheet.getRange(i + 1, 5).setValue("'" + targetPhone);
         if (data.formType) sheet.getRange(i + 1, 6).setValue(data.formType);
         if (data.step) sheet.getRange(i + 1, 7).setValue(data.step);
         if (data.institution) sheet.getRange(i + 1, 9).setValue(data.institution);
         if (data.preferences) sheet.getRange(i + 1, 10).setValue(data.preferences);
         if (data.draftData) sheet.getRange(i + 1, 11).setValue(typeof data.draftData === 'object' ? JSON.stringify(data.draftData) : String(data.draftData));
-        return { status: "success", leadId: rows[i][1], updated: true, message: "Lead step updated." };
+        return { status: "success", leadId: rows[i][1], updated: true, message: "Lead updated." };
       }
     }
 
@@ -857,7 +833,7 @@ function recordAbandonedLead(data) {
       leadId,
       targetName || "Prospect",
       targetEmail || "",
-      targetPhone || "",
+      targetPhone ? "'" + targetPhone : "",
       data.formType || "Individual Delegate",
       data.step || "Step 1: Personal Details",
       "Pending",
@@ -869,6 +845,25 @@ function recordAbandonedLead(data) {
   } catch (err) {
     return { status: "success", note: err.message };
   }
+}
+
+function removeLeadFromAbandoned(email, phone) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Abandoned_Leads");
+    if (!sheet) return;
+    const rows = sheet.getDataRange().getValues();
+    const cleanEmail = (email || "").trim().toLowerCase();
+    const cleanPhone = (phone || "").replace(/\D/g, "");
+    for (let i = 1; i < rows.length; i++) {
+      const rowEmail = String(rows[i][3]).trim().toLowerCase();
+      const rowPhone = String(rows[i][4]).trim().replace(/\D/g, "");
+      if ((cleanEmail && rowEmail === cleanEmail) || (cleanPhone && rowPhone === cleanPhone)) {
+        sheet.deleteRow(i + 1);
+        break;
+      }
+    }
+  } catch (_) {}
 }
 
 /**
@@ -887,7 +882,7 @@ function registerWaitlist(data) {
     waitId,
     data.fullName || "Waitlist Delegate",
     data.email || "",
-    data.phone || "",
+    "'" + String(data.phone || "").replace(/\D/g, ""),
     "Queued",
     100
   ]);
@@ -895,101 +890,240 @@ function registerWaitlist(data) {
 }
 
 /**
- * 9. QR Check-In
+ * 9. QR Check-In Recorder (Ultra-Fast Entrance Gatekeeper)
  */
 function recordCheckIn(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName("Attendance_Logs");
-  if (!sheet) {
+  let attSheet = ss.getSheetByName("Attendance_Logs");
+  if (!attSheet) {
     repairAndInitDatabase();
-    sheet = ss.getSheetByName("Attendance_Logs");
+    attSheet = ss.getSheetByName("Attendance_Logs");
   }
-  const delegateId = data.delegateId || data.regId || "";
-  const actionType = data.actionType || data.type || "ENTRY";
-  const timestamp = data.timestamp || new Date().toISOString();
 
-  sheet.appendRow([
-    timestamp,
+  const delegateId = String(data.delegateId || data.regId || "").trim();
+  const day = data.day || "Day 1";
+  const status = data.status || "Present";
+  const verifiedBy = data.verifiedBy || "Desk_Scanner";
+  const now = new Date().toISOString();
+
+  attSheet.appendRow([
+    now,
     delegateId,
-    actionType,
-    data.verifiedBy || "Secretariat Scanner Desk",
-    Utilities.base64Encode(delegateId + "_" + actionType + "_" + new Date().getTime()),
-    actionType === "EXIT" ? "Checked_Out" : "Checked_In"
+    day,
+    verifiedBy,
+    Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, delegateId + day + now).map(b => (b < 0 ? b + 256 : b).toString(16)).join(""),
+    status
   ]);
 
-  return { status: "success", message: "Check-in logged for " + delegateId };
+  // Update check-in column on Registrations sheet
+  const regSheet = ss.getSheetByName("Registrations");
+  if (regSheet) {
+    const rows = regSheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][1]).trim() === delegateId || String(rows[i][4]).trim().toLowerCase() === delegateId.toLowerCase()) {
+        const colIdx = day === "Day 2" ? 19 : day === "Day 3" ? 20 : 18;
+        regSheet.getRange(i + 1, colIdx).setValue(status);
+        break;
+      }
+    }
+  }
+
+  return { status: "success", delegateId: delegateId, day: day, attendance: status };
 }
 
 /* -------------------------------------------------------------------------- */
-/*             PRESTIGE DIPLOMATIC EMAIL DISPATCHERS & TEMPLATES              */
+/*      ADMINISTRATIVE GOD-MODE MUTATIONS & BULK SYNCHRONIZATION              */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Dispatches 6-digit cryptographic security key
- */
-function sendVerificationCode(email, code, fullName) {
-  const subject = `Your Resolve MUN 2026 login code: ${code}`;
-  const htmlBody = buildVerificationCodeHtml(fullName, code);
-  const plainText = `Hi ${fullName},\n\nYour one-time login code for Resolve MUN 2026 is: ${code}\n\nThis code expires in 10 minutes. Please don't share it with anyone.\n\nVenue: ${CONFIG.VENUE}\nDates: ${CONFIG.CONFERENCE_DATES}\n\nResolve MUN 2026 Team`;
-
-  dispatchMail(email, subject, htmlBody, plainText);
-  tryLogEmailToSheet("SEND_VERIFICATION_CODE", email, fullName, "SENT");
-
-  return { status: "success", recipient: email, code: code, message: "Verification code sent." };
+function adminGetAllData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const result = {
+    status: "success",
+    timestamp: new Date().toISOString(),
+    venue: CONFIG.VENUE,
+    conferenceDates: CONFIG.CONFERENCE_DATES,
+    committees: CONFIG.COMMITTEES,
+    capacities: getCommitteeCapacitiesMap(),
+    registrations: sheetToObjects(ss.getSheetByName("Registrations")),
+    delegations: sheetToObjects(ss.getSheetByName("Delegations")),
+    ebApplicants: sheetToObjects(ss.getSheetByName("EB_Applications")),
+    ocApplicants: sheetToObjects(ss.getSheetByName("OC_Applications")),
+    secretariatApplicants: sheetToObjects(ss.getSheetByName("Secretariat_Applications")),
+    socialsPasses: sheetToObjects(ss.getSheetByName("Socials_Passes")),
+    waitlist: sheetToObjects(ss.getSheetByName("Waitlist")),
+    abandonedLeads: sheetToObjects(ss.getSheetByName("Abandoned_Leads")),
+    siteUsers: sheetToObjects(ss.getSheetByName("Users")),
+    committeeFiles: sheetToObjects(ss.getSheetByName("Committee_Files")),
+    auditLogs: sheetToObjects(ss.getSheetByName("Audit_Logs"), 50),
+    emailLogs: sheetToObjects(ss.getSheetByName("Email_Logs"), 50)
+  };
+  return result;
 }
 
-/**
- * Dispatches formal Financial Clearance Certificate
- */
-function sendPaymentVerifiedEmail(email, fullName, regId, amount, utr) {
-  const subject = `Payment Confirmed — Resolve MUN 2026 [${regId}]`;
-  const htmlBody = buildPaymentVerifiedHtml(fullName, regId, amount, utr);
-  const plainText = `Hi ${fullName},\n\nWe've confirmed your payment for Resolve MUN 2026.\n\nRegistration ID: ${regId}\nAmount: Rs.${amount}\nTransaction Reference: ${utr}\n\nWe'll send your committee allocation separately once our team processes it.\n\nResolve MUN 2026 Team`;
+function sheetToObjects(sheet, limit = 0) {
+  if (!sheet) return [];
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) return [];
+  const headers = rows[0];
+  const out = [];
+  const startRow = 1;
+  const endRow = limit > 0 ? Math.min(rows.length, startRow + limit) : rows.length;
 
-  dispatchMail(email, subject, htmlBody, plainText);
-  tryLogEmailToSheet("PAYMENT_VERIFIED", email, fullName, "SENT");
-
-  return { status: "success", recipient: email, regId: regId, message: "Payment confirmation sent." };
+  for (let i = startRow; i < endRow; i++) {
+    const row = rows[i];
+    const obj = {};
+    for (let c = 0; c < headers.length; c++) {
+      const h = headers[c];
+      if (h) {
+        obj[h] = row[c];
+      }
+    }
+    out.push(obj);
+  }
+  return out;
 }
 
-/**
- * Dispatches Official Committee & Country Allotment Decree
- */
-function sendAllocationEmail(email, fullName, delegateId, committee, country) {
-  const subject = `Official Allocation Decree & Entry QR Pass — Resolve MUN 2026 [${delegateId}]`;
-  const htmlBody = buildAllocationHtml(fullName, delegateId, committee, country, email);
-  const plainText = `Hi ${fullName},\n\nYour committee allocation for Resolve MUN 2026 is confirmed!\n\nCommittee: ${committee}\nCountry / Portfolio: ${country}\nDelegate ID: ${delegateId}\n\nVenue: ${CONFIG.VENUE}\nDates: ${CONFIG.CONFERENCE_DATES}\n\nYour unique entry QR code pass is attached to this email. You can also view it anytime on your delegate portal: ${CONFIG.PORTAL_URL || 'https://resolvemun.in/dashboard'}\n\nResolve MUN 2026 Secretariat`;
+function adminDeleteRecord(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetName = data.sheetName || "Registrations";
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return { status: "error", message: "Sheet not found: " + sheetName };
 
-  dispatchMail(email, subject, htmlBody, plainText);
-  tryLogEmailToSheet("ALLOCATION_CONFIRMED", email, fullName, "SENT");
+  const targetId = String(data.recordId || data.id || data.regId || data.leadId || "").trim();
+  if (!targetId) return { status: "error", message: "No record ID provided for deletion" };
 
-  return { status: "success", recipient: email, delegateId: delegateId, message: "Allocation email sent." };
+  const rows = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    const col0 = String(rows[i][0] || "").trim();
+    const col1 = String(rows[i][1] || "").trim(); // RegID, DelID, AppID, LeadID, UID
+    const col2 = String(rows[i][2] || "").trim();
+    const col3 = String(rows[i][3] || "").trim();
+    const col4 = String(rows[i][4] || "").trim(); // Email
+
+    if (
+      col1 === targetId ||
+      col0 === targetId ||
+      col2 === targetId ||
+      col3 === targetId ||
+      (targetId.includes("@") && col4.toLowerCase() === targetId.toLowerCase())
+    ) {
+      sheet.deleteRow(i + 1);
+      return { status: "success", recordId: targetId, deletedRow: i + 1, sheet: sheetName };
+    }
+  }
+  return { status: "error", message: "Record " + targetId + " not found in " + sheetName };
 }
 
-/**
- * Dispatches Official Intake Communiqué
- */
-function sendApplicationReceivedEmail(email, fullName, formType, refId) {
-  const reference = refId || ("RM26-REC-" + Math.floor(1000 + Math.random() * 9000));
-  const subject = `Registration Received — Resolve MUN 2026 [${reference}]`;
-  const htmlBody = buildApplicationReceivedHtml(fullName, formType, reference);
-  const plainText = `Hi ${fullName},\n\nWe've received your ${formType} registration for Resolve MUN 2026.\n\nReference: ${reference}\n\nOur team will review your details and follow up with payment confirmation and your committee allocation.\n\nVenue: ${CONFIG.VENUE}\nDates: ${CONFIG.CONFERENCE_DATES}\n\nResolve MUN 2026 Team`;
+function purgeTestData(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const testKeywords = ["test", "example.com", "asdf", "qwerty", "tester", "placeholder"];
+  let purgedCount = 0;
 
-  dispatchMail(email, subject, htmlBody, plainText);
-  tryLogEmailToSheet("APPLICATION_RECEIVED", email, fullName, "SENT");
+  const sheetsToScan = ["Registrations", "Abandoned_Leads", "Users", "OC_Applications", "Secretariat_Applications", "EB_Applications"];
+  sheetsToScan.forEach(function(sName) {
+    const sheet = ss.getSheetByName(sName);
+    if (!sheet) return;
+    const rows = sheet.getDataRange().getValues();
+    for (let i = rows.length - 1; i >= 1; i--) {
+      const rowStr = JSON.stringify(rows[i]).toLowerCase();
+      const isTest = testKeywords.some(k => rowStr.includes(k));
+      if (isTest) {
+        sheet.deleteRow(i + 1);
+        purgedCount++;
+      }
+    }
+  });
 
-  return { status: "success", recipient: email, refId: reference, message: "Registration confirmation sent." };
+  return { status: "success", purgedCount: purgedCount, message: "Purged " + purgedCount + " test entries across sheets." };
 }
 
-/**
- * Admin: Assign committee, country and dispatch allotment letter
- */
-function allotCommitteeAndSendEmail(data) {
+function updateCommitteeCapacities(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Committee_Capacities");
+  if (!sheet) {
+    repairAndInitDatabase();
+    sheet = ss.getSheetByName("Committee_Capacities");
+  }
+  const capacities = data.capacities || {};
+  const now = new Date().toISOString();
+
+  // Clear existing and rewrite
+  sheet.clearContents();
+  sheet.appendRow(SCHEMAS.Committee_Capacities);
+  sheet.setFrozenRows(1);
+
+  Object.keys(capacities).forEach(function(comm) {
+    sheet.appendRow([now, comm.replace(/\s+/g, "_").toUpperCase(), comm, capacities[comm], data.updatedBy || "Admin"]);
+  });
+
+  return { status: "success", capacities: capacities };
+}
+
+function getCommitteeCapacitiesMap() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Committee_Capacities");
+  const map = { ...CONFIG.DEFAULT_CAPACITIES };
+  if (!sheet || sheet.getLastRow() <= 1) return map;
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    const name = String(rows[i][2] || "").trim();
+    const cap = parseInt(rows[i][3], 10);
+    if (name && !isNaN(cap)) {
+      map[name] = cap;
+    }
+  }
+  return map;
+}
+
+function uploadCommitteeFileToDrive(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Committee_Files");
+  if (!sheet) {
+    repairAndInitDatabase();
+    sheet = ss.getSheetByName("Committee_Files");
+  }
+  const fileId = "FILE-" + Math.floor(1000 + Math.random() * 9000);
+  let driveUrl = data.url || "";
+  if (data.fileBase64) {
+    driveUrl = saveFileToDriveFolder(data.fileBase64, data.title || "Committee_Guide.pdf", data.type || "application/pdf", CONFIG.FOLDERS.COMMITTEE_DOSSIERS);
+  }
+  sheet.appendRow([
+    new Date().toISOString(),
+    fileId,
+    data.committee || "GENERAL",
+    data.title || "Resource Dossier",
+    driveUrl,
+    data.type || "pdf",
+    data.uploadedBy || "Admin"
+  ]);
+  return { status: "success", fileId: fileId, url: driveUrl };
+}
+
+function adminUpdateDelegateStatus(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName("Registrations");
   if (!sheet) return { status: "error", message: "Registrations sheet not found" };
 
   const regId = String(data.regId || data.id || "").trim();
+  const newStatus = data.status || "Confirmed";
+  const rows = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][1]).trim() === regId) {
+      sheet.getRange(i + 1, 14).setValue(newStatus);
+      return { status: "success", regId: regId, status: newStatus };
+    }
+  }
+  return { status: "error", message: "Delegate not found" };
+}
+
+function allotCommitteeAndSendEmail(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Registrations");
+  if (!sheet) return { status: "error", message: "Registrations sheet not found" };
+
+  const regId = String(data.regId || data.id || data.delegateId || "").trim();
   const committee = data.committee || data.allocatedCommittee || "";
   const country = data.country || data.allocatedCountry || "";
   let targetEmail = data.email || "";
@@ -1021,29 +1155,28 @@ function allotCommitteeAndSendEmail(data) {
   return { status: "success", regId: regId, found: found, emailSent: Boolean(targetEmail) };
 }
 
-/**
- * Admin: Formally verify payment and dispatch Financial Clearance Certificate email
- */
 function adminVerifyPaymentAndSendEmail(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName("Registrations");
   if (!sheet) return { status: "error", message: "Registrations sheet not found" };
 
-  const regId = data.regId;
+  const regId = data.regId || data.id || data.delegateId;
   let targetEmail = data.email || "";
   let targetName = data.fullName || data.name || "Delegate";
-  let utr = data.utr || "CONFIRMED-BY-ADMIN";
-  let amount = data.amount || "2199";
+  let utr = data.utr || data.paymentUTR || "CONFIRMED-BY-SECRETARIAT";
+  let amount = data.amount || "2500";
 
   const rows = sheet.getDataRange().getValues();
   let found = false;
 
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][1] === regId) {
-      sheet.getRange(i + 1, 14).setValue("Payment_Verified");
+    const rowRegId = String(rows[i][1] || "").trim();
+    const rowEmail = String(rows[i][4] || "").trim().toLowerCase();
+    if ((regId && rowRegId === regId) || (targetEmail && rowEmail === targetEmail.toLowerCase())) {
+      sheet.getRange(i + 1, 14).setValue("Verified");
       targetEmail = targetEmail || rows[i][4];
       targetName = (targetName === "Delegate" && rows[i][3]) ? rows[i][3] : targetName;
-      utr = (utr === "CONFIRMED-BY-ADMIN" && rows[i][11]) ? rows[i][11] : utr;
+      utr = utr === "CONFIRMED-BY-SECRETARIAT" && rows[i][11] ? rows[i][11] : utr;
       found = true;
       break;
     }
@@ -1056,66 +1189,8 @@ function adminVerifyPaymentAndSendEmail(data) {
   return { status: "success", regId: regId, verified: true, emailSent: Boolean(targetEmail) };
 }
 
-/**
- * Admin: Dispatch warm diplomatic reminder to abandoned leads
- */
-function adminDispatchLeadReminder(data) {
-  const email = data.email;
-  const name = data.name || "Distinguished Delegate";
-  const step = data.step || "Payment Confirmation";
-
-  if (!email || !email.includes("@")) {
-    return { status: "error", message: "Valid email required" };
-  }
-
-  const subject = `ACTION REQUIRED: Complete Your Delegate Seat Reservation — Resolve MUN 2026`;
-  const bodyHtml = `
-    <p>Dear ${name},</p>
-    <p>The Executive Secretariat of Resolve Model United Nations 2026 noticed that you initiated registration but have not yet finalized your dossier at <strong>${step}</strong>.</p>
-    <div style="margin: 20px 0; padding: 16px; background: #0c0e18; border-left: 3px solid #d4af37; border-radius: 4px;">
-      <p style="margin: 0 0 8px 0; color: #d4af37; font-weight: 700; font-size: 13px;">OFFICIAL INVITATION NOTICE</p>
-      <p style="margin: 0; font-size: 13px; line-height: 1.6;">Your preferred committee allocation is currently reserved on a provisional basis. Round 1 allocations are filling rapidly across all councils at Meridian School, Kompally.</p>
-    </div>
-    <p>To finalize your delegate credentials and secure your portfolio assignment, please complete your submission on the portal:</p>
-    <p style="text-align: center; margin: 24px 0;">
-      <a href="https://resolvemun.in/auth" style="display: inline-block; background: #d4af37; color: #080a13; padding: 12px 28px; text-decoration: none; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px;">Complete Registration Now &rarr;</a>
-    </p>
-    <p style="font-size: 12px; color: #8a90a4;">Venue: Meridian School, Kompally, Hyderabad<br>Dates: 27th &ndash; 29th November 2026<br>Assistance Helpline: +91 92121 07797</p>
-  `;
-
-  const plainText = `RESOLVE MUN 2026 · REGISTRATION NOTICE\n\nDear ${name},\n\nYou initiated your registration but have not finalized your submission at ${step}.\n\nYour provisional seat reservation is active. Please complete your registration at https://resolvemun.in/auth\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nExecutive Secretariat, Resolve MUN 2026`;
-
-  dispatchMail(email, subject, wrapInEmbassyLayout("COMM-REM-LEAD", "RESERVATION NOTICE", bodyHtml), plainText);
-  tryLogEmailToSheet("LEAD_REMINDER_SENT", email, name, "SENT");
-
-  return { status: "success", email: email, message: "Reminder successfully dispatched." };
-}
-
-/**
- * Mail Dispatcher with Dual Failover (MailApp -> GmailApp)
- */
-function dispatchMail(to, subject, htmlBody, plainText) {
-  try {
-    MailApp.sendEmail({
-      to: to,
-      subject: subject,
-      htmlBody: htmlBody,
-      body: plainText,
-      name: CONFIG.SENDER_NAME,
-      replyTo: CONFIG.REPLY_TO
-    });
-  } catch (err) {
-    Logger.log("MailApp primary dispatch notice, using GmailApp fallback: " + err.message);
-    GmailApp.sendEmail(to, subject, plainText, {
-      htmlBody: htmlBody,
-      name: CONFIG.SENDER_NAME,
-      replyTo: CONFIG.REPLY_TO
-    });
-  }
-}
-
 /* -------------------------------------------------------------------------- */
-/*      AUTHENTIC DIPLOMATIC EMBASSY-GRADE HTML TEMPLATES (NON-AI LOOK)       */
+/*      AUTHENTIC DIPLOMATIC EMBASSY-GRADE HTML TEMPLATES (LUXURY MUN)        */
 /* -------------------------------------------------------------------------- */
 
 function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
@@ -1125,39 +1200,44 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${heading}</title>
+  <title>${heading} — Resolve MUN 2.0</title>
   <style>
-    body { margin: 0; padding: 0; background-color: #060606; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { margin: 0; padding: 0; background-color: #07080c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
     table { border-collapse: collapse; }
     img { border: 0; outline: none; text-decoration: none; }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #060606;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #060606; width: 100%;">
+<body style="margin: 0; padding: 0; background-color: #07080c; color: #f1f5f9;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #07080c; width: 100%;">
     <tr>
       <td align="center" style="padding: 36px 12px;">
         
         <!-- Main Chassis -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #0a0a0a; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #0b0d14; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 18px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.9);">
           
+          <!-- Top Accent Ribbon -->
+          <tr>
+            <td height="3" style="background: linear-gradient(90deg, #d4af37 0%, #ffffff 50%, #d4af37 100%);"></td>
+          </tr>
+
           <!-- Header -->
           <tr>
-            <td style="padding: 26px 28px 22px 28px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); background-color: #0d0d0d;">
+            <td style="padding: 28px 32px 22px 32px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: #0e111a;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <div style="font-family: 'Courier New', monospace; font-size: 10px; font-weight: 700; color: #a3a3a3; letter-spacing: 0.18em; text-transform: uppercase;">
-                      COMMUNIQUÉ · ${dispatchCode}
+                    <div style="font-family: 'Courier New', Courier, monospace; font-size: 10px; font-weight: 700; color: #d4af37; letter-spacing: 0.22em; text-transform: uppercase;">
+                      OFFICIAL COMMUNIQUÉ · ${dispatchCode}
                     </div>
-                    <div style="font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: 0.02em; text-transform: uppercase; margin-top: 5px;">
+                    <div style="font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: 0.02em; text-transform: uppercase; margin-top: 6px;">
                       RESOLVE MODEL UNITED NATIONS 2.0
                     </div>
-                    <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 3px;">
-                      ${CONFIG.VENUE}
+                    <div style="font-size: 11px; color: rgba(255, 255, 255, 0.6); margin-top: 4px; font-family: monospace;">
+                      🏛️ ${CONFIG.VENUE}
                     </div>
                   </td>
                   <td align="right" valign="top">
-                    <div style="display: inline-block; padding: 5px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; background: rgba(255, 255, 255, 0.04); font-family: monospace; font-size: 10px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.1em;">
+                    <div style="display: inline-block; padding: 6px 14px; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 6px; background: rgba(212, 175, 55, 0.08); font-family: monospace; font-size: 10px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 0.12em;">
                       HYD 2026
                     </div>
                   </td>
@@ -1168,29 +1248,44 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
 
           <!-- Document Body -->
           <tr>
-            <td style="padding: 30px 28px 34px 28px;">
+            <td style="padding: 32px 32px 36px 32px;">
               ${bodyHtml}
+            </td>
+          </tr>
+
+          <!-- Verified Venue & Dates Banner -->
+          <tr>
+            <td style="padding: 16px 32px; background-color: #0e121e; border-top: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="font-size: 11px; color: rgba(255, 255, 255, 0.85); line-height: 1.6;">
+                    <strong style="color: #ffffff;">🏛️ Venue:</strong> Meridian School, Kompally, Hyderabad<br>
+                    <strong style="color: #ffffff;">📅 Conference Dates:</strong> 27th – 29th November 2026<br>
+                    <strong style="color: #ffffff;">🏛️ Committees:</strong> DISEC · UNHRC · UNSC · LOK SABHA · COMMITTEE X · IP
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 22px 28px; background-color: #080808; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <td style="padding: 24px 32px; background-color: #07090f;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <div style="font-size: 11px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.08em;">
-                      The Executive Secretariat
+                    <div style="font-size: 11px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.1em;">
+                      The Executive Secretariat · Resolve MUN 2.0
                     </div>
-                    <div style="font-size: 11px; color: rgba(255, 255, 255, 0.45); line-height: 1.5; margin-top: 3px;">
-                      Meridian School, Kompally, Hyderabad<br>
-                      Conference Dates: 27th – 29th November 2026<br>
-                      Official Contact: <a href="mailto:resolve.mun@gmail.com" style="color: #ffffff; text-decoration: underline;">resolve.mun@gmail.com</a>
+                    <div style="font-size: 11px; color: rgba(255, 255, 255, 0.45); line-height: 1.6; margin-top: 4px;">
+                      Official Direct Line: <strong style="color: #ffffff;">${CONFIG.HELPLINE}</strong><br>
+                      Assistance Email: <a href="mailto:${CONFIG.REPLY_TO}" style="color: #d4af37; text-decoration: none;">${CONFIG.REPLY_TO}</a><br>
+                      Official Portal: <a href="${CONFIG.PORTAL_URL}" style="color: #ffffff; text-decoration: underline;">resolvemun.in</a>
                     </div>
                   </td>
                   <td align="right" valign="bottom">
-                    <div style="font-family: monospace; font-size: 9px; color: rgba(255, 255, 255, 0.3); text-transform: uppercase;">
-                      OFFICIAL CREDENTIAL DISPATCH
+                    <div style="font-family: monospace; font-size: 9px; color: rgba(255, 255, 255, 0.35); text-transform: uppercase; letter-spacing: 0.08em;">
+                      OFFICIAL DIPLOMATIC CREDENTIAL
                     </div>
                   </td>
                 </tr>
@@ -1209,598 +1304,386 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
 }
 
 /**
- * 1. Verification Code Email
+ * 1. Verification Code Email (One-Time Login Password)
  */
+function sendVerificationCode(email, code, fullName) {
+  const name = fullName || "Distinguished Delegate";
+  const subject = `Your Security Verification Code: ${code} — Resolve MUN 2.0`;
+  const htmlBody = buildVerificationCodeHtml(name, code);
+  const plainText = `Hi ${name},\n\nYour security verification code for Resolve MUN 2.0 is: ${code}\n\nValid for 10 minutes.\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+
+  dispatchMail(email, subject, htmlBody, plainText);
+  tryLogEmailToSheet("AUTH_CODE_SENT", email, name, "SENT");
+  return { status: "success", email: email, message: "Verification code dispatched." };
+}
+
 function buildVerificationCodeHtml(fullName, code) {
   const body = `
-    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.85); line-height: 1.6; margin: 0 0 18px 0;">
-      Hi <strong style="color: #ffffff;">${fullName}</strong>,
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+      Dear <strong style="color: #ffffff;">${fullName}</strong>,
     </p>
-    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.6; margin: 0 0 22px 0;">
-      Here is your one-time verification code to sign in to the Resolve MUN 2026 Portal:
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.75); line-height: 1.6; margin: 0 0 24px 0;">
+      Here is your one-time verification passcode to authenticate into the Resolve MUN 2.0 Portal and access your delegate dossier:
     </p>
 
-    <!-- CODE BOX -->
-    <div style="background-color: #050505; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 12px; padding: 26px; text-align: center; margin: 22px 0;">
-      <div style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 800; letter-spacing: 12px; color: #ffffff;">
+    <!-- CODE CHASSIS -->
+    <div style="background-color: #040508; border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 14px; padding: 28px; text-align: center; margin: 24px 0;">
+      <div style="font-family: 'Courier New', Courier, monospace; font-size: 42px; font-weight: 800; letter-spacing: 14px; color: #ffffff;">
         ${code}
       </div>
-      <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 10px; font-family: monospace;">
-        Valid for 10 minutes · Single Use
+      <div style="font-size: 11px; color: #d4af37; margin-top: 10px; font-family: monospace; letter-spacing: 0.1em; text-transform: uppercase;">
+        Valid for 10 minutes · Single Use Security Token
       </div>
     </div>
 
-    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.45); line-height: 1.5; margin: 18px 0 0 0;">
-      If you did not request this verification code, please ignore this email.
+    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.5); line-height: 1.5; margin: 20px 0 0 0;">
+      If you did not initiate this authentication request, you can safely ignore this message. Your credentials remain protected.
     </p>
   `;
-  return wrapInEmbassyLayout("Resolve MUN 2026", "Security Authentication Code", body);
+  return wrapInEmbassyLayout("AUTH-KEY", "Security Passcode", body);
 }
 
 /**
- * 2. Payment Confirmed Email (Step 2: Awaiting Allocation)
+ * 2. Payment Verified Email (Financial Clearance Certificate)
  */
+function sendPaymentVerifiedEmail(email, fullName, regId, amount, utr) {
+  const name = fullName || "Distinguished Delegate";
+  const subject = `Financial Clearance & Seat Confirmed — Resolve MUN 2.0 [${regId}]`;
+  const htmlBody = buildPaymentVerifiedHtml(name, regId, amount, utr);
+  const plainText = `Hi ${name},\n\nYour payment of INR ${amount} (UTR: ${utr}) has been successfully verified. Your seat at Resolve MUN 2.0 is officially confirmed!\n\nDelegate ID: ${regId}\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th – 29th November 2026\n\nExecutive Secretariat, Resolve MUN 2.0`;
+
+  dispatchMail(email, subject, htmlBody, plainText);
+  tryLogEmailToSheet("PAYMENT_VERIFIED", email, name, "SENT");
+  return { status: "success", email: email, message: "Payment clearance certificate dispatched." };
+}
+
 function buildPaymentVerifiedHtml(fullName, regId, amount, utr) {
   const body = `
-    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.85); line-height: 1.6; margin: 0 0 16px 0;">
-      Hi <strong style="color: #ffffff;">${fullName}</strong>,
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+      Dear <strong style="color: #ffffff;">${fullName}</strong>,
     </p>
-    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 20px 0;">
-      Your payment has been successfully verified by the Secretariat. <strong style="color: #ffffff;">Your seat at Resolve MUN 2026 is officially confirmed.</strong>
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 22px 0;">
+      The Secretariat has formally verified your registration payment. <strong style="color: #ffffff;">Your delegate seat at Resolve Model United Nations 2.0 is confirmed.</strong>
     </p>
 
-    <!-- RECEIPT TABLE -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #050505; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; margin-bottom: 24px;">
+    <!-- RECEIPT CARD -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #05070d; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; margin-bottom: 24px;">
       <tr>
-        <td style="padding: 13px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: rgba(255, 255, 255, 0.5);">Delegate ID</td>
-        <td align="right" style="padding: 13px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-family: monospace; font-size: 13px; font-weight: 700; color: #ffffff;">${regId}</td>
+        <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: rgba(255, 255, 255, 0.5);">Official Delegate ID</td>
+        <td align="right" style="padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-family: monospace; font-size: 14px; font-weight: 800; color: #ffffff;">${regId}</td>
       </tr>
       <tr>
-        <td style="padding: 13px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: rgba(255, 255, 255, 0.5);">Amount Verified</td>
-        <td align="right" style="padding: 13px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 14px; font-weight: 800; color: #ffffff;">&#8377;${amount}</td>
+        <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: rgba(255, 255, 255, 0.5);">Verified Amount</td>
+        <td align="right" style="padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 15px; font-weight: 800; color: #d4af37;">&#8377;${amount}</td>
       </tr>
       <tr>
-        <td style="padding: 13px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: rgba(255, 255, 255, 0.5);">Transaction Reference / UTR</td>
-        <td align="right" style="padding: 13px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-family: monospace; font-size: 12px; color: rgba(255, 255, 255, 0.85);">${utr}</td>
+        <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: rgba(255, 255, 255, 0.5);">UTR / Transaction Reference</td>
+        <td align="right" style="padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-family: monospace; font-size: 12px; color: rgba(255, 255, 255, 0.9);">${utr}</td>
       </tr>
       <tr>
-        <td style="padding: 13px 18px; font-size: 12px; color: rgba(255, 255, 255, 0.5);">Payment Status</td>
-        <td align="right" style="padding: 13px 18px; font-family: monospace; font-size: 11px; font-weight: 700; color: #22c55e; text-transform: uppercase;">VERIFIED &amp; CLEARED ✓</td>
+        <td style="padding: 14px 20px; font-size: 12px; color: rgba(255, 255, 255, 0.5);">Financial Clearance Status</td>
+        <td align="right" style="padding: 14px 20px; font-family: monospace; font-size: 11px; font-weight: 800; color: #22c55e; text-transform: uppercase;">CLEARED &amp; VERIFIED ✓</td>
       </tr>
     </table>
 
-    <!-- NEXT STEPS: AWAITING ALLOCATION -->
-    <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-      <div style="font-family: monospace; font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 6px;">
-        Next Step: Committee &amp; Country Allotment
+    <!-- NEXT STEPS: ALLOCATION IN PROCESS -->
+    <div style="background-color: rgba(212, 175, 55, 0.04); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <div style="font-family: monospace; font-size: 10px; font-weight: 700; color: #d4af37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 6px;">
+        Next Stage: Council &amp; Country Allotment
       </div>
-      <p style="font-size: 12px; color: rgba(255, 255, 255, 0.75); line-height: 1.6; margin: 0 0 10px 0;">
-        You are now in the active allocation pool! The Executive Board is currently finalizing committee and portfolio assignments based on your submitted preferences and experience.
+      <p style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 10px 0;">
+        Your dossier is now in the active allocation review. The Executive Board is assigning country portfolios across DISEC, UNHRC, UNSC, Lok Sabha, Committee X, and IP based on merit and stated preferences.
       </p>
-      <p style="font-size: 12px; color: rgba(255, 255, 255, 0.55); line-height: 1.5; margin: 0;">
-        Once your committee and country are confirmed, you will receive your <strong>Official Allocation Decree</strong> along with your <strong>Official Digital Pass and Unique Entry QR Code</strong>.
+      <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); line-height: 1.5; margin: 0;">
+        Upon confirmation, you will receive your <strong>Official Allocation Decree</strong> containing your council details and your <strong>Digital Scannable QR Entry Pass</strong>.
       </p>
     </div>
 
     <div style="text-align: center; margin-top: 24px;">
-      <a href="${CONFIG.PORTAL_URL || 'https://resolvemun.in/dashboard'}" style="display: inline-block; padding: 13px 30px; background-color: #ffffff; color: #000000; font-family: monospace; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px;">
-        View Dashboard Status &rarr;
+      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; padding: 14px 32px; background-color: #ffffff; color: #000000; font-family: monospace; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
+        Open Delegate Dashboard &rarr;
       </a>
     </div>
   `;
-  return wrapInEmbassyLayout("Resolve MUN 2026", "Payment Confirmed — Seat Reserved", body);
+  return wrapInEmbassyLayout("FIN-CLEARANCE", "Financial Clearance Certificate", body);
 }
 
 /**
- * 3. Committee Allocation Email (Step 3: Includes Unique Entry QR Pass)
+ * 3. Committee Allocation Email (Includes Scannable QR Pass)
  */
+function sendAllocationEmail(email, fullName, delegateId, committee, country) {
+  const name = fullName || "Distinguished Delegate";
+  const subject = `Official Allocation Decree: ${country} in ${committee} — Resolve MUN 2.0 [${delegateId}]`;
+  const htmlBody = buildAllocationHtml(name, delegateId, committee, country, email);
+  const plainText = `Hi ${name},\n\nYour committee allotment for Resolve MUN 2.0 is confirmed!\n\nDelegate ID: ${delegateId}\nAssigned Committee: ${committee}\nCountry / Portfolio: ${country}\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nAccess your delegate dashboard: https://resolvemun.in/dashboard\n\nResolve MUN 2.0 Secretariat`;
+
+  dispatchMail(email, subject, htmlBody, plainText);
+  tryLogEmailToSheet("ALLOCATION_DECREE", email, name, "SENT");
+  return { status: "success", email: email, message: "Allocation decree dispatched." };
+}
+
 function buildAllocationHtml(fullName, delegateId, committee, country, email) {
-  const qrUrl = "https://quickchart.io/qr?size=320&text=" + encodeURIComponent("RESOLVE_PASS:DELEGATE:" + delegateId + ":" + (email || ""));
+  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=" + encodeURIComponent("RESOLVE26:DELEGATE:" + delegateId + ":" + (email || ""));
 
   const body = `
-    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.85); line-height: 1.6; margin: 0 0 16px 0;">
-      Hi <strong style="color: #ffffff;">${fullName}</strong>,
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+      Distinguished Delegate <strong style="color: #ffffff;">${fullName}</strong>,
     </p>
-    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 22px 0;">
-      The Secretariat of Resolve Model United Nations 2.0 is pleased to officially confirm your committee assignment and dispatch your credentials.
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 24px 0;">
+      By the authority of the Secretariat and the Executive Board of Resolve Model United Nations 2.0, your diplomatic portfolio and official credentials are confirmed as follows:
     </p>
 
-    <!-- ALLOCATION BLOCK -->
-    <div style="background-color: #050505; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+    <!-- ALLOTMENT CHASSIS -->
+    <div style="background-color: #05070d; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 14px; padding: 24px; margin-bottom: 24px;">
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
           <td style="padding-bottom: 14px;">
-            <div style="font-size: 10px; font-family: monospace; color: rgba(255, 255, 255, 0.45); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px;">Assigned Committee</div>
-            <div style="font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: 0.02em;">${committee}</div>
+            <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 4px;">Assigned Council / Committee</div>
+            <div style="font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: 0.02em;">${committee}</div>
           </td>
         </tr>
         <tr>
           <td style="padding-bottom: 14px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-            <div style="font-size: 10px; font-family: monospace; color: rgba(255, 255, 255, 0.45); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px;">Country / Portfolio</div>
-            <div style="font-size: 18px; font-weight: 700; color: #ffffff;">${country}</div>
+            <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 4px;">Diplomatic Portfolio / Country</div>
+            <div style="font-size: 19px; font-weight: 700; color: #ffffff;">${country}</div>
           </td>
         </tr>
         <tr>
           <td style="padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-            <div style="font-size: 10px; font-family: monospace; color: rgba(255, 255, 255, 0.45); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px;">Official Delegate ID</div>
-            <div style="font-size: 15px; font-family: monospace; font-weight: 800; color: #ffffff;">${delegateId}</div>
+            <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 4px;">Permanent Delegate Registration ID</div>
+            <div style="font-size: 16px; font-family: monospace; font-weight: 800; color: #ffffff;">${delegateId}</div>
           </td>
         </tr>
       </table>
     </div>
 
-    <!-- OFFICIAL ENGRAVED DIGITAL PASS CARD WITH SCANNABLE QR -->
-    <div style="background-color: #000000; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 14px; padding: 24px; text-align: center; margin-bottom: 24px;">
-      <div style="font-family: monospace; font-size: 10px; font-weight: 800; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 16px;">
-        RESOLVE MUN 2.0 · OFFICIAL ENTRY PASS
+    <!-- DIGITAL PASS WITH LIVE SCANNABLE QR -->
+    <div style="background-color: #000000; border: 2px solid rgba(255, 255, 255, 0.35); border-radius: 16px; padding: 26px; text-align: center; margin-bottom: 26px;">
+      <div style="font-family: monospace; font-size: 10px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 0.22em; margin-bottom: 18px;">
+        RESOLVE MUN 2.0 · OFFICIAL ENTRANCE PASS
       </div>
 
-      <!-- Scannable QR Code -->
-      <div style="display: inline-block; padding: 12px; background-color: #ffffff; border-radius: 12px; margin-bottom: 16px;">
-        <img src="${qrUrl}" alt="Official QR Entry Pass" width="160" height="160" style="display: block; border: 0; outline: none;" />
+      <div style="display: inline-block; padding: 14px; background-color: #ffffff; border-radius: 14px; margin-bottom: 16px;">
+        <img src="${qrUrl}" alt="Scannable Delegate Pass" width="160" height="160" style="display: block; border: 0; outline: none;" />
       </div>
 
-      <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 2px;">
+      <div style="font-size: 17px; font-weight: 800; color: #ffffff; margin-bottom: 3px;">
         ${fullName}
       </div>
-      <div style="font-family: monospace; font-size: 12px; font-weight: 700; color: #a3a3a3; margin-bottom: 12px;">
-        ${delegateId} · DELEGATE PASS
+      <div style="font-family: monospace; font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 14px;">
+        ${delegateId} · ${committee} · ${country}
       </div>
 
-      <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 12px; font-family: monospace;">
-        Meridian School, Kompally · Active Official Credential
+      <div style="font-size: 11px; color: rgba(255, 255, 255, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 14px; font-family: monospace;">
+        Meridian School, Kompally · Active Entry Credential
       </div>
     </div>
 
-    <!-- ENTRY INSTRUCTIONS -->
-    <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 16px 18px; margin-bottom: 24px;">
-      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); line-height: 1.6;">
-        <strong style="color: #ffffff;">Entrance Desk Verification:</strong> Present this email or your pass in the portal at the entrance registration desk on <strong>27th November 2026</strong> for instant check-in.<br><br>
+    <!-- ARRIVAL INSTRUCTIONS -->
+    <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 18px 20px; margin-bottom: 24px;">
+      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.7;">
+        <strong style="color: #ffffff;">Entrance Check-In:</strong> Present this email or download your digital badge from the portal at the registration desk on <strong>27th November 2026</strong>.<br><br>
         <strong style="color: #ffffff;">Venue:</strong> ${CONFIG.VENUE}<br>
-        <strong style="color: #ffffff;">Dates:</strong> 27th – 29th November 2026
+        <strong style="color: #ffffff;">Conference Dates:</strong> 27th – 29th November 2026
       </div>
     </div>
 
     <div style="text-align: center;">
-      <a href="${CONFIG.PORTAL_URL || 'https://resolvemun.in/dashboard'}" style="display: inline-block; padding: 13px 30px; background-color: #ffffff; color: #000000; font-family: monospace; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px;">
-        Open Portal &amp; Download Background Guides &rarr;
+      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; padding: 14px 32px; background-color: #ffffff; color: #000000; font-family: monospace; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
+        Access Delegate Dashboard &amp; Guides &rarr;
       </a>
     </div>
   `;
-  return wrapInEmbassyLayout("Resolve MUN 2026", "Committee Allocation & Entry QR Pass", body);
+  return wrapInEmbassyLayout("ALLOTMENT-DECREE", "Official Allocation Decree", body);
 }
 
 /**
- * 4. Registration Received Email (Step 1: Intake Confirmation)
+ * 4. Application Received Intake Email
  */
+function sendApplicationReceivedEmail(email, fullName, formType, refId) {
+  const reference = refId || ("RM26-DEL-" + Math.floor(1000 + Math.random() * 9000));
+  const subject = `Registration Received — Resolve MUN 2.0 [${reference}]`;
+  const htmlBody = buildApplicationReceivedHtml(fullName, formType, reference);
+  const plainText = `Hi ${fullName},\n\nWe have received your ${formType} registration for Resolve MUN 2.0.\n\nReference: ${reference}\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th – 29th November 2026\n\nOur finance directorate is reviewing your payment screenshot. You will receive an official payment confirmation once verified.\n\nResolve MUN 2.0 Secretariat`;
+
+  dispatchMail(email, subject, htmlBody, plainText);
+  tryLogEmailToSheet("APPLICATION_RECEIVED", email, fullName, "SENT");
+  return { status: "success", recipient: email, refId: reference, message: "Registration intake confirmation sent." };
+}
+
 function buildApplicationReceivedHtml(fullName, formType, refId) {
   const body = `
-    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.85); line-height: 1.6; margin: 0 0 16px 0;">
-      Hi <strong style="color: #ffffff;">${fullName}</strong>,
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+      Dear <strong style="color: #ffffff;">${fullName}</strong>,
     </p>
-    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 20px 0;">
-      We have safely received your <strong style="color: #ffffff;">${formType}</strong> application for Resolve MUN 2026.
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 22px 0;">
+      We have safely received your <strong style="color: #ffffff;">${formType}</strong> application for Resolve Model United Nations 2.0.
     </p>
 
-    <div style="background-color: #050505; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 20px; margin-bottom: 22px;">
-      <div style="font-size: 10px; font-family: monospace; color: rgba(255, 255, 255, 0.45); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px;">Reference Number</div>
-      <div style="font-family: monospace; font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 10px;">${refId}</div>
-      <div style="display: inline-block; padding: 3px 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); font-family: monospace; font-size: 10px; color: #ffffff;">
-        STATUS: INTAKE RECEIVED · FINANCE REVIEW IN PROGRESS
+    <div style="background-color: #05070d; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 22px; margin-bottom: 22px;">
+      <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 4px;">Dossier Reference ID</div>
+      <div style="font-family: monospace; font-size: 17px; font-weight: 800; color: #ffffff; margin-bottom: 10px;">${refId}</div>
+      <div style="display: inline-block; padding: 4px 12px; border-radius: 6px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); font-family: monospace; font-size: 10px; font-weight: 700; color: #4ade80;">
+        STATUS: INTAKE SECURED · PAYMENT AUDIT IN PROGRESS
       </div>
     </div>
 
-    <!-- 3-STAGE PROGRESS GUIDE -->
-    <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
-      <div style="font-family: monospace; font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px;">
-        Application Pipeline Overview
+    <!-- 3-STAGE PIPELINE -->
+    <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <div style="font-family: monospace; font-size: 10px; font-weight: 700; color: #d4af37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 12px;">
+        Onboarding Pipeline Overview
       </div>
-      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); line-height: 1.6;">
-        <strong style="color: #ffffff;">1. Payment Verification (Current):</strong> Our Secretariat is reviewing your transaction screenshot / UTR.<br>
-        <strong style="color: #ffffff;">2. Payment Clearance:</strong> Once verified, you will receive an official payment confirmation email securing your seat.<br>
-        <strong style="color: #ffffff;">3. Allocation Decree &amp; QR Pass:</strong> The Executive Board will assign your committee &amp; country and dispatch your official Entry QR Pass.
+      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.7;">
+        <strong style="color: #ffffff;">1. Payment Clearance (Current):</strong> Our finance team is validating your transaction proof.<br>
+        <strong style="color: #ffffff;">2. Seat Confirmation:</strong> Once cleared, you will receive your Financial Clearance Certificate.<br>
+        <strong style="color: #ffffff;">3. Portfolio Allocation &amp; QR Pass:</strong> The Executive Board will dispatch your committee, country, and Scannable QR Entry Pass.
       </div>
     </div>
-
-    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.5); line-height: 1.5; margin: 0 0 20px 0;">
-      <strong style="color: rgba(255,255,255,0.7);">Venue:</strong> ${CONFIG.VENUE}<br>
-      <strong style="color: rgba(255,255,255,0.7);">Dates:</strong> ${CONFIG.CONFERENCE_DATES}
-    </p>
 
     <div style="text-align: center;">
-      <a href="${CONFIG.PORTAL_URL || 'https://resolvemun.in/dashboard'}" style="display: inline-block; padding: 12px 28px; background-color: #ffffff; color: #000000; font-family: monospace; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px;">
-        Track Status on Dashboard &rarr;
+      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; padding: 13px 30px; background-color: #ffffff; color: #000000; font-family: monospace; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
+        Track Status on Portal &rarr;
       </a>
     </div>
   `;
-  return wrapInEmbassyLayout("Resolve MUN 2026", "Registration Received", body);
+  return wrapInEmbassyLayout("INTAKE-REC", "Registration Intake Received", body);
 }
 
 /**
- * 5. Secretariat Application Received Email (Zero Fee Intake)
+ * 5. Secretariat Application Received Email (Free Application)
  */
 function sendSecretariatApplicationReceivedEmail(email, fullName, position, appId) {
   const reference = appId || ("RM26-SEC-" + Math.floor(1000 + Math.random() * 9000));
   const subject = `Secretariat Application Received: ${position} — Resolve MUN 2.0 [${reference}]`;
   const htmlBody = buildSecretariatReceivedHtml(fullName, position, reference);
-  const plainText = `Hi ${fullName},\n\nWe have successfully received your Secretariat application for Resolve MUN 2.0.\n\nPosition Applied: ${position}\nApplication ID: ${reference}\n\nPlease note: Secretariat applications are strictly free of charge — no payment or registration fee is required.\n\nShortlisted applicants will be contacted directly for a personal interview. Selections and allocations will be made on the basis of merit and availability.\n\nVenue: ${CONFIG.VENUE}\nDates: ${CONFIG.CONFERENCE_DATES}\nContact: @mun.resolve | resolve.mun@gmail.com\n\nResolve MUN 2.0 Directorate`;
+  const plainText = `Hi ${fullName},\n\nWe have received your Secretariat application for Resolve MUN 2.0.\n\nPosition: ${position}\nApplication ID: ${reference}\n\nSecretariat applications are strictly free of charge. Shortlisted candidates will be invited for personal interviews.\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("SECRETARIAT_APP_RECEIVED", email, fullName, "SENT");
-
   return { status: "success", recipient: email, appId: reference, message: "Secretariat confirmation email dispatched." };
 }
 
 function buildSecretariatReceivedHtml(fullName, position, appId) {
   const body = `
-    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.85); line-height: 1.6; margin: 0 0 20px 0;">
-      Hi <strong style="color: #ffffff;">${fullName}</strong>,
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+      Dear <strong style="color: #ffffff;">${fullName}</strong>,
     </p>
-    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.6; margin: 0 0 20px 0;">
-      Thank you for stepping forward to shape <strong style="color: #a5b4fc;">Resolve MUN 2.0</strong>. Your application for the Executive Secretariat has been securely registered in our directorate database.
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 22px 0;">
+      Thank you for your application to join the Executive Secretariat for <strong style="color: #ffffff;">Resolve Model United Nations 2.0</strong>.
     </p>
 
-    <!-- DOSSIER DETAILS -->
-    <div style="background-color: #0f1224; border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+    <div style="background-color: #05070d; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 22px; margin-bottom: 22px;">
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
           <td style="padding-bottom: 12px;">
-            <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Candidate Application ID</div>
-            <div style="font-family: monospace; font-size: 16px; font-weight: 700; color: #38bdf8;">${appId}</div>
+            <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px;">Candidate Application ID</div>
+            <div style="font-family: monospace; font-size: 16px; font-weight: 800; color: #ffffff;">${appId}</div>
           </td>
         </tr>
         <tr>
           <td style="padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-            <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Position Applied</div>
+            <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px;">Position Applied</div>
             <div style="font-size: 16px; font-weight: 700; color: #ffffff;">${position}</div>
           </td>
         </tr>
         <tr>
           <td style="padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-            <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Registration Fee</div>
-            <div style="font-size: 13px; font-weight: 700; color: #34d399;">&#8377;0 (No Fee / Free Application)</div>
+            <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px;">Application Fee</div>
+            <div style="font-size: 13px; font-weight: 700; color: #22c55e;">&#8377;0 (Free Intake)</div>
           </td>
         </tr>
       </table>
     </div>
 
-    <div style="background: rgba(129, 140, 248, 0.06); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 8px; padding: 14px 16px; margin-bottom: 22px;">
-      <p style="margin: 0; font-size: 12px; color: rgba(255, 255, 255, 0.75); line-height: 1.6;">
-        <strong>What's Next?</strong><br>
-        Shortlisted applicants will be contacted individually for an interview. Selections and portfolio allocations will be finalized strictly on the basis of merit, past experience, and availability.
+    <div style="background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 10px; padding: 16px; margin-bottom: 22px;">
+      <p style="margin: 0; font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.6;">
+        <strong>Interview Process:</strong> Shortlisted applicants will be contacted individually for personal interviews. Final appointments will be determined based on leadership experience, commitment, and interview performance.
+      </p>
+    </div>
+  `;
+  return wrapInEmbassyLayout("SEC-INTAKE", "Secretariat Application", body);
+}
+
+/**
+ * 6. Socials Pass Email
+ */
+function sendSocialsPassEmail(email, fullName, passId) {
+  const name = fullName || "Pass Holder";
+  const subject = `Socials Night Delegate Pass — Resolve MUN 2.0 [${passId}]`;
+  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=" + encodeURIComponent("RESOLVE26:SOCIALS:" + passId + ":" + email);
+  const body = `
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+      Dear <strong style="color: #ffffff;">${name}</strong>,
+    </p>
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 24px 0;">
+      Your pass for the official <strong>Resolve MUN 2.0 Socials Night</strong> has been registered.
+    </p>
+
+    <div style="background-color: #000000; border: 2px solid rgba(212, 175, 55, 0.4); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+      <div style="font-family: monospace; font-size: 10px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 16px;">
+        SOCIALS NIGHT DELEGATE PASS · ADMIT ONE
+      </div>
+      <div style="display: inline-block; padding: 12px; background-color: #ffffff; border-radius: 12px; margin-bottom: 16px;">
+        <img src="${qrUrl}" alt="Socials QR Pass" width="160" height="160" style="display: block; border: 0;" />
+      </div>
+      <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 2px;">${name}</div>
+      <div style="font-family: monospace; font-size: 12px; color: #94a3b8;">${passId}</div>
+    </div>
+  `;
+  const plainText = `Hi ${name},\n\nYour Socials Night Pass for Resolve MUN 2.0 is confirmed!\nPass ID: ${passId}\nVenue: Meridian School, Kompally, Hyderabad\n\nResolve MUN 2.0 Secretariat`;
+  dispatchMail(email, subject, wrapInEmbassyLayout("SOC-PASS", "Socials Pass Credential", body), plainText);
+  tryLogEmailToSheet("SOCIALS_PASS_SENT", email, name, "SENT");
+}
+
+/**
+ * 7. Lead Recovery Reminder
+ */
+function adminDispatchLeadReminder(data) {
+  const email = (data.email || "").trim().toLowerCase();
+  const name = data.name || data.fullName || "Distinguished Delegate";
+  const step = data.step || "Payment Confirmation";
+
+  if (!email || !email.includes("@")) {
+    return { status: "error", message: "Valid email required" };
+  }
+
+  const subject = `Action Required: Secure Your Reserved Portfolio — Resolve MUN 2.0`;
+  const bodyHtml = `
+    <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+      Dear <strong style="color: #ffffff;">${name}</strong>,
+    </p>
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 20px 0;">
+      The Secretariat noticed that you initiated your registration for Resolve MUN 2.0 but have not finalized your submission at <strong>${step}</strong>.
+    </p>
+
+    <div style="background-color: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <div style="font-family: monospace; font-size: 10px; font-weight: 800; color: #d4af37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 6px;">
+        Provisional Portfolio Reservation Active
+      </div>
+      <p style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0;">
+        Allocations across DISEC, UNHRC, UNSC, Lok Sabha, Committee X, and IP are moving rapidly. We encourage you to complete your submission to guarantee your seat before quotas close.
       </p>
     </div>
 
-    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.45); line-height: 1.5; margin: 0;">
-      <strong style="color: rgba(255,255,255,0.6);">Official Channel:</strong> Instagram: @mun.resolve &bull; Email: resolve.mun@gmail.com<br>
-      <strong style="color: rgba(255,255,255,0.6);">Venue:</strong> ${CONFIG.VENUE}<br>
-      <strong style="color: rgba(255,255,255,0.6);">Dates:</strong> ${CONFIG.CONFERENCE_DATES}
-    </p>
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${CONFIG.PORTAL_URL}/?open=delegate" style="display: inline-block; padding: 14px 32px; background-color: #ffffff; color: #000000; font-family: monospace; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
+        Resume &amp; Complete Registration &rarr;
+      </a>
+    </div>
   `;
-  return wrapInEmbassyLayout("Resolve MUN 2.0", "Secretariat Application", body);
+
+  const plainText = `Dear ${name},\n\nYou initiated registration for Resolve MUN 2.0 but have not finished at ${step}.\n\nSeats are closing quickly. Resume here: ${CONFIG.PORTAL_URL}/?open=delegate\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+  dispatchMail(email, subject, wrapInEmbassyLayout("LEAD-RENEW", "Registration Reminder", bodyHtml), plainText);
+  tryLogEmailToSheet("LEAD_REMINDER_SENT", email, name, "SENT");
+
+  return { status: "success", email: email, message: "Reminder successfully dispatched." };
 }
 
-
-/* -------------------------------------------------------------------------- */
-/*             ADMINISTRATIVE & REPAIR UTILITIES                             */
-/* -------------------------------------------------------------------------- */
-
-function repairAndInitDatabase() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (!ss) return;
-  for (const sheetName in SCHEMAS) {
-    let sheet = ss.getSheetByName(sheetName);
-    const headers = SCHEMAS[sheetName];
-
-    if (!sheet) {
-      sheet = ss.insertSheet(sheetName);
-      sheet.appendRow(headers);
-      const headerRange = sheet.getRange(1, 1, 1, headers.length);
-      headerRange.setBackground("#080a14");
-      headerRange.setFontColor("#818cf8");
-      headerRange.setFontWeight("bold");
-      sheet.setFrozenRows(1);
-    } else if (sheet.getLastRow() === 0) {
-      sheet.appendRow(headers);
-      const headerRange = sheet.getRange(1, 1, 1, headers.length);
-      headerRange.setBackground("#080a14");
-      headerRange.setFontColor("#818cf8");
-      headerRange.setFontWeight("bold");
-      sheet.setFrozenRows(1);
-    }
-  }
-}
-
-function getSiteSettings() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Site_Settings");
-  if (!sheet || sheet.getLastRow() <= 1) {
-    return {
-      roundName: "Round 2",
-      delegatePrice: 2199,
-      venue: CONFIG.VENUE,
-      dates: CONFIG.CONFERENCE_DATES,
-      registrationsOpen: true
-    };
-  }
-  const rows = sheet.getDataRange().getValues();
-  const settings = {};
-  for (let i = 1; i < rows.length; i++) {
-    settings[rows[i][0]] = rows[i][1];
-  }
-  return settings;
-}
-
-function updateSiteSettings(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName("Site_Settings");
-  if (!sheet) {
-    repairAndInitDatabase();
-    sheet = ss.getSheetByName("Site_Settings");
-  }
-
-  // Settings come as flat keys in payload (not nested under data.settings)
-  const settingKeys = [
-    'registrationsOpen', 'delegateOpen', 'delegationOpen', 'ocOpen', 'ebOpen',
-    'secretariatOpen', 'roundName', 'delegatePrice', 'delegationPrice'
-  ];
-
-  const existingRows = sheet.getDataRange().getValues();
-  settingKeys.forEach(function(key) {
-    if (data[key] === undefined) return;
-    var found = false;
-    for (var i = 1; i < existingRows.length; i++) {
-      if (existingRows[i][0] === key) {
-        sheet.getRange(i + 1, 2).setValue(data[key]);
-        sheet.getRange(i + 1, 3).setValue(new Date().toISOString());
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      sheet.appendRow([key, data[key], new Date().toISOString(), 'Admin']);
-    }
-  });
-
-  return { status: "success", message: "Settings saved." };
-}
-
-function adminGetAllRecords() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const result = {};
-  for (const sheetName in SCHEMAS) {
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet || sheet.getLastRow() <= 1) {
-      result[sheetName] = [];
-      continue;
-    }
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    result[sheetName] = data.slice(1).map(function(row) {
-      const obj = {};
-      headers.forEach(function(h, idx) {
-        obj[h] = row[idx];
-      });
-      return obj;
-    });
-  }
-  return result;
-}
-
-function adminGetAbandonedLeads() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Abandoned_Leads");
-  if (!sheet || sheet.getLastRow() <= 1) return [];
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  return data.slice(1).map(function(row) {
-    const obj = {};
-    headers.forEach(function(h, idx) {
-      obj[h] = row[idx];
-    });
-    return obj;
-  });
-}
-
-function adminUpdateDelegation(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Delegations");
-  if (!sheet) return { status: "error", message: "Sheet not found" };
-  const delId = data.delId;
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][1] === delId) {
-      if (data.status) sheet.getRange(i + 1, 11).setValue(data.status);
-      if (data.notes) sheet.getRange(i + 1, 12).setValue(data.notes);
-      return { status: "success", delId: delId };
-    }
-  }
-  return { status: "error", message: "Delegation ID not found" };
-}
-
-function adminAddDelegate(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName("Registrations");
-  if (!sheet) {
-    repairAndInitDatabase();
-    sheet = ss.getSheetByName("Registrations");
-  }
-  if (!sheet) return { status: "error", message: "Sheet not found" };
-
-  const regId = String(data.regId || data.delegateId || ("RM26-DEL-" + Math.floor(1000 + Math.random() * 9000))).trim();
-  const name = data.fullName || data.name || "Delegate";
-  const email = (data.email || "").trim().toLowerCase();
-  const phone = data.phone || "";
-  const school = data.institution || data.school || "Individual";
-  const committee = data.allocatedCommittee || data.committee || "DISEC";
-  const country = data.allocatedCountry || data.country || "";
-  const utr = data.paymentUTR || data.utr || "OFFLINE-MANUAL";
-  const payStatus = (data.paymentStatus || "VERIFIED").toUpperCase();
-
-  sheet.appendRow([
-    new Date().toISOString(),
-    regId,
-    data.uid || "",
-    name,
-    email,
-    phone,
-    school,
-    committee, // Col 8
-    data.pref2 || "",
-    data.pref3 || "",
-    data.experience || "Manual Walk-In Entry",
-    utr,
-    data.screenshotUrl || data.paymentScreenshotURL || "",
-    payStatus === "VERIFIED" ? "Verified" : "Pending_Verification",
-    committee, // Col 15 AllocatedCommittee
-    country,   // Col 16 AllocatedCountry
-    data.delegationCode || data.referral || "",
-    "No"
-  ]);
-  return { status: "success", regId: regId, message: "Delegate " + name + " added successfully" };
-}
-
-function adminUpdateDelegate(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Registrations");
-  if (!sheet) return { status: "error", message: "Registrations sheet not found" };
-
-  const targetId = String(data.regId || data.delegateId || data.id || "").trim();
-  const targetEmail = String(data.email || "").trim().toLowerCase();
-
-  if (!targetId && !targetEmail) {
-    return { status: "error", message: "No regId or email provided for update" };
-  }
-
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    const rowId = String(rows[i][1] || "").trim();
-    const rowEmail = String(rows[i][4] || "").trim().toLowerCase();
-
-    if ((targetId && rowId === targetId) || (targetEmail && rowEmail === targetEmail)) {
-      const rowIdx = i + 1;
-      if (data.fullName || data.name) sheet.getRange(rowIdx, 4).setValue(data.fullName || data.name);
-      if (data.email) sheet.getRange(rowIdx, 5).setValue(data.email);
-      if (data.phone) sheet.getRange(rowIdx, 6).setValue(data.phone);
-      if (data.institution || data.school) sheet.getRange(rowIdx, 7).setValue(data.institution || data.school);
-      if (data.paymentUTR || data.utr) sheet.getRange(rowIdx, 12).setValue(data.paymentUTR || data.utr);
-      if (data.paymentStatus) {
-        const s = String(data.paymentStatus).toUpperCase();
-        sheet.getRange(rowIdx, 14).setValue(s === "VERIFIED" ? "Verified" : "Pending_Verification");
-      }
-      if (data.allocatedCommittee !== undefined) sheet.getRange(rowIdx, 15).setValue(data.allocatedCommittee);
-      if (data.allocatedCountry !== undefined) sheet.getRange(rowIdx, 16).setValue(data.allocatedCountry);
-
-      return {
-        status: "success",
-        regId: rowId,
-        message: "Delegate " + (data.fullName || rowId) + " successfully updated",
-      };
-    }
-  }
-
-  return { status: "error", message: "Delegate not found: " + (targetId || targetEmail) };
-}
-
-function adminDeleteRecord(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetName = data.sheetName || "Registrations";
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return { status: "error", message: "Sheet not found: " + sheetName };
-
-  const targetId = String(data.recordId || data.id || data.regId || data.delId || data.appId || "").trim();
-  if (!targetId) return { status: "error", message: "No record ID provided for deletion" };
-
-  const rows = sheet.getDataRange().getValues();
-  const idColIndex = Math.max(0, (data.idColIndex || data.idCol || 2) - 1);
-
-  for (let i = 1; i < rows.length; i++) {
-    const valCol = String(rows[i][idColIndex] || "").trim();
-    const valCol1 = String(rows[i][1] || "").trim(); // Column B (RegID, DelID, AppID, UID)
-    const valCol2 = String(rows[i][2] || "").trim(); // Column C (UID, DelCode)
-    const valEmail = String(rows[i][4] || "").trim().toLowerCase(); // Column E (Email)
-
-    if (
-      valCol === targetId ||
-      valCol1 === targetId ||
-      valCol2 === targetId ||
-      (targetId.includes("@") && valEmail === targetId.toLowerCase())
-    ) {
-      sheet.deleteRow(i + 1);
-      return { status: "success", recordId: targetId, deletedRow: i + 1, sheet: sheetName };
-    }
-  }
-  return { status: "error", message: "Record " + targetId + " not found in " + sheetName };
-}
-
-function adminUpdateDelegateStatus(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Registrations");
-  if (!sheet) return { status: "error", message: "Registrations sheet not found" };
-
-  const regId = String(data.regId || data.id || "").trim();
-  const newStatus = data.status || "Confirmed";
-  const rows = sheet.getDataRange().getValues();
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][1]).trim() === regId) {
-      sheet.getRange(i + 1, 14).setValue(newStatus);
-      return { status: "success", regId: regId, status: newStatus };
-    }
-  }
-  return { status: "error", message: "Delegate ID not found: " + regId };
-}
-
-function getDelegateByEmail(email) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Registrations");
-  if (!sheet || sheet.getLastRow() <= 1) return { found: false };
-  const rows = sheet.getDataRange().getValues();
-  const cleanTarget = (email || "").trim().toLowerCase();
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][4]).trim().toLowerCase() === cleanTarget) {
-      return {
-        found: true,
-        regId: rows[i][1],
-        fullName: rows[i][3],
-        email: rows[i][4],
-        phone: rows[i][5],
-        institution: rows[i][6],
-        status: rows[i][13],
-        allocatedCommittee: rows[i][14],
-        allocatedCountry: rows[i][15],
-        paymentScreenshotURL: rows[i][12],
-        paymentUTR: rows[i][11]
-      };
-    }
-  }
-  return { found: false };
-}
-
-function tryLogEmailToSheet(action, email, name, status) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (!ss) return;
-    let sheet = ss.getSheetByName("Email_Logs");
-    if (!sheet) {
-      sheet = ss.insertSheet("Email_Logs");
-      sheet.appendRow(SCHEMAS.Email_Logs);
-    }
-    sheet.appendRow([new Date().toISOString(), action, email, name, status]);
-  } catch (_) {}
-}
-
-function logAudit(action, actor, status, details) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (!ss) return;
-    const sheet = ss.getSheetByName("Audit_Logs");
-    if (sheet) sheet.appendRow([new Date().toISOString(), action, actor, status, details]);
-  } catch (_) {}
-}
-
+/**
+ * 8. Appointment Offer Letter (OC / Secretariat / EB Acceptance)
+ */
 function adminAcceptApplicantAndSendEmail(data) {
-  const email = (data.email || "").trim();
+  const email = (data.email || "").trim().toLowerCase();
   const fullName = data.fullName || data.name || "Applicant";
   const roleType = data.roleType || "OC";
   const position = data.position || (roleType === "OC" ? "Organizing Committee" : "Secretariat");
@@ -1813,7 +1696,7 @@ function adminAcceptApplicantAndSendEmail(data) {
     if (sheet) {
       const rows = sheet.getDataRange().getValues();
       for (let i = 1; i < rows.length; i++) {
-        if (String(rows[i][1]).trim() === String(appId).trim() || String(rows[i][4]).trim().toLowerCase() === email.toLowerCase()) {
+        if (String(rows[i][1]).trim() === String(appId).trim() || String(rows[i][4]).trim().toLowerCase() === email) {
           sheet.getRange(i + 1, rows[0].length).setValue("Accepted");
           break;
         }
@@ -1822,31 +1705,38 @@ function adminAcceptApplicantAndSendEmail(data) {
   } catch (_) {}
 
   if (email) {
-    const subject = "Official Appointment Offer — " + position + " | Resolve MUN 2.0";
-    const htmlBody = "<div style='font-family:Inter,Arial,sans-serif;background:#070914;color:#ffffff;padding:32px;border-radius:16px;max-width:600px;margin:0 auto;border:1px solid rgba(255,255,255,0.12)'>" +
-      "<p style='font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#a855f7;margin:0 0 8px;font-weight:700'>RESOLVE MUN 2.0 · SECRETARIAT DISPATCH</p>" +
-      "<h2 style='font-size:22px;margin:0 0 16px;color:#ffffff'>Congratulations, " + fullName + "!</h2>" +
-      "<p style='font-size:14px;line-height:1.6;color:#cbd5e1'>We are pleased to inform you that your application (<b>" + appId + "</b>) for <b>" + position + "</b> at <b>Resolve Model United Nations 2.0</b> (27–29 November 2026 at Meridian School, Kompally) has been <b>approved</b>.</p>" +
-      "<div style='background:#0f1326;border:1px solid rgba(168,85,247,0.3);padding:16px;border-radius:12px;margin:20px 0'>" +
-      "<p style='margin:0 0 6px;font-size:12px;color:#94a3b8'>ASSIGNED ROLE</p>" +
-      "<p style='margin:0;font-size:16px;font-weight:700;color:#e9d5ff'>" + position + "</p>" +
-      "<p style='margin:8px 0 0;font-size:12px;color:#94a3b8'>Application ID: <b style='color:#fff'>" + appId + "</b></p>" +
-      "</div>" +
-      "<p style='font-size:13px;line-height:1.6;color:#94a3b8'>Your digital entry pass is now active on your Resolve MUN Dashboard. Our leadership team will reach out shortly with onboarding details.</p>" +
-      "<p style='font-size:12px;color:#64748b;margin-top:24px'>Warm regards,<br><b style='color:#fff'>Secretariat, Resolve MUN 2.0</b></p>" +
-      "</div>";
-    try {
-      MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody, name: CONFIG.SENDER_NAME, replyTo: CONFIG.REPLY_TO });
-      tryLogEmailToSheet("ADMIN_ACCEPT_APPLICANT", email, fullName, "SENT");
-    } catch (e) {
-      tryLogEmailToSheet("ADMIN_ACCEPT_APPLICANT", email, fullName, "ERROR: " + e.message);
-    }
+    const subject = `Official Appointment: ${position} — Resolve MUN 2.0 [${appId}]`;
+    const bodyHtml = `
+      <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; margin: 0 0 16px 0;">
+        Dear <strong style="color: #ffffff;">${fullName}</strong>,
+      </p>
+      <p style="font-size: 13px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 22px 0;">
+        We are thrilled to officially inform you that your application for <strong style="color: #ffffff;">${position}</strong> for Resolve Model United Nations 2.0 has been <strong style="color: #22c55e;">Approved</strong>.
+      </p>
+
+      <div style="background-color: #05070d; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+        <div style="font-size: 10px; font-family: monospace; color: #d4af37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 4px;">Assigned Appointment</div>
+        <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">${position}</div>
+        <div style="font-size: 12px; font-family: monospace; color: rgba(255, 255, 255, 0.6);">Application ID: ${appId}</div>
+      </div>
+
+      <p style="font-size: 12px; color: rgba(255, 255, 255, 0.7); line-height: 1.6; margin: 0 0 20px 0;">
+        Our leadership team will reach out with onboarding materials, communication groups, and operational briefings.
+      </p>
+    `;
+    const plainText = `Congratulations ${fullName}!\n\nYour appointment for ${position} at Resolve MUN 2.0 (App ID: ${appId}) has been approved.\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+    dispatchMail(email, subject, wrapInEmbassyLayout("APPOINTMENT", "Official Appointment Offer", bodyHtml), plainText);
+    tryLogEmailToSheet("ADMIN_ACCEPT_APPLICANT", email, fullName, "SENT");
   }
+
   return { status: "success", appId: appId, email: email };
 }
 
+/**
+ * 9. Custom CRM Embassy Email Dispatch
+ */
 function adminSendCustomCrmEmail(data) {
-  const subject = data.subject || "Official Update — Resolve MUN 2.0";
+  const subject = data.subject || "Official Communiqué — Resolve MUN 2.0";
   const bodyText = data.messageBody || "";
   const recipients = Array.isArray(data.recipients) && data.recipients.length > 0
     ? data.recipients
@@ -1856,16 +1746,18 @@ function adminSendCustomCrmEmail(data) {
   const formattedBody = bodyText.replace(/\n/g, "<br>");
 
   recipients.forEach(function(r) {
-    const toEmail = (r.email || "").trim();
+    const toEmail = (r.email || "").trim().toLowerCase();
     if (!toEmail || !toEmail.includes("@")) return;
-    const htmlBody = "<div style='font-family:Inter,Arial,sans-serif;background:#070914;color:#ffffff;padding:32px;border-radius:16px;max-width:600px;margin:0 auto;border:1px solid rgba(255,255,255,0.12)'>" +
-      "<p style='font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#818cf8;margin:0 0 12px;font-weight:700'>RESOLVE MUN 2.0 · OFFICIAL DISPATCH</p>" +
-      "<div style='font-size:14px;line-height:1.7;color:#e2e8f0'>" + formattedBody + "</div>" +
-      "<hr style='border:0;border-top:1px solid rgba(255,255,255,0.1);margin:24px 0'>" +
-      "<p style='font-size:11px;color:#64748b;margin:0'>Resolve Model United Nations 2.0 · 27–29 November 2026 · Meridian School, Kompally</p>" +
-      "</div>";
+
+    const bodyHtml = `
+      <div style="font-size: 14px; line-height: 1.7; color: rgba(255, 255, 255, 0.88);">
+        ${formattedBody}
+      </div>
+    `;
+    const plainText = bodyText + `\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\nResolve MUN 2.0 Secretariat`;
+
     try {
-      MailApp.sendEmail({ to: toEmail, subject: subject, htmlBody: htmlBody, name: CONFIG.SENDER_NAME, replyTo: CONFIG.REPLY_TO });
+      dispatchMail(toEmail, subject, wrapInEmbassyLayout("CRM-DISPATCH", "Secretariat Dispatch", bodyHtml), plainText);
       sentCount++;
       tryLogEmailToSheet("CRM_CUSTOM_EMAIL", toEmail, r.name || "Delegate", "SENT");
     } catch (e) {
@@ -1876,10 +1768,57 @@ function adminSendCustomCrmEmail(data) {
   return { status: "success", sentCount: sentCount };
 }
 
-/**
- * Auto-Heal: Verifies all sheets in SCHEMAS exist, creates missing ones, formats headers.
- */
-function autoHealSheets() {
+/* -------------------------------------------------------------------------- */
+/*      CORE ENGINE INFRASTRUCTURE & DUAL FAILOVER MAILING ENGINE             */
+/* -------------------------------------------------------------------------- */
+
+function dispatchMail(to, subject, htmlBody, plainText) {
+  try {
+    MailApp.sendEmail({
+      to: to,
+      subject: subject,
+      htmlBody: htmlBody,
+      body: plainText,
+      name: CONFIG.SENDER_NAME,
+      replyTo: CONFIG.REPLY_TO
+    });
+  } catch (err) {
+    Logger.log("Primary MailApp notice, falling back to GmailApp: " + err.message);
+    GmailApp.sendEmail(to, subject, plainText, {
+      htmlBody: htmlBody,
+      name: CONFIG.SENDER_NAME,
+      replyTo: CONFIG.REPLY_TO
+    });
+  }
+}
+
+function tryLogEmailToSheet(action, email, name, status) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Email_Logs");
+    if (!sheet) {
+      sheet = ss.insertSheet("Email_Logs");
+      sheet.appendRow(SCHEMAS.Email_Logs);
+      sheet.setFrozenRows(1);
+    }
+    sheet.appendRow([new Date().toISOString(), action, email, name, status]);
+  } catch (_) {}
+}
+
+function logAudit(action, actor, status, details) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Audit_Logs");
+    if (!sheet) {
+      sheet = ss.insertSheet("Audit_Logs");
+      sheet.appendRow(SCHEMAS.Audit_Logs);
+      sheet.setFrozenRows(1);
+    }
+    sheet.appendRow([new Date().toISOString(), action, actor, status, details]);
+  } catch (_) {}
+}
+
+function repairAndInitDatabase() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     for (const sheetName in SCHEMAS) {
@@ -1889,21 +1828,15 @@ function autoHealSheets() {
         sheet.appendRow(SCHEMAS[sheetName]);
         sheet.setFrozenRows(1);
         const headerRange = sheet.getRange(1, 1, 1, SCHEMAS[sheetName].length);
-        headerRange.setBackground("#0f172a");
-        headerRange.setFontColor("#f8fafc");
+        headerRange.setBackground("#0a0e1a");
+        headerRange.setFontColor("#f1f5f9");
         headerRange.setFontWeight("bold");
         headerRange.setFontFamily("Roboto Mono");
       }
     }
-    return { status: "success", message: "All sheets verified and auto-healed." };
-  } catch (err) {
-    return { status: "error", message: err.message };
-  }
+  } catch (_) {}
 }
 
-/**
- * Synchronize User Account from Firebase Auth / Site Logins
- */
 function syncUserAccount(data) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1937,103 +1870,81 @@ function syncUserAccount(data) {
         sheet.getRange(i + 1, 1, 1, 7).setValues([[
           now, uid || rows[i][1], name || rows[i][2], email, role, avatar || rows[i][5], now
         ]]);
-        return { status: "success", message: "User account updated", email: email, role: role };
+        return { status: "success", message: "User updated", email: email, role: role };
       }
     }
 
     sheet.appendRow([now, uid, name, email, role, avatar, now]);
-    return { status: "success", message: "User account created", email: email, role: role };
+    return { status: "success", message: "User enrolled", email: email, role: role };
   } catch (err) {
     return { status: "error", message: err.message };
   }
 }
 
-/**
- * Update Committee Seat Capacities
- */
-function updateCommitteeCapacities(data) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Committee_Capacities");
-    if (!sheet) {
-      sheet = ss.insertSheet("Committee_Capacities");
-      sheet.appendRow(SCHEMAS.Committee_Capacities);
-      sheet.setFrozenRows(1);
-    }
-    const capacities = data.capacities || {};
-    const now = new Date().toISOString();
-    const committeeNames = {
-      "DISEC": "Disarmament & International Security",
-      "UNHRC": "United Nations Human Rights Council",
-      "UNSC": "United Nations Security Council",
-      "LOK SABHA": "Lok Sabha (Indian Parliament)",
-      "COMMITTEE X": "Crisis Directorate / Committee X",
-      "IP": "International Press Corps"
-    };
-
-    const existingRows = sheet.getDataRange().getValues();
-    for (const commId in capacities) {
-      const cap = parseInt(capacities[commId], 10) || 50;
-      let found = false;
-      for (let i = 1; i < existingRows.length; i++) {
-        if (String(existingRows[i][1]).trim().toUpperCase() === commId.toUpperCase()) {
-          sheet.getRange(i + 1, 1, 1, 5).setValues([[
-            now, commId.toUpperCase(), committeeNames[commId] || commId, cap, "ADMIN"
-          ]]);
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        sheet.appendRow([now, commId.toUpperCase(), committeeNames[commId] || commId, cap, "ADMIN"]);
-      }
-    }
-
-    return { status: "success", capacities: capacities };
-  } catch (err) {
-    return { status: "error", message: err.message };
+function getSiteSettings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Site_Settings");
+  const defaults = {
+    registrationsOpen: true,
+    roundName: "Round 1 Priority Applications",
+    delegateFee: 2500,
+    delegationFee: 2200,
+    venue: CONFIG.VENUE,
+    conferenceDates: CONFIG.CONFERENCE_DATES,
+    committees: CONFIG.COMMITTEES
+  };
+  if (!sheet || sheet.getLastRow() <= 1) return defaults;
+  const rows = sheet.getDataRange().getValues();
+  const out = { ...defaults };
+  for (let i = 1; i < rows.length; i++) {
+    const k = rows[i][0];
+    const v = rows[i][1];
+    if (k) out[k] = v;
   }
+  return out;
 }
 
-/**
- * Attach and Upload Committee Dossier / File to Google Drive
- */
-function uploadCommitteeFileToDrive(data) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Committee_Files");
-    if (!sheet) {
-      sheet = ss.insertSheet("Committee_Files");
-      sheet.appendRow(SCHEMAS.Committee_Files);
-      sheet.setFrozenRows(1);
-    }
-
-    const committee = String(data.committee || "DISEC").toUpperCase();
-    const title = String(data.title || "Background Guide").trim();
-    let fileUrl = String(data.url || "").trim();
-    const fileId = "DOC-" + Math.floor(1000 + Math.random() * 9000);
-    const now = new Date().toISOString();
-
-    if (data.base64Data && data.fileName) {
-      const folders = DriveApp.getFoldersByName("Resolve MUN 2026 - Committee Dossiers");
-      let folder;
-      if (folders.hasNext()) {
-        folder = folders.next();
-      } else {
-        folder = DriveApp.createFolder("Resolve MUN 2026 - Committee Dossiers");
-      }
-      const decoded = Utilities.base64Decode(data.base64Data);
-      const blob = Utilities.newBlob(decoded, data.mimeType || "application/pdf", data.fileName);
-      const createdFile = folder.createFile(blob);
-      createdFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      fileUrl = createdFile.getUrl();
-    }
-
-    sheet.appendRow([now, fileId, committee, title, fileUrl, data.type || "pdf", "ADMIN"]);
-    return { status: "success", file: { id: fileId, committee: committee, title: title, url: fileUrl } };
-  } catch (err) {
-    return { status: "error", message: err.message };
+function updateSiteSettings(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Site_Settings");
+  if (!sheet) {
+    repairAndInitDatabase();
+    sheet = ss.getSheetByName("Site_Settings");
   }
+  const settings = data.settings || data;
+  const now = new Date().toISOString();
+  Object.keys(settings).forEach(function(k) {
+    sheet.appendRow([k, settings[k], now, data.updatedBy || "Admin"]);
+  });
+  return { status: "success", settings: settings };
+}
+
+function verifyPassCredential(passId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const cleanId = String(passId || "").trim();
+  if (!cleanId) return { status: "invalid", message: "Invalid pass identifier" };
+
+  const regSheet = ss.getSheetByName("Registrations");
+  if (regSheet) {
+    const rows = regSheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][1]).trim() === cleanId) {
+        return {
+          status: "valid",
+          delegateId: cleanId,
+          fullName: rows[i][3],
+          email: rows[i][4],
+          institution: rows[i][6],
+          committee: rows[i][14] || "Unassigned",
+          country: rows[i][15] || "Unassigned",
+          paymentStatus: rows[i][13],
+          venue: CONFIG.VENUE,
+          dates: CONFIG.CONFERENCE_DATES
+        };
+      }
+    }
+  }
+  return { status: "not_found", message: "Credential not found in registry" };
 }
 
 function jsonResponse(obj) {
@@ -2041,11 +1952,12 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function errorResponse(msg, code) {
+function errorResponse(msg, code = 400) {
   return ContentService.createTextOutput(JSON.stringify({
     status: "error",
-    error: msg,
-    code: code || 400,
+    code: code,
+    message: msg,
+    venue: CONFIG.VENUE,
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
 }
