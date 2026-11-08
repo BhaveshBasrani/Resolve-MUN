@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 
 const APPS_SCRIPT_URL =
   process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
-  "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+  "https://script.google.com/macros/s/AKfycbyfh1S7g1oJ9ej06z-OUZnn9BJhVSbSFuCmBESJ53bPTQsPPDL-s5P3HOaZ4RzfWna1/exec";
 
 export async function GET(request) {
   try {

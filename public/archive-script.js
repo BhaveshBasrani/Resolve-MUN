@@ -6,7 +6,7 @@
     return d.length === 10 && /^[6-9]\d{9}$/.test(d);
   }
 
-  const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+  const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/AKfycbyfh1S7g1oJ9ej06z-OUZnn9BJhVSbSFuCmBESJ53bPTQsPPDL-s5P3HOaZ4RzfWna1/exec";
 
   function sendAbandonedDraftLead(formType, name, email, phone, step) {
     if (!email || !email.includes('@')) return;
@@ -1057,7 +1057,7 @@
     });
   };
 
-  const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxd_EyDHhJY1yokbma62PFcLu1SyBC-QXe32zb8JRIOUaJBowaivqNcgVwqk4HEsxTLpw/exec";
+  const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyfh1S7g1oJ9ej06z-OUZnn9BJhVSbSFuCmBESJ53bPTQsPPDL-s5P3HOaZ4RzfWna1/exec";
 
   async function submitToGoogleSheet(data) {
     try {
