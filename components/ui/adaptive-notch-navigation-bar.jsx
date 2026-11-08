@@ -247,7 +247,7 @@ function NotchDropdownItem({ item, isSelected, onSelect }) {
         "focus-visible:ring-2 focus-visible:ring-white",
         isSelected
           ? "bg-white text-black font-bold shadow-sm"
-          : "text-zinc-300 hover:bg-zinc-850 hover:text-white active:bg-zinc-800",
+          : "text-zinc-300 hover:bg-white/10 hover:text-white active:bg-white/15",
         item.disabled && "cursor-not-allowed pointer-events-none opacity-40"
       )}
     >
@@ -420,19 +420,22 @@ export function NotchNav({
       {/* ========================================================================= */}
       <div
         ref={containerRef}
+        style={{
+          transform: "none",
+        }}
         className={cn(
           "xl:hidden absolute z-50 flex flex-col bg-[#050608]/95 backdrop-blur-xl text-white select-none pointer-events-auto border-b border-x border-white/[0.14] shadow-[0_12px_40px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.12)]",
-          "w-[95vw] max-w-md left-1/2 -translate-x-1/2 px-2.5 sm:px-3 py-1",
+          "w-[calc(100%-16px)] sm:w-[calc(100%-28px)] max-w-lg left-0 right-0 mx-auto px-2.5 sm:px-3 py-1",
           isBottom ? "bottom-0 rounded-t-[20px]" : "top-0 rounded-b-[20px]"
         )}
       >
-        <NotchLeftWing position={position} />
-        <NotchRightWing position={position} />
+        <NotchLeftWing position={position} className="hidden md:block" />
+        <NotchRightWing position={position} className="hidden md:block" />
 
         {/* Unified Horizontal Bar */}
         <div
           className={cn(
-            "w-full flex h-10 items-center justify-between gap-2",
+            "w-full flex h-10 items-center justify-between gap-1.5 sm:gap-2",
             isBottom ? "items-baseline" : "items-center"
           )}
         >
@@ -459,7 +462,7 @@ export function NotchNav({
               ) : (
                 <Menu className="size-3.5 text-white/90" />
               )}
-              <span className="hidden sm:inline">Menu</span>
+              <span className="hidden min-[380px]:inline">Menu</span>
             </button>
 
             {/* Right Action Slot (Avatar / Register) */}

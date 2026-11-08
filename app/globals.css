@@ -11623,9 +11623,7 @@ select:-webkit-autofill {
   .stat-card,
   .glass-panel,
   .adaptive-hero-btn,
-  .liquid-glass-pill,
-  .liquid-nav-island,
-  .notch-container {
+  .liquid-glass-pill {
     will-change: auto !important;
     -webkit-backface-visibility: hidden !important;
     backface-visibility: hidden !important;
