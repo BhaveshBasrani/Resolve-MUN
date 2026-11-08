@@ -2041,9 +2041,12 @@ export const homeHtml = `
         </div>
 
         <div class="form-group">
-          <label for="ebCv">Executive Board CV / Portfolio <span style="color:#f87171;">*</span></label>
-          <div id="ebCvMount"></div>
-          <input type="file" id="ebCv" class="file-upload-input" accept=".pdf,image/*,.doc,.docx" required data-required="true" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
+          <label for="ebCv">Executive Board CV / Portfolio (PDF or Word) <span style="color:#f87171;">*</span></label>
+          <label class="file-upload-wrapper" for="ebCv">
+            <span class="file-upload-btn">Upload CV File</span>
+            <span class="file-name" id="ebCvFileName">No file chosen (PDF, max 5MB)</span>
+            <input type="file" id="ebCv" name="ebCv" class="file-upload-input" accept=".pdf,image/*,.doc,.docx" required data-required="true">
+          </label>
         </div>
 
         <div class="form-actions">

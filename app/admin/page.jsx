@@ -275,6 +275,59 @@ export default function SuperAdminPage() {
     } catch (_) {}
   };
 
+  // Team Applicant Full Inspector Modal State
+  const [selectedTeamApp, setSelectedTeamApp] = useState(null);
+
+  const handleUpdateApplicantStatus = async (app, newStatus) => {
+    if (!app) return;
+    const appId = app.appId || app.id;
+    const roleType = app.roleType || "OC";
+
+    // Optimistically update locally
+    if (roleType === "OC") {
+      setOcApplications((prev) =>
+        prev.map((a) => (a.appId === appId || a.id === appId ? { ...a, status: newStatus } : a))
+      );
+    } else if (roleType === "EB") {
+      setEbApplications((prev) =>
+        prev.map((a) => (a.appId === appId || a.id === appId ? { ...a, status: newStatus } : a))
+      );
+    } else {
+      setSecApplications((prev) =>
+        prev.map((a) => (a.appId === appId || a.id === appId ? { ...a, status: newStatus } : a))
+      );
+    }
+
+    if (selectedTeamApp && (selectedTeamApp.appId === appId || selectedTeamApp.id === appId)) {
+      setSelectedTeamApp((prev) => ({ ...prev, status: newStatus }));
+    }
+
+    notify(`Application marked as ${newStatus}`);
+
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminKey: "abhilashisgoat",
+          action: "ADMIN_UPDATE_APPLICANT_STATUS",
+          appId,
+          roleType,
+          email: app.email,
+          fullName: app.fullName || app.name,
+          position:
+            app.position ||
+            app.prefCommittee1 ||
+            (roleType === "OC" ? "Organizing Committee" : roleType === "EB" ? "Executive Board" : "Secretariat"),
+          newStatus,
+        }),
+      });
+      if (newStatus === "Accepted") {
+        notify(`Acceptance offer email dispatched to ${app.email}!`);
+      }
+    } catch (_) {}
+  };
+
   // CRM Mailer State
   const [crmRecipientMode, setCrmRecipientMode] = useState("ALL_DELEGATES");
   const [crmEmailTo, setCrmEmailTo] = useState("");
@@ -2225,9 +2278,10 @@ export default function SuperAdminPage() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
-                        <th className="px-4 py-3">Applicant & Role</th>
+                        <th className="px-4 py-3">Applicant &amp; Role</th>
                         <th className="px-4 py-3">Contact</th>
                         <th className="px-4 py-3">Department / Motivation</th>
+                        <th className="px-4 py-3">CV / Resume</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3 text-right">Action</th>
                       </tr>
@@ -2240,7 +2294,11 @@ export default function SuperAdminPage() {
                       ]
                         .filter((a) => appTypeFilter === "ALL" || a.roleType === appTypeFilter)
                         .map((a, idx) => (
-                          <tr key={idx} className="hover:bg-zinc-900/40 transition-colors">
+                          <tr
+                            key={idx}
+                            onClick={() => setSelectedTeamApp(a)}
+                            className="hover:bg-zinc-900/60 cursor-pointer transition-colors"
+                          >
                             <td className="px-4 py-3">
                               <span className="font-semibold text-white block">
                                 {a.fullName || a.name || "Candidate"}
@@ -2255,29 +2313,63 @@ export default function SuperAdminPage() {
                             </td>
                             <td className="px-4 py-3 max-w-sm">
                               <p className="line-clamp-2 text-zinc-400 text-[11px]">
-                                {a.whyJoin || a.previousExperience || a.department || "No statement provided"}
+                                {a.whyJoin || a.previousExperience || a.munExperience || a.sop || a.department || "No statement provided"}
                               </p>
                             </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {a.cvUrl || a.resumeUrl || a.portfolioUrl ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openScreenshotLightbox(a.cvUrl || a.resumeUrl || a.portfolioUrl, a);
+                                  }}
+                                  className="h-7 text-[10px] border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/40 cursor-pointer"
+                                >
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  View CV
+                                </Button>
+                              ) : (
+                                <span className="text-[10px] text-zinc-600 italic font-mono">No CV</span>
+                              )}
+                            </td>
                             <td className="px-4 py-3">
-                              <Badge variant="secondary" className="text-[10px] font-mono">
+                              <Badge
+                                variant={a.status === "Accepted" ? "default" : "secondary"}
+                                className={cn(
+                                  "text-[10px] font-mono",
+                                  a.status === "Accepted" && "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                                )}
+                              >
                                 {a.status || "Under Review"}
                               </Badge>
                             </td>
-                            <td className="px-4 py-3 text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setCrmEmailTo(a.email);
-                                  setCrmSubject(`Resolve MUN 2.0 — ${a.roleType} Application Status`);
-                                  setCrmMessageBody(`Dear ${a.fullName || "Candidate"},\n\nThank you for applying for the Resolve MUN 2.0 ${a.roleType === "OC" ? "Organizing Committee" : "Secretariat"}.\n\nWe have reviewed your profile and would like to invite you for a virtual interview with the High Command.\n\nPlease reply to this email with your availability over the upcoming weekend.\n\nWarm regards,\nHigh Command, Resolve MUN 2.0`);
-                                  setCrmRecipientMode("SINGLE");
-                                  setActiveTab("crm");
-                                }}
-                                className="h-7 text-xs border-white/10"
-                              >
-                                Contact
-                              </Button>
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  size="sm"
+                                  onClick={() => setSelectedTeamApp(a)}
+                                  className="h-7 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Inspect
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setCrmEmailTo(a.email);
+                                    setCrmSubject(`Resolve MUN 2.0 — ${a.roleType} Application Status`);
+                                    setCrmMessageBody(`Dear ${a.fullName || "Candidate"},\n\nThank you for applying for the Resolve MUN 2.0 ${a.roleType === "OC" ? "Organizing Committee" : a.roleType === "EB" ? "Executive Board" : "Secretariat"}.\n\nWe have reviewed your profile and would like to invite you for a virtual interview with the team.\n\nPlease reply to this email with your availability.\n\nWarm regards,\nResolve MUN 2.0 Secretariat`);
+                                    setCrmRecipientMode("SINGLE");
+                                    setActiveTab("crm");
+                                  }}
+                                  className="h-7 text-xs border-white/10 hover:bg-white/10 text-zinc-300 cursor-pointer"
+                                >
+                                  <Mail className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -3731,6 +3823,312 @@ export default function SuperAdminPage() {
                   <span>Convert to Official Delegate</span>
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: TEAM APPLICATION & CV INSPECTOR (FULL ANSWERS + EMBEDDED CV)
+          ========================================================================= */}
+      {selectedTeamApp && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setSelectedTeamApp(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full rounded-2xl border border-white/20 bg-zinc-950 p-5 sm:p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with identity & close */}
+            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xl font-bold text-white tracking-tight">
+                    {selectedTeamApp.fullName || selectedTeamApp.name || "Candidate"}
+                  </h3>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[10px] font-mono",
+                      selectedTeamApp.roleType === "EB"
+                        ? "border-amber-500/40 text-amber-300 bg-amber-500/10"
+                        : selectedTeamApp.roleType === "OC"
+                        ? "border-cyan-500/40 text-cyan-300 bg-cyan-500/10"
+                        : "border-purple-500/40 text-purple-300 bg-purple-500/10"
+                    )}
+                  >
+                    {selectedTeamApp.roleType === "OC"
+                      ? "Organizing Committee (OC)"
+                      : selectedTeamApp.roleType === "EB"
+                      ? "Executive Board (EB)"
+                      : "Secretariat"}
+                  </Badge>
+                  <Badge
+                    variant={selectedTeamApp.status === "Accepted" ? "default" : "secondary"}
+                    className={cn(
+                      "text-[10px] font-mono",
+                      selectedTeamApp.status === "Accepted"
+                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                        : selectedTeamApp.status === "Rejected"
+                        ? "bg-red-500/20 text-red-300 border-red-500/30"
+                        : "bg-white/10 text-zinc-300"
+                    )}
+                  >
+                    {selectedTeamApp.status || "Under Review"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-zinc-400 font-mono">
+                  Application ID: <span className="text-zinc-200">{selectedTeamApp.appId || selectedTeamApp.id || "APP-PENDING"}</span>
+                  {selectedTeamApp.timestamp && ` · Applied: ${new Date(selectedTeamApp.timestamp).toLocaleDateString()}`}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedTeamApp(null)}
+                className="h-8 w-8 rounded-lg border border-white/15 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Quick Status Bar & Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-white/10 bg-zinc-900/40">
+              <span className="text-xs text-zinc-400 font-mono">
+                Update Status &amp; Dispatch Notifications:
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUpdateApplicantStatus(selectedTeamApp, "Under Review")}
+                  className={cn(
+                    "h-8 text-xs cursor-pointer",
+                    selectedTeamApp.status === "Under Review" ? "border-amber-500 text-amber-300" : "border-white/10 text-zinc-400"
+                  )}
+                >
+                  Mark Under Review
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUpdateApplicantStatus(selectedTeamApp, "Rejected")}
+                  className={cn(
+                    "h-8 text-xs cursor-pointer border-red-500/30 text-red-400 hover:bg-red-950/30",
+                    selectedTeamApp.status === "Rejected" && "bg-red-500/20"
+                  )}
+                >
+                  Reject
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleUpdateApplicantStatus(selectedTeamApp, "Accepted")}
+                  className="h-8 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-bold cursor-pointer gap-1.5"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Accept &amp; Send Offer</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Grid with Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column: Personal & Contact Information */}
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-3">
+                  <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400">
+                    Contact &amp; Demographics
+                  </h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between py-1 border-b border-white/5">
+                      <span className="text-zinc-500 font-mono">Email:</span>
+                      <a href={`mailto:${selectedTeamApp.email}`} className="text-cyan-400 hover:underline font-mono">
+                        {selectedTeamApp.email || "N/A"}
+                      </a>
+                    </div>
+                    <div className="flex items-center justify-between py-1 border-b border-white/5">
+                      <span className="text-zinc-500 font-mono">Phone:</span>
+                      {selectedTeamApp.phone ? (
+                        <a href={`tel:${selectedTeamApp.phone}`} className="text-zinc-200 hover:underline font-mono">
+                          {selectedTeamApp.phone}
+                        </a>
+                      ) : (
+                        <span className="text-zinc-500 italic">N/A</span>
+                      )}
+                    </div>
+                    {selectedTeamApp.institution && (
+                      <div className="flex items-center justify-between py-1 border-b border-white/5">
+                        <span className="text-zinc-500 font-mono">Institution:</span>
+                        <span className="text-zinc-200">{selectedTeamApp.institution}</span>
+                      </div>
+                    )}
+                    {selectedTeamApp.grade && (
+                      <div className="flex items-center justify-between py-1 border-b border-white/5">
+                        <span className="text-zinc-500 font-mono">Grade/Year:</span>
+                        <span className="text-zinc-200">{selectedTeamApp.grade}</span>
+                      </div>
+                    )}
+                    {selectedTeamApp.dob && (
+                      <div className="flex items-center justify-between py-1 border-b border-white/5">
+                        <span className="text-zinc-500 font-mono">DOB:</span>
+                        <span className="text-zinc-200">{selectedTeamApp.dob}</span>
+                      </div>
+                    )}
+                    {selectedTeamApp.instagram && (
+                      <div className="flex items-center justify-between py-1 border-b border-white/5">
+                        <span className="text-zinc-500 font-mono">Instagram:</span>
+                        <span className="text-zinc-200">{selectedTeamApp.instagram}</span>
+                      </div>
+                    )}
+                    {selectedTeamApp.residentialAddress && (
+                      <div className="py-1 border-b border-white/5">
+                        <span className="text-zinc-500 font-mono block mb-0.5">Address:</span>
+                        <span className="text-zinc-300">{selectedTeamApp.residentialAddress}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Preferences / Role applied for */}
+                <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-2">
+                  <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400">
+                    Application Preferences
+                  </h4>
+                  {selectedTeamApp.roleType === "EB" ? (
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-zinc-500 font-mono block text-[10px]">1st Committee Preference:</span>
+                        <span className="font-semibold text-white">{selectedTeamApp.prefCommittee1 || "Not specified"}</span>
+                      </div>
+                      {selectedTeamApp.prefCommittee2 && (
+                        <div>
+                          <span className="text-zinc-500 font-mono block text-[10px]">2nd Committee Preference:</span>
+                          <span className="font-semibold text-zinc-300">{selectedTeamApp.prefCommittee2}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-zinc-500 font-mono block text-[10px]">Department Preference 1:</span>
+                        <span className="font-semibold text-white">{selectedTeamApp.department1 || selectedTeamApp.department || "General"}</span>
+                      </div>
+                      {selectedTeamApp.department2 && (
+                        <div>
+                          <span className="text-zinc-500 font-mono block text-[10px]">Department Preference 2:</span>
+                          <span className="font-semibold text-zinc-300">{selectedTeamApp.department2}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Statement, Experience & CV Preview */}
+              <div className="space-y-4">
+                {/* Experience / Statement */}
+                <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-2">
+                  <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400">
+                    Statement &amp; Experience
+                  </h4>
+                  <div className="text-xs space-y-3 max-h-48 overflow-y-auto pr-1">
+                    {(selectedTeamApp.munExperience || selectedTeamApp.previousExperience || selectedTeamApp.experience) && (
+                      <div>
+                        <span className="text-[10px] font-mono text-zinc-500 block">Past Experience:</span>
+                        <p className="text-zinc-300 whitespace-pre-line leading-relaxed">
+                          {selectedTeamApp.munExperience || selectedTeamApp.previousExperience || selectedTeamApp.experience}
+                        </p>
+                      </div>
+                    )}
+                    {(selectedTeamApp.executiveSummary || selectedTeamApp.whyJoin || selectedTeamApp.why || selectedTeamApp.sop) && (
+                      <div>
+                        <span className="text-[10px] font-mono text-zinc-500 block">Statement of Purpose / Why Join:</span>
+                        <p className="text-zinc-300 whitespace-pre-line leading-relaxed">
+                          {selectedTeamApp.executiveSummary || selectedTeamApp.whyJoin || selectedTeamApp.why || selectedTeamApp.sop}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* CV / Portfolio Document Section */}
+                <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400">
+                      Curriculum Vitae (CV) / Portfolio
+                    </h4>
+                    {(selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl) && (
+                      <a
+                        href={selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-mono text-cyan-400 hover:underline flex items-center gap-1"
+                      >
+                        <span>Open Document</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+
+                  {selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl ? (
+                    <div className="space-y-2">
+                      <div className="relative w-full h-64 rounded-lg border border-white/10 overflow-hidden bg-black/40">
+                        <iframe
+                          src={getDrivePreviewUrl(selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl)}
+                          className="w-full h-full border-0"
+                          title="Candidate CV Document"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500">
+                        <span>Direct Link:</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openScreenshotLightbox(selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl, selectedTeamApp)}
+                          className="h-6 text-[10px] text-cyan-300 hover:text-white hover:bg-white/10 p-1"
+                        >
+                          <Maximize2 className="h-3 w-3 mr-1" />
+                          View in Lightbox
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center border border-dashed border-white/10 rounded-lg">
+                      <FileText className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-xs text-zinc-400 font-mono">No CV attached by this applicant</p>
+                      <p className="text-[10px] text-zinc-600 mt-0.5">Contact candidate directly via email to request files</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer with email link */}
+            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedTeamApp(null)}
+                className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
+              >
+                Close Inspector
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCrmEmailTo(selectedTeamApp.email);
+                  setCrmSubject(`Resolve MUN 2.0 — ${selectedTeamApp.roleType} Application Follow-Up`);
+                  setCrmMessageBody(`Dear ${selectedTeamApp.fullName || selectedTeamApp.name || "Candidate"},\n\nWe have reviewed your application for Resolve MUN 2.0.\n\nWarm regards,\nResolve MUN 2.0 Secretariat`);
+                  setCrmRecipientMode("SINGLE");
+                  setSelectedTeamApp(null);
+                  setActiveTab("crm");
+                }}
+                className="h-9 px-4 text-xs border-white/15 text-white hover:bg-white/10 cursor-pointer gap-1.5"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                <span>Message Applicant in CRM</span>
+              </Button>
             </div>
           </div>
         </div>

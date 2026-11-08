@@ -419,12 +419,129 @@ export default function Home() {
       }
     };
 
-    // Attach listeners to OC and Socials forms once (no document.body MutationObserver)
+    // Multi-step navigation for Executive Board Modal
+    window.nextEbStep = function (stepNum) {
+      const currentStep = document.querySelector("#ebModal .form-step.active");
+      const currentStepNum = currentStep ? parseInt(currentStep.id.replace("ebStep", "")) : 1;
+      if (stepNum > currentStepNum) {
+        const inputs = currentStep ? currentStep.querySelectorAll("input[required], select[required], textarea[required]") : [];
+        let isValid = true;
+        inputs.forEach((input) => {
+          if (!input.value.trim()) {
+            input.style.borderBottomColor = "#ff4444";
+            isValid = false;
+          } else {
+            input.style.borderBottomColor = "";
+          }
+        });
+        if (!isValid) {
+          if (window.showCustomAlert) window.showCustomAlert("Please fill in all required fields before continuing.", "warning");
+          return;
+        }
+      }
+      document.querySelectorAll("#ebModal .form-step").forEach((step) => step.classList.remove("active"));
+      const targetStep = document.getElementById("ebStep" + stepNum);
+      if (targetStep) targetStep.classList.add("active");
+    };
+
+    window.handleEbSubmit = async (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+      const form = document.getElementById("ebRegForm");
+      if (!form) return;
+      const btn = form.querySelector('button[type="submit"]');
+      const spinner = document.getElementById("submitSpinner");
+
+      const fileInput = document.getElementById("ebCv");
+      let cvBase64 = "";
+      let cvName = "";
+      if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        cvName = file.name;
+        cvBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result || "");
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const nameVal = document.getElementById("ebName")?.value?.trim() || "";
+      const emailVal = document.getElementById("ebEmail")?.value?.trim() || "";
+      const pref1 = document.getElementById("ebPref1")?.value || "";
+      const pref2 = document.getElementById("ebPref2")?.value || "";
+
+      const data = {
+        name: nameVal,
+        fullName: nameVal,
+        phone: document.getElementById("ebPhone")?.value?.trim() || "",
+        email: emailVal,
+        institute: document.getElementById("ebInst")?.value?.trim() || "",
+        position: document.getElementById("ebRole")?.value?.trim() || "Executive Board",
+        experience: document.getElementById("ebExp")?.value?.trim() || "",
+        munExperience: document.getElementById("ebExp")?.value?.trim() || "",
+        why: document.getElementById("ebWhy")?.value?.trim() || "",
+        executiveSummary: document.getElementById("ebWhy")?.value?.trim() || "",
+        committees: `${pref1} & ${pref2}`,
+        prefCommittee1: pref1,
+        prefCommittee2: pref2,
+        dob: document.getElementById("ebDob")?.value || "",
+        referral: document.getElementById("ebReferral")?.value?.trim() || "",
+        munCount: document.getElementById("ebMunCount")?.value || "",
+        cv_file: cvBase64,
+        cvBase64: cvBase64,
+        cvName: cvName || `EB_CV_${nameVal.replace(/\s+/g, "_")}.pdf`,
+      };
+
+      try {
+        if (spinner) spinner.style.display = "flex";
+        if (btn) {
+          btn.disabled = true;
+          btn.innerText = "Submitting Application...";
+        }
+        const res = await submitEbApplication(data);
+        localStorage.removeItem("resolveMunEbRegForm");
+        form.reset();
+        window.nextEbStep(1);
+        if (window.closeModalById) window.closeModalById("ebModal");
+        if (window.showCustomAlert) {
+          window.showCustomAlert("Executive Board application submitted successfully! Check your inbox for confirmation.", "success", 6000);
+        }
+      } catch (err) {
+        console.error("EB Submit Error:", err);
+        if (window.showCustomAlert) {
+          window.showCustomAlert("Submission Error: " + (err?.message || "Please try again."), "error");
+        }
+      } finally {
+        if (spinner) spinner.style.display = "none";
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Submit EB Application";
+        }
+      }
+    };
+
+    // Attach listeners to OC, EB, and Socials forms once (no document.body MutationObserver)
     const bindCustomForms = () => {
       const ocForm = document.getElementById("ocRegForm");
       if (ocForm && !ocForm.__bound) {
         ocForm.__bound = true;
         ocForm.onsubmit = window.handleOcSubmit;
+      }
+      const ebForm = document.getElementById("ebRegForm");
+      if (ebForm && !ebForm.__bound) {
+        ebForm.__bound = true;
+        ebForm.onsubmit = window.handleEbSubmit;
+      }
+      const ebCvInput = document.getElementById("ebCv");
+      if (ebCvInput && !ebCvInput.__bound) {
+        ebCvInput.__bound = true;
+        ebCvInput.addEventListener("change", (e) => {
+          const fn = document.getElementById("ebCvFileName");
+          if (fn && e.target.files && e.target.files[0]) {
+            fn.textContent = e.target.files[0].name;
+            fn.style.color = "#38bdf8";
+          }
+        });
       }
       const socForm = document.getElementById("socialsRegForm");
       if (socForm && !socForm.__bound) {

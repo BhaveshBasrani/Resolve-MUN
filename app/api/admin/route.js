@@ -388,50 +388,73 @@ export async function GET(request) {
 
     const rawOc = asData.ocApplicants || asData.OC_Applications || [];
     const asOcApplicants = rawOc.map(o => ({
+      ...o,
       id: o.AppID || o.id || o.appId,
       appId: o.AppID || o.id || o.appId,
       fullName: o.FullName || o.fullName || o.name || "OC Candidate",
       name: o.FullName || o.fullName || o.name || "OC Candidate",
       email: o.Email || o.email || "",
       phone: o.Phone && o.Phone !== "#ERROR!" ? String(o.Phone) : "",
+      institution: o.Institution || o.SchoolCollege || o.schoolCollege || o.institution || "",
+      grade: o.Grade || o.grade || "",
+      dob: o.DOB || o.dob || "",
+      residentialAddress: o.ResidentialAddress || o.residentialAddress || o.address || "",
+      instagram: o.Instagram || o.instagram || "",
+      transportNeeded: o.TransportNeeded || o.transportNeeded || "",
+      previousExperience: o.PreviousExperience || o.previousExperience || o.StatementOfPurpose || o.sop || "",
+      feeTier: o.FeeTier || o.feeTier || "₹1,500",
+      paymentUTR: o.PaymentUTR || o.paymentUTR || o.utr || "",
+      paymentScreenshotURL: o.PaymentScreenshotURL || o.paymentScreenshotURL || o.CV_URL || o.cvUrl || o.screenshotUrl || "",
+      cvUrl: o.CV_URL || o.cvUrl || o.PaymentScreenshotURL || o.paymentScreenshotURL || "",
       department1: o.Department1 || o.department1 || "",
       department2: o.Department2 || o.department2 || "",
-      sop: o.StatementOfPurpose || o.sop || "",
-      cvUrl: o.CV_URL || o.cv_url || o.cvUrl || "",
+      sop: o.StatementOfPurpose || o.sop || o.PreviousExperience || "",
       status: o.Status || o.status || "Under Review",
       timestamp: o.Timestamp || o.timestamp || new Date().toISOString(),
     }));
 
     const rawEb = asData.ebApplicants || asData.EB_Applications || [];
     const asEbApplicants = rawEb.map(e => ({
+      ...e,
       id: e.AppID || e.id || e.appId,
       appId: e.AppID || e.id || e.appId,
       fullName: e.FullName || e.fullName || e.name || "EB Candidate",
       name: e.FullName || e.fullName || e.name || "EB Candidate",
       email: e.Email || e.email || "",
       phone: e.Phone && e.Phone !== "#ERROR!" ? String(e.Phone) : "",
-      position: e.RolePreference || e.role_preference || "",
-      experience: e.Experience || e.experience || "",
-      why: e.WhyJoin || e.why_join || "",
-      cvUrl: e.CV_URL || e.cv_url || "",
+      prefCommittee1: e.PrefCommittee1 || e.prefCommittee1 || e.pref1 || e.RolePreference || "",
+      prefCommittee2: e.PrefCommittee2 || e.prefCommittee2 || e.pref2 || "",
+      munExperience: e.MUNExperience || e.munExperience || e.Experience || e.experience || "",
+      executiveSummary: e.ExecutiveSummary || e.executiveSummary || e.WhyJoin || e.why || "",
+      position: e.PrefCommittee1 || e.RolePreference || e.role_preference || "Executive Board",
+      experience: e.MUNExperience || e.Experience || e.experience || "",
+      why: e.ExecutiveSummary || e.WhyJoin || e.why_join || "",
+      cvUrl: e.CV_URL || e.cv_url || e.cvUrl || e.DriveURL || e.driveUrl || "",
       status: e.Status || e.status || "Under Review",
       timestamp: e.Timestamp || e.timestamp || new Date().toISOString(),
     }));
 
     const rawSec = asData.secretariatApplicants || asData.Secretariat_Applications || [];
     const asSecApplicants = rawSec.map(s => ({
+      ...s,
       id: s.AppID || s.id || s.appId,
       appId: s.AppID || s.id || s.appId,
       fullName: s.FullName || s.fullName || s.name || "Secretariat Candidate",
       name: s.FullName || s.fullName || s.name || "Secretariat Candidate",
       email: s.Email || s.email || "",
       phone: s.Phone && s.Phone !== "#ERROR!" ? String(s.Phone) : "",
-      schoolCollege: s.SchoolCollege || s.school_college || "",
-      previousExperiences: s.PreviousExperiences || s.previous_experiences || "",
-      whyJoin: s.WhyJoin || s.why_join || "",
-      dailyCommitment: s.DailyCommitment || s.daily_commitment || "",
-      portfolioUrl: s.PortfolioURL || s.portfolio_url || "",
-      resumeUrl: s.ResumeURL || s.resume_url || "",
+      instagram: s.Instagram || s.instagram || "",
+      schoolCollege: s.SchoolCollege || s.schoolCollege || s.institution || "",
+      residentialAddress: s.ResidentialAddress || s.residentialAddress || "",
+      dob: s.DOB || s.dob || "",
+      grade: s.Grade || s.grade || "",
+      position: s.Position || s.position || "",
+      whyJoin: s.WhyJoin || s.whyJoin || s.why || "",
+      contribution: s.Contribution || s.contribution || "",
+      dailyCommitment: s.DailyCommitment || s.dailyCommitment || "",
+      portfolioUrl: s.PortfolioURL || s.portfolio_url || s.portfolioUrl || "",
+      resumeUrl: s.ResumeURL || s.resume_url || s.resumeUrl || s.CV_URL || s.cvUrl || "",
+      cvUrl: s.ResumeURL || s.resume_url || s.resumeUrl || s.CV_URL || s.cvUrl || "",
       status: s.Status || s.status || "Under Review",
       timestamp: s.Timestamp || s.timestamp || new Date().toISOString(),
     }));
@@ -860,6 +883,39 @@ export async function POST(request) {
       }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'Document added to committee', committeeDocuments: currentDocs });
+    }
+
+    // 0c2. TEAM APPLICATION MANAGEMENT: ADMIN_UPDATE_APPLICANT_STATUS
+    if (action === 'ADMIN_UPDATE_APPLICANT_STATUS') {
+      const { appId, roleType, email, fullName, position, newStatus } = body;
+      
+      // 1. Update in Supabase
+      if (supabase) {
+        try {
+          const tableName = roleType === 'OC' ? 'oc_applications' : roleType === 'SEC' ? 'secretariat_applications' : 'eb_applications';
+          await supabase.from(tableName).update({ status: newStatus }).or(`app_id.eq.${appId},email.eq.${email}`);
+        } catch (err) {
+          console.warn("[Supabase] Applicant status update notice:", err.message);
+        }
+      }
+
+      // 2. Sync to Google Apps Script & dispatch official offer letter if Accepted
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'ADMIN_ACCEPT_APPLICANT',
+          adminKey: ADMIN_KEY,
+          appId,
+          roleType,
+          email,
+          fullName,
+          position: position || (roleType === 'OC' ? 'Organizing Committee' : roleType === 'EB' ? 'Executive Board' : 'Secretariat'),
+          status: newStatus,
+        }),
+      }).catch(() => {});
+
+      return NextResponse.json({ status: 'success', appId, newStatus, message: `Applicant updated to ${newStatus}` });
     }
 
     // 0d. USER ROLE MANAGEMENT: ADMIN_UPDATE_USER_ROLE

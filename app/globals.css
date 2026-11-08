@@ -11601,7 +11601,13 @@ select:-webkit-autofill {
    strobing on iOS Safari and Android Chrome without changing any visuals.
    ========================================================================== */
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  /* 1. Eliminate VRAM exhaustion by neutralizing will-change on static boxes */
+  /* 1. Eliminate VRAM exhaustion & compositor tile drops on mobile devices */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+  }
+
+  /* Stabilize glass cards & prevent layer explosion */
   .committee-card,
   .selection-card,
   .letter-container,
@@ -11619,20 +11625,26 @@ select:-webkit-autofill {
   .adaptive-hero-btn,
   .liquid-glass-pill,
   .liquid-nav-island,
-  .notch-container,
-  [class*="backdrop-blur"],
-  [class*="rounded-xl"],
-  [class*="rounded-2xl"],
-  [class*="rounded-3xl"] {
+  .notch-container {
     will-change: auto !important;
     -webkit-backface-visibility: hidden !important;
     backface-visibility: hidden !important;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    isolation: isolate;
+    transform: none;
   }
 
-  /* 2. Anchor 3D Perspective containers to prevent WebKit non-affine blur flicker */
+  /* 2. Optimized mobile glassmorphism: retain deep dark glass appearance without GPU stall */
+  @media (max-width: 768px) {
+    .glass-panel,
+    .liquid-nav-island,
+    .modal-content,
+    .selection-card,
+    .committee-card {
+      -webkit-backdrop-filter: blur(10px) saturate(120%) !important;
+      backdrop-filter: blur(10px) saturate(120%) !important;
+    }
+  }
+
+  /* 3. Anchor 3D Perspective containers to prevent WebKit non-affine blur flicker */
   .gf-root,
   .gf-stage,
   .gf-front,
@@ -11655,7 +11667,7 @@ select:-webkit-autofill {
     transform: none !important;
   }
 
-  /* 3. Disable false touch-hover 350ms box-shadow transitions on mobile */
+  /* 4. Disable false touch-hover 350ms box-shadow transitions on mobile */
   .committee-card:hover,
   .selection-card:hover,
   .about-stat:hover,
@@ -11668,15 +11680,13 @@ select:-webkit-autofill {
     transform: none !important;
   }
 
-  /* 4. Prevent sub-pixel border jitter on high-DPI retina mobile screens */
+  /* 5. Prevent sub-pixel border jitter on high-DPI retina mobile screens */
   .selection-card,
   .committee-card,
   .about-stat,
   .modal-content,
   .sec-card,
-  .letter-container,
-  [class*="rounded-xl"],
-  [class*="rounded-2xl"] {
+  .letter-container {
     background-clip: padding-box !important;
   }
 }
