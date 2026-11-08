@@ -341,7 +341,7 @@ export async function GET(request) {
             typeof (l.DraftData || l.draftData) === "string"
               ? JSON.parse(l.DraftData || l.draftData)
               : l.DraftData || l.draftData;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const leadObj = {
@@ -602,7 +602,7 @@ export async function POST(request) {
           action: 'SAVE_DRAFT_LEAD',
           ...body,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return NextResponse.json({ status: 'success', lead: leadObj });
     }
@@ -651,7 +651,7 @@ export async function POST(request) {
           name,
           avatarUrl,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'User synced successfully' });
     }
@@ -813,7 +813,7 @@ export async function POST(request) {
           adminKey: ADMIN_KEY,
           capacities,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'Committee capacities updated', capacities });
     }
@@ -857,7 +857,7 @@ export async function POST(request) {
           url,
           type,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'Document added to committee', committeeDocuments: currentDocs });
     }
@@ -1245,7 +1245,7 @@ export async function POST(request) {
           sheetName: 'Abandoned_Leads',
           recordId: targetId || targetEmail || targetPhone,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'Lead deleted successfully' });
     }
@@ -1272,7 +1272,7 @@ export async function POST(request) {
             supabase.from('delegate_applications').delete().ilike('email', '%test%'),
             supabase.from('delegate_applications').delete().ilike('email', '%example.com%'),
           ]);
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Replicate to Google Apps Script
@@ -1283,7 +1283,7 @@ export async function POST(request) {
           action: 'PURGE_TEST_DATA',
           adminKey: ADMIN_KEY,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'Test leads and sample records purged successfully' });
     }
