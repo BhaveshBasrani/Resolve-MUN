@@ -205,11 +205,75 @@ export default function SuperAdminPage() {
   const scannerVideoRef = useRef(null);
   const scannerInputRef = useRef(null);
 
-  // In-Site Payment Screenshot Lightbox
+  // In-Site Payment Screenshot Lightbox & Document Viewer
   const [viewingImage, setViewingImage] = useState(null);
   const [viewingDelegate, setViewingDelegate] = useState(null);
   const [imageZoom, setImageZoom] = useState(1);
   const [imageRotation, setImageRotation] = useState(0);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [lightboxMode, setLightboxMode] = useState("image"); // "image" | "preview"
+
+  // Google Drive URL & Thumbnail Resolvers
+  const getDriveFileId = (url) => {
+    if (!url) return null;
+    const s = String(url).trim();
+    const match = s.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                  s.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+                  s.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  };
+
+  const getDirectImageUrl = (url) => {
+    if (!url) return "";
+    const s = String(url).trim();
+    if (s.startsWith("data:") || s.startsWith("blob:")) return s;
+    const fileId = getDriveFileId(s);
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+    }
+    return s;
+  };
+
+  const getDrivePreviewUrl = (url) => {
+    if (!url) return "";
+    const s = String(url).trim();
+    const fileId = getDriveFileId(s);
+    if (fileId) {
+      return `https://drive.google.com/file/d/${fileId}/preview`;
+    }
+    return s;
+  };
+
+  const openScreenshotLightbox = (url, delegate = null) => {
+    if (!url) return;
+    setViewingImage(url);
+    setViewingDelegate(delegate);
+    setImageZoom(1);
+    setImageRotation(0);
+    setImageLoadError(false);
+    const isPdf = typeof url === "string" && (url.toLowerCase().endsWith(".pdf") || url.toLowerCase().includes(".pdf"));
+    setLightboxMode(isPdf ? "preview" : "image");
+  };
+
+  const handleUpdateProofUrl = async (regId, proofUrl) => {
+    if (!regId || !proofUrl) return;
+    setRegistrations((prev) =>
+      prev.map((d) => (d.regId === regId ? { ...d, paymentScreenshotURL: proofUrl } : d))
+    );
+    notify(`Saved receipt link for ${regId}`);
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminKey: "abhilashisgoat",
+          action: "ADMIN_UPDATE_DELEGATE",
+          regId,
+          updates: { payment_screenshot_url: proofUrl, PaymentScreenshotURL: proofUrl },
+        }),
+      });
+    } catch (_) {}
+  };
 
   // CRM Mailer State
   const [crmRecipientMode, setCrmRecipientMode] = useState("ALL_DELEGATES");
@@ -288,7 +352,7 @@ export default function SuperAdminPage() {
             allocatedCountry: d.allocatedCountry || "",
             paymentUTR: d.paymentUTR || d.utr || "",
             paymentStatus: (d.paymentStatus || (d.paymentVerified === "verified" ? "VERIFIED" : "PENDING")).toUpperCase(),
-            paymentScreenshotURL: d.paymentScreenshotURL || d.screenshotUrl || "",
+            paymentScreenshotURL: d.paymentScreenshotURL || d.payment_screenshot_url || d.screenshotUrl || d.driveUrl || d.DriveURL || d.PaymentScreenshotURL || "",
             timestamp: d.timestamp || d.created_at || "",
           }));
 
@@ -303,7 +367,7 @@ export default function SuperAdminPage() {
             delegateCount: parseInt(d.delegateCount || d.size || 6),
             totalAmount: d.totalAmount || "₹13,200",
             paymentUTR: d.paymentUTR || d.utr || "",
-            paymentScreenshotURL: d.paymentScreenshotURL || d.screenshotUrl || "",
+            paymentScreenshotURL: d.paymentScreenshotURL || d.payment_screenshot_url || d.screenshotUrl || d.driveUrl || d.DriveURL || d.PaymentScreenshotURL || "",
             paymentStatus: (d.paymentStatus || "PENDING").toUpperCase(),
             timestamp: d.timestamp || d.created_at || "",
           }));
@@ -1696,9 +1760,23 @@ export default function SuperAdminPage() {
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="font-mono text-xs text-zinc-300 block">
-                                {d.paymentUTR || "OFFLINE / MANUAL"}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-xs text-zinc-300">
+                                  {d.paymentUTR || "OFFLINE / MANUAL"}
+                                </span>
+                                {d.paymentUTR && (
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(d.paymentUTR);
+                                      notify(`Copied UTR: ${d.paymentUTR}`);
+                                    }}
+                                    title="Copy UTR"
+                                    className="text-zinc-500 hover:text-white cursor-pointer"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
                               <div className="flex items-center gap-1.5 mt-1">
                                 <Badge
                                   variant={d.paymentStatus === "VERIFIED" ? "default" : "secondary"}
@@ -1709,18 +1787,27 @@ export default function SuperAdminPage() {
                                 >
                                   {d.paymentStatus || "PENDING"}
                                 </Badge>
-                                {d.paymentScreenshotURL && (
+                                {d.paymentScreenshotURL ? (
                                   <button
-                                    onClick={() => {
-                                      setViewingImage(d.paymentScreenshotURL);
-                                      setViewingDelegate(d);
-                                      setImageZoom(1);
-                                      setImageRotation(0);
-                                    }}
-                                    className="text-[10px] text-zinc-400 hover:text-white underline inline-flex items-center gap-0.5 cursor-pointer"
+                                    onClick={() => openScreenshotLightbox(d.paymentScreenshotURL, d)}
+                                    className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium underline inline-flex items-center gap-0.5 cursor-pointer ml-1"
+                                    title="View Payment Proof"
                                   >
                                     <Eye className="h-3 w-3" />
                                     Proof
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      const url = window.prompt(`Paste Payment Screenshot / Drive URL for ${d.name || d.fullName} (${d.regId}):`);
+                                      if (url && url.trim()) {
+                                        handleUpdateProofUrl(d.regId, url.trim());
+                                      }
+                                    }}
+                                    className="text-[9px] text-zinc-500 hover:text-zinc-300 italic inline-flex items-center gap-0.5 cursor-pointer ml-1"
+                                    title="Attach receipt link manually"
+                                  >
+                                    <Plus className="h-2.5 w-2.5" /> Proof
                                   </button>
                                 )}
                               </div>
@@ -1874,15 +1961,18 @@ export default function SuperAdminPage() {
                               </Badge>
                             </td>
                             <td className="px-4 py-3 text-right">
-                              {d.paymentScreenshotURL && (
+                              {d.paymentScreenshotURL ? (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setViewingImage(d.paymentScreenshotURL)}
-                                  className="h-7 text-xs border-white/10"
+                                  onClick={() => openScreenshotLightbox(d.paymentScreenshotURL, d)}
+                                  className="h-7 text-xs border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/30 cursor-pointer"
                                 >
+                                  <Eye className="h-3 w-3 mr-1" />
                                   Proof
                                 </Button>
+                              ) : (
+                                <span className="text-[10px] text-zinc-600 italic">No file</span>
                               )}
                             </td>
                           </tr>
@@ -2463,7 +2553,7 @@ export default function SuperAdminPage() {
                         Committee Capacities &amp; Allocation Matrix
                       </CardTitle>
                       <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                        Configure official committee seat caps, monitor portfolio distribution, and upload dossiers
+                        Configure committee seat caps, monitor delegate counts, and attach background guides
                       </CardDescription>
                     </div>
                     <Button
@@ -2528,11 +2618,11 @@ export default function SuperAdminPage() {
                               />
                             </div>
 
-                            {/* Dossiers / Background Guides */}
+                            {/* Background Guides & Documents */}
                             <div className="text-[11px] space-y-1">
-                              <span className="text-zinc-500 font-mono block">Dossiers &amp; Resources:</span>
+                              <span className="text-zinc-500 font-mono block">Background Guides &amp; Resources:</span>
                               {docs.length === 0 ? (
-                                <span className="text-zinc-600 italic block">No resources attached</span>
+                                <span className="text-zinc-600 italic block">No guides attached</span>
                               ) : (
                                 docs.map((doc, idx) => (
                                   <a
@@ -2558,7 +2648,7 @@ export default function SuperAdminPage() {
                   <div className="rounded-xl border border-white/10 bg-black/60 p-4 space-y-3">
                     <h4 className="text-xs font-semibold text-white uppercase tracking-wider flex items-center gap-2">
                       <FolderPlus className="h-4 w-4 text-cyan-400" />
-                      Attach Dossier / Background Guide to Committee
+                      Attach Background Guide / Study Document to Committee
                     </h4>
                     <form onSubmit={handleUploadDossier} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
                       <div>
@@ -2598,7 +2688,7 @@ export default function SuperAdminPage() {
                         className="h-8 bg-white hover:bg-zinc-200 text-black text-xs font-semibold cursor-pointer"
                       >
                         <FileUp className="h-3.5 w-3.5 mr-1" />
-                        Attach Dossier
+                        Attach Guide / Document
                       </Button>
                     </form>
                   </div>
@@ -3341,13 +3431,13 @@ export default function SuperAdminPage() {
           }}
         >
           <div
-            className="relative max-w-2xl max-h-[90vh] w-full rounded-2xl border border-white/20 bg-zinc-950 p-4 overflow-hidden flex flex-col items-center gap-3 shadow-2xl"
+            className="relative max-w-3xl max-h-[92vh] w-full rounded-2xl border border-white/20 bg-zinc-950 p-4 overflow-hidden flex flex-col items-center gap-3 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Controls */}
             <div className="w-full flex items-center justify-between border-b border-white/10 pb-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white uppercase font-sans">Payment Verification Lightbox</span>
+                <span className="text-xs font-bold text-white uppercase tracking-wider font-sans">Payment Receipt Lightbox</span>
                 {viewingDelegate && (
                   <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-zinc-300">
                     {viewingDelegate.regId} · UTR: {viewingDelegate.paymentUTR || "None"}
@@ -3355,6 +3445,16 @@ export default function SuperAdminPage() {
                 )}
               </div>
               <div className="flex items-center gap-1.5">
+                {getDriveFileId(viewingImage) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLightboxMode((m) => (m === "image" ? "preview" : "image"))}
+                    className="h-7 text-[10px] px-2 border-white/15 text-zinc-300 hover:text-white"
+                  >
+                    {lightboxMode === "image" ? "Drive Preview / PDF" : "Image View"}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -3394,29 +3494,53 @@ export default function SuperAdminPage() {
               </div>
             </div>
 
-            {/* Image Canvas */}
-            <div className="w-full flex-1 min-h-[350px] max-h-[60vh] overflow-auto flex items-center justify-center bg-black/60 rounded-xl p-2 border border-white/10">
-              <img
-                src={viewingImage}
-                alt="Payment Screenshot Proof"
-                style={{
-                  transform: `scale(${imageZoom}) rotate(${imageRotation}deg)`,
-                  transition: "transform 0.15s ease-out",
-                }}
-                className="max-h-[55vh] max-w-full object-contain rounded"
-              />
+            {/* Image / Preview Canvas */}
+            <div className="w-full flex-1 min-h-[380px] max-h-[62vh] overflow-auto flex items-center justify-center bg-black/70 rounded-xl p-2 border border-white/10">
+              {lightboxMode === "preview" || imageLoadError ? (
+                <iframe
+                  src={getDrivePreviewUrl(viewingImage)}
+                  className="w-full h-[58vh] rounded-lg border-0 bg-zinc-900"
+                  title="Payment Proof Document"
+                  allow="autoplay"
+                />
+              ) : (
+                <img
+                  src={getDirectImageUrl(viewingImage)}
+                  alt="Payment Screenshot Proof"
+                  onError={() => {
+                    // Fall back to Drive preview iframe if thumbnail fails
+                    setImageLoadError(true);
+                  }}
+                  style={{
+                    transform: `scale(${imageZoom}) rotate(${imageRotation}deg)`,
+                    transition: "transform 0.15s ease-out",
+                  }}
+                  className="max-h-[58vh] max-w-full object-contain rounded"
+                />
+              )}
             </div>
 
             {/* Quick Actions Footer */}
             <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 border-t border-white/10">
-              <a
-                href={viewingImage}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-zinc-400 hover:text-white underline inline-flex items-center gap-1"
-              >
-                Open Original File <ExternalLink className="h-3 w-3" />
-              </a>
+              <div className="flex items-center gap-3">
+                <a
+                  href={viewingImage}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-zinc-300 hover:text-white underline inline-flex items-center gap-1 font-mono"
+                >
+                  Open in Google Drive <ExternalLink className="h-3 w-3" />
+                </a>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(viewingImage);
+                    notify("Receipt URL copied to clipboard");
+                  }}
+                  className="text-xs text-zinc-400 hover:text-zinc-200 inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Copy className="h-3 w-3" /> Copy Link
+                </button>
+              </div>
 
               {viewingDelegate && (
                 <div className="flex items-center gap-2">
