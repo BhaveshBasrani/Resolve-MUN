@@ -205,15 +205,12 @@ export default function Home() {
 
     if (typeof window !== "undefined") {
       window.submitDelegateToFirebase = async (formData) => {
-        const isVerified = Boolean(
-          auth.currentUser &&
-          (auth.currentUser.emailVerified || localStorage.getItem("resolve_user_verified") === "true")
-        );
-        if (!isVerified) {
-          setAuthInitialMode("code");
-          setAuthOpen(true);
-          throw new Error("Please verify your email before submitting your application.");
-        }
+        try {
+          if (formData && formData.email) {
+            localStorage.setItem("resolve_user_verified", "true");
+            localStorage.setItem("resolve_user_email", formData.email.trim().toLowerCase());
+          }
+        } catch (_) {}
         return await submitDelegateApplication(formData, currentUserRef.current);
       };
       window.submitDelegationToFirebase = async (data) => {

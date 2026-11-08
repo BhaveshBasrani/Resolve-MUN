@@ -90,7 +90,8 @@ export async function GET(request) {
 
     if (supabase) {
       try {
-        const [delRes, delegRes, ocRes, ebRes, secRes, profRes] = await Promise.all([
+        const [realDelRes, appDelRes, delegRes, ocRes, ebRes, secRes, profRes] = await Promise.all([
+          supabase.from('delegates').select('*').order('created_at', { ascending: false }),
           supabase.from('delegate_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('delegation_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('oc_applications').select('*').order('created_at', { ascending: false }),
@@ -99,21 +100,28 @@ export async function GET(request) {
           supabase.from('profiles').select('*').order('created_at', { ascending: false }),
         ]);
 
-        if (delRes.data) {
-          sbDelegates = delRes.data.map(d => ({
+        const rawAllDelegates = [...(realDelRes.data || []), ...(appDelRes.data || [])];
+        if (rawAllDelegates.length > 0) {
+          sbDelegates = rawAllDelegates.map(d => ({
             ...d,
-            id: d.id,
-            _id: d.id,
+            id: d.delegate_id || d.id,
+            _id: d.delegate_id || d.id,
             regId: d.delegate_id || d.id,
             delegateId: d.delegate_id || d.id,
             fullName: d.name || d.full_name || 'Delegate',
             name: d.name || d.full_name || 'Delegate',
             email: d.email || '',
-            phone: d.phone || '',
-            institution: d.institute || 'Individual',
-            school: d.institute || 'Individual',
+            phone: d.phone ? String(d.phone) : '',
+            institution: d.institute || d.school || 'Individual',
+            school: d.school || d.institute || 'Individual',
             grade: d.grade || '',
             dob: d.dob || '',
+            pref1_committee: d.pref1_committee || '',
+            pref1_country: d.pref1_country || d.pref1_portfolio1 || '',
+            pref2_committee: d.pref2_committee || '',
+            pref2_country: d.pref2_country || d.pref2_portfolio1 || '',
+            pref3_committee: d.pref3_committee || '',
+            pref3_country: d.pref3_country || d.pref3_portfolio1 || '',
             allocatedCommittee: d.allocated_committee || '',
             allocatedCountry: d.allocated_country || '',
             paymentUTR: d.payment_utr || '',
@@ -648,6 +656,132 @@ export async function POST(request) {
       return NextResponse.json({ status: 'success', message: 'User synced successfully' });
     }
 
+    // 0c. PUBLIC REGISTRATION SUBMISSION: SUBMIT_DELEGATE
+    if (action === 'SUBMIT_DELEGATE' || action === 'DELEGATE_REGISTRATION') {
+      const generatedId = body.regId || body.delegateId || body.id || `RM26-DEL-${Math.floor(1000 + Math.random() * 9000)}`;
+      const cleanEmail = (body.email || '').trim().toLowerCase();
+      const delegateName = (body.fullName || body.name || 'Delegate').trim();
+      const phone = (body.phone ? String(body.phone) : '').trim();
+      const institute = body.institute || body.institution || body.school || 'Individual';
+      const grade = body.grade || '11';
+      const utr = (body.payment_utr || body.paymentUTR || body.txnID || 'PENDING').trim();
+      const screenshot = body.payment_screenshot_link || body.payment_screenshot_url || body.paymentScreenshotBase64 || body.screenshotBase64 || '';
+      const fee = parseFloat(body.registration_fee) || 2500;
+      const qrToken = `RESOLVE26:DELEGATE:${generatedId}:${cleanEmail}`;
+
+      const newDelObj = {
+        id: generatedId,
+        _id: generatedId,
+        regId: generatedId,
+        delegateId: generatedId,
+        fullName: delegateName,
+        name: delegateName,
+        email: cleanEmail,
+        phone: phone,
+        school: institute,
+        institution: institute,
+        grade: grade,
+        dob: body.dob || '',
+        address: body.address || '',
+        transport: body.transport || 'No',
+        experience: body.experience || '',
+        pref1_committee: body.pref1_committee || '',
+        pref1_country: body.pref1_country || '',
+        pref2_committee: body.pref2_committee || '',
+        pref2_country: body.pref2_country || '',
+        pref3_committee: body.pref3_committee || '',
+        pref3_country: body.pref3_country || '',
+        paymentUTR: utr,
+        paymentStatus: 'PENDING_VERIFICATION',
+        paymentVerified: 'Pending',
+        paymentScreenshotURL: screenshot,
+        status: 'Confirmed',
+        timestamp: new Date().toISOString(),
+      };
+
+      // Add to in-memory store for instant visibility in admin panel
+      memoryAddedDelegates.set(generatedId, newDelObj);
+      memoryDeletedIds.delete(generatedId);
+      if (cleanEmail) inMemoryDraftLeads.delete(cleanEmail);
+      if (phone) inMemoryDraftLeads.delete(phone);
+      adminDataCache = null;
+
+      // Persist in Supabase 'delegates' and 'delegate_applications'
+      if (supabase) {
+        try {
+          await Promise.all([
+            supabase.from('delegates').upsert({
+              delegate_id: generatedId,
+              full_name: delegateName,
+              name: delegateName,
+              email: cleanEmail,
+              phone: phone,
+              school: institute,
+              institute: institute,
+              grade: grade,
+              pref1_committee: body.pref1_committee || '',
+              pref1_country: body.pref1_country || '',
+              pref2_committee: body.pref2_committee || '',
+              pref2_country: body.pref2_country || '',
+              pref3_committee: body.pref3_committee || '',
+              pref3_country: body.pref3_country || '',
+              registration_fee: fee,
+              payment_utr: utr,
+              payment_status: 'PENDING_VERIFICATION',
+              payment_screenshot_url: screenshot.startsWith('http') ? screenshot : '',
+              status: 'Confirmed',
+              qr_token: qrToken,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'email' }),
+            supabase.from('delegate_applications').upsert({
+              name: delegateName,
+              email: cleanEmail,
+              phone: phone,
+              institute: institute,
+              grade: grade,
+              registration_fee: fee,
+              payment_utr: utr,
+              payment_status: 'PENDING_VERIFICATION',
+              status: 'Confirmed',
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'email' })
+          ]);
+        } catch (sbErr) {
+          console.warn("[Supabase] Submission insert notice:", sbErr.message);
+        }
+      }
+
+      // Replicate to Google Apps Script (Drive storage + auto confirmation email)
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'SUBMIT_DELEGATE',
+          regId: generatedId,
+          id: generatedId,
+          ...body,
+          name: delegateName,
+          fullName: delegateName,
+          email: cleanEmail,
+          phone: phone,
+          institute: institute,
+          payment_utr: utr,
+          payment_screenshot_link: screenshot,
+          paymentScreenshotBase64: screenshot,
+          screenshotBase64: screenshot,
+        }),
+      }).catch(err => console.warn("Google Apps Script async dispatch notice:", err.message));
+
+      return NextResponse.json({
+        status: 'success',
+        regId: generatedId,
+        delegateId: generatedId,
+        id: generatedId,
+        ticketId: generatedId,
+        message: 'Registration submitted successfully!'
+      });
+    }
+
     const key = body.adminKey;
     if (!isAuthorizedKey(key)) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
@@ -811,24 +945,44 @@ export async function POST(request) {
       memoryAddedDelegates.set(genId, newDelegate);
       memoryDeletedIds.delete(genId);
 
-      // Insert into Supabase delegate_applications
+      // Insert into Supabase delegates & delegate_applications
       if (supabase) {
         try {
-          await supabase.from('delegate_applications').insert({
-            name: delegateName,
-            email: cleanEmail,
-            phone: body.phone || '',
-            institute: institute,
-            grade: body.grade || '11',
-            registration_fee: parseFloat(body.registrationFee) || 2500,
-            payment_utr: utr,
-            payment_status: payStatus,
-            status: country ? 'ALLOTTED' : 'PENDING',
-            allocated_committee: committee,
-            allocated_country: country,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+          await Promise.all([
+            supabase.from('delegates').insert({
+              delegate_id: genId,
+              full_name: delegateName,
+              name: delegateName,
+              email: cleanEmail,
+              phone: body.phone || '',
+              school: institute,
+              institute: institute,
+              grade: body.grade || '11',
+              registration_fee: parseFloat(body.registrationFee) || 2500,
+              payment_utr: utr,
+              payment_status: payStatus,
+              status: country ? 'ALLOTTED' : 'PENDING',
+              allocated_committee: committee,
+              allocated_country: country,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }),
+            supabase.from('delegate_applications').insert({
+              name: delegateName,
+              email: cleanEmail,
+              phone: body.phone || '',
+              institute: institute,
+              grade: body.grade || '11',
+              registration_fee: parseFloat(body.registrationFee) || 2500,
+              payment_utr: utr,
+              payment_status: payStatus,
+              status: country ? 'ALLOTTED' : 'PENDING',
+              allocated_committee: committee,
+              allocated_country: country,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+          ]);
         } catch (e) {
           console.warn("[Supabase] Insert delegate notice:", e.message);
         }
@@ -880,11 +1034,11 @@ export async function POST(request) {
       if (supabase) {
         try {
           const patch = { updated_at: new Date().toISOString() };
-          if (body.fullName !== undefined) patch.name = body.fullName;
-          if (body.name !== undefined) patch.name = body.name;
+          if (body.fullName !== undefined) { patch.name = body.fullName; patch.full_name = body.fullName; }
+          if (body.name !== undefined) { patch.name = body.name; patch.full_name = body.name; }
           if (body.phone !== undefined) patch.phone = body.phone;
-          if (body.institution !== undefined) patch.institute = body.institution;
-          if (body.school !== undefined) patch.institute = body.school;
+          if (body.institution !== undefined) { patch.institute = body.institution; patch.school = body.institution; }
+          if (body.school !== undefined) { patch.institute = body.school; patch.school = body.school; }
           if (body.grade !== undefined) patch.grade = body.grade;
           if (body.allocatedCommittee !== undefined) patch.allocated_committee = body.allocatedCommittee;
           if (body.allocatedCountry !== undefined) patch.allocated_country = body.allocatedCountry;
@@ -894,14 +1048,23 @@ export async function POST(request) {
           }
           if (body.allocatedCommittee && !patch.status) patch.status = 'ALLOTTED';
 
-          let q = supabase.from('delegate_applications').update(patch);
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+          let q1 = supabase.from('delegates').update(patch);
+          let q2 = supabase.from('delegate_applications').update(patch);
           if (isUuid) {
-            q = q.eq('id', targetId);
-          } else if (targetEmail) {
-            q = q.ilike('email', targetEmail);
+            q1 = q1.eq('id', targetId);
+            q2 = q2.eq('id', targetId);
+          } else {
+            if (targetId) {
+              q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
+              q2 = q2.or(`name.ilike.${targetId},email.ilike.${targetId}`);
+            }
+            if (targetEmail) {
+              q1 = q1.ilike('email', targetEmail);
+              q2 = q2.ilike('email', targetEmail);
+            }
           }
-          await q;
+          await Promise.all([q1, q2]);
         } catch (e) {
           console.warn("[Supabase] Update delegate notice:", e.message);
         }
@@ -1023,10 +1186,22 @@ export async function POST(request) {
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q = supabase.from('delegate_applications').delete();
-          if (isUuid) q = q.eq('id', targetId);
-          else if (targetEmail) q = q.ilike('email', targetEmail);
-          await q;
+          let q1 = supabase.from('delegates').delete();
+          let q2 = supabase.from('delegate_applications').delete();
+          if (isUuid) {
+            q1 = q1.eq('id', targetId);
+            q2 = q2.eq('id', targetId);
+          } else {
+            if (targetId) {
+              q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
+              q2 = q2.or(`name.ilike.${targetId},email.ilike.${targetId}`);
+            }
+            if (targetEmail) {
+              q1 = q1.ilike('email', targetEmail);
+              q2 = q2.ilike('email', targetEmail);
+            }
+          }
+          await Promise.all([q1, q2]);
         } catch (e) {
           console.warn("[Supabase] Delete delegate notice:", e.message);
         }
@@ -1044,6 +1219,73 @@ export async function POST(request) {
       }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'Record deleted successfully' });
+    }
+
+    // 6b. LEAD MANAGEMENT: DELETE_LEAD
+    if (action === 'DELETE_LEAD' || action === 'ADMIN_DELETE_LEAD') {
+      const targetId = (body.leadId || body.id || '').trim();
+      const targetEmail = (body.email || '').trim().toLowerCase();
+      const targetPhone = (body.phone ? String(body.phone) : '').trim();
+
+      if (targetId) memoryDeletedIds.add(targetId);
+      if (targetEmail) {
+        memoryDeletedIds.add(targetEmail);
+        inMemoryDraftLeads.delete(targetEmail);
+      }
+      if (targetPhone) inMemoryDraftLeads.delete(targetPhone);
+      if (targetId) inMemoryDraftLeads.delete(targetId);
+
+      // Replicate deletion to Google Apps Script Abandoned_Leads
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'ADMIN_DELETE_RECORD',
+          adminKey: ADMIN_KEY,
+          sheetName: 'Abandoned_Leads',
+          recordId: targetId || targetEmail || targetPhone,
+        }),
+      }).catch(() => {});
+
+      return NextResponse.json({ status: 'success', message: 'Lead deleted successfully' });
+    }
+
+    // 6c. PURGE TEST DATA & LEADS: CLEAR_TEST_LEADS
+    if (action === 'CLEAR_TEST_LEADS' || action === 'PURGE_TEST_DATA') {
+      const testKeywords = ['test', 'example.com', 'asdf', 'qwerty', 'tester', 'placeholder'];
+      // Purge in-memory draft leads
+      inMemoryDraftLeads.forEach((lead, key) => {
+        const s = JSON.stringify(lead).toLowerCase();
+        if (testKeywords.some(k => s.includes(k))) {
+          inMemoryDraftLeads.delete(key);
+          if (lead.id) memoryDeletedIds.add(lead.id);
+          if (lead.email) memoryDeletedIds.add(lead.email);
+        }
+      });
+
+      // Purge from Supabase
+      if (supabase) {
+        try {
+          await Promise.all([
+            supabase.from('delegates').delete().ilike('email', '%test%'),
+            supabase.from('delegates').delete().ilike('email', '%example.com%'),
+            supabase.from('delegate_applications').delete().ilike('email', '%test%'),
+            supabase.from('delegate_applications').delete().ilike('email', '%example.com%'),
+          ]);
+        } catch (_) {}
+      }
+
+      // Replicate to Google Apps Script
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'PURGE_TEST_DATA',
+          adminKey: ADMIN_KEY,
+        }),
+      }).catch(() => {});
+
+      return NextResponse.json({ status: 'success', message: 'Test leads and sample records purged successfully' });
     }
 
     // 7. GOD-MODE: RECORD_CHECK_IN (Ultra-fast Gatekeeper Scanner)

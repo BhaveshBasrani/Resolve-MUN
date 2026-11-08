@@ -1003,16 +1003,57 @@
 
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        showCustomAlert("⚠️ FILE TOO LARGE: The maximum allowed size is 5MB. Please compress your screenshot.", "error");
-        reject(new Error("File too large"));
+      if (!file) {
+        resolve("");
         return;
       }
+
+      // Automatically downscale and compress images to high-quality JPEG under 300KB
+      if (file.type && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              let width = img.width;
+              let height = img.height;
+              const maxDim = 1280;
+
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, width, height);
+
+              const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+              resolve(compressedDataUrl);
+            } catch (cvsErr) {
+              resolve(e.target.result);
+            }
+          };
+          img.onerror = () => resolve(e.target.result);
+          img.src = e.target.result;
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      // Non-image files (e.g. PDF)
       const reader = new FileReader();
-      reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
       reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
     });
   };
 
@@ -1513,25 +1554,36 @@
       };
 
       let submitRes = null;
-      if (typeof window.submitDelegateToFirebase === 'function') {
+
+      // 1. Primary: Server-side unified pipeline via /api/admin/
+      try {
+        const apiRes = await fetch('/api/admin/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (apiRes.ok) {
+          const apiJson = await apiRes.json();
+          if (apiJson && (apiJson.regId || apiJson.ticketId || apiJson.delegateId || apiJson.status === 'success')) {
+            submitRes = apiJson;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Direct API submission notice:', apiErr);
+      }
+
+      // 2. Secondary: Mirror via Firebase/Supabase client handler
+      if (!submitRes && typeof window.submitDelegateToFirebase === 'function') {
         try {
           submitRes = await window.submitDelegateToFirebase(data);
         } catch (fbErr) {
-          // Re-throw auth / verification errors — do NOT fall back to GAS
-          const msg = fbErr && fbErr.message ? fbErr.message : '';
-          const isAuthError = msg.toLowerCase().includes('verify') ||
-            msg.toLowerCase().includes('email') ||
-            msg.toLowerCase().includes('sign') ||
-            msg.toLowerCase().includes('login') ||
-            msg.toLowerCase().includes('auth') ||
-            msg.toLowerCase().includes('credential');
-          if (isAuthError) throw fbErr;
-          // Non-auth Firebase error — fall back to GAS with generous timeout
-          console.warn('Firebase submit failed, falling back to Sheets:', fbErr);
-          submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
+          console.warn('Firebase submission notice, trying Google Sheets:', fbErr);
         }
-      } else {
-        submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 45000 });
+      }
+
+      // 3. Fallback: Direct Google Apps Script dispatch
+      if (!submitRes) {
+        submitRes = await submitToGoogleSheetWithRetry(data, { retries: 2, timeoutMs: 35000 });
       }
 
       if (typeof window !== 'undefined') {

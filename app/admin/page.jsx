@@ -620,6 +620,57 @@ export default function SuperAdminPage() {
     } catch (_) {}
   };
 
+  // Delete Abandoned Lead (Optimistic & Zero Lag)
+  const handleDeleteLead = async (leadId, email, fullName) => {
+    if (!window.confirm(`Are you sure you want to delete lead ${fullName || email || leadId}?`)) return;
+
+    // 1. Optimistic filter
+    setAbandonedLeads((prev) => prev.filter((l) => (l.id !== leadId && l.leadId !== leadId) && (email ? (l.email || '').toLowerCase() !== email.toLowerCase() : true)));
+    notify(`Deleted lead ${fullName || leadId}`);
+
+    // 2. Background sync
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "DELETE_LEAD",
+          adminKey: "abhilashisgoat",
+          leadId,
+          email,
+        }),
+      });
+    } catch (_) {}
+  };
+
+  // Clear Test Leads & Sample Records
+  const handleClearTestLeads = async () => {
+    if (!window.confirm("Purge all test leads and draft drop-offs containing test keywords?")) return;
+
+    const testKeywords = ['test', 'example.com', 'asdf', 'qwerty', 'tester', 'placeholder'];
+    setAbandonedLeads((prev) => prev.filter((l) => {
+      const s = JSON.stringify(l).toLowerCase();
+      return !testKeywords.some(k => s.includes(k)) && (l.email || l.phone || l.fullName);
+    }));
+    notify("Purging test data across Supabase & Google Sheets...");
+
+    try {
+      const res = await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "CLEAR_TEST_LEADS",
+          adminKey: "abhilashisgoat",
+        }),
+      });
+      const data = await res.json();
+      notify(data.message || "Test data purged successfully");
+      fetchAdminData(true);
+    } catch (_) {
+      notify("Failed to purge test data", "error");
+    }
+  };
+
   // Delegate Mutation: Verify Payment (Optimistic)
   const handleVerifyPayment = async (regId, email, newStatus = "VERIFIED") => {
     // 1. Optimistic update
@@ -1864,6 +1915,16 @@ export default function SuperAdminPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={handleClearTestLeads}
+                      className="h-8 gap-1.5 text-xs border-red-500/30 text-red-400 hover:bg-red-950/30 cursor-pointer"
+                      title="Purge all test entries and blank leads"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Purge Test Leads
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => exportCsv(abandonedLeads, "abandoned_leads")}
                       className="h-8 gap-1.5 text-xs border-white/15"
                     >
@@ -2021,9 +2082,9 @@ export default function SuperAdminPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDeleteRecord(l.id || l.leadId, "Abandoned_Leads")}
+                                  onClick={() => handleDeleteLead(l.id || l.leadId, l.email, l.fullName || l.name)}
                                   className="h-7 w-7 text-zinc-500 hover:text-red-400 cursor-pointer"
-                                  title="Dismiss Lead"
+                                  title="Delete Lead"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
