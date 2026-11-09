@@ -241,6 +241,11 @@ export default function SuperAdminPage() {
     if (fileId) {
       return `https://drive.google.com/file/d/${fileId}/preview`;
     }
+    if (s.startsWith("http://") || s.startsWith("https://")) {
+      if (s.toLowerCase().includes(".pdf") || s.toLowerCase().includes(".doc")) {
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(s)}&embedded=true`;
+      }
+    }
     return s;
   };
 
@@ -3529,10 +3534,14 @@ export default function SuperAdminPage() {
             {/* Header Controls */}
             <div className="w-full flex items-center justify-between border-b border-white/10 pb-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white uppercase tracking-wider font-sans">Payment Receipt Lightbox</span>
+                <span className="text-xs font-bold text-white uppercase tracking-wider font-sans">
+                  {viewingDelegate?.roleType ? `${viewingDelegate.roleType} Candidate CV / Portfolio` : "Payment Receipt Lightbox"}
+                </span>
                 {viewingDelegate && (
                   <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-zinc-300">
-                    {viewingDelegate.regId} · UTR: {viewingDelegate.paymentUTR || "None"}
+                    {viewingDelegate.roleType
+                      ? `${viewingDelegate.appId || viewingDelegate.id || "Candidate"} · ${viewingDelegate.fullName || viewingDelegate.name || ""}`
+                      : `${viewingDelegate.regId} · UTR: ${viewingDelegate.paymentUTR || "None"}`}
                   </Badge>
                 )}
               </div>
@@ -3619,14 +3628,14 @@ export default function SuperAdminPage() {
                   href={viewingImage}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs text-zinc-300 hover:text-white underline inline-flex items-center gap-1 font-mono"
+                  className="text-xs text-cyan-300 hover:text-white underline inline-flex items-center gap-1 font-mono"
                 >
-                  Open in Google Drive <ExternalLink className="h-3 w-3" />
+                  Open Original Document <ExternalLink className="h-3 w-3" />
                 </a>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(viewingImage);
-                    notify("Receipt URL copied to clipboard");
+                    notify("Document link copied to clipboard");
                   }}
                   className="text-xs text-zinc-400 hover:text-zinc-200 inline-flex items-center gap-1 cursor-pointer"
                 >
@@ -3636,29 +3645,60 @@ export default function SuperAdminPage() {
 
               {viewingDelegate && (
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      handleVerifyPayment(viewingDelegate.regId, viewingDelegate.email, "FAILED");
-                      setViewingImage(null);
-                    }}
-                    className="h-8 px-3 text-xs text-red-400 border-red-500/30 hover:bg-red-950/40 cursor-pointer"
-                  >
-                    Reject Payment
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      handleVerifyPayment(viewingDelegate.regId, viewingDelegate.email, "VERIFIED");
-                      setViewingImage(null);
-                    }}
-                    className="h-8 px-4 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-bold cursor-pointer"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                    Approve &amp; Activate Pass
-                  </Button>
+                  {viewingDelegate.roleType ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleUpdateApplicantStatus(viewingDelegate, "Rejected");
+                          setViewingImage(null);
+                        }}
+                        className="h-8 px-3 text-xs text-red-400 border-red-500/30 hover:bg-red-950/40 cursor-pointer"
+                      >
+                        <XCircle className="h-4 w-4 mr-1.5" />
+                        Reject Application
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          handleUpdateApplicantStatus(viewingDelegate, "Accepted");
+                          setViewingImage(null);
+                        }}
+                        className="h-8 px-4 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-bold cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                        Accept Candidate
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleVerifyPayment(viewingDelegate.regId, viewingDelegate.email, "FAILED");
+                          setViewingImage(null);
+                        }}
+                        className="h-8 px-3 text-xs text-red-400 border-red-500/30 hover:bg-red-950/40 cursor-pointer"
+                      >
+                        Reject Payment
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          handleVerifyPayment(viewingDelegate.regId, viewingDelegate.email, "VERIFIED");
+                          setViewingImage(null);
+                        }}
+                        className="h-8 px-4 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-bold cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                        Approve &amp; Activate Pass
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
