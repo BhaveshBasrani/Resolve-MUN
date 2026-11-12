@@ -307,25 +307,25 @@ export default function DelegatePassSection() {
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[380px] bg-indigo-600/10 blur-[150px] rounded-full"
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-3.5 sm:px-6 text-left sm:text-center">
-        {/* Sleek Modern Sideline Label */}
+      <div className="relative z-10 max-w-7xl mx-auto px-3.5 sm:px-6 text-center">
+        {/* Sleek Modern Centered Label */}
         <div
           className="section-label"
-          style={{ margin: "0 0 8px 0" }}
+          style={{ justifyContent: "center", margin: "0 auto 10px auto" }}
         >
           Resolve MUN 2.0
         </div>
 
         {/* Section Headline */}
         <h2
-          className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase tracking-tight text-white mb-1.5"
+          className="text-3xl sm:text-5xl md:text-6xl font-extrabold uppercase tracking-tight text-white mb-1.5 text-center"
           style={{ fontFamily: "'Oswald', sans-serif" }}
         >
           Official Passes
         </h2>
 
         {/* Minimal Uncluttered Description */}
-        <p className="text-xs sm:text-sm text-white/60 max-w-xl sm:mx-auto font-light leading-relaxed mb-6 sm:mb-14">
+        <p className="text-xs sm:text-sm text-white/60 max-w-xl mx-auto font-light leading-relaxed mb-6 sm:mb-14 text-center">
           Select your pass below.
         </p>
 

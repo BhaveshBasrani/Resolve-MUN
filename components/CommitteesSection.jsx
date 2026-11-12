@@ -136,14 +136,14 @@ export default function CommitteesSection() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto text-left sm:text-center mb-5 sm:mb-16">
-        <div className="section-label" style={{ margin: "0 0 8px 0" }}>
+      <div className="relative z-10 max-w-7xl mx-auto text-center mb-5 sm:mb-16">
+        <div className="section-label" style={{ justifyContent: "center", margin: "0 auto 10px auto" }}>
           Official Committees
         </div>
-          <h2 className="font-['Bebas_Neue'] text-2xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-2">
+          <h2 className="font-['Bebas_Neue'] text-2xl sm:text-5xl md:text-6xl tracking-wider text-white uppercase leading-tight sm:leading-none mb-2 text-center">
             Where the Debate Happens
           </h2>
-          <p className="font-['Oswald'] text-[11px] sm:text-sm font-normal text-zinc-400 max-w-2xl sm:mx-auto tracking-wide uppercase leading-relaxed">
+          <p className="font-['Oswald'] text-[11px] sm:text-sm font-normal text-zinc-400 max-w-2xl mx-auto tracking-wide uppercase leading-relaxed text-center">
             Six elite simulations. Tap any folder to open the dossier and inspect committee files.
           </p>
       </div>
