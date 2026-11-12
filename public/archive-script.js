@@ -1499,12 +1499,21 @@
 
       // Get file data
       const fileInput = document.getElementById("regDriveLink");
+      let screenshotUrl = fileInput?.dataset?.uploadedUrl || "";
       let fileBase64 = "";
       let fileName = "";
-      if (fileInput.files.length > 0) {
+      if (fileInput && fileInput.files && fileInput.files.length > 0) {
         const file = fileInput.files[0];
-        fileBase64 = await fileToBase64(file);
         fileName = file.name;
+        if (!screenshotUrl && typeof window.uploadFileToSupabase === 'function') {
+          try {
+            screenshotUrl = await window.uploadFileToSupabase(file, 'payment-screenshots', 'DEL_PAY');
+            if (screenshotUrl && fileInput) fileInput.dataset.uploadedUrl = screenshotUrl;
+          } catch (_) {}
+        }
+        if (!screenshotUrl) {
+          fileBase64 = await fileToBase64(file);
+        }
       }
 
       const nameVal = document.getElementById("regName").value.trim();
@@ -1529,7 +1538,8 @@
         experience: document.getElementById("regExp").value,
         payment_utr: utrVal,
         paymentUTR: utrVal,
-        payment_screenshot_link: fileBase64,
+        payment_screenshot_url: screenshotUrl || fileBase64,
+        payment_screenshot_link: screenshotUrl || fileBase64,
         paymentScreenshotBase64: fileBase64,
         screenshotBase64: fileBase64,
         screenshotName: fileName,

@@ -719,9 +719,38 @@ export async function POST(request) {
       const institute = body.institute || body.institution || body.school || 'Individual';
       const grade = body.grade || '11';
       const utr = (body.payment_utr || body.paymentUTR || body.txnID || 'PENDING').trim();
-      const screenshot = body.payment_screenshot_link || body.payment_screenshot_url || body.paymentScreenshotBase64 || body.screenshotBase64 || '';
+      const screenshot = (body.payment_screenshot_url || body.payment_screenshot_link || body.paymentScreenshotBase64 || body.screenshotBase64 || '').trim();
       const fee = parseFloat(body.registration_fee) || 2500;
       const qrToken = `RESOLVE26:DELEGATE:${generatedId}:${cleanEmail}`;
+
+      let finalScreenshotUrl = screenshot.startsWith('http') ? screenshot : '';
+
+      // Server-side fallback: Convert base64 payment screenshot to Supabase Storage file
+      if (!finalScreenshotUrl && screenshot.startsWith('data:') && supabase) {
+        try {
+          const match = screenshot.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+          if (match) {
+            const mimeType = match[1];
+            const base64Data = match[2];
+            const buffer = Buffer.from(base64Data, 'base64');
+            const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+            const fileName = `payment-proofs/SS_${generatedId}_${Date.now()}.${ext}`;
+            const { data: uploadData, error: uploadErr } = await supabase.storage
+              .from('resolve-uploads')
+              .upload(fileName, buffer, { contentType: mimeType, upsert: true });
+            if (!uploadErr && uploadData) {
+              const { data: urlData } = supabase.storage
+                .from('resolve-uploads')
+                .getPublicUrl(fileName);
+              if (urlData?.publicUrl) {
+                finalScreenshotUrl = urlData.publicUrl;
+              }
+            }
+          }
+        } catch (upErr) {
+          console.warn('[Storage] Payment screenshot upload notice:', upErr.message);
+        }
+      }
 
       const newDelObj = {
         id: generatedId,
@@ -748,8 +777,9 @@ export async function POST(request) {
         paymentUTR: utr,
         paymentStatus: 'PENDING_VERIFICATION',
         paymentVerified: 'Pending',
-        paymentScreenshotURL: screenshot,
-        status: 'Confirmed',
+        paymentScreenshotURL: finalScreenshotUrl,
+        payment_screenshot_url: finalScreenshotUrl,
+        status: 'PENDING',
         timestamp: new Date().toISOString(),
       };
 
@@ -760,48 +790,64 @@ export async function POST(request) {
       if (phone) inMemoryDraftLeads.delete(phone);
       adminDataCache = null;
 
-      // Persist in Supabase 'delegates' and 'delegate_applications'
-      if (supabase) {
+      // Persist in Supabase 'delegate_applications' & sync profile
+      if (supabase && cleanEmail) {
         try {
-          await Promise.all([
-            supabase.from('delegates').upsert({
-              delegate_id: generatedId,
-              full_name: delegateName,
-              name: delegateName,
-              email: cleanEmail,
-              phone: phone,
-              school: institute,
-              institute: institute,
-              grade: grade,
-              pref1_committee: body.pref1_committee || '',
-              pref1_country: body.pref1_country || '',
-              pref2_committee: body.pref2_committee || '',
-              pref2_country: body.pref2_country || '',
-              pref3_committee: body.pref3_committee || '',
-              pref3_country: body.pref3_country || '',
-              registration_fee: fee,
-              payment_utr: utr,
-              payment_status: 'PENDING_VERIFICATION',
-              payment_screenshot_url: screenshot.startsWith('http') ? screenshot : '',
-              status: 'Confirmed',
-              qr_token: qrToken,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'email' }),
-            supabase.from('delegate_applications').upsert({
-              name: delegateName,
-              email: cleanEmail,
-              phone: phone,
-              institute: institute,
-              grade: grade,
-              registration_fee: fee,
-              payment_utr: utr,
-              payment_status: 'PENDING_VERIFICATION',
-              status: 'Confirmed',
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'email' })
-          ]);
+          const { data: existingApp } = await supabase
+            .from('delegate_applications')
+            .select('id')
+            .ilike('email', cleanEmail)
+            .maybeSingle();
+
+          const appRecord = {
+            reg_id: generatedId,
+            name: delegateName,
+            email: cleanEmail,
+            phone: phone,
+            institute: institute,
+            grade: grade,
+            registration_fee: fee,
+            payment_utr: utr,
+            payment_screenshot_url: finalScreenshotUrl,
+            payment_status: 'PENDING_VERIFICATION',
+            status: 'PENDING',
+            pref1_committee: body.pref1_committee || '',
+            pref1_country: body.pref1_country || '',
+            pref2_committee: body.pref2_committee || '',
+            pref2_country: body.pref2_country || '',
+            pref3_committee: body.pref3_committee || '',
+            pref3_country: body.pref3_country || '',
+            address: body.address || '',
+            transport: body.transport || 'No',
+            experience: body.experience || '',
+            dob: body.dob || '',
+            referral: body.referral || '',
+            emergency_name: body.emergency_name || '',
+            emergency_phone: body.emergency_phone || '',
+            updated_at: new Date().toISOString(),
+          };
+
+          if (existingApp?.id) {
+            await supabase
+              .from('delegate_applications')
+              .update(appRecord)
+              .eq('id', existingApp.id);
+          } else {
+            await supabase
+              .from('delegate_applications')
+              .insert([appRecord]);
+          }
+
+          // Ensure site user profile is present
+          await supabase.from('profiles').upsert({
+            full_name: delegateName,
+            email: cleanEmail,
+            phone: phone,
+            role: 'DELEGATE',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'email' });
         } catch (sbErr) {
-          console.warn("[Supabase] Submission insert notice:", sbErr.message);
+          console.warn("[Supabase] Delegate application save notice:", sbErr.message);
         }
       }
 

@@ -65,6 +65,7 @@ export default function Home() {
   useEffect(() => {
     // Check URL for permanent delegation code
     if (typeof window !== 'undefined') {
+      window.uploadFileToSupabase = uploadFileToSupabase;
       try {
         localStorage.removeItem('resolve_theme');
         document.documentElement.classList.remove('theme-light');
@@ -556,6 +557,81 @@ export default function Home() {
               const uploaded = await uploadFileToSupabase(file, "eb-cvs", "EB");
               if (uploaded) ebCvInput.dataset.uploadedUrl = uploaded;
             } catch (_) {}
+          }
+        });
+      }
+
+      // Delegate Payment Screenshot (regDriveLink)
+      const regProofInput = document.getElementById("regDriveLink");
+      if (regProofInput && !regProofInput.__bound) {
+        regProofInput.__bound = true;
+        regProofInput.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          const wrapper = regProofInput.closest(".file-upload-wrapper");
+          const fn = wrapper?.querySelector(".file-name");
+          if (file) {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            if (fn) fn.innerHTML = `<span style="color:#34d399;font-weight:700;">Uploading payment proof (${sizeMb} MB)...</span>`;
+            if (wrapper) wrapper.classList.add("has-file");
+            try {
+              const uploadedUrl = await uploadFileToSupabase(file, "payment-screenshots", "DEL_PAY");
+              if (uploadedUrl) {
+                regProofInput.dataset.uploadedUrl = uploadedUrl;
+                if (fn) fn.innerHTML = `<span style="color:#34d399;font-weight:700;">✓ ${file.name}</span> <span style="opacity:0.7;">(${sizeMb} MB)</span>`;
+              }
+            } catch (err) {
+              console.warn("Screenshot background upload notice:", err);
+            }
+          }
+        });
+      }
+
+      // Delegation Payment Screenshot (delDriveLink)
+      const delProofInput = document.getElementById("delDriveLink");
+      if (delProofInput && !delProofInput.__bound) {
+        delProofInput.__bound = true;
+        delProofInput.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          const wrapper = delProofInput.closest(".file-upload-wrapper");
+          const fn = wrapper?.querySelector(".file-name");
+          if (file) {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            if (fn) fn.innerHTML = `<span style="color:#34d399;font-weight:700;">Uploading payment proof (${sizeMb} MB)...</span>`;
+            if (wrapper) wrapper.classList.add("has-file");
+            try {
+              const uploadedUrl = await uploadFileToSupabase(file, "delegation-payments", "INST_PAY");
+              if (uploadedUrl) {
+                delProofInput.dataset.uploadedUrl = uploadedUrl;
+                if (fn) fn.innerHTML = `<span style="color:#34d399;font-weight:700;">✓ ${file.name}</span> <span style="opacity:0.7;">(${sizeMb} MB)</span>`;
+              }
+            } catch (err) {
+              console.warn("Delegation proof background upload notice:", err);
+            }
+          }
+        });
+      }
+
+      // OC Payment Screenshot (ocDriveLink)
+      const ocProofInput = document.getElementById("ocDriveLink");
+      if (ocProofInput && !ocProofInput.__bound) {
+        ocProofInput.__bound = true;
+        ocProofInput.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          const wrapper = ocProofInput.closest(".file-upload-wrapper");
+          const fn = wrapper?.querySelector(".file-name");
+          if (file) {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            if (fn) fn.innerHTML = `<span style="color:#34d399;font-weight:700;">Uploading payment proof (${sizeMb} MB)...</span>`;
+            if (wrapper) wrapper.classList.add("has-file");
+            try {
+              const uploadedUrl = await uploadFileToSupabase(file, "oc-payments", "OC_PAY");
+              if (uploadedUrl) {
+                ocProofInput.dataset.uploadedUrl = uploadedUrl;
+                if (fn) fn.innerHTML = `<span style="color:#34d399;font-weight:700;">✓ ${file.name}</span> <span style="opacity:0.7;">(${sizeMb} MB)</span>`;
+              }
+            } catch (err) {
+              console.warn("OC proof background upload notice:", err);
+            }
           }
         });
       }

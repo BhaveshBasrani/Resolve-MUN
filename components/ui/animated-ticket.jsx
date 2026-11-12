@@ -21,6 +21,24 @@ const CheckCircleIcon = (props) => (
   </svg>
 );
 
+const CloseIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
 const UpiBadgeIcon = (props) => (
   <svg
     {...props}
@@ -93,11 +111,11 @@ const Barcode = ({ value }) => {
   const totalWidth =
     bars.reduce((acc, bar) => acc + bar.width + spacing, 0) - spacing;
   const svgWidth = 250;
-  const svgHeight = 64;
+  const svgHeight = 44;
   let currentX = (svgWidth - totalWidth) / 2;
 
   return (
-    <div className="flex flex-col items-center py-1.5">
+    <div className="flex flex-col items-center py-1">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width={svgWidth}
@@ -113,14 +131,14 @@ const Barcode = ({ value }) => {
             <rect
               key={index}
               x={x}
-              y="8"
+              y="4"
               width={bar.width}
-              height="48"
+              height="36"
             />
           );
         })}
       </svg>
-      <p className="text-xs text-white/55 tracking-[0.22em] mt-1 font-mono">
+      <p className="text-[11px] text-white/55 tracking-[0.22em] mt-0.5 font-mono">
         {value}
       </p>
     </div>
@@ -241,24 +259,24 @@ export const AnimatedTicket = React.forwardRef(
           <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black border-r border-white/20" />
           <div className="absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black border-l border-white/20" />
 
-          <div className="p-6 flex flex-col items-center text-center">
-            <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-full animate-in zoom-in-50 delay-150 duration-300">
-              <CheckCircleIcon className="w-8 h-8 text-emerald-400" />
+          <div className="p-4 sm:p-5 flex flex-col items-center text-center">
+            <div className="p-2 sm:p-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full animate-in zoom-in-50 delay-150 duration-300">
+              <CheckCircleIcon className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
             </div>
-            <h2 className="text-xl font-bold mt-3.5 text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold mt-2.5 text-white tracking-tight">
               {title}
             </h2>
-            <p className="text-xs sm:text-sm text-white/60 mt-1">
+            <p className="text-xs text-white/60 mt-0.5 max-w-[280px]">
               {subtitle}
             </p>
           </div>
 
-          <div className="px-6 pb-6 space-y-4">
+          <div className="px-5 sm:px-6 pb-5 space-y-3 sm:space-y-3.5">
             <DashedLine />
 
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-3 text-left">
               <div>
-                <p className="text-[10px] text-white/50 uppercase tracking-widest">
+                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
                   Reference ID
                 </p>
                 <p className="font-mono font-semibold text-xs sm:text-sm text-white mt-0.5 truncate">
@@ -266,7 +284,7 @@ export const AnimatedTicket = React.forwardRef(
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-white/50 uppercase tracking-widest">
+                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
                   Amount Paid
                 </p>
                 <p className="font-bold text-base sm:text-lg text-white mt-0.5">
@@ -275,17 +293,17 @@ export const AnimatedTicket = React.forwardRef(
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-3 text-left">
               <div>
-                <p className="text-[10px] text-white/50 uppercase tracking-widest">
-                  Date & Time
+                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
+                  Date &amp; Time
                 </p>
                 <p className="text-xs font-medium text-white/85 mt-0.5">
                   {formattedDate}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-white/50 uppercase tracking-widest">
+                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
                   Pass Category
                 </p>
                 <p className="text-xs font-semibold text-white mt-0.5">
@@ -294,7 +312,7 @@ export const AnimatedTicket = React.forwardRef(
               </div>
             </div>
 
-            <div className="bg-white/[0.04] border border-white/15 p-3.5 rounded-xl flex items-center space-x-3.5 text-left">
+            <div className="bg-white/[0.04] border border-white/15 p-3 rounded-xl flex items-center space-x-3 text-left">
               <UpiBadgeIcon className="shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-xs sm:text-sm text-white truncate">
@@ -356,31 +374,43 @@ export function PaymentReceiptModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[10005] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
-      <AnimatedTicket
-        ticketId={receipt.ticketId}
-        amount={receipt.amount}
-        date={receipt.date}
-        cardHolder={receipt.cardHolder}
-        utrNumber={receipt.utrNumber}
-        passCategory={receipt.passCategory}
-        barcodeValue={receipt.barcodeValue}
-      />
-      <div className="mt-5 flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm z-20">
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="w-full sm:w-1/2 py-3 px-4 rounded-xl border border-white/25 bg-[#111] text-white text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer"
-        >
-          Print / Save PDF
-        </button>
-        <button
-          type="button"
-          onClick={handleContinue}
-          className="w-full sm:w-1/2 py-3 px-4 rounded-xl border border-white bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer"
-        >
-          Open My Dashboard →
-        </button>
+    <div className="fixed inset-0 z-[10005] bg-black/90 backdrop-blur-md overflow-y-auto overscroll-contain p-4 sm:p-6">
+      {/* Floating Close Button */}
+      <button
+        type="button"
+        onClick={handleContinue}
+        className="fixed top-4 right-4 z-[10010] w-9 h-9 rounded-full bg-zinc-900/90 border border-white/20 text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-xl"
+        aria-label="Close pass dialog"
+      >
+        <CloseIcon />
+      </button>
+
+      <div className="min-h-full flex flex-col items-center justify-center py-6 sm:py-8 my-auto">
+        <AnimatedTicket
+          ticketId={receipt.ticketId}
+          amount={receipt.amount}
+          date={receipt.date}
+          cardHolder={receipt.cardHolder}
+          utrNumber={receipt.utrNumber}
+          passCategory={receipt.passCategory}
+          barcodeValue={receipt.barcodeValue}
+        />
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-sm z-20 pb-4">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl border border-white/25 bg-[#111] text-white text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            Print / Save PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleContinue}
+            className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl border border-white bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer"
+          >
+            Open Dashboard →
+          </button>
+        </div>
       </div>
     </div>
   );
