@@ -54,10 +54,20 @@ export const metadata = {
     siteName: "Resolve MUN 2026",
     images: [
       {
-        url: "/images/OG.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Resolve MUN 2.0 — 25, 26, 27 December 2026 in Hyderabad",
+        url: `${siteUrl}/images/OG.jpg`,
+        secureUrl: `${siteUrl}/images/OG.jpg`,
+        width: 1024,
+        height: 576,
+        type: "image/jpeg",
+        alt: "Resolve MUN 2.0 — Resolve, Reform, Reconcile | 25, 26, 27 December 2026",
+      },
+      {
+        url: `${siteUrl}/OG.jpg`,
+        secureUrl: `${siteUrl}/OG.jpg`,
+        width: 1024,
+        height: 576,
+        type: "image/jpeg",
+        alt: "Resolve MUN 2.0 — Official Banner",
       },
     ],
     locale: "en_IN",
@@ -68,7 +78,7 @@ export const metadata = {
     title: "Resolve MUN 2.0 | 25, 26, 27 Dec 2026 · TBA",
     description:
       "Hyderabad's flagship MUN returns on 25, 26, 27 December 2026. Venue TBA (To Be Announced). 6 elite committees, ₹2.5 Lakhs in cash rewards. Register now.",
-    images: ["/images/OG.jpg"],
+    images: [`${siteUrl}/images/OG.jpg`],
   },
   alternates: {
     canonical: siteUrl,
@@ -96,6 +106,17 @@ export default function RootLayout({ children }) {
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* Explicit High-Reliability OG & Twitter Meta Tags for WhatsApp, iMessage, Telegram, Discord, LinkedIn, X */}
+        <meta property="og:image" content={`${siteUrl}/images/OG.jpg`} />
+        <meta property="og:image:secure_url" content={`${siteUrl}/images/OG.jpg`} />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="1024" />
+        <meta property="og:image:height" content="576" />
+        <meta property="og:image:alt" content="Resolve MUN 2.0 — Resolve, Reform, Reconcile" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content={`${siteUrl}/images/OG.jpg`} />
+        <meta name="twitter:image:alt" content="Resolve MUN 2.0 — Resolve, Reform, Reconcile" />
+        
         <link
           href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Oswald:wght@300;400;500;600;700&family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@800;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap"
           rel="stylesheet"
