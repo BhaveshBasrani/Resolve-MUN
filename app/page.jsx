@@ -29,7 +29,7 @@ import DelegatePassSection from "@/components/DelegatePassSection";
 import DobPickerPortals from "@/components/DobPickerPortal";
 import { PaymentReceiptModal } from "@/components/ui/animated-ticket";
 import { GradientBackground } from "@/components/ui/paper-design-shader-background";
-import { DEFAULT_SITE_SETTINGS } from "@/lib/supabase";
+import { DEFAULT_SITE_SETTINGS, uploadFileToSupabase } from "@/lib/supabase";
 
 const [homePart1, rest1] = homeHtml.split("<!-- COMMITTEES_PLACEHOLDER -->");
 const [homePart2, homePart3] = (rest1 || "").split("<!-- SECRETARIAT_PLACEHOLDER -->");
@@ -454,17 +454,23 @@ export default function Home() {
       const spinner = document.getElementById("submitSpinner");
 
       const fileInput = document.getElementById("ebCv");
+      let cvUrl = fileInput?.dataset?.uploadedUrl || "";
       let cvBase64 = "";
       let cvName = "";
       if (fileInput && fileInput.files && fileInput.files.length > 0) {
         const file = fileInput.files[0];
         cvName = file.name;
-        cvBase64 = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result || "");
-          reader.onerror = () => resolve("");
-          reader.readAsDataURL(file);
-        });
+        if (!cvUrl) {
+          cvUrl = await uploadFileToSupabase(file, "eb-cvs", "EB");
+        }
+        if (!cvUrl) {
+          cvBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result || "");
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(file);
+          });
+        }
       }
 
       const nameVal = document.getElementById("ebName")?.value?.trim() || "";
@@ -489,7 +495,8 @@ export default function Home() {
         dob: document.getElementById("ebDob")?.value || "",
         referral: document.getElementById("ebReferral")?.value?.trim() || "",
         munCount: document.getElementById("ebMunCount")?.value || "",
-        cv_file: cvBase64,
+        cv_file: cvUrl || cvBase64,
+        cvUrl: cvUrl,
         cvBase64: cvBase64,
         cvName: cvName || `EB_CV_${nameVal.replace(/\s+/g, "_")}.pdf`,
       };
@@ -537,11 +544,18 @@ export default function Home() {
       const ebCvInput = document.getElementById("ebCv");
       if (ebCvInput && !ebCvInput.__bound) {
         ebCvInput.__bound = true;
-        ebCvInput.addEventListener("change", (e) => {
+        ebCvInput.addEventListener("change", async (e) => {
           const fn = document.getElementById("ebCvFileName");
-          if (fn && e.target.files && e.target.files[0]) {
-            fn.textContent = e.target.files[0].name;
-            fn.style.color = "#38bdf8";
+          const file = e.target.files?.[0];
+          if (fn && file) {
+            const sizeStr = (file.size / (1024 * 1024)).toFixed(2);
+            fn.innerHTML = `<span style="color:#34d399;font-weight:700;">✓ ${file.name}</span> <span style="opacity:0.7;">(${sizeStr} MB)</span>`;
+            const wrapper = ebCvInput.closest(".file-upload-wrapper");
+            if (wrapper) wrapper.classList.add("has-file");
+            try {
+              const uploaded = await uploadFileToSupabase(file, "eb-cvs", "EB");
+              if (uploaded) ebCvInput.dataset.uploadedUrl = uploaded;
+            } catch (_) {}
           }
         });
       }
@@ -1770,14 +1784,16 @@ export default function Home() {
         const portPrev = document.getElementById("secPortfolioPreview");
         if (portInput && !portInput.__attached) {
           portInput.__attached = true;
-          portInput.addEventListener("change", function () {
+          portInput.addEventListener("change", async function () {
             if (this.files && this.files[0]) {
               const f = this.files[0];
-              if (portName) portName.textContent = f.name;
-              if (portPrev) {
-                portPrev.textContent = `Attached: ${f.name} (${(f.size / 1024).toFixed(1)} KB) ✓`;
-                portPrev.style.display = "block";
-              }
+              if (portName) portName.innerHTML = `<span style="color:#34d399;font-weight:700;">✓ ${f.name}</span> <span style="opacity:0.7;">(${(f.size / (1024 * 1024)).toFixed(2)} MB)</span>`;
+              const wrapper = portInput.closest(".file-upload-wrapper");
+              if (wrapper) wrapper.classList.add("has-file");
+              try {
+                const uploaded = await uploadFileToSupabase(f, "secretariat-portfolios", "SEC_PORT");
+                if (uploaded) portInput.dataset.uploadedUrl = uploaded;
+              } catch (_) {}
             }
           });
         }
@@ -1787,14 +1803,16 @@ export default function Home() {
         const resPrev = document.getElementById("secResumePreview");
         if (resInput && !resInput.__attached) {
           resInput.__attached = true;
-          resInput.addEventListener("change", function () {
+          resInput.addEventListener("change", async function () {
             if (this.files && this.files[0]) {
               const f = this.files[0];
-              if (resName) resName.textContent = f.name;
-              if (resPrev) {
-                resPrev.textContent = `Attached: ${f.name} (${(f.size / 1024).toFixed(1)} KB) ✓`;
-                resPrev.style.display = "block";
-              }
+              if (resName) resName.innerHTML = `<span style="color:#34d399;font-weight:700;">✓ ${f.name}</span> <span style="opacity:0.7;">(${(f.size / (1024 * 1024)).toFixed(2)} MB)</span>`;
+              const wrapper = resInput.closest(".file-upload-wrapper");
+              if (wrapper) wrapper.classList.add("has-file");
+              try {
+                const uploaded = await uploadFileToSupabase(f, "secretariat-resumes", "SEC_RES");
+                if (uploaded) resInput.dataset.uploadedUrl = uploaded;
+              } catch (_) {}
             }
           });
         }
@@ -1885,8 +1903,18 @@ export default function Home() {
           const portfolioFileInput = document.getElementById("secPortfolioFile");
           const resumeFileInput = document.getElementById("secResumeFile");
 
-          const portfolioFileData = portfolioFileInput?.files?.[0] ? await fileToBase64(portfolioFileInput.files[0]) : null;
-          const resumeFileData = resumeFileInput?.files?.[0] ? await fileToBase64(resumeFileInput.files[0]) : null;
+          let portfolioUrl = portfolioFileInput?.dataset?.uploadedUrl || "";
+          let resumeUrl = resumeFileInput?.dataset?.uploadedUrl || "";
+
+          if (portfolioFileInput?.files?.[0] && !portfolioUrl) {
+            portfolioUrl = await uploadFileToSupabase(portfolioFileInput.files[0], "secretariat-portfolios", "SEC_PORT");
+          }
+          if (resumeFileInput?.files?.[0] && !resumeUrl) {
+            resumeUrl = await uploadFileToSupabase(resumeFileInput.files[0], "secretariat-resumes", "SEC_RES");
+          }
+
+          const portfolioFileData = (!portfolioUrl && portfolioFileInput?.files?.[0]) ? await fileToBase64(portfolioFileInput.files[0]) : null;
+          const resumeFileData = (!resumeUrl && resumeFileInput?.files?.[0]) ? await fileToBase64(resumeFileInput.files[0]) : null;
 
           const payload = {
             action: "SUBMIT_SECRETARIAT",
@@ -1903,11 +1931,13 @@ export default function Home() {
             whyJoin: whyJoin,
             contribution: contribution,
             dailyCommitment: dailyCommitment,
+            portfolioUrl: portfolioUrl || "",
+            resumeUrl: resumeUrl || "",
             portfolioBase64: portfolioFileData?.base64 || "",
-            portfolioName: portfolioFileData?.name || "",
+            portfolioName: portfolioFileData?.name || portfolioFileInput?.files?.[0]?.name || "",
             portfolioType: portfolioFileData?.type || "application/pdf",
             resumeBase64: resumeFileData?.base64 || "",
-            resumeName: resumeFileData?.name || "",
+            resumeName: resumeFileData?.name || resumeFileInput?.files?.[0]?.name || "",
             resumeType: resumeFileData?.type || "application/pdf",
             timestamp: new Date().toISOString()
           };

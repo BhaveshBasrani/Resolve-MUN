@@ -2493,9 +2493,9 @@
   const canvas = document.getElementById('particles');
   const ctx = canvas && typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
   let W = 0, H = 0, particles = [];
-  mx = -1000;
-  my = -1000;
-  if (typeof window !== 'undefined') {
+  let mx = -1000;
+  let my = -1000;
+  if (canvas && typeof window !== 'undefined') {
     window.addEventListener('mousemove', (e) => {
       mx = e.clientX;
       my = e.clientY;
@@ -2599,14 +2599,15 @@
     });
   }, { threshold: 0.1 });
 
-  if (canvas) {
+  if (canvas && typeof canvasObserver !== 'undefined' && canvasObserver.observe) {
     canvas.dataset.visible = 'true';
     canvasObserver.observe(canvas);
+    window.addEventListener('resize', resize);
   }
 
-  window.addEventListener('resize', resize);
   // Don't start drawing immediately; choose best renderer for device
   function initAdaptiveParticles() {
+    if (!canvas || !ctx) return;
     // High-performance canvas particle system
     resize();
     requestAnimationFrame(function drawParticles() {
@@ -2625,11 +2626,14 @@
     });
   }
 
-  
   function initWebGLParticles() {
-    const glCanvas = canvas; // reuse the same DOM canvas
-    const gl = glCanvas.getContext('webgl2', { antialias: false });
-    if (!gl) throw new Error('WebGL2 not available');
+    const glCanvas = canvas;
+    if (!glCanvas) return;
+    let gl = null;
+    try {
+      gl = glCanvas.getContext('webgl2', { antialias: false });
+    } catch (_) {}
+    if (!gl) return;
 
     // Resize for DPR
     const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -2712,8 +2716,10 @@
     requestAnimationFrame(updateAndDraw);
   }
 
-  // Start the adaptive particle system now that both paths are defined
-  initAdaptiveParticles();
+  // Start the adaptive particle system if canvas is present
+  if (canvas && ctx) {
+    initAdaptiveParticles();
+  }
 
   // EB MODAL LOGIC
   const ebModal = document.getElementById('ebModal');

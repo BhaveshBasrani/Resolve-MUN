@@ -3422,11 +3422,12 @@ export default function SuperAdminPage() {
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3">
                     <div className="relative flex-1 max-w-sm">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-                      <Input
+                      <input
+                        type="text"
                         placeholder="Search users by name, email, or phone..."
                         value={userSearchQuery}
                         onChange={(e) => setUserSearchQuery(e.target.value)}
-                        className="h-8 pl-8 text-xs bg-zinc-900/60 border-white/10"
+                        className="h-8 pl-8 pr-3 w-full bg-zinc-900 border border-white/10 rounded-md text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30"
                       />
                     </div>
                     <div className="flex items-center gap-1.5 overflow-x-auto">

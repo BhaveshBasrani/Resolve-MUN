@@ -17,6 +17,23 @@ export const homeHtml = `
   </div>
   <span class="loader-text">Loading...</span>
 </div>
+<script>
+  (function() {
+    function dismiss() {
+      var loader = document.getElementById('loading-screen');
+      if (loader && !loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+        setTimeout(function() { if (loader) loader.style.display = 'none'; }, 350);
+      }
+      if (document.body) {
+        document.body.classList.add('loaded');
+      }
+    }
+    setTimeout(dismiss, 750);
+    window.addEventListener('DOMContentLoaded', function() { setTimeout(dismiss, 150); });
+    window.addEventListener('load', function() { setTimeout(dismiss, 100); });
+  })();
+</script>
 
 <!-- SELECTION MODAL -->
 <div class="modal-overlay" id="selectionModal">

@@ -438,7 +438,7 @@ export function NotchNav({
         >
           {/* Left Logo Slot */}
           {showLogo && logo && (
-            <div className="flex shrink-0 items-center text-white origin-left">
+            <div className="flex min-w-0 shrink items-center text-white origin-left">
               {logo}
             </div>
           )}

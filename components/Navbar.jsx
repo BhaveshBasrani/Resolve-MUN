@@ -262,10 +262,10 @@ export function Navbar() {
         />
       </div>
       <span
-        className="text-[0.98rem] min-[360px]:text-[1.08rem] sm:text-[1.28rem] tracking-[0.08em] sm:tracking-[0.14em] leading-none text-white group-hover:text-zinc-200 transition-colors duration-200 font-bold whitespace-nowrap pt-0.5"
+        className="text-[0.92rem] min-[340px]:text-[1.02rem] sm:text-[1.28rem] tracking-[0.06em] sm:tracking-[0.14em] leading-none text-white group-hover:text-zinc-200 transition-colors duration-200 font-bold truncate pt-0.5"
         style={{ fontFamily: "'Bebas Neue', sans-serif" }}
       >
-        RESOLVE MUN <span className="hidden min-[360px]:inline">2.0</span>
+        RESOLVE <span className="hidden min-[340px]:inline">MUN</span> <span className="hidden min-[390px]:inline">2.0</span>
       </span>
     </Link>
   );

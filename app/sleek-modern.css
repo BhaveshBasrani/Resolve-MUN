@@ -413,6 +413,7 @@ body.modal-locked {
 }
 
 .file-upload-wrapper {
+  position: relative !important;
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
@@ -420,22 +421,35 @@ body.modal-locked {
   min-height: 52px !important;
   padding: 8px 14px !important;
   border-radius: 12px !important;
-  border: 1.5px dashed rgba(255, 255, 255, 0.28) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1.5px dashed rgba(255, 255, 255, 0.32) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
   cursor: pointer !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow: hidden !important;
 }
 
-.file-upload-wrapper:hover {
-  border-color: rgba(255, 255, 255, 0.6) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+.file-upload-wrapper:hover,
+.file-upload-wrapper:focus-within {
+  border-color: #a855f7 !important;
+  background: rgba(168, 85, 247, 0.08) !important;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2) !important;
   transform: translateY(-1px) !important;
 }
 
 .file-upload-wrapper.has-file {
   border-style: solid !important;
-  border-color: rgba(52, 211, 153, 0.6) !important;
-  background: rgba(52, 211, 153, 0.08) !important;
+  border-color: rgba(52, 211, 153, 0.8) !important;
+  background: rgba(52, 211, 153, 0.1) !important;
+}
+
+.file-upload-input {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  z-index: 5 !important;
 }
 
 .file-upload-btn {
@@ -790,24 +804,7 @@ body.modal-locked {
   text-align: center !important;
 }
 
-.file-upload-wrapper {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  width: 100% !important;
-  height: 44px !important;
-  padding: 4px 10px !important;
-  border-radius: 10px !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
-  cursor: pointer !important;
-  transition: border-color 0.15s ease, background 0.15s ease !important;
-}
 
-.file-upload-wrapper:hover {
-  border-color: rgba(255, 255, 255, 0.3) !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-}
 
 .file-upload-btn {
   display: inline-flex !important;
