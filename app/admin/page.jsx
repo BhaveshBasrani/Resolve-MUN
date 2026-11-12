@@ -1150,12 +1150,15 @@ export default function SuperAdminPage() {
           message: crmMessageBody,
         }),
       });
-      if (res.ok) {
-        notify("Email broadcast sent successfully!");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.status === "success") {
+        notify(data.message || "Email broadcast sent successfully!");
         setCrmMessageBody("");
+      } else {
+        notify(data.message || "Broadcast dispatch failed", "error");
       }
     } catch (err) {
-      notify("Broadcast dispatch failed", "error");
+      notify("Broadcast dispatch failed: " + err.message, "error");
     } finally {
       setCrmSending(false);
     }
@@ -2668,6 +2671,14 @@ export default function SuperAdminPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-amber-300 text-xs flex items-start gap-2.5 max-w-2xl">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block text-white mb-0.5">Diplomatic Mailing Engine</span>
+                    Dispatches official correspondence using the Resolve MUN Google Apps Script Web App. Ensure your deployment has <strong>Who has access: Anyone</strong> configured so API dispatches can be delivered smoothly.
+                  </div>
+                </div>
+
                 <form onSubmit={handleSendCrm} className="space-y-4 max-w-2xl">
                   <div>
                     <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">

@@ -1617,6 +1617,133 @@ export async function POST(request) {
       });
     }
 
+    // 8. DIPLOMATIC BROADCAST & CRM EMAIL DISPATCH
+    if (action === 'DISPATCH_COMMUNICATION' || action === 'ADMIN_SEND_CUSTOM_EMAIL') {
+      const recipientMode = body.recipientMode || 'SINGLE';
+      const emailTo = (body.emailTo || body.email || '').trim().toLowerCase();
+      const subject = (body.subject || 'Official Notice — Resolve MUN 2.0').trim();
+      const message = (body.message || body.messageBody || '').trim();
+
+      if (!subject || !message) {
+        return NextResponse.json(
+          { status: 'error', message: 'Subject and Message content are required.' },
+          { status: 400 }
+        );
+      }
+
+      let recipients = [];
+
+      if (recipientMode === 'SINGLE') {
+        if (!emailTo || !emailTo.includes('@')) {
+          return NextResponse.json(
+            { status: 'error', message: 'Please provide a valid destination email address.' },
+            { status: 400 }
+          );
+        }
+        recipients.push({ email: emailTo, name: body.name || 'Delegate' });
+      } else if (recipientMode === 'ALL_DELEGATES') {
+        if (supabase) {
+          const { data } = await supabase
+            .from('delegate_applications')
+            .select('name, email')
+            .eq('payment_status', 'VERIFIED');
+          if (data && data.length > 0) {
+            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Delegate' })).filter(r => r.email && r.email.includes('@'));
+          }
+        }
+      } else if (recipientMode === 'UNASSIGNED_DELEGATES') {
+        if (supabase) {
+          const { data } = await supabase
+            .from('delegate_applications')
+            .select('name, email')
+            .is('allocated_committee', null);
+          if (data && data.length > 0) {
+            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Delegate' })).filter(r => r.email && r.email.includes('@'));
+          }
+        }
+      } else if (recipientMode === 'OC_APPLICANTS') {
+        if (supabase) {
+          const { data } = await supabase.from('oc_applications').select('name, email');
+          if (data && data.length > 0) {
+            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Applicant' })).filter(r => r.email && r.email.includes('@'));
+          }
+        }
+      } else if (recipientMode === 'SEC_APPLICANTS') {
+        if (supabase) {
+          const { data } = await supabase.from('secretariat_applications').select('name, email');
+          if (data && data.length > 0) {
+            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Applicant' })).filter(r => r.email && r.email.includes('@'));
+          }
+        }
+      }
+
+      if (recipients.length === 0) {
+        return NextResponse.json(
+          { status: 'error', message: 'No valid recipient email addresses found for the selected audience.' },
+          { status: 400 }
+        );
+      }
+
+      // Deduplicate recipients by email
+      const uniqueRecipients = [];
+      const seenEmails = new Set();
+      for (const r of recipients) {
+        if (!seenEmails.has(r.email)) {
+          seenEmails.add(r.email);
+          uniqueRecipients.push(r);
+        }
+      }
+
+      const asPayload = {
+        action: 'ADMIN_SEND_CUSTOM_EMAIL',
+        adminKey: ADMIN_KEY,
+        subject: subject,
+        messageBody: message,
+        email: uniqueRecipients[0]?.email,
+        recipients: uniqueRecipients,
+      };
+
+      try {
+        const asRes = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(asPayload),
+        });
+
+        const text = await asRes.text();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(text);
+        } catch (_) { }
+
+        if (text.includes('You need permission to access this item') || text.includes('accounts.google.com') || text.includes('docs-drivelogo') || asRes.status === 403) {
+          return NextResponse.json({
+            status: 'error',
+            code: 'APPS_SCRIPT_ACCESS_RESTRICTED',
+            message: 'Google Apps Script deployment access is currently restricted (HTTP 403: "You need permission"). In Google Apps Script (extensions > Apps Script), click Deploy > Manage deployments > Edit (pencil icon) and set "Who has access" to "Anyone", then click Deploy to authorize email dispatches.',
+          }, { status: 502 });
+        }
+
+        if (parsed && (parsed.status === 'success' || parsed.sentCount !== undefined)) {
+          return NextResponse.json({
+            status: 'success',
+            message: `Official communiqué dispatched successfully to ${uniqueRecipients.length} recipient(s).`,
+            sentCount: parsed.sentCount || uniqueRecipients.length,
+          });
+        }
+
+        return NextResponse.json({
+          status: 'success',
+          message: `Official communiqué dispatched to ${uniqueRecipients.length} recipient(s).`,
+        });
+      } catch (dispatchErr) {
+        return NextResponse.json({
+          status: 'error',
+          message: `Email dispatch delivery failed: ${dispatchErr.message}`,
+        }, { status: 500 });
+      }
+    }
+
     // Generic forward to Apps Script
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
