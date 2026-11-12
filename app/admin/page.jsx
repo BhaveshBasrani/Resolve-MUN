@@ -221,8 +221,8 @@ export default function SuperAdminPage() {
     if (!url) return null;
     const s = String(url).trim();
     const match = s.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
-                  s.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
-                  s.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      s.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+      s.match(/\/d\/([a-zA-Z0-9_-]+)/);
     return match ? match[1] : null;
   };
 
@@ -282,7 +282,7 @@ export default function SuperAdminPage() {
           updates: { payment_screenshot_url: proofUrl, PaymentScreenshotURL: proofUrl },
         }),
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Team Applicant Full Inspector Modal State
@@ -335,7 +335,7 @@ export default function SuperAdminPage() {
       if (newStatus === "Accepted") {
         notify(`Acceptance offer email dispatched to ${app.email}!`);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleDeleteApplicant = async (app) => {
@@ -371,7 +371,7 @@ export default function SuperAdminPage() {
           email: app.email,
         }),
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // CRM Mailer State
@@ -592,7 +592,7 @@ export default function SuperAdminPage() {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.25);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Delegate Mutation: Allocate Committee & Portfolio (Optimistic)
@@ -621,6 +621,42 @@ export default function SuperAdminPage() {
       });
     } catch (err) {
       notify("Failed to sync allocation to cloud", "error");
+    }
+  };
+
+  // Delegate Mutation: Clear / Remove Allocation (Optimistic & Zero Lag)
+  const handleClearAllocation = async (regId, fullName, email) => {
+    if (!window.confirm(`Are you sure you want to remove the committee and portfolio allocation for ${fullName || regId}?`)) {
+      return;
+    }
+
+    // 1. Optimistic update
+    setRegistrations((prev) =>
+      prev.map((d) =>
+        d.regId === regId || d.id === regId
+          ? { ...d, allocatedCommittee: "", allocatedCountry: "", status: "PENDING" }
+          : d
+      )
+    );
+    notify(`Allocation removed for ${fullName || regId}`);
+    if (allottingDelegate && (allottingDelegate.regId === regId || allottingDelegate.id === regId)) {
+      setAllottingDelegate(null);
+    }
+
+    // 2. Background cloud sync
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADMIN_CLEAR_ALLOCATION",
+          adminKey: "abhilashisgoat",
+          regId,
+          email,
+        }),
+      });
+    } catch (err) {
+      notify("Failed to sync cleared allocation to cloud", "error");
     }
   };
 
@@ -759,7 +795,7 @@ export default function SuperAdminPage() {
           sendEmail: allotForm.sendEmail,
         }),
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Delete Delegate (Optimistic & Zero Lag)
@@ -782,7 +818,7 @@ export default function SuperAdminPage() {
           sheetName: "Registrations",
         }),
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Delete Abandoned Lead (Optimistic & Zero Lag)
@@ -805,7 +841,7 @@ export default function SuperAdminPage() {
           email,
         }),
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Clear Test Leads & Sample Records
@@ -958,7 +994,7 @@ export default function SuperAdminPage() {
           id,
         }),
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Permanently Purge User Account and All Data
@@ -1052,7 +1088,7 @@ export default function SuperAdminPage() {
         day: scannerDay,
         actionType: scannerActionType,
       }),
-    }).catch(() => {});
+    }).catch(() => { });
   };
 
   // Send CRM Broadcast
@@ -1882,9 +1918,22 @@ export default function SuperAdminPage() {
                             <td className="px-4 py-3">
                               {d.allocatedCommittee ? (
                                 <div className="space-y-1">
-                                  <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-white bg-white/[0.04]">
-                                    {d.allocatedCommittee}
-                                  </Badge>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-white bg-white/[0.04]">
+                                      {d.allocatedCommittee}
+                                    </Badge>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleClearAllocation(d.regId || d.id, d.fullName || d.name, d.email);
+                                      }}
+                                      title="Delete / Remove Allocation"
+                                      className="text-zinc-500 hover:text-red-400 p-0.5 rounded cursor-pointer transition-colors"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
                                   <span className="block text-xs font-semibold text-zinc-200 truncate max-w-[180px]">
                                     {d.allocatedCountry || "General Delegate"}
                                   </span>
@@ -2272,8 +2321,7 @@ export default function SuperAdminPage() {
                                 {l.phone && (
                                   <a
                                     href={`https://wa.me/91${l.phone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
-                                      `Hi ${l.fullName || l.name || "Delegate"}! We noticed you began your Resolve MUN 2.0 registration for ${
-                                        l.preferences || "our committees"
+                                      `Hi ${l.fullName || l.name || "Delegate"}! We noticed you began your Resolve MUN 2.0 registration for ${l.preferences || "our committees"
                                       }. Would you like assistance securing your portfolio before seats fill up?`
                                     )}`}
                                     target="_blank"
@@ -3929,21 +3977,34 @@ export default function SuperAdminPage() {
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setAllottingDelegate(null)}
-                  className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="h-9 px-5 bg-white hover:bg-zinc-200 text-black font-semibold text-xs cursor-pointer"
-                >
-                  Confirm Allotment
-                </Button>
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/10">
+                {allottingDelegate.allocatedCommittee ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleClearAllocation(allottingDelegate.regId || allottingDelegate.id, allottingDelegate.fullName || allottingDelegate.name, allottingDelegate.email)}
+                    className="h-9 px-3 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Remove Allocation
+                  </Button>
+                ) : <div />}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setAllottingDelegate(null)}
+                    className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="h-9 px-5 bg-white hover:bg-zinc-200 text-black font-semibold text-xs cursor-pointer"
+                  >
+                    Confirm Allotment
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
@@ -4212,8 +4273,7 @@ export default function SuperAdminPage() {
                       </a>
                       <a
                         href={`https://wa.me/91${viewingDraftLead.phone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
-                          `Hi ${viewingDraftLead.fullName || viewingDraftLead.name || "Delegate"}! We noticed you began your Resolve MUN 2.0 registration for ${
-                            viewingDraftLead.preferences || "our committees"
+                          `Hi ${viewingDraftLead.fullName || viewingDraftLead.name || "Delegate"}! We noticed you began your Resolve MUN 2.0 registration for ${viewingDraftLead.preferences || "our committees"
                           }. Would you like assistance completing your allotment?`
                         )}`}
                         target="_blank"
@@ -4328,15 +4388,15 @@ export default function SuperAdminPage() {
                       selectedTeamApp.roleType === "EB"
                         ? "border-amber-500/40 text-amber-300 bg-amber-500/10"
                         : selectedTeamApp.roleType === "OC"
-                        ? "border-cyan-500/40 text-cyan-300 bg-cyan-500/10"
-                        : "border-purple-500/40 text-purple-300 bg-purple-500/10"
+                          ? "border-cyan-500/40 text-cyan-300 bg-cyan-500/10"
+                          : "border-purple-500/40 text-purple-300 bg-purple-500/10"
                     )}
                   >
                     {selectedTeamApp.roleType === "OC"
                       ? "Organizing Committee (OC)"
                       : selectedTeamApp.roleType === "EB"
-                      ? "Executive Board (EB)"
-                      : "Secretariat"}
+                        ? "Executive Board (EB)"
+                        : "Secretariat"}
                   </Badge>
                   <Badge
                     variant={selectedTeamApp.status === "Accepted" ? "default" : "secondary"}
@@ -4345,8 +4405,8 @@ export default function SuperAdminPage() {
                       selectedTeamApp.status === "Accepted"
                         ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
                         : selectedTeamApp.status === "Rejected"
-                        ? "bg-red-500/20 text-red-300 border-red-500/30"
-                        : "bg-white/10 text-zinc-300"
+                          ? "bg-red-500/20 text-red-300 border-red-500/30"
+                          : "bg-white/10 text-zinc-300"
                     )}
                   >
                     {selectedTeamApp.status || "Under Review"}

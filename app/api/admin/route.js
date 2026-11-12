@@ -1263,15 +1263,27 @@ export async function POST(request) {
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q = supabase.from('delegate_applications').update({
+          const updateData = {
             allocated_committee: body.committee,
             allocated_country: body.country,
             status: 'ALLOTTED',
             updated_at: new Date().toISOString(),
-          });
-          if (isUuid) q = q.eq('id', targetId);
-          else if (targetEmail) q = q.ilike('email', targetEmail);
-          await q;
+          };
+
+          let q1 = supabase.from('delegates').update(updateData);
+          let q2 = supabase.from('delegate_applications').update(updateData);
+
+          if (isUuid) {
+            q1 = q1.eq('id', targetId);
+            q2 = q2.eq('id', targetId);
+          } else if (targetId.startsWith('RM26-DEL-')) {
+            q1 = q1.eq('delegate_id', targetId);
+            q2 = q2.eq('id', targetId);
+          } else if (targetEmail) {
+            q1 = q1.ilike('email', targetEmail);
+            q2 = q2.ilike('email', targetEmail);
+          }
+          await Promise.allSettled([q1, q2]);
         } catch (e) {
           console.warn("[Supabase] Allotment notice:", e.message);
         }
@@ -1286,6 +1298,64 @@ export async function POST(request) {
       return NextResponse.json({
         status: 'success',
         message: `Allotted ${body.country} in ${body.committee} to delegate`,
+      });
+    }
+
+    // 4b. GOD-MODE: ADMIN_CLEAR_ALLOCATION / ADMIN_DEALLOCATE_DELEGATE
+    if (action === 'ADMIN_CLEAR_ALLOCATION' || action === 'ADMIN_DEALLOCATE_DELEGATE') {
+      const targetId = (body.regId || body.delegateId || body.id || '').trim();
+      const targetEmail = (body.email || '').trim().toLowerCase();
+
+      // In-memory update
+      const memoryKey = targetId || targetEmail;
+      if (memoryKey) {
+        const existing = memoryUpdatedDelegates.get(memoryKey) || {};
+        memoryUpdatedDelegates.set(memoryKey, {
+          ...existing,
+          allocatedCommittee: '',
+          allocatedCountry: '',
+          status: 'PENDING',
+        });
+      }
+
+      if (supabase) {
+        try {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+          const updateData = {
+            allocated_committee: null,
+            allocated_country: null,
+            status: 'PENDING',
+            updated_at: new Date().toISOString(),
+          };
+
+          let q1 = supabase.from('delegates').update(updateData);
+          let q2 = supabase.from('delegate_applications').update(updateData);
+
+          if (isUuid) {
+            q1 = q1.eq('id', targetId);
+            q2 = q2.eq('id', targetId);
+          } else if (targetId.startsWith('RM26-DEL-')) {
+            q1 = q1.eq('delegate_id', targetId);
+            q2 = q2.eq('id', targetId);
+          } else if (targetEmail) {
+            q1 = q1.ilike('email', targetEmail);
+            q2 = q2.ilike('email', targetEmail);
+          }
+          await Promise.allSettled([q1, q2]);
+        } catch (e) {
+          console.warn("[Supabase] Deallocation notice:", e.message);
+        }
+      }
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ ...body, action: 'ADMIN_CLEAR_ALLOCATION', adminKey: ADMIN_KEY }),
+      }).catch(() => { });
+
+      return NextResponse.json({
+        status: 'success',
+        message: `Cleared allocation for delegate`,
       });
     }
 
