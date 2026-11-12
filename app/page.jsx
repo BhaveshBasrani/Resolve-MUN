@@ -1581,6 +1581,22 @@ export default function Home() {
       window.getDelegateFeeFromReferral = function () {
         const val = normalizeReferral(document.getElementById("regReferral")?.value);
         const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
+        if (!val) return baseFee;
+
+        // Check dynamic custom referral codes from admin settings
+        const dynamicCodes = window.__siteSettings?.referralCodes || [];
+        const dynamicMatch = dynamicCodes.find(
+          (c) => normalizeReferral(c.code) === val && c.active !== false
+        );
+        if (dynamicMatch) {
+          if (dynamicMatch.finalFee !== undefined && dynamicMatch.finalFee !== null && dynamicMatch.finalFee !== "") {
+            return Number(dynamicMatch.finalFee);
+          }
+          if (dynamicMatch.discountAmount) {
+            return Math.max(0, baseFee - Number(dynamicMatch.discountAmount));
+          }
+        }
+
         return REFERRAL_CODE_PRICING[val] || baseFee;
       };
 
@@ -1599,16 +1615,29 @@ export default function Home() {
           if (!referralVal) {
             feedbackEl.innerText = "";
             feedbackEl.style.color = "";
-          } else if (REFERRAL_CODE_PRICING[referralVal]) {
-            const applied = REFERRAL_CODE_PRICING[referralVal];
-            const savings = baseFee - applied;
-            const ambassador = REFERRAL_AMBASSADORS[referralVal];
-            const note = ambassador ? ` (${ambassador})` : "";
-            feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
-            feedbackEl.style.color = "#22c55e";
           } else {
-            feedbackEl.innerText = "Referral code not recognized";
-            feedbackEl.style.color = "#ef4444";
+            const dynamicCodes = window.__siteSettings?.referralCodes || [];
+            const dynamicMatch = dynamicCodes.find(
+              (c) => normalizeReferral(c.code) === referralVal && c.active !== false
+            );
+            if (dynamicMatch) {
+              const applied = Number(dynamicMatch.finalFee ?? (baseFee - Number(dynamicMatch.discountAmount || 0)));
+              const savings = baseFee - applied;
+              const ambassador = dynamicMatch.ambassador || REFERRAL_AMBASSADORS[referralVal] || "";
+              const note = ambassador ? ` (${ambassador})` : "";
+              feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
+              feedbackEl.style.color = "#22c55e";
+            } else if (REFERRAL_CODE_PRICING[referralVal]) {
+              const applied = REFERRAL_CODE_PRICING[referralVal];
+              const savings = baseFee - applied;
+              const ambassador = REFERRAL_AMBASSADORS[referralVal];
+              const note = ambassador ? ` (${ambassador})` : "";
+              feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
+              feedbackEl.style.color = "#22c55e";
+            } else {
+              feedbackEl.innerText = "Referral code not recognized";
+              feedbackEl.style.color = "#ef4444";
+            }
           }
         }
       };

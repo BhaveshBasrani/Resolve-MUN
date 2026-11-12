@@ -241,6 +241,42 @@ export default function DelegateDashboard() {
   const [authLoading, setAuthLoading] = useState(true);
   const [delegateRecord, setDelegateRecord] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const handleSelfDeleteAccount = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to permanently delete your account?\n\nThis will permanently erase your profile, registration details, allocated portfolio, and entry pass from Resolve MUN records. This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+    const targetEmail = user?.email;
+    const targetId = user?.id || user?.uid;
+    if (!targetEmail && !targetId) return;
+
+    setIsDeletingAccount(true);
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "USER_DELETE_SELF",
+          email: targetEmail,
+          userId: targetId,
+        }),
+      });
+      await signOutUser();
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/?account_deleted=true";
+      }
+    } catch (_) {
+      alert("Failed to delete account. Please try again or contact the Secretariat.");
+      setIsDeletingAccount(false);
+    }
+  };
   const [systemSettings, setSystemSettings] = useState({
     registrationsOpen: true,
     roundName: "Priority Round Applications",
@@ -1012,6 +1048,29 @@ export default function DelegateDashboard() {
                   )}
                 </button>
 
+              </div>
+            </section>
+
+            {/* 6. DANGER ZONE: SELF-SERVE DATA PURGE */}
+            <section className="p-5 sm:p-6 rounded-2xl border border-red-500/20 bg-red-950/[0.06] space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-mono uppercase tracking-wider font-semibold text-red-400">
+                    DANGER ZONE &bull; ACCOUNT &amp; PRIVACY
+                  </p>
+                  <p className="text-xs text-white/60 font-sans">
+                    Permanently delete your profile, committee applications, and all submitted registration data.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSelfDeleteAccount}
+                  disabled={isDeletingAccount}
+                  className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isDeletingAccount ? "Purging Data..." : "Delete Account & Purge Data"}</span>
+                </button>
               </div>
             </section>
           </main>

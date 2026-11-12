@@ -489,15 +489,18 @@ export async function GET(request) {
     const asWaitlist = asData.waitlist || asData.Waitlist || [];
     const siteUsers = asData.siteUsers || asData.Users || [];
 
-    // Deduplication helper
+    // Deduplication helper - strictly skips items with no identifying key
     const dedupeByEmailOrId = (lists, idKey = 'regId') => {
       const seen = new Set();
       const out = [];
       for (const list of lists) {
+        if (!Array.isArray(list)) continue;
         for (const item of list) {
+          if (!item) continue;
           const k = ((item[idKey] || item.email || item.id || '') + '').toLowerCase().trim();
-          if (k && seen.has(k)) continue;
-          if (k) seen.add(k);
+          if (!k) continue; // Skip blank / unidentifiable rows
+          if (seen.has(k)) continue;
+          seen.add(k);
           out.push(item);
         }
       }
@@ -536,12 +539,13 @@ export async function GET(request) {
     const mergedOc = dedupeByEmailOrId([sbOc, asOcApplicants], 'email');
     const mergedEb = dedupeByEmailOrId([sbEb, asEbApplicants], 'email');
     const mergedSec = dedupeByEmailOrId([sbSec, asSecApplicants], 'email');
-    const mergedUsers = dedupeByEmailOrId([sbProfiles, siteUsers], 'email');
+    const mergedUsers = dedupeByEmailOrId([sbProfiles, siteUsers], 'email')
+      .filter(u => u && u.email && typeof u.email === 'string' && u.email.trim().includes('@'));
 
     // Also synthesize site user profiles from confirmed delegate registrations so all registered accounts show up
     mergedRegistrations.forEach((r, idx) => {
       const email = (r.email || '').toLowerCase().trim();
-      if (!email) return;
+      if (!email || !email.includes('@')) return;
       const exists = mergedUsers.some(u => (u.email || '').toLowerCase() === email);
       if (!exists) {
         mergedUsers.push({
@@ -964,6 +968,9 @@ export async function POST(request) {
     // 1. ADMIN_UPDATE_SETTINGS
     if (action === 'ADMIN_UPDATE_SETTINGS') {
       const normalized = normalizeSettings(body.settings || body);
+      const referralCodes = Array.isArray(body.settings?.referralCodes)
+        ? body.settings.referralCodes
+        : normalized.referralCodes || [];
       if (supabase) {
         try {
           await supabase.from('system_settings').upsert({
@@ -971,6 +978,9 @@ export async function POST(request) {
             registrations_open: normalized.registrationsOpen,
             round_name: normalized.roundName,
             delegate_base_fee: normalized.delegateFee,
+            referral_codes: referralCodes,
+            committee_capacities: normalized.committeeCapacities,
+            committee_documents: normalized.committeeDocuments,
             updated_at: new Date().toISOString(),
           });
         } catch (sbErr) {
@@ -978,13 +988,34 @@ export async function POST(request) {
         }
       }
 
+      adminDataCache = null;
+
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ ...body, adminKey: ADMIN_KEY }),
       }).catch(() => { });
 
-      return NextResponse.json({ status: 'success', settings: normalized });
+      return NextResponse.json({ status: 'success', settings: { ...normalized, referralCodes } });
+    }
+
+    // 1b. UPDATE_REFERRAL_CODES
+    if (action === 'UPDATE_REFERRAL_CODES') {
+      const referralCodes = Array.isArray(body.referralCodes) ? body.referralCodes : [];
+      if (supabase) {
+        try {
+          await supabase.from('system_settings').upsert({
+            id: 'global',
+            referral_codes: referralCodes,
+            updated_at: new Date().toISOString()
+          });
+        } catch (sbErr) {
+          console.warn("Supabase referral codes update notice:", sbErr.message);
+        }
+      }
+
+      adminDataCache = null;
+      return NextResponse.json({ status: 'success', referralCodes });
     }
 
     // 2. GOD-MODE: ADMIN_ADD_DELEGATE
@@ -1269,26 +1300,25 @@ export async function POST(request) {
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q1 = supabase.from('delegates').delete();
-          let q2 = supabase.from('delegate_applications').delete();
+          let q = supabase.from('delegate_applications').delete();
           if (isUuid) {
-            q1 = q1.eq('id', targetId);
-            q2 = q2.eq('id', targetId);
+            q = q.eq('id', targetId);
           } else {
-            if (targetId) {
-              q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
-              q2 = q2.or(`name.ilike.${targetId},email.ilike.${targetId}`);
-            }
-            if (targetEmail) {
-              q1 = q1.ilike('email', targetEmail);
-              q2 = q2.ilike('email', targetEmail);
+            if (targetId && targetEmail) {
+              q = q.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+            } else if (targetId) {
+              q = q.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
+            } else if (targetEmail) {
+              q = q.ilike('email', targetEmail);
             }
           }
-          await Promise.all([q1, q2]);
+          await q;
         } catch (e) {
           console.warn("[Supabase] Delete delegate notice:", e.message);
         }
       }
+
+      adminDataCache = null;
 
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
@@ -1302,6 +1332,58 @@ export async function POST(request) {
       }).catch(() => { });
 
       return NextResponse.json({ status: 'success', message: 'Record deleted successfully' });
+    }
+
+    // 6a2. USER & DATA PURGE: ADMIN_DELETE_USER / USER_DELETE_SELF
+    if (action === 'ADMIN_DELETE_USER' || action === 'USER_DELETE_SELF') {
+      const targetEmail = (body.email || '').trim().toLowerCase();
+      const targetId = (body.id || body.userId || body.uid || '').trim();
+
+      if (!targetEmail && !targetId) {
+        return NextResponse.json({ status: 'error', message: 'User email or ID required' }, { status: 400 });
+      }
+
+      if (targetEmail) memoryDeletedIds.add(targetEmail);
+      if (targetId) memoryDeletedIds.add(targetId);
+
+      if (supabase) {
+        try {
+          const deletes = [];
+          if (targetEmail) {
+            deletes.push(supabase.from('profiles').delete().ilike('email', targetEmail));
+            deletes.push(supabase.from('delegate_applications').delete().ilike('email', targetEmail));
+            deletes.push(supabase.from('eb_applications').delete().ilike('email', targetEmail));
+            deletes.push(supabase.from('oc_applications').delete().ilike('email', targetEmail));
+            deletes.push(supabase.from('secretariat_applications').delete().ilike('email', targetEmail));
+            deletes.push(supabase.from('delegation_applications').delete().ilike('advisor_email', targetEmail));
+          }
+          if (targetId) {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+            if (isUuid) {
+              deletes.push(supabase.from('profiles').delete().eq('id', targetId));
+              deletes.push(supabase.from('delegate_applications').delete().eq('user_id', targetId));
+            }
+          }
+          await Promise.allSettled(deletes);
+        } catch (delErr) {
+          console.warn("[Supabase] Purge user notice:", delErr.message);
+        }
+      }
+
+      adminDataCache = null;
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'ADMIN_DELETE_USER',
+          adminKey: ADMIN_KEY,
+          email: targetEmail,
+          userId: targetId,
+        }),
+      }).catch(() => { });
+
+      return NextResponse.json({ status: 'success', message: 'User and all associated registrations purged successfully' });
     }
 
     // 6b. LEAD MANAGEMENT: DELETE_LEAD

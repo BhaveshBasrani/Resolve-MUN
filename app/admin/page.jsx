@@ -194,6 +194,7 @@ export default function SuperAdminPage() {
   const [committeeDocuments, setCommitteeDocuments] = useState({});
   const [capacitiesSaving, setCapacitiesSaving] = useState(false);
   const [newDossierFile, setNewDossierFile] = useState({ committee: "DISEC", title: "", url: "", type: "pdf" });
+  const [newRefCode, setNewRefCode] = useState({ code: "", ambassador: "", finalFee: 2350, active: true });
 
   // Ultra-Fast Pass Scanner State (2 scans/sec throughput)
   const [scannerActive, setScannerActive] = useState(false);
@@ -430,13 +431,15 @@ export default function SuperAdminPage() {
             timestamp: d.timestamp || d.created_at || "",
           }));
 
-          const rawUsers = json.siteUsers || [];
+          const rawUsers = (json.siteUsers || []).filter(
+            (u) => u && u.email && typeof u.email === "string" && u.email.trim().includes("@")
+          );
           const normalizedUsers = rawUsers.map((u, idx) => ({
             ...u,
             id: u.id || u.uid || `usr_${idx}`,
             name: u.fullName || u.name || (u.email ? u.email.split("@")[0] : "User"),
             fullName: u.fullName || u.name || (u.email ? u.email.split("@")[0] : "User"),
-            email: u.email || "",
+            email: u.email.trim().toLowerCase(),
             role: (u.role || (ADMIN_EMAILS.includes((u.email || "").toLowerCase()) ? "ADMIN" : "DELEGATE")).toUpperCase(),
             avatarUrl: u.avatarUrl || u.avatar || "",
             lastActive: u.lastActive || u.updated_at || u.timestamp || new Date().toISOString(),
@@ -916,6 +919,40 @@ export default function SuperAdminPage() {
         }),
       });
     } catch (_) {}
+  };
+
+  // Permanently Purge User Account and All Data
+  const handleDeleteUser = async (email, id, name) => {
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete user "${name || email}"?\n\nThis will permanently purge their account, delegate applications, committee allocations, and all uploaded files. This action CANNOT be undone.`
+      )
+    ) {
+      return;
+    }
+    setSiteUsers((prev) => prev.filter((u) => u.email !== email && u.id !== id));
+    notify(`Purging user ${email}...`);
+    try {
+      const res = await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADMIN_DELETE_USER",
+          adminKey: "abhilashisgoat",
+          email,
+          id,
+        }),
+      });
+      const j = await res.json();
+      if (j.status === "success") {
+        notify(`User ${email} and all linked records permanently deleted.`);
+        fetchAdminData(true);
+      } else {
+        notify(j.message || "Failed to purge user", "error");
+      }
+    } catch (_) {
+      notify("Network error while purging user", "error");
+    }
   };
 
   // Ultra-Fast QR / Barcode Scanner Check-In (Target: 2 scans/sec)
@@ -2633,6 +2670,152 @@ export default function SuperAdminPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Referral Codes & Custom Pricing Manager */}
+                <div className="space-y-3 pt-3 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                        Referral Codes &amp; Custom Dynamic Pricing
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Define custom delegate registration fees per ambassador or school delegation. The checkout QR updates automatically.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Add New Referral Code Form */}
+                  <div className="p-3 rounded-lg border border-white/10 bg-zinc-900/40 space-y-2.5">
+                    <span className="text-[10px] font-mono uppercase text-zinc-400 block font-semibold">
+                      Add New Referral Code
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                      <input
+                        type="text"
+                        placeholder="CODE (e.g. BHAFN01)"
+                        value={newRefCode.code}
+                        onChange={(e) => setNewRefCode((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-950 text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Ambassador / Partner"
+                        value={newRefCode.ambassador}
+                        onChange={(e) => setNewRefCode((prev) => ({ ...prev, ambassador: e.target.value }))}
+                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-950 text-xs text-white placeholder:text-zinc-600 focus:outline-none"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Custom Fee (₹)"
+                        value={newRefCode.finalFee}
+                        onChange={(e) => setNewRefCode((prev) => ({ ...prev, finalFee: Number(e.target.value) }))}
+                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-950 text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          if (!newRefCode.code.trim()) {
+                            notify("Please enter a referral code", "error");
+                            return;
+                          }
+                          const cleanCode = newRefCode.code.trim().toUpperCase();
+                          const currentCodes = Array.isArray(siteSettings.referralCodes) ? [...siteSettings.referralCodes] : [];
+                          const idx = currentCodes.findIndex((c) => (c.code || "").toUpperCase() === cleanCode);
+                          const entry = {
+                            code: cleanCode,
+                            ambassador: newRefCode.ambassador.trim() || "Ambassador",
+                            finalFee: Number(newRefCode.finalFee || 2500),
+                            active: true,
+                          };
+                          if (idx >= 0) {
+                            currentCodes[idx] = entry;
+                          } else {
+                            currentCodes.unshift(entry);
+                          }
+                          setSiteSettings((prev) => ({ ...prev, referralCodes: currentCodes }));
+                          setNewRefCode({ code: "", ambassador: "", finalFee: 2350, active: true });
+                          notify(`Added referral code ${cleanCode} (₹${entry.finalFee}). Click "Save Settings" to publish.`);
+                        }}
+                        className="h-8 bg-white hover:bg-zinc-200 text-black text-xs font-bold uppercase tracking-wider cursor-pointer"
+                      >
+                        + Add Code
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Active Referral Codes Table */}
+                  <div className="rounded-lg border border-white/10 overflow-hidden bg-zinc-950">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-zinc-900 border-b border-white/10 text-zinc-400 font-mono text-[10px] uppercase">
+                          <th className="px-3 py-2">Code</th>
+                          <th className="px-3 py-2">Ambassador / Partner</th>
+                          <th className="px-3 py-2">Fee (INR)</th>
+                          <th className="px-3 py-2">Status</th>
+                          <th className="px-3 py-2 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {(!siteSettings.referralCodes || siteSettings.referralCodes.length === 0) ? (
+                          <tr>
+                            <td colSpan={5} className="py-4 text-center text-zinc-500 text-xs">
+                              No custom referral codes configured. Default fee applies.
+                            </td>
+                          </tr>
+                        ) : (
+                          siteSettings.referralCodes.map((rc, idx) => (
+                            <tr key={rc.code || idx} className="hover:bg-zinc-900/30">
+                              <td className="px-3 py-2 font-mono font-bold text-white">
+                                {rc.code}
+                              </td>
+                              <td className="px-3 py-2 text-zinc-300">
+                                {rc.ambassador || "Ambassador"}
+                              </td>
+                              <td className="px-3 py-2 font-mono text-emerald-400 font-semibold">
+                                ₹{Number(rc.finalFee || 2500).toLocaleString("en-IN")}
+                              </td>
+                              <td className="px-3 py-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = siteSettings.referralCodes.map((c, i) =>
+                                      i === idx ? { ...c, active: c.active === false ? true : false } : c
+                                    );
+                                    setSiteSettings((prev) => ({ ...prev, referralCodes: updated }));
+                                  }}
+                                  className={cn(
+                                    "px-2 py-0.5 rounded text-[10px] font-mono cursor-pointer border transition-colors",
+                                    rc.active !== false
+                                      ? "bg-emerald-950/30 text-emerald-400 border-emerald-500/30"
+                                      : "bg-zinc-800 text-zinc-500 border-white/10"
+                                  )}
+                                >
+                                  {rc.active !== false ? "Active" : "Disabled"}
+                                </button>
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const updated = siteSettings.referralCodes.filter((_, i) => i !== idx);
+                                    setSiteSettings((prev) => ({ ...prev, referralCodes: updated }));
+                                    notify(`Removed referral code ${rc.code}`);
+                                  }}
+                                  className="h-6 w-6 text-zinc-500 hover:text-red-400 cursor-pointer"
+                                  title="Delete code"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -3128,6 +3311,15 @@ export default function SuperAdminPage() {
                                       Demote
                                     </Button>
                                   )}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteUser(u.email, u.id, u.fullName || u.name)}
+                                    className="h-7 w-7 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
+                                    title="Permanently purge user & all records"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               </td>
                             </tr>

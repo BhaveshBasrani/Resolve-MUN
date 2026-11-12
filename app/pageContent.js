@@ -1880,18 +1880,24 @@ export const homeHtml = `
 
         <!-- DRIVE UPLOAD 1: PORTFOLIO / WORK -->
         <div class="form-group">
-          <div id="secPortfolioFileMount"></div>
-          <input type="file" id="secPortfolioFile" class="file-upload-input" accept=".pdf,.png,.jpg,.jpeg,.zip,.docx" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
-          <span id="secPortfolioFileName" style="display:none;"></span>
-          <div id="secPortfolioPreview" style="display: none;"></div>
+          <label for="secPortfolioFile">Portfolio / Work Samples (Design, Tech, PR, Content &bull; Optional)</label>
+          <label class="file-upload-wrapper" for="secPortfolioFile">
+            <span class="file-upload-btn">Upload Portfolio</span>
+            <span class="file-name" id="secPortfolioFileName">No file chosen (PDF, PNG, DOCX, max 15MB)</span>
+            <input type="file" id="secPortfolioFile" name="secPortfolioFile" class="file-upload-input" accept=".pdf,.png,.jpg,.jpeg,.zip,.docx">
+          </label>
+          <div id="secPortfolioPreview" style="display: none; font-size: 0.72rem; color: #38bdf8; margin-top: 4px; font-family: monospace;"></div>
         </div>
 
         <!-- DRIVE UPLOAD 2: RESUME / CV -->
         <div class="form-group">
-          <div id="secResumeFileMount"></div>
-          <input type="file" id="secResumeFile" class="file-upload-input" accept=".pdf,.doc,.docx,image/*" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
-          <span id="secResumeFileName" style="display:none;"></span>
-          <div id="secResumePreview" style="display: none;"></div>
+          <label for="secResumeFile">Curriculum Vitae (CV) / MUN Resume <span style="color:#f87171;">*</span></label>
+          <label class="file-upload-wrapper" for="secResumeFile">
+            <span class="file-upload-btn">Upload CV / Resume</span>
+            <span class="file-name" id="secResumeFileName">No file chosen (PDF or Word, max 10MB)</span>
+            <input type="file" id="secResumeFile" name="secResumeFile" class="file-upload-input" accept=".pdf,.doc,.docx,image/*" required data-required="true">
+          </label>
+          <div id="secResumePreview" style="display: none; font-size: 0.72rem; color: #38bdf8; margin-top: 4px; font-family: monospace;"></div>
         </div>
 
         <!-- GOOGLE FORM FOOTER NOTICE -->
