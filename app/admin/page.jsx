@@ -3573,11 +3573,6 @@ export default function SuperAdminPage() {
               </Card>
             );
           })()}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
           )}
         </main>
       </SidebarInset>
