@@ -29,6 +29,7 @@ import DelegatePassSection from "@/components/DelegatePassSection";
 import DobPickerPortals from "@/components/DobPickerPortal";
 import { PaymentReceiptModal } from "@/components/ui/animated-ticket";
 import { GradientBackground } from "@/components/ui/paper-design-shader-background";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/supabase";
 
 const [homePart1, rest1] = homeHtml.split("<!-- COMMITTEES_PLACEHOLDER -->");
 const [homePart2, homePart3] = (rest1 || "").split("<!-- SECRETARIAT_PLACEHOLDER -->");
@@ -37,6 +38,7 @@ const HOME_PART2_HTML = homePart2 ? { __html: homePart2 } : null;
 const HOME_PART3_HTML = homePart3 ? { __html: homePart3 } : null;
 
 export default function Home() {
+  const [siteSettings, setSiteSettings] = useState(DEFAULT_SITE_SETTINGS);
   const [authOpen, setAuthOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState("signup");
   const [currentUser, setCurrentUser] = useState(null);
@@ -928,9 +930,57 @@ export default function Home() {
       const applyLiveSettingsToDOM = (settings) => {
         if (!settings) return;
         window.__siteSettings = settings;
+        setSiteSettings((prev) => ({ ...prev, ...settings }));
         const delFee = Number(settings.delegateFee || 2500);
         const delgFee = Number(settings.delegationFee || 2200);
         const upi = settings.upiId || "6301550628@nyes";
+
+        // Update live venue section in DOM
+        const vTitle = document.getElementById("venueSectionTitle");
+        if (vTitle && (settings.venueShort || settings.conferenceVenue)) {
+          vTitle.innerText = (settings.venueShort || settings.conferenceVenue).toUpperCase();
+        }
+        const vAddr = document.getElementById("venueAddressText");
+        if (vAddr && settings.venueAddress) {
+          vAddr.innerText = settings.venueAddress;
+        }
+        const vIframe = document.getElementById("venueMapIframe");
+        if (vIframe && (settings.venueMapUrl || settings.conferenceVenue)) {
+          const mapUrl = (settings.venueMapUrl && settings.venueMapUrl.includes("output=embed"))
+            ? settings.venueMapUrl
+            : `https://maps.google.com/maps?q=${encodeURIComponent(settings.conferenceVenue || settings.venueAddress || "Meridian School Kompally Hyderabad")}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+          vIframe.src = mapUrl;
+        }
+        const vLink = document.getElementById("venueMapLink");
+        if (vLink && (settings.venueMapUrl || settings.conferenceVenue)) {
+          vLink.href = settings.venueMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.conferenceVenue || "Meridian School Kompally Hyderabad")}`;
+        }
+
+        // Update live prize pool in DOM
+        const delPrizeBadge = document.getElementById("delegationPrizePoolBadge");
+        if (delPrizeBadge && settings.prizePool) {
+          delPrizeBadge.innerText = `${settings.prizePool.toUpperCase()} PRIZE POOL`;
+        }
+        const delPrizeDesc = document.getElementById("delegationPrizePoolDesc");
+        if (delPrizeDesc && settings.prizePool) {
+          delPrizeDesc.innerText = `Register a contingent of 6+ delegates and compete for the ${settings.prizePool} Best Delegation cash prize pool.`;
+        }
+        const aboutCash = document.getElementById("aboutCashpoolNum");
+        if (aboutCash && settings.prizePool) {
+          aboutCash.innerText = settings.prizePool;
+        }
+
+        // Eyebrows across DOM
+        document.querySelectorAll(".hero-eyebrow").forEach((el) => {
+          if (settings.conferenceDates) el.innerText = settings.conferenceDates.toUpperCase();
+        });
+
+        window.copyVenueAddress = () => {
+          const addr = window.__siteSettings?.venueAddress || "Survey No. 108 & 109/B, Satyam Enclave, Behind Cine Planet, Kompally, Hyderabad, Telangana 500014";
+          navigator.clipboard?.writeText(addr);
+          if (window.showCustomAlert) window.showCustomAlert("Venue address copied to clipboard!", "success");
+          else alert("Venue address copied to clipboard!");
+        };
 
         const regFeeEl = document.getElementById("regFeeDisplay");
         if (regFeeEl) regFeeEl.innerText = `Registration Fee: ₹${delFee.toLocaleString("en-IN")}`;
@@ -1652,7 +1702,7 @@ export default function Home() {
       };
       setTimeout(attachReferralListener, 500);
 
-      // Global single-row file upload handler (No duplicate previews, validates 5MB)
+      // Global single-row file upload handler (No duplicate previews, validates 10MB with clear feedback)
       const initFileUploadListeners = () => {
         document.querySelectorAll(".file-upload-input").forEach((input) => {
           if (input.__fileListenerAttached) return;
@@ -1660,33 +1710,49 @@ export default function Home() {
           input.addEventListener("change", function () {
             const wrapper = this.closest(".file-upload-wrapper");
             const fileNameSpan = wrapper ? wrapper.querySelector(".file-name") : null;
+            const btnSpan = wrapper ? wrapper.querySelector(".file-upload-btn") : null;
             if (this.files && this.files.length > 0) {
               const file = this.files[0];
-              const maxSize = 5 * 1024 * 1024; // 5MB limit
+              const maxSize = 10 * 1024 * 1024; // 10MB limit
               if (file.size > maxSize) {
                 if (window.showCustomAlert) {
-                  window.showCustomAlert(`File "${file.name}" exceeds 5MB limit.`, "error");
+                  window.showCustomAlert(`File "${file.name}" exceeds 10MB limit.`, "error");
                 }
                 this.value = "";
                 if (fileNameSpan) {
-                  fileNameSpan.textContent = "File too large (max 5MB)";
+                  fileNameSpan.textContent = "File too large (max 10MB)";
                   fileNameSpan.style.color = "#ef4444";
                 }
                 if (wrapper) wrapper.style.borderColor = "#ef4444";
                 return;
               }
-              const sizeKb = (file.size / 1024).toFixed(1);
+              const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+              const sizeText = file.size > 1024 * 1024 ? `${sizeMb} MB` : `${(file.size / 1024).toFixed(0)} KB`;
               if (fileNameSpan) {
-                fileNameSpan.textContent = `${file.name} (${sizeKb} KB) ✓`;
-                fileNameSpan.style.color = "#22c55e";
+                fileNameSpan.textContent = `✓ ${file.name} (${sizeText})`;
+                fileNameSpan.style.color = "#34d399";
+                fileNameSpan.style.fontWeight = "600";
               }
-              if (wrapper) wrapper.style.borderColor = "rgba(34, 197, 94, 0.4)";
+              if (wrapper) {
+                wrapper.classList.add("has-file");
+                wrapper.style.borderColor = "rgba(52, 211, 153, 0.6)";
+              }
+              if (btnSpan) {
+                btnSpan.textContent = "Change";
+              }
             } else {
               if (fileNameSpan) {
                 fileNameSpan.textContent = "No file chosen";
                 fileNameSpan.style.color = "";
+                fileNameSpan.style.fontWeight = "";
               }
-              if (wrapper) wrapper.style.borderColor = "";
+              if (wrapper) {
+                wrapper.classList.remove("has-file");
+                wrapper.style.borderColor = "";
+              }
+              if (btnSpan) {
+                btnSpan.textContent = "Choose File";
+              }
             }
           });
         });
@@ -2360,7 +2426,7 @@ export default function Home() {
         <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "900px", margin: "0 auto" }}>
           {/* Eyebrow */}
           <div className="hero-eyebrow">
-            27TH – 29TH NOVEMBER 2026
+            {(siteSettings.conferenceDates || "27TH – 29TH NOVEMBER 2026").toUpperCase()}
           </div>
 
           {/* Adaptive Hero Title — NEVER overlaps navbar */}
@@ -2430,11 +2496,11 @@ export default function Home() {
           <div className="marquee-group">
             <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">27–29 NOVEMBER 2026</span>
+            <span className="ticker-item">{(siteSettings.conferenceDates || "27–29 NOVEMBER 2026").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">MERIDIAN SCHOOL, KOMPALLY</span>
+            <span className="ticker-item">{(siteSettings.venueShort || siteSettings.conferenceVenue || "MERIDIAN SCHOOL, KOMPALLY").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
             <span className="ticker-sep">✦</span>
@@ -2455,11 +2521,11 @@ export default function Home() {
           <div className="marquee-group" aria-hidden="true">
             <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">27–29 NOVEMBER 2026</span>
+            <span className="ticker-item">{(siteSettings.conferenceDates || "27–29 NOVEMBER 2026").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">MERIDIAN SCHOOL, KOMPALLY</span>
+            <span className="ticker-item">{(siteSettings.venueShort || siteSettings.conferenceVenue || "MERIDIAN SCHOOL, KOMPALLY").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
             <span className="ticker-sep">✦</span>
@@ -2556,7 +2622,7 @@ export default function Home() {
                 Signed In
               </span>
               <span className="text-white/20">|</span>
-              <span className="text-white/70">27–29 November 2026</span>
+              <span className="text-white/70">{siteSettings.conferenceDates || "27–29 November 2026"}</span>
             </div>
 
             {/* Action Buttons */}

@@ -55,11 +55,11 @@ export const homeHtml = `
       <div id="pathwayCardDelegation" class="selection-card selection-card--delegation selection-card--featured" style="border: 1.5px solid rgba(56, 189, 248, 0.45); background: linear-gradient(135deg, rgba(12, 74, 110, 0.4) 0%, rgba(15, 23, 42, 0.92) 100%); cursor: pointer;" onclick="selectPathway('delegation')">
         <div class="selection-card-header">
           <span id="pathwayBadgeDelegation" class="selection-badge" style="background: #0284c7; color: #ffffff; font-weight: 800; letter-spacing: 0.08em;">₹2,200 / DEL · MIN 6</span>
-          <span style="font-size: 10px; color: #7dd3fc; font-family: monospace;">₹25K PRIZE POOL</span>
+          <span id="delegationPrizePoolBadge" style="font-size: 10px; color: #7dd3fc; font-family: monospace;">₹25K PRIZE POOL</span>
         </div>
         <div class="selection-card-body" style="padding: 8px 0;">
           <h3 style="font-size: 1.25rem; color: #ffffff;">DELEGATION</h3>
-          <p style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.78); line-height: 1.45;">
+          <p id="delegationPrizePoolDesc" style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.78); line-height: 1.45;">
             Register a contingent of 6+ delegates and compete for the ₹25,000 Best Delegation cash prize pool.
           </p>
         </div>
@@ -1279,7 +1279,7 @@ export const homeHtml = `
         <span class="desc">Committees</span>
       </div>
       <div class="about-stat cash-rewards-stat">
-        <span class="num">???</span>
+        <span class="num" id="aboutCashpoolNum">₹25K+</span>
         <div class="stat-divider"></div>
         <span class="desc">Cashpool</span>
       </div>
@@ -1408,7 +1408,7 @@ export const homeHtml = `
   <div class="venue-inner">
     <div class="venue-header text-center reveal">
       <div class="section-label" style="justify-content: center; margin: 0 auto 12px auto;">Official Venue</div>
-      <h2 class="section-title" style="text-align: center; margin-bottom: 12px;">MERIDIAN SCHOOL, KOMPALLY</h2>
+      <h2 class="section-title" id="venueSectionTitle" style="text-align: center; margin-bottom: 12px;">MERIDIAN SCHOOL, KOMPALLY</h2>
       <p class="section-body" style="max-width: 720px; margin: 0 auto 36px auto;">
         Hyderabad's premier institutional campus — purpose-built with world-class facilities, state-of-the-art committee chambers, and an expansive plenary hall.
       </p>
@@ -1419,7 +1419,7 @@ export const homeHtml = `
       <!-- LEFT: PIC SHOWCASE (FULL FIT, NO PILLS, NO BOXES) -->
       <div class="venue-pic-card reveal">
         <div class="venue-pic-frame">
-          <img src="/images/venue-meridian.jpg" alt="Meridian School Kompally - Official Venue for Resolve MUN 2.0" class="venue-showcase-img" />
+          <img src="/images/venue-meridian.jpg" alt="Official Venue for Resolve MUN 2.0" class="venue-showcase-img" />
         </div>
       </div>
 
@@ -1428,7 +1428,7 @@ export const homeHtml = `
         <div class="venue-map-header">
           <div class="venue-map-meta">
             
-            <span class="venue-landmark-text">Behind Cine Planet · Kompally</span>
+            <span class="venue-landmark-text" id="venueLandmarkText">Behind Cine Planet &bull; Kompally</span>
           </div>
           <span class="venue-city-code">HYD · 500014</span>
         </div>
@@ -1436,12 +1436,13 @@ export const homeHtml = `
         <!-- Extended Interactive Dark Google Maps Embed -->
         <div class="venue-map-frame">
           <iframe
+            id="venueMapIframe"
             src="https://maps.google.com/maps?q=Meridian+School+Kompally+Hyderabad&t=&z=15&ie=UTF8&iwloc=&output=embed"
             class="venue-map-iframe"
             allowfullscreen=""
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
-            title="Meridian School Kompally Google Map Location"
+            title="Resolve MUN Official Venue Google Map Location"
           ></iframe>
         </div>
 
@@ -1463,6 +1464,7 @@ export const homeHtml = `
           <!-- Action Buttons -->
           <div class="venue-actions-row">
             <a
+              id="venueMapLink"
               href="https://www.google.com/maps/search/?api=1&query=Meridian+School+Kompally+Hyderabad"
               target="_blank"
               rel="noopener noreferrer"
@@ -1477,12 +1479,8 @@ export const homeHtml = `
             <button
               type="button"
               class="venue-nav-btn venue-nav-btn--secondary"
-              onclick="(function(){
-                navigator.clipboard.writeText('Survey No. 108 & 109/B, Satyam Enclave, Behind Cine Planet, Kompally, Hyderabad, Telangana 500014');
-                if (window.showCustomAlert) {
-                  window.showCustomAlert('Venue address copied to clipboard!', 'success');
-                } else {
-                  alert('Venue address copied to clipboard!');
+              onclick="window.copyVenueAddress && window.copyVenueAddress()"
+            >
                 }
               })()"
             >
@@ -1882,8 +1880,8 @@ export const homeHtml = `
         <div class="form-group">
           <label for="secPortfolioFile">Portfolio / Work Samples (Design, Tech, PR, Content &bull; Optional)</label>
           <label class="file-upload-wrapper" for="secPortfolioFile">
-            <span class="file-upload-btn">Upload Portfolio</span>
-            <span class="file-name" id="secPortfolioFileName">No file chosen (PDF, PNG, DOCX, max 15MB)</span>
+            <span class="file-upload-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Choose File</span>
+            <span class="file-name" id="secPortfolioFileName">Tap to upload Portfolio (PDF, PNG, DOCX up to 15MB)</span>
             <input type="file" id="secPortfolioFile" name="secPortfolioFile" class="file-upload-input" accept=".pdf,.png,.jpg,.jpeg,.zip,.docx">
           </label>
           <div id="secPortfolioPreview" style="display: none; font-size: 0.72rem; color: #38bdf8; margin-top: 4px; font-family: monospace;"></div>
@@ -1893,8 +1891,8 @@ export const homeHtml = `
         <div class="form-group">
           <label for="secResumeFile">Curriculum Vitae (CV) / MUN Resume <span style="color:#f87171;">*</span></label>
           <label class="file-upload-wrapper" for="secResumeFile">
-            <span class="file-upload-btn">Upload CV / Resume</span>
-            <span class="file-name" id="secResumeFileName">No file chosen (PDF or Word, max 10MB)</span>
+            <span class="file-upload-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Choose CV File</span>
+            <span class="file-name" id="secResumeFileName">Tap to upload CV / Resume (PDF, DOCX up to 10MB)</span>
             <input type="file" id="secResumeFile" name="secResumeFile" class="file-upload-input" accept=".pdf,.doc,.docx,image/*" required data-required="true">
           </label>
           <div id="secResumePreview" style="display: none; font-size: 0.72rem; color: #38bdf8; margin-top: 4px; font-family: monospace;"></div>
@@ -2049,8 +2047,8 @@ export const homeHtml = `
         <div class="form-group">
           <label for="ebCv">Executive Board CV / Portfolio (PDF or Word) <span style="color:#f87171;">*</span></label>
           <label class="file-upload-wrapper" for="ebCv">
-            <span class="file-upload-btn">Upload CV File</span>
-            <span class="file-name" id="ebCvFileName">No file chosen (PDF, max 5MB)</span>
+            <span class="file-upload-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Choose CV File</span>
+            <span class="file-name" id="ebCvFileName">Tap to choose CV (PDF, DOCX up to 10MB)</span>
             <input type="file" id="ebCv" name="ebCv" class="file-upload-input" accept=".pdf,image/*,.doc,.docx" required data-required="true">
           </label>
         </div>

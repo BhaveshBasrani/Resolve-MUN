@@ -15,8 +15,34 @@ const CONFIG = {
   REPLY_TO: "resolve.mun@gmail.com",
   SUPPORT_EMAIL: "support@resolvemun.in",
   HELPLINE: "+91 92121 07797",
-  CONFERENCE_DATES: "27th – 29th November 2026",
-  VENUE: "Meridian School, Kompally, Hyderabad",
+  CONFERENCE_DATES: (function() {
+    try {
+      return PropertiesService.getScriptProperties().getProperty("CONFERENCE_DATES") || "27th – 29th November 2026";
+    } catch (_) {
+      return "27th – 29th November 2026";
+    }
+  })(),
+  VENUE: (function() {
+    try {
+      return PropertiesService.getScriptProperties().getProperty("VENUE") || "Meridian School, Kompally, Hyderabad";
+    } catch (_) {
+      return "Meridian School, Kompally, Hyderabad";
+    }
+  })(),
+  VENUE_ADDRESS: (function() {
+    try {
+      return PropertiesService.getScriptProperties().getProperty("VENUE_ADDRESS") || "Survey No. 108, Behind Cine Planet, Kompally, Medchal Road, Hyderabad";
+    } catch (_) {
+      return "Survey No. 108, Behind Cine Planet, Kompally, Medchal Road, Hyderabad";
+    }
+  })(),
+  PRIZE_POOL: (function() {
+    try {
+      return PropertiesService.getScriptProperties().getProperty("PRIZE_POOL") || "₹25,000+";
+    } catch (_) {
+      return "₹25,000+";
+    }
+  })(),
   PORTAL_URL: "https://resolvemun.in",
   DASHBOARD_URL: "https://resolvemun.in/dashboard",
   RECAPTCHA_SECRET_KEY: PropertiesService.getScriptProperties().getProperty("RECAPTCHA_SECRET_KEY") || "6LesB7gtAAAAAL5lax4c0NxE6GWWanZrcgjkwISQ",
@@ -603,7 +629,7 @@ function applyEBWithDrive(data) {
   const appId = "RM26-EB-" + Math.floor(100 + Math.random() * 900);
   const cvData = data.cvBase64 || data.cv_base64 || "";
   const cvName = data.cvName || ("EB_CV_" + appId + ".pdf");
-  const driveUrl = cvData ? saveFileToDriveFolder(cvData, cvName, "application/pdf", CONFIG.FOLDERS.EB_CVS) : (data.cvLink || "");
+  const driveUrl = cvData ? saveFileToDriveFolder(cvData, cvName, "application/pdf", CONFIG.FOLDERS.EB_CVS) : (data.cvLink || data.cvUrl || data.cv_file || "");
 
   sheet.appendRow([
     new Date().toISOString(),
@@ -1261,8 +1287,8 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="font-size: 11px; color: rgba(255, 255, 255, 0.85); line-height: 1.6;">
-                    <strong style="color: #ffffff;">🏛️ Venue:</strong> Meridian School, Kompally, Hyderabad<br>
-                    <strong style="color: #ffffff;">📅 Conference Dates:</strong> 27th – 29th November 2026<br>
+                    <strong style="color: #ffffff;">🏛️ Venue:</strong> ${CONFIG.VENUE}<br>
+                    <strong style="color: #ffffff;">📅 Conference Dates:</strong> ${CONFIG.CONFERENCE_DATES}<br>
                     <strong style="color: #ffffff;">🏛️ Committees:</strong> DISEC · UNHRC · UNSC · LOK SABHA · COMMITTEE X · IP
                   </td>
                 </tr>
@@ -1915,10 +1941,34 @@ function updateSiteSettings(data) {
   }
   const settings = data.settings || data;
   const now = new Date().toISOString();
+
+  // Persist core conference logistics to ScriptProperties so all outgoing emails dynamically pick them up
+  try {
+    const props = PropertiesService.getScriptProperties();
+    if (settings.conferenceDates) {
+      props.setProperty("CONFERENCE_DATES", String(settings.conferenceDates));
+      CONFIG.CONFERENCE_DATES = String(settings.conferenceDates);
+    }
+    if (settings.conferenceVenue) {
+      props.setProperty("VENUE", String(settings.conferenceVenue));
+      CONFIG.VENUE = String(settings.conferenceVenue);
+    }
+    if (settings.venueAddress) {
+      props.setProperty("VENUE_ADDRESS", String(settings.venueAddress));
+      CONFIG.VENUE_ADDRESS = String(settings.venueAddress);
+    }
+    if (settings.prizePool) {
+      props.setProperty("PRIZE_POOL", String(settings.prizePool));
+      CONFIG.PRIZE_POOL = String(settings.prizePool);
+    }
+  } catch (propErr) {
+    console.warn("ScriptProperties update note: " + propErr);
+  }
+
   Object.keys(settings).forEach(function(k) {
     sheet.appendRow([k, settings[k], now, data.updatedBy || "Admin"]);
   });
-  return { status: "success", settings: settings };
+  return { status: "success", settings: settings, venue: CONFIG.VENUE, dates: CONFIG.CONFERENCE_DATES };
 }
 
 function verifyPassCredential(passId) {

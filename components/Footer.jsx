@@ -276,6 +276,32 @@ export default function Footer() {
   const altTextRef = React.useRef(null);
   const revealAt = React.useRef(null);
   const [inView, setInView] = React.useState(false);
+  const [footerInfo, setFooterInfo] = React.useState({
+    dates: "27–29 November 2026",
+    venue: "Meridian School, Kompally",
+  });
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (window.__siteSettings) {
+        setFooterInfo({
+          dates: window.__siteSettings.conferenceDates || "27–29 November 2026",
+          venue: window.__siteSettings.venueShort || window.__siteSettings.conferenceVenue || "Meridian School, Kompally",
+        });
+      }
+      const handleUpdate = (e) => {
+        const s = e?.detail || window.__siteSettings;
+        if (s) {
+          setFooterInfo({
+            dates: s.conferenceDates || "27–29 November 2026",
+            venue: s.venueShort || s.conferenceVenue || "Meridian School, Kompally",
+          });
+        }
+      };
+      window.addEventListener("siteSettingsUpdated", handleUpdate);
+      return () => window.removeEventListener("siteSettingsUpdated", handleUpdate);
+    }
+  }, []);
 
   const colors = MONOCHROME_PALETTE;
   const tones = colors.tones;
@@ -704,7 +730,7 @@ export default function Footer() {
 
             {/* Simpler, Professional, Clutter-Free Description */}
             <p className="rdf-tag rdf-r" style={{ "--d": 220 }}>
-              Hyderabad&apos;s premier Model United Nations conference. Convening at Meridian School, Kompally on 27–29 November 2026.
+              Hyderabad&apos;s premier Model United Nations conference. Convening at {footerInfo.venue} on {footerInfo.dates}.
             </p>
 
             {/* Social Icons */}

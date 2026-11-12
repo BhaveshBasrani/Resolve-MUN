@@ -420,12 +420,9 @@ export function NotchNav({
       {/* ========================================================================= */}
       <div
         ref={containerRef}
-        style={{
-          transform: "none",
-        }}
         className={cn(
           "xl:hidden absolute z-50 flex flex-col bg-[#050608]/95 backdrop-blur-xl text-white select-none pointer-events-auto border-b border-x border-white/[0.14] shadow-[0_12px_40px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.12)]",
-          "w-[calc(100%-16px)] sm:w-[calc(100%-28px)] max-w-lg left-0 right-0 mx-auto px-2.5 sm:px-3 py-1",
+          "w-[calc(100%-20px)] sm:w-[calc(100%-28px)] max-w-lg left-1/2 -translate-x-1/2 px-2.5 sm:px-3 py-1",
           isBottom ? "bottom-0 rounded-t-[20px]" : "top-0 rounded-b-[20px]"
         )}
       >

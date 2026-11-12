@@ -248,10 +248,10 @@ export function Navbar() {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       }}
-      className="flex items-center gap-2 group outline-none select-none !no-underline"
+      className="flex items-center gap-1.5 sm:gap-2 group outline-none select-none !no-underline"
       aria-label="Resolve MUN 2.0"
     >
-      <div className="relative size-6 shrink-0 flex items-center justify-center">
+      <div className="relative size-5 sm:size-6 shrink-0 flex items-center justify-center">
         <img
           src="/images/Logo.svg"
           onError={(e) => {
@@ -262,7 +262,7 @@ export function Navbar() {
         />
       </div>
       <span
-        className="text-[1.08rem] sm:text-[1.28rem] tracking-[0.1em] sm:tracking-[0.14em] leading-none text-white group-hover:text-zinc-200 transition-colors duration-200 font-bold whitespace-nowrap pt-0.5"
+        className="text-[0.98rem] min-[360px]:text-[1.08rem] sm:text-[1.28rem] tracking-[0.08em] sm:tracking-[0.14em] leading-none text-white group-hover:text-zinc-200 transition-colors duration-200 font-bold whitespace-nowrap pt-0.5"
         style={{ fontFamily: "'Bebas Neue', sans-serif" }}
       >
         RESOLVE MUN <span className="hidden min-[360px]:inline">2.0</span>
@@ -400,7 +400,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={openModal}
-          className="relative inline-flex items-center justify-center h-8 px-4 rounded-full bg-white text-black font-extrabold text-xs uppercase tracking-wider hover:bg-zinc-100 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 transition-all shadow-sm cursor-pointer"
+          className="relative inline-flex items-center justify-center h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-white text-black font-extrabold text-[11px] sm:text-xs uppercase tracking-wider hover:bg-zinc-100 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 transition-all shadow-sm cursor-pointer whitespace-nowrap"
         >
           Register
         </button>

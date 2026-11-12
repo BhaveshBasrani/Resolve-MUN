@@ -153,6 +153,8 @@ export default function SuperAdminPage() {
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("ALL");
   const [committeeFilter, setCommitteeFilter] = useState("ALL");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [leadFilter, setLeadFilter] = useState("ALL");
@@ -242,10 +244,12 @@ export default function SuperAdminPage() {
     if (fileId) {
       return `https://drive.google.com/file/d/${fileId}/preview`;
     }
-    if (s.startsWith("http://") || s.startsWith("https://")) {
-      if (s.toLowerCase().includes(".pdf") || s.toLowerCase().includes(".doc")) {
-        return `https://docs.google.com/viewer?url=${encodeURIComponent(s)}&embedded=true`;
-      }
+    // Direct PDF URLs (e.g. Supabase storage) render natively without Google Docs Viewer embedding blocks
+    if (s.toLowerCase().includes(".pdf")) {
+      return s;
+    }
+    if (s.toLowerCase().includes(".doc") || s.toLowerCase().includes(".docx") || s.toLowerCase().includes(".ppt")) {
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(s)}&embedded=true`;
     }
     return s;
   };
@@ -331,6 +335,42 @@ export default function SuperAdminPage() {
       if (newStatus === "Accepted") {
         notify(`Acceptance offer email dispatched to ${app.email}!`);
       }
+    } catch (_) {}
+  };
+
+  const handleDeleteApplicant = async (app) => {
+    if (!app) return;
+    const appId = app.appId || app.id;
+    const roleType = app.roleType || "OC";
+    const name = app.fullName || app.name || "Candidate";
+    if (!confirm(`Are you sure you want to permanently delete application "${name}" (${appId})?`)) {
+      return;
+    }
+
+    if (roleType === "OC") {
+      setOcApplications((prev) => prev.filter((a) => a.appId !== appId && a.id !== appId));
+    } else if (roleType === "EB") {
+      setEbApplications((prev) => prev.filter((a) => a.appId !== appId && a.id !== appId));
+    } else if (roleType === "SEC") {
+      setSecApplications((prev) => prev.filter((a) => a.appId !== appId && a.id !== appId));
+    }
+    if (selectedTeamApp && (selectedTeamApp.appId === appId || selectedTeamApp.id === appId)) {
+      setSelectedTeamApp(null);
+    }
+    notify(`Application ${appId} deleted`);
+
+    try {
+      await fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminKey: "abhilashisgoat",
+          action: "ADMIN_DELETE_APPLICATION",
+          appId,
+          roleType,
+          email: app.email,
+        }),
+      });
     } catch (_) {}
   };
 
@@ -1505,7 +1545,7 @@ export default function SuperAdminPage() {
                         stage: "4. Gatekeeper Venue Check-Ins",
                         count: registrations.filter((r) => r.checkInDay1 === "Present" || r.checkInDay2 === "Present" || r.checkInDay3 === "Present").length,
                         pct: registrations.length ? Math.round((registrations.filter((r) => r.checkInDay1 === "Present" || r.checkInDay2 === "Present" || r.checkInDay3 === "Present").length / registrations.length) * 100) : 0,
-                        desc: "Scanned at Meridian Kompally registration desk",
+                        desc: `Scanned at ${siteSettings.venueShort || "Meridian Kompally"} registration desk`,
                         color: "bg-cyan-500",
                       },
                     ].map((step, idx) => (
@@ -1603,7 +1643,7 @@ export default function SuperAdminPage() {
                           path: "/register/delegate",
                           badgeColor: "bg-purple-500/15 text-purple-300 border-purple-500/30",
                           desc: "Direct individual registration modal with committee preferences & study guides",
-                          whatsappText: "Hi! Register as an official Delegate for Resolve MUN 2.0 (27th-29th Nov 2026 at Meridian School, Hyderabad) here: https://resolvemun.in/register/delegate",
+                          whatsappText: `Hi! Register as an official Delegate for Resolve MUN 2.0 (${siteSettings.conferenceDates || "27th-29th Nov 2026"} at ${siteSettings.venueShort || "Meridian School, Hyderabad"}) here: https://resolvemun.in/register/delegate`,
                         },
                         {
                           title: "School / Delegation",
@@ -2535,6 +2575,143 @@ export default function SuperAdminPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6 max-w-2xl">
+                {/* 1. Core Conference Logistics & Identity (Dates, Venue, Prize Pool) */}
+                <div className="space-y-3 pb-4 border-b border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Core Conference Identity &amp; Logistics
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Changes here update live everywhere: hero banner, digital passes, emails, WhatsApp messages, and attendee dashboard.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Conference Dates
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.conferenceDates || "27th – 29th November 2026"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            conferenceDates: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. 27th – 29th November 2026"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                        Affects hero, passes, entry tracker &amp; emails
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Official Cash Prize Pool
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.prizePool || "₹25,000+"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            prizePool: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. ₹25,000+ or ₹50,000+"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                        Displayed on stats counter &amp; delegation awards
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Full Venue Name (Official Diplomatic)
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.conferenceVenue || "Meridian School, Kompally, Hyderabad"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            conferenceVenue: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Meridian School, Kompally, Hyderabad"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                        Printed on official communications &amp; email confirmations
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Short Venue (For Digital Passes &amp; Tickers)
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.venueShort || "Meridian School, Kompally"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            venueShort: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Meridian School, Kompally"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                        Used on entry pass badges and ticker carousel
+                      </span>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Full Physical Address &amp; Landmarks
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.venueAddress || "Survey No. 108 & 109/B, Satyam Enclave, Behind Cine Planet, Kompally, Hyderabad, Telangana 500014"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            venueAddress: e.target.value,
+                          }))
+                        }
+                        placeholder="Exact street address, survey number, landmarks"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Google Maps Embed or Navigation URL
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.venueMapUrl || "https://maps.google.com/maps?q=Meridian+School+Kompally+Hyderabad"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            venueMapUrl: e.target.value,
+                          }))
+                        }
+                        placeholder="Google Maps link or search query"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-mono text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Registration Switches */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
@@ -3189,143 +3366,213 @@ export default function SuperAdminPage() {
           {/* ===============================================================
               TAB: USERS (SITE ACCOUNTS & ROLES)
               =============================================================== */}
-          {activeTab === "users" && (
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-base font-semibold">
-                      Site User Accounts &amp; Access Roles ({siteUsers.length})
-                    </CardTitle>
-                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                      Accounts authenticated via Google Auth with real-time role elevation &amp; pass linkage
-                    </CardDescription>
+          {activeTab === "users" && (() => {
+            const validUsers = siteUsers
+              .filter((u) => {
+                if (!u) return false;
+                const email = (u.email || "").trim().toLowerCase();
+                return email.includes("@") && !email.startsWith("@");
+              })
+              .filter((u) => {
+                if (!userSearchQuery) return true;
+                const q = userSearchQuery.toLowerCase();
+                return (
+                  (u.fullName || "").toLowerCase().includes(q) ||
+                  (u.name || "").toLowerCase().includes(q) ||
+                  (u.email || "").toLowerCase().includes(q) ||
+                  (u.phone || "").toLowerCase().includes(q)
+                );
+              })
+              .filter((u) => {
+                if (userRoleFilter === "ALL") return true;
+                const isAdmin = (u.role || "").toUpperCase() === "ADMIN";
+                const linkedDel = registrations.find((r) => r.email?.toLowerCase() === u.email?.toLowerCase());
+                if (userRoleFilter === "ADMINS") return isAdmin;
+                if (userRoleFilter === "REGISTERED") return Boolean(linkedDel);
+                if (userRoleFilter === "UNREGISTERED") return !linkedDel && !isAdmin;
+                return true;
+              });
+
+            return (
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base font-semibold">
+                        Site User Accounts &amp; Access Roles ({validUsers.length})
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                        Verified accounts authenticated via Google Auth with real-time role elevation &amp; pass linkage
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fetchAdminData(true)}
+                        className="h-8 gap-1.5 text-xs border-white/15 cursor-pointer"
+                      >
+                        <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
+                        Refresh Accounts
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchAdminData(true)}
-                    className="h-8 gap-1.5 text-xs border-white/15 cursor-pointer"
-                  >
-                    <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
-                    Refresh Accounts
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
-                        <th className="px-4 py-3">User</th>
-                        <th className="px-4 py-3">Email Address</th>
-                        <th className="px-4 py-3">Registered Delegate Pass</th>
-                        <th className="px-4 py-3">Role</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 font-sans">
-                      {siteUsers.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-zinc-500 text-xs">
-                            No authenticated user records found.
-                          </td>
+
+                  {/* Search & Filter Bar */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
+                      <Input
+                        placeholder="Search users by name, email, or phone..."
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        className="h-8 pl-8 text-xs bg-zinc-900/60 border-white/10"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 overflow-x-auto">
+                      {[
+                        { key: "ALL", label: `All (${siteUsers.filter(u => u?.email?.includes("@")).length})` },
+                        { key: "REGISTERED", label: "Registered" },
+                        { key: "UNREGISTERED", label: "Browsing Only" },
+                        { key: "ADMINS", label: "Admins" },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setUserRoleFilter(tab.key)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-md text-[11px] font-mono transition-colors whitespace-nowrap cursor-pointer",
+                            userRoleFilter === tab.key
+                              ? "bg-white text-black font-semibold"
+                              : "text-zinc-400 hover:text-white bg-zinc-900 border border-white/10"
+                          )}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
+                          <th className="px-4 py-3">User</th>
+                          <th className="px-4 py-3">Email Address</th>
+                          <th className="px-4 py-3">Registered Delegate Pass</th>
+                          <th className="px-4 py-3">Role</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
-                      ) : (
-                        siteUsers.map((u, idx) => {
-                          const linkedDel = registrations.find(
-                            (r) => r.email?.toLowerCase() === u.email?.toLowerCase()
-                          );
-                          const isAdmin = (u.role || "").toUpperCase() === "ADMIN";
+                      </thead>
+                      <tbody className="divide-y divide-white/5 font-sans">
+                        {validUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-8 text-center text-zinc-500 text-xs font-mono">
+                              No matching user accounts found.
+                            </td>
+                          </tr>
+                        ) : (
+                          validUsers.map((u, idx) => {
+                            const linkedDel = registrations.find(
+                              (r) => r.email?.toLowerCase() === u.email?.toLowerCase()
+                            );
+                            const isAdmin = (u.role || "").toUpperCase() === "ADMIN";
 
-                          return (
-                            <tr key={u.id || idx} className="hover:bg-zinc-900/40 transition-colors">
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2.5">
-                                  <Avatar className="h-8 w-8 border border-white/15">
-                                    <AvatarImage src={u.avatarUrl || u.avatar} alt={u.fullName} />
-                                    <AvatarFallback className="text-[10px] bg-zinc-800 text-white font-mono">
-                                      {(u.fullName || u.email || "U").slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <span className="font-semibold text-white block">
-                                      {u.fullName || u.name || "User"}
-                                    </span>
-                                    <span className="text-[10px] text-zinc-500 font-mono">
-                                      {u.phone || "No phone linked"}
-                                    </span>
+                            return (
+                              <tr key={u.id || idx} className="hover:bg-zinc-900/40 transition-colors">
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2.5">
+                                    <Avatar className="h-8 w-8 border border-white/15">
+                                      <AvatarImage src={u.avatarUrl || u.avatar} alt={u.fullName} />
+                                      <AvatarFallback className="text-[10px] bg-zinc-800 text-white font-mono">
+                                        {(u.fullName || u.email || "U").slice(0, 2).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <span className="font-semibold text-white block">
+                                        {u.fullName || u.name || "User"}
+                                      </span>
+                                      <span className="text-[10px] text-zinc-500 font-mono">
+                                        {u.phone || "No phone linked"}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              </td>
+                                </td>
 
-                              <td className="px-4 py-3 font-mono text-zinc-300">
-                                {u.email}
-                              </td>
+                                <td className="px-4 py-3 font-mono text-zinc-300">
+                                  {u.email}
+                                </td>
 
-                              <td className="px-4 py-3">
-                                {linkedDel ? (
-                                  <div className="space-y-0.5">
-                                    <Badge variant="outline" className="text-[10px] font-mono border-emerald-500/40 text-emerald-400">
-                                      {linkedDel.regId}
-                                    </Badge>
-                                    <span className="block text-[11px] text-zinc-400 truncate max-w-[150px]">
-                                      {linkedDel.allocatedCommittee || "Pending"} · {linkedDel.paymentStatus}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-[11px] text-zinc-500 italic">No registration linked</span>
-                                )}
-                              </td>
-
-                              <td className="px-4 py-3">
-                                <Badge
-                                  variant={isAdmin ? "default" : "secondary"}
-                                  className={cn(
-                                    "text-[10px] font-mono font-bold uppercase",
-                                    isAdmin ? "bg-white text-black" : "bg-zinc-800 text-zinc-400 border border-white/10"
-                                  )}
-                                >
-                                  {u.role || "DELEGATE"}
-                                </Badge>
-                              </td>
-
-                              <td className="px-4 py-3 text-right whitespace-nowrap">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  {!isAdmin ? (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleUpdateUserRole(u.email, "ADMIN", u.id)}
-                                      className="h-7 px-2 text-[10px] text-zinc-300 hover:text-white border-white/15 cursor-pointer"
-                                    >
-                                      Make Admin
-                                    </Button>
+                                <td className="px-4 py-3">
+                                  {linkedDel ? (
+                                    <div className="space-y-0.5">
+                                      <Badge variant="outline" className="text-[10px] font-mono border-emerald-500/40 text-emerald-400">
+                                        {linkedDel.regId}
+                                      </Badge>
+                                      <span className="block text-[11px] text-zinc-400 truncate max-w-[150px]">
+                                        {linkedDel.allocatedCommittee || "Pending"} · {linkedDel.paymentStatus}
+                                      </span>
+                                    </div>
                                   ) : (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleUpdateUserRole(u.email, "DELEGATE", u.id)}
-                                      className="h-7 px-2 text-[10px] text-zinc-500 hover:text-red-400 border-white/10 cursor-pointer"
-                                    >
-                                      Demote
-                                    </Button>
+                                    <span className="text-[11px] text-zinc-500 italic">No registration linked</span>
                                   )}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDeleteUser(u.email, u.id, u.fullName || u.name)}
-                                    className="h-7 w-7 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
-                                    title="Permanently purge user & all records"
+                                </td>
+
+                                <td className="px-4 py-3">
+                                  <Badge
+                                    variant={isAdmin ? "default" : "secondary"}
+                                    className={cn(
+                                      "text-[10px] font-mono font-bold uppercase",
+                                      isAdmin ? "bg-white text-black" : "bg-zinc-800 text-zinc-400 border border-white/10"
+                                    )}
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
+                                    {u.role || "DELEGATE"}
+                                  </Badge>
+                                </td>
+
+                                <td className="px-4 py-3 text-right whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    {!isAdmin ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleUpdateUserRole(u.email, "ADMIN", u.id)}
+                                        className="h-7 px-2 text-[10px] text-zinc-300 hover:text-white border-white/15 cursor-pointer"
+                                      >
+                                        Make Admin
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleUpdateUserRole(u.email, "DELEGATE", u.id)}
+                                        className="h-7 px-2 text-[10px] text-zinc-500 hover:text-red-400 border-white/10 cursor-pointer"
+                                      >
+                                        Demote
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleDeleteUser(u.email, u.id, u.fullName || u.name)}
+                                      className="h-7 w-7 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
+                                      title="Permanently purge user & all records"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
                     </tbody>
                   </table>
                 </div>
@@ -4181,17 +4428,27 @@ export default function SuperAdminPage() {
                     <div className="flex items-center justify-between py-1 border-b border-white/5">
                       <span className="text-zinc-500 font-mono">Phone:</span>
                       {selectedTeamApp.phone ? (
-                        <a href={`tel:${selectedTeamApp.phone}`} className="text-zinc-200 hover:underline font-mono">
-                          {selectedTeamApp.phone}
-                        </a>
+                        <div className="flex items-center gap-2">
+                          <a href={`tel:${selectedTeamApp.phone}`} className="text-zinc-200 hover:underline font-mono">
+                            {selectedTeamApp.phone}
+                          </a>
+                          <a
+                            href={`https://wa.me/91${String(selectedTeamApp.phone).replace(/\D/g, "").slice(-10)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-emerald-400 hover:underline font-mono"
+                          >
+                            WhatsApp ↗
+                          </a>
+                        </div>
                       ) : (
                         <span className="text-zinc-500 italic">N/A</span>
                       )}
                     </div>
-                    {selectedTeamApp.institution && (
+                    {(selectedTeamApp.institution || selectedTeamApp.schoolCollege || selectedTeamApp.school) && (
                       <div className="flex items-center justify-between py-1 border-b border-white/5">
                         <span className="text-zinc-500 font-mono">Institution:</span>
-                        <span className="text-zinc-200">{selectedTeamApp.institution}</span>
+                        <span className="text-zinc-200 font-semibold">{selectedTeamApp.institution || selectedTeamApp.schoolCollege || selectedTeamApp.school}</span>
                       </div>
                     )}
                     {selectedTeamApp.grade && (
@@ -4209,13 +4466,20 @@ export default function SuperAdminPage() {
                     {selectedTeamApp.instagram && (
                       <div className="flex items-center justify-between py-1 border-b border-white/5">
                         <span className="text-zinc-500 font-mono">Instagram:</span>
-                        <span className="text-zinc-200">{selectedTeamApp.instagram}</span>
+                        <a
+                          href={`https://instagram.com/${String(selectedTeamApp.instagram).replace("@", "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-pink-400 hover:underline font-mono"
+                        >
+                          @{String(selectedTeamApp.instagram).replace("@", "")}
+                        </a>
                       </div>
                     )}
-                    {selectedTeamApp.residentialAddress && (
+                    {(selectedTeamApp.residentialAddress || selectedTeamApp.address) && (
                       <div className="py-1 border-b border-white/5">
                         <span className="text-zinc-500 font-mono block mb-0.5">Address:</span>
-                        <span className="text-zinc-300">{selectedTeamApp.residentialAddress}</span>
+                        <span className="text-zinc-300">{selectedTeamApp.residentialAddress || selectedTeamApp.address}</span>
                       </div>
                     )}
                   </div>
@@ -4224,18 +4488,47 @@ export default function SuperAdminPage() {
                 {/* Preferences / Role applied for */}
                 <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-2">
                   <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400">
-                    Application Preferences
+                    Application Role &amp; Preferences
                   </h4>
                   {selectedTeamApp.roleType === "EB" ? (
                     <div className="space-y-2 text-xs">
                       <div>
-                        <span className="text-zinc-500 font-mono block text-[10px]">1st Committee Preference:</span>
-                        <span className="font-semibold text-white">{selectedTeamApp.prefCommittee1 || "Not specified"}</span>
+                        <span className="text-zinc-500 font-mono block text-[10px]">Applied Position:</span>
+                        <span className="font-bold text-white">{selectedTeamApp.position || selectedTeamApp.role_preference || "Executive Board Member"}</span>
                       </div>
-                      {selectedTeamApp.prefCommittee2 && (
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
                         <div>
-                          <span className="text-zinc-500 font-mono block text-[10px]">2nd Committee Preference:</span>
-                          <span className="font-semibold text-zinc-300">{selectedTeamApp.prefCommittee2}</span>
+                          <span className="text-zinc-500 font-mono block text-[10px]">Pref 1:</span>
+                          <span className="font-semibold text-emerald-400">{selectedTeamApp.prefCommittee1 || (selectedTeamApp.committees ? selectedTeamApp.committees.split(" & ")[0] : "None")}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 font-mono block text-[10px]">Pref 2:</span>
+                          <span className="font-semibold text-zinc-300">{selectedTeamApp.prefCommittee2 || (selectedTeamApp.committees ? selectedTeamApp.committees.split(" & ")[1] : "None")}</span>
+                        </div>
+                      </div>
+                      {selectedTeamApp.munCount && (
+                        <div className="pt-1 border-t border-white/5">
+                          <span className="text-zinc-500 font-mono text-[10px]">Total MUNs Chaired/Attended: </span>
+                          <span className="font-mono font-bold text-amber-300">{selectedTeamApp.munCount}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : selectedTeamApp.roleType === "SEC" ? (
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-zinc-500 font-mono block text-[10px]">Secretariat Position Applied:</span>
+                        <span className="font-bold text-white text-sm">{selectedTeamApp.position || "Secretariat High Command"}</span>
+                      </div>
+                      {selectedTeamApp.dailyCommitment && (
+                        <div className="pt-1 border-t border-white/5">
+                          <span className="text-zinc-500 font-mono block text-[10px]">Daily Commitment:</span>
+                          <span className="font-semibold text-cyan-300">{selectedTeamApp.dailyCommitment}</span>
+                        </div>
+                      )}
+                      {selectedTeamApp.contribution && (
+                        <div className="pt-1 border-t border-white/5">
+                          <span className="text-zinc-500 font-mono block text-[10px]">Specific Role Contribution:</span>
+                          <p className="text-zinc-300 whitespace-pre-line text-[11px] leading-relaxed mt-0.5">{selectedTeamApp.contribution}</p>
                         </div>
                       )}
                     </div>
@@ -4251,6 +4544,12 @@ export default function SuperAdminPage() {
                           <span className="font-semibold text-zinc-300">{selectedTeamApp.department2}</span>
                         </div>
                       )}
+                      {selectedTeamApp.paymentUTR && (
+                        <div className="pt-1 border-t border-white/5">
+                          <span className="text-zinc-500 font-mono text-[10px]">Payment UTR: </span>
+                          <span className="font-mono text-emerald-400">{selectedTeamApp.paymentUTR}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -4264,11 +4563,11 @@ export default function SuperAdminPage() {
                     Statement &amp; Experience
                   </h4>
                   <div className="text-xs space-y-3 max-h-48 overflow-y-auto pr-1">
-                    {(selectedTeamApp.munExperience || selectedTeamApp.previousExperience || selectedTeamApp.experience) && (
+                    {(selectedTeamApp.munExperience || selectedTeamApp.previousExperience || selectedTeamApp.previousExperiences || selectedTeamApp.experience) && (
                       <div>
                         <span className="text-[10px] font-mono text-zinc-500 block">Past Experience:</span>
                         <p className="text-zinc-300 whitespace-pre-line leading-relaxed">
-                          {selectedTeamApp.munExperience || selectedTeamApp.previousExperience || selectedTeamApp.experience}
+                          {selectedTeamApp.munExperience || selectedTeamApp.previousExperience || selectedTeamApp.previousExperiences || selectedTeamApp.experience}
                         </p>
                       </div>
                     )}
@@ -4285,66 +4584,108 @@ export default function SuperAdminPage() {
 
                 {/* CV / Portfolio Document Section */}
                 <div className="p-4 rounded-xl border border-white/10 bg-zinc-900/60 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400">
-                      Curriculum Vitae (CV) / Portfolio
-                    </h4>
-                    {(selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl) && (
-                      <a
-                        href={selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-mono text-cyan-400 hover:underline flex items-center gap-1"
-                      >
-                        <span>Open Document</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
+                  {(() => {
+                    const candidateDocUrl = selectedTeamApp.cvUrl || selectedTeamApp.cv_url || selectedTeamApp.resumeUrl || selectedTeamApp.resume_url || selectedTeamApp.drive_url || selectedTeamApp.paymentScreenshotURL || "";
+                    const candidatePortfolioUrl = selectedTeamApp.portfolioUrl || selectedTeamApp.portfolio_url || "";
+                    const activeDoc = candidateDocUrl || candidatePortfolioUrl;
 
-                  {selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl ? (
-                    <div className="space-y-2">
-                      <div className="relative w-full h-64 rounded-lg border border-white/10 overflow-hidden bg-black/40">
-                        <iframe
-                          src={getDrivePreviewUrl(selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl)}
-                          className="w-full h-full border-0"
-                          title="Candidate CV Document"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500">
-                        <span>Direct Link:</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openScreenshotLightbox(selectedTeamApp.cvUrl || selectedTeamApp.resumeUrl || selectedTeamApp.portfolioUrl, selectedTeamApp)}
-                          className="h-6 text-[10px] text-cyan-300 hover:text-white hover:bg-white/10 p-1"
-                        >
-                          <Maximize2 className="h-3 w-3 mr-1" />
-                          View in Lightbox
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-8 text-center border border-dashed border-white/10 rounded-lg">
-                      <FileText className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
-                      <p className="text-xs text-zinc-400 font-mono">No CV attached by this applicant</p>
-                      <p className="text-[10px] text-zinc-600 mt-0.5">Contact candidate directly via email to request files</p>
-                    </div>
-                  )}
+                    return (
+                      <>
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400">
+                            Curriculum Vitae (CV) &amp; Portfolio
+                          </h4>
+                          {activeDoc && (
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={activeDoc}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1 rounded bg-white text-black font-semibold text-[11px] hover:bg-zinc-200 transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>Open Full Document</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {activeDoc ? (
+                          <div className="space-y-2">
+                            <div className="relative w-full h-80 sm:h-96 rounded-lg border border-white/15 overflow-hidden bg-black/60 shadow-inner">
+                              <iframe
+                                src={getDrivePreviewUrl(activeDoc)}
+                                className="w-full h-full border-0"
+                                title="Candidate Document"
+                              />
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-1">
+                              <span className="truncate max-w-[200px] text-zinc-500">
+                                {candidateDocUrl ? "CV / Resume" : "Portfolio Document"}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openScreenshotLightbox(activeDoc, selectedTeamApp)}
+                                  className="h-6 text-[10px] text-cyan-300 hover:text-white hover:bg-white/10 p-1"
+                                >
+                                  <Maximize2 className="h-3 w-3 mr-1" />
+                                  View in Lightbox
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-8 text-center border border-dashed border-white/10 rounded-lg">
+                            <FileText className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
+                            <p className="text-xs text-zinc-400 font-mono">No CV document attached</p>
+                            <p className="text-[10px] text-zinc-600 mt-0.5">Applicant did not upload a CV file</p>
+                          </div>
+                        )}
+
+                        {candidatePortfolioUrl && candidatePortfolioUrl !== activeDoc && (
+                          <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                            <span className="text-xs font-mono text-zinc-400">Additional Portfolio Link:</span>
+                            <a
+                              href={candidatePortfolioUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1"
+                            >
+                              <span>View Portfolio</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
 
-            {/* Footer with email link */}
-            <div className="flex items-center justify-between pt-4 border-t border-white/10">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedTeamApp(null)}
-                className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
-              >
-                Close Inspector
-              </Button>
+            {/* Footer with email link & delete option */}
+            <div className="flex items-center justify-between pt-4 border-t border-white/10 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTeamApp(null)}
+                  className="h-9 px-4 text-xs border-white/15 text-zinc-400 cursor-pointer"
+                >
+                  Close Inspector
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteApplicant(selectedTeamApp)}
+                  className="h-9 px-3 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer gap-1"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete Application</span>
+                </Button>
+              </div>
               <Button
                 variant="outline"
                 size="sm"

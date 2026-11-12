@@ -277,6 +277,8 @@ export default function EngravedTicket({
   institution = "Individual",
   tagline = "RESOLVE MUN 2.0 · HYDERABAD",
   quote = "27TH – 29TH NOVEMBER 2026",
+  venue = "MERIDIAN KOMPALLY",
+  dates = "27TH – 29TH NOVEMBER 2026",
   rhythm = [3, 2, 3, 1],
   phases = ["VERIFIED", "ACCREDITED", "AUTHENTICATED", "ENCRYPTED"],
   breathe = true,
@@ -536,7 +538,7 @@ export default function EngravedTicket({
             <div className="text-center space-y-1 border-b pb-3" style={{ borderColor: borderColor }}>
               <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.2em] font-semibold" style={{ color: mutedText }}>
                 <span>HYDERABAD 2026</span>
-                <span>MERIDIAN KOMPALLY</span>
+                <span className="truncate max-w-[180px] text-right">{(venue || "MERIDIAN KOMPALLY").toUpperCase()}</span>
               </div>
               <h2 className="text-lg sm:text-xl font-extrabold uppercase tracking-tight text-inherit font-sans" style={{ letterSpacing: "-0.01em" }}>
                 RESOLVE MUN 2.0
@@ -627,7 +629,7 @@ export default function EngravedTicket({
 
             {/* Security Verification Stamp */}
             <div className="text-center font-mono text-[9px] uppercase tracking-wider pt-1 opacity-70">
-              <span>27TH – 29TH NOVEMBER 2026 · MERIDIAN SCHOOL</span>
+              <span>{(dates || "27TH – 29TH NOVEMBER 2026").toUpperCase()} &bull; {(venue || "MERIDIAN SCHOOL").toUpperCase()}</span>
             </div>
           </div>
 
@@ -756,7 +758,7 @@ export default function EngravedTicket({
             </div>
 
             <p className="text-xs leading-relaxed font-sans opacity-75 max-w-md">
-              Valid official credential for all committee proceedings, official socials, and plenary sessions convening at Meridian School, Kompally, Hyderabad. Non-transferable.
+              Valid official credential for all committee proceedings, official socials, and plenary sessions convening at {venue || "Meridian School, Kompally, Hyderabad"} ({dates || "27th – 29th November 2026"}). Non-transferable.
             </p>
 
             {/* Barcode & Breath Meter */}

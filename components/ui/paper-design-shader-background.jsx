@@ -44,21 +44,27 @@ export function GradientBackground({
   const [isLowPower, setIsLowPower] = useState(false);
 
   useEffect(() => {
+    const isTouchOrMobile = Boolean(
+      (typeof window !== "undefined" && window.innerWidth <= 768) ||
+      (typeof window !== "undefined" && window.matchMedia?.("(max-width: 768px), (pointer: coarse)").matches) ||
+      (typeof navigator !== "undefined" && navigator.deviceMemory && navigator.deviceMemory <= 4)
+    );
+    setIsLowPower(isTouchOrMobile);
+
+    if (isTouchOrMobile) {
+      // On mobile, bypass WebGL completely to prevent GPU thermal throttling, black screens, and context loss
+      setSupportsWebGL(false);
+      setIsMounted(true);
+      return;
+    }
+
     try {
       const canvas = document.createElement("canvas");
       const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
       setSupportsWebGL(Boolean(gl));
-      // Release the probe context immediately so it doesn't count against mobile GPU limits
-      gl?.getExtension("WEBGL_lose_context")?.loseContext();
     } catch (e) {
       setSupportsWebGL(false);
     }
-    setIsLowPower(
-      Boolean(
-        window.matchMedia?.("(max-width: 768px), (pointer: coarse)").matches ||
-        (navigator.deviceMemory && navigator.deviceMemory <= 4)
-      )
-    );
     setIsMounted(true);
 
     const checkModal = () => {

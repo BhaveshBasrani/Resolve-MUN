@@ -7,6 +7,13 @@ import DynamicIslandAlert from "@/components/DynamicIslandAlert";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://resolvemun.in";
 const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LesB7gtAAAAAPTHA-4HMMhWytZLAV0yE4Jd7OcJ";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#000000",
+};
+
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: "Resolve MUN 2.0 | 27–29 November 2026 · Meridian School, Kompally",

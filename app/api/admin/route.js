@@ -949,6 +949,38 @@ export async function POST(request) {
       return NextResponse.json({ status: 'success', appId, newStatus, message: `Applicant updated to ${newStatus}` });
     }
 
+    if (action === 'ADMIN_DELETE_APPLICATION') {
+      const { appId, roleType, email } = body;
+      adminDataCache = null;
+
+      if (supabase) {
+        try {
+          const tableName = roleType === 'OC' ? 'oc_applications' : roleType === 'SEC' ? 'secretariat_applications' : 'eb_applications';
+          if (appId) {
+            await supabase.from(tableName).delete().or(`app_id.eq.${appId},id.eq.${appId}`);
+          } else if (email) {
+            await supabase.from(tableName).delete().ilike('email', email);
+          }
+        } catch (err) {
+          console.warn("[Supabase] Delete application notice:", err.message);
+        }
+      }
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'DELETE_APPLICATION',
+          adminKey: ADMIN_KEY,
+          appId,
+          roleType,
+          email,
+        }),
+      }).catch(() => {});
+
+      return NextResponse.json({ status: 'success', appId, message: 'Application deleted successfully' });
+    }
+
     // 0d. USER ROLE MANAGEMENT: ADMIN_UPDATE_USER_ROLE
     if (action === 'ADMIN_UPDATE_USER_ROLE') {
       const { email, role, id } = body;
@@ -978,6 +1010,11 @@ export async function POST(request) {
             registrations_open: normalized.registrationsOpen,
             round_name: normalized.roundName,
             delegate_base_fee: normalized.delegateFee,
+            conference_dates: normalized.conferenceDates,
+            conference_venue: normalized.conferenceVenue,
+            venue_address: normalized.venueAddress,
+            venue_map_url: normalized.venueMapUrl,
+            prize_pool: normalized.prizePool,
             referral_codes: referralCodes,
             committee_capacities: normalized.committeeCapacities,
             committee_documents: normalized.committeeDocuments,
@@ -993,7 +1030,15 @@ export async function POST(request) {
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ ...body, adminKey: ADMIN_KEY }),
+        body: JSON.stringify({
+          action: 'ADMIN_UPDATE_SETTINGS',
+          adminKey: ADMIN_KEY,
+          settings: normalized,
+          conferenceDates: normalized.conferenceDates,
+          conferenceVenue: normalized.conferenceVenue,
+          venueAddress: normalized.venueAddress,
+          prizePool: normalized.prizePool,
+        }),
       }).catch(() => { });
 
       return NextResponse.json({ status: 'success', settings: { ...normalized, referralCodes } });

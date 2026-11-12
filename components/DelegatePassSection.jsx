@@ -377,8 +377,8 @@ export default function DelegatePassSection() {
                     name={delegateName}
                     presenter="RESOLVE MODEL UNITED NATIONS 2.0"
                     event={open ? priceTag || "DIPLOMACY · REFORM · RECONCILE" : "REGISTRATIONS CLOSED"}
-                    venue="MERIDIAN SCHOOL, KOMPALLY"
-                    dates="27–29 NOVEMBER 2026"
+                    venue={siteSettings.venueShort || siteSettings.conferenceVenue || "MERIDIAN SCHOOL, KOMPALLY"}
+                    dates={(siteSettings.conferenceDates || "27–29 NOVEMBER 2026").toUpperCase()}
                     stubText={open ? pass.stub : "UNAVAILABLE"}
                     watermark="2026"
                     width={ticketWidth}
