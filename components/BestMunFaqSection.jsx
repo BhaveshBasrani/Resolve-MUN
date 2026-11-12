@@ -18,7 +18,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Which committees are available at Resolve MUN 2.0?",
-    a: "Resolve MUN 2.0 features 6 exciting committees: UNCSW (Women's Rights), UNHRC (Human Rights), DISEC (Security & Disarmament), International Press (Journalism & Photography), Lok Sabha (Indian Politics), and the IPL Auction (Cricket Strategy).",
+    a: "Resolve MUN 2.0 features 6 exciting committees: UNCSW (Women's Rights), UNHRC (Human Rights), DISEC (Security & Disarmament), International Press (Journalism & Photography), Lok Sabha (Indian Politics), and the Marvel Crisis Committee (Continuous Crisis).",
   },
   {
     q: "What are the cash prizes and delegate awards?",
@@ -46,9 +46,8 @@ export default function BestMunFaqSection() {
       {/* Header */}
       <div className="text-center mb-10 sm:mb-14">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 mb-3.5">
-          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
           <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-300">
-            Best MUN in Hyderabad &bull; Delegate Guide
+            Resolve MUN 2.0 &bull; FAQ
           </span>
         </div>
         <h2

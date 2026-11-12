@@ -2547,15 +2547,6 @@ export default function Home() {
             <strong>Resolve.</strong>&nbsp; Reform. &nbsp;<strong>Reconcile.</strong>
           </p>
 
-          {/* Clean Minimal SEO Badge */}
-          <div className="mt-3.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] sm:text-xs text-zinc-300 font-medium shadow-sm">
-            <span className="text-amber-400 font-bold">★ Rated #1</span>
-            <span className="text-white/20">•</span>
-            <span className="text-white font-semibold tracking-wide">Best MUN in Hyderabad</span>
-            <span className="text-white/20">•</span>
-            <span className="text-zinc-400 font-mono">25–27 Dec 2026</span>
-          </div>
-
           {/* Stats: Exact archive design, Committees = 6 */}
           <div className="hero-meta">
             <div className="hero-meta-item">

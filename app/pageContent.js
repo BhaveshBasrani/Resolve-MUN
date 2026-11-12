@@ -60,7 +60,7 @@ export const homeHtml = `
         <div class="selection-card-body" style="padding: 8px 0;">
           <h3 style="font-size: 1.25rem; color: #ffffff;">INDIVIDUAL DELEGATE</h3>
           <p style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.78); line-height: 1.45;">
-            Represent a portfolio across 6 dynamic committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL).
+            Represent a portfolio across 6 dynamic committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel).
           </p>
         </div>
         <div class="selection-card-action">
@@ -245,7 +245,7 @@ export const homeHtml = `
             <option value="DISEC">DISEC</option>
             <option value="IP">International Press</option>
             <option value="LOK SABHA">Lok Sabha</option>
-            <option value="IPL">IPL</option>
+            <option value="Marvel">Marvel</option>
           </select>
           <div id="pref1_container" style="display: none; margin-top: 10px;">
             <div id="pref1_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -270,7 +270,7 @@ export const homeHtml = `
             <option value="DISEC">DISEC</option>
             <option value="IP">International Press</option>
             <option value="LOK SABHA">Lok Sabha</option>
-            <option value="IPL">IPL</option>
+            <option value="Marvel">Marvel</option>
           </select>
           <div id="pref2_container" style="display: none; margin-top: 10px;">
             <div id="pref2_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -295,7 +295,7 @@ export const homeHtml = `
             <option value="DISEC">DISEC</option>
             <option value="IP">International Press</option>
             <option value="LOK SABHA">Lok Sabha</option>
-            <option value="IPL">IPL</option>
+            <option value="Marvel">Marvel</option>
           </select>
           <div id="pref3_container" style="display: none; margin-top: 10px;">
             <div id="pref3_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -2044,7 +2044,7 @@ export const homeHtml = `
               <option value="DISEC">DISEC</option>
               <option value="IP">International Press</option>
               <option value="LOK SABHA">Lok Sabha</option>
-              <option value="IPL">IPL</option>
+              <option value="Marvel">Marvel</option>
             </select>
           </div>
           <div>
@@ -2056,7 +2056,7 @@ export const homeHtml = `
               <option value="DISEC">DISEC</option>
               <option value="IP">International Press</option>
               <option value="LOK SABHA">Lok Sabha</option>
-              <option value="IPL">IPL</option>
+              <option value="Marvel">Marvel</option>
             </select>
           </div>
         </div>

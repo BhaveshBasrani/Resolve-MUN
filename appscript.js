@@ -6,7 +6,7 @@
  * Venue: TBA (To Be Announced)
  * Dates: 25, 26, 27 December 2026
  * Portals: https://resolvemun.in
- * Official Committees (6): UNCSW, UNHRC, DISEC, IP, LOK SABHA, IPL
+ * Official Committees (6): UNCSW, UNHRC, DISEC, IP, LOK SABHA, MARVEL
  * ============================================================================
  */
 
@@ -1271,7 +1271,7 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
                   <td style="font-size: 12px; color: #CBD5E1; line-height: 1.7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                     <strong style="color: #FFFFFF;">📅 Conference Dates:</strong> 25, 26, 27 December 2026<br>
                     <strong style="color: #FFFFFF;">🏛️ Official Venue:</strong> ${CONFIG.VENUE}<br>
-                    <strong style="color: #FFFFFF;">⚖️ 6 Elite Committees:</strong> UNCSW &bull; UNHRC &bull; DISEC &bull; IP &bull; LOK SABHA &bull; IPL
+                    <strong style="color: #FFFFFF;">⚖️ 6 Elite Committees:</strong> UNCSW &bull; UNHRC &bull; DISEC &bull; IP &bull; LOK SABHA &bull; MARVEL
                   </td>
                 </tr>
               </table>
@@ -1422,7 +1422,7 @@ function buildPaymentVerifiedHtml(fullName, regId, amount, utr) {
             Next Step: Committee &amp; Country Allotment
           </div>
           <p style="font-size: 12px; color: #CBD5E1; line-height: 1.7; margin: 0 0 10px 0;">
-            Our Executive Board is currently processing committee preferences across our 6 committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and IPL).
+            Our Executive Board is currently processing committee preferences across our 6 committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel).
           </p>
           <p style="font-size: 12px; color: #94A3B8; line-height: 1.6; margin: 0;">
             Once allotments are finalized, you will receive an official allotment notice containing your assigned portfolio and your <strong>Scannable VIP Entry Pass</strong>.
@@ -1740,7 +1740,7 @@ function adminDispatchLeadReminder(data) {
             Seats Are Filling Fast!
           </div>
           <p style="font-size: 13px; color: #CBD5E1; line-height: 1.7; margin: 0;">
-            Committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and IPL) are reaching maximum capacity. Complete your registration now to guarantee your preferred committee and country portfolio!
+            Committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel) are reaching maximum capacity. Complete your registration now to guarantee your preferred committee and country portfolio!
           </p>
         </td>
       </tr>

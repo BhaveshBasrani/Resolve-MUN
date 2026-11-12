@@ -117,7 +117,7 @@ const COMMITTEES = [
   "DISEC",
   "IP",
   "LOK SABHA",
-  "IPL",
+  "Marvel",
 ];
 
 const COMMITTEES_CONFIG = [
@@ -126,7 +126,7 @@ const COMMITTEES_CONFIG = [
   { id: "DISEC", name: "Disarmament & International Security", totalSeats: 80, type: "Security & Disarmament" },
   { id: "IP", name: "International Press Corps", totalSeats: 30, type: "Journalism & Media Oversight" },
   { id: "LOK SABHA", name: "Lok Sabha (Indian Parliament)", totalSeats: 85, type: "National Parliamentary Crisis" },
-  { id: "IPL", name: "Indian Premier League (Auction Crisis)", totalSeats: 50, type: "High-Stakes Sports & Strategy Crisis" },
+  { id: "Marvel", name: "Marvel Crisis Committee", totalSeats: 50, type: "Continuous Crisis & Tactical Multiverse" },
 ];
 
 const parseDateMs = (val) => {
@@ -229,7 +229,7 @@ export default function SuperAdminPage() {
     "DISEC": 80,
     "IP": 30,
     "LOK SABHA": 85,
-    "IPL": 50,
+    "Marvel": 50,
   });
   const [committeeDocuments, setCommitteeDocuments] = useState({});
   const [capacitiesSaving, setCapacitiesSaving] = useState(false);
@@ -2500,7 +2500,7 @@ export default function SuperAdminPage() {
                                     onClick={() => {
                                       setCrmEmailTo(l.email);
                                       setCrmSubject("Complete Your Resolve MUN 2.0 Registration");
-                                      setCrmMessageBody(`Dear ${l.fullName || l.name || "Delegate"},\n\nWe noticed you began your delegate registration for Resolve MUN 2.0 but didn't finish submitting your committee preferences.\n\nSlots across UNCSW, UNHRC, DISEC, IP, Lok Sabha, and IPL are moving quickly. You can resume your application directly at https://resolvemun.in/?open=delegate\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`);
+                                      setCrmMessageBody(`Dear ${l.fullName || l.name || "Delegate"},\n\nWe noticed you began your delegate registration for Resolve MUN 2.0 but didn't finish submitting your committee preferences.\n\nSlots across UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel are moving quickly. You can resume your application directly at https://resolvemun.in/?open=delegate\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`);
                                       setCrmRecipientMode("SINGLE");
                                       setActiveTab("crm");
                                     }}

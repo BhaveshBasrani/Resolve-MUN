@@ -16,9 +16,9 @@ export const viewport = {
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Best MUN in Hyderabad | Resolve MUN 2.0 (25–27 Dec 2026)",
+  title: "Resolve MUN 2.0",
   description:
-    "Looking for the best MUN in Hyderabad? Resolve MUN 2.0 convenes on 25, 26, 27 December 2026. 6 top committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL), ₹2.5 Lakhs in cash prizes, and executive passes. Register your delegate pass today!",
+    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
   keywords: [
     "Best MUN in Hyderabad",
     "best mun in hyderabad",
@@ -32,7 +32,7 @@ export const metadata = {
     "best mun for beginners hyderabad",
     "best school mun in hyderabad",
     "best college mun hyderabad",
-    "UNCSW UNHRC DISEC IP Lok Sabha IPL",
+    "UNCSW UNHRC DISEC IP Lok Sabha Marvel",
     "Resolve MUN dates",
     "Resolve MUN venue",
     "student diplomacy Hyderabad",
@@ -52,11 +52,11 @@ export const metadata = {
     ],
   },
   openGraph: {
-    title: "Best MUN in Hyderabad | Resolve MUN 2.0 (25–27 Dec 2026)",
+    title: "Resolve MUN 2.0",
     description:
-      "Looking for the best MUN in Hyderabad? Join Resolve MUN 2.0 on 25, 26, 27 December 2026. 6 top committees, ₹2.5 Lakhs in cash prizes, and beginner-friendly executive boards. Register now!",
+      "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
     url: siteUrl,
-    siteName: "Resolve MUN 2.0 — Best MUN in Hyderabad",
+    siteName: "Resolve MUN 2.0",
     images: [
       {
         url: `${siteUrl}/images/OG.jpg`,
@@ -80,9 +80,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best MUN in Hyderabad | Resolve MUN 2.0 (25–27 Dec 2026)",
+    title: "Resolve MUN 2.0",
     description:
-      "Looking for the best MUN in Hyderabad? Resolve MUN 2.0 happens on 25, 26, 27 December 2026. 6 elite committees, ₹2.5 Lakhs in cash rewards. Register your delegate pass today!",
+      "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
     images: [`${siteUrl}/images/OG.jpg`],
   },
   alternates: {
@@ -143,9 +143,9 @@ export default function RootLayout({ children }) {
                 {
                   "@type": "Event",
                   "@id": `${siteUrl}/#event`,
-                  name: "Resolve MUN 2.0 — Best MUN in Hyderabad",
+                  name: "Resolve MUN 2.0",
                   description:
-                    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. Venue TBA (To Be Announced). 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
+                    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. Venue TBA (To Be Announced). 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
                   startDate: "2026-12-25T08:30:00+05:30",
                   endDate: "2026-12-27T18:30:00+05:30",
                   eventStatus: "https://schema.org/EventScheduled",
@@ -201,7 +201,7 @@ export default function RootLayout({ children }) {
                   "@type": "WebSite",
                   "@id": `${siteUrl}/#website`,
                   url: siteUrl,
-                  name: "Resolve MUN 2.0 — Best MUN in Hyderabad",
+                  name: "Resolve MUN 2.0",
                   publisher: {
                     "@id": `${siteUrl}/#organization`,
                   },
@@ -224,7 +224,7 @@ export default function RootLayout({ children }) {
                       name: "What is the best MUN in Hyderabad?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "Resolve MUN 2.0 is rated among the best MUNs in Hyderabad. It brings together over 500 delegates across 6 committees (UNCSW, UNHRC, DISEC, International Press, Lok Sabha, and IPL Auction) on 25, 26, and 27 December 2026 with ₹2,50,000 in cash prizes.",
+                        text: "Resolve MUN 2.0 is rated among the best MUNs in Hyderabad. It brings together over 500 delegates across 6 committees (UNCSW, UNHRC, DISEC, International Press, Lok Sabha, and Marvel Crisis Committee) on 25, 26, and 27 December 2026 with ₹2,50,000 in cash prizes.",
                       },
                     },
                     {
@@ -248,7 +248,7 @@ export default function RootLayout({ children }) {
                       name: "What committees are available at Resolve MUN 2.0?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "The 6 committees are UNCSW (Women's Rights), UNHRC (Human Rights), DISEC (Disarmament & Security), International Press (IP), Lok Sabha (Indian Parliament), and IPL Auction.",
+                        text: "The 6 committees are UNCSW (Women's Rights), UNHRC (Human Rights), DISEC (Disarmament & Security), International Press (IP), Lok Sabha (Indian Parliament), and Marvel Crisis Committee.",
                       },
                     },
                     {
