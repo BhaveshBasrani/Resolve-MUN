@@ -17,6 +17,9 @@ const CONFIG = {
   HELPLINE: "+91 92121 07797",
   CONFERENCE_DATES: "25, 26, 27 December 2026",
   VENUE: "TBA (To Be Announced)",
+  TOTAL_PRIZE_POOL: "TBA",
+  DELEGATION_PRIZE_POOL: "₹25,000",
+  PRIZE_POOL: "TBA",
   PORTAL_URL: "https://resolvemun.in",
   DASHBOARD_URL: "https://resolvemun.in/dashboard",
   RECAPTCHA_SECRET_KEY: PropertiesService.getScriptProperties().getProperty("RECAPTCHA_SECRET_KEY") || "6LesB7gtAAAAAL5lax4c0NxE6GWWanZrcgjkwISQ",
@@ -25,20 +28,20 @@ const CONFIG = {
   ENABLE_RECAPTCHA_VERIFY: true,
   VERSION: "5.0.0",
   COMMITTEES: [
-    "DISEC",
+    "UNCSW",
     "UNHRC",
-    "UNSC",
-    "LOK SABHA",
-    "COMMITTEE X",
-    "IP"
+    "DISEC",
+    "IP",
+    "Lok Sabha",
+    "Marvel"
   ],
   DEFAULT_CAPACITIES: {
-    "DISEC": 80,
+    "UNCSW": 60,
     "UNHRC": 70,
-    "UNSC": 40,
-    "LOK SABHA": 85,
-    "COMMITTEE X": 45,
-    "IP": 30
+    "DISEC": 80,
+    "IP": 30,
+    "Lok Sabha": 85,
+    "Marvel": 50
   },
   FOLDERS: {
     ROOT: "Resolve_MUN_2026",

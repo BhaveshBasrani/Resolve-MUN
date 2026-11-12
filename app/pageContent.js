@@ -72,7 +72,7 @@ export const homeHtml = `
       <div id="pathwayCardDelegation" class="selection-card selection-card--delegation selection-card--featured" style="border: 1.5px solid rgba(56, 189, 248, 0.45); background: linear-gradient(135deg, rgba(12, 74, 110, 0.4) 0%, rgba(15, 23, 42, 0.92) 100%); cursor: pointer;" onclick="selectPathway('delegation')">
         <div class="selection-card-header">
           <span id="pathwayBadgeDelegation" class="selection-badge" style="background: #0284c7; color: #ffffff; font-weight: 800; letter-spacing: 0.08em;">₹2,200 / DEL · MIN 6</span>
-          <span id="delegationPrizePoolBadge" style="font-size: 10px; color: #7dd3fc; font-family: monospace;">₹25K PRIZE POOL</span>
+          <span id="delegationPrizePoolBadge" style="font-size: 10px; color: #7dd3fc; font-family: monospace;">₹25,000 PRIZE POOL</span>
         </div>
         <div class="selection-card-body" style="padding: 8px 0;">
           <h3 style="font-size: 1.25rem; color: #ffffff;">DELEGATION</h3>
@@ -1296,9 +1296,9 @@ export const homeHtml = `
         <span class="desc">Committees</span>
       </div>
       <div class="about-stat cash-rewards-stat">
-        <span class="num" id="aboutCashpoolNum">₹25K+</span>
+        <span class="num" id="aboutCashpoolNum">TBA</span>
         <div class="stat-divider"></div>
-        <span class="desc">Cashpool</span>
+        <span class="desc">Total Cash Prize</span>
       </div>
       <div class="about-stat">
         <span class="num">3</span>

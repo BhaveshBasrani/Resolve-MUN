@@ -1049,16 +1049,18 @@ export default function Home() {
 
         // Update live prize pool in DOM
         const delPrizeBadge = document.getElementById("delegationPrizePoolBadge");
-        if (delPrizeBadge && settings.prizePool) {
-          delPrizeBadge.innerText = `${settings.prizePool.toUpperCase()} PRIZE POOL`;
+        if (delPrizeBadge) {
+          const delCp = settings.delegationPrizePool || "₹25,000";
+          delPrizeBadge.innerText = `${delCp.toUpperCase()} PRIZE POOL`;
         }
         const delPrizeDesc = document.getElementById("delegationPrizePoolDesc");
-        if (delPrizeDesc && settings.prizePool) {
-          delPrizeDesc.innerText = `Register a contingent of 6+ delegates and compete for the ${settings.prizePool} Best Delegation cash prize pool.`;
+        if (delPrizeDesc) {
+          const delCp = settings.delegationPrizePool || "₹25,000";
+          delPrizeDesc.innerText = `Register a contingent of 6+ delegates and compete for the ${delCp} Best Delegation cash prize pool.`;
         }
         const aboutCash = document.getElementById("aboutCashpoolNum");
-        if (aboutCash && settings.prizePool) {
-          aboutCash.innerText = settings.prizePool;
+        if (aboutCash) {
+          aboutCash.innerText = settings.totalPrizePool || settings.prizePool || "TBA";
         }
 
         // Eyebrows across DOM

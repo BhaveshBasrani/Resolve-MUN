@@ -2829,22 +2829,44 @@ export default function SuperAdminPage() {
 
                     <div>
                       <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
-                        Official Cash Prize Pool
+                        Total Cash Prize (Total CP)
                       </label>
                       <input
                         type="text"
-                        value={siteSettings.prizePool || "₹25,000+"}
+                        value={siteSettings.totalPrizePool || siteSettings.prizePool || "TBA"}
                         onChange={(e) =>
                           setSiteSettings((prev) => ({
                             ...prev,
+                            totalPrizePool: e.target.value,
                             prizePool: e.target.value,
                           }))
                         }
-                        placeholder="e.g. ₹25,000+ or ₹50,000+"
+                        placeholder="e.g. TBA"
                         className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
                       />
                       <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
-                        Displayed on stats counter &amp; delegation awards
+                        Displayed on stats counter (Total CP: TBA)
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Delegation Cash Prize (Delegation CP)
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.delegationPrizePool || "₹25,000"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            delegationPrizePool: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. ₹25,000"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                        Displayed on Delegation pass card &amp; awards
                       </span>
                     </div>
 

@@ -1078,7 +1078,9 @@ export async function POST(request) {
             conference_venue: normalized.conferenceVenue,
             venue_address: normalized.venueAddress,
             venue_map_url: normalized.venueMapUrl,
-            prize_pool: normalized.prizePool,
+            total_prize_pool: normalized.totalPrizePool || normalized.prizePool,
+            delegation_prize_pool: normalized.delegationPrizePool,
+            prize_pool: normalized.totalPrizePool || normalized.prizePool,
             referral_codes: referralCodes,
             committee_capacities: normalized.committeeCapacities,
             committee_documents: normalized.committeeDocuments,
@@ -1101,7 +1103,9 @@ export async function POST(request) {
           conferenceDates: normalized.conferenceDates,
           conferenceVenue: normalized.conferenceVenue,
           venueAddress: normalized.venueAddress,
-          prizePool: normalized.prizePool,
+          totalPrizePool: normalized.totalPrizePool || normalized.prizePool,
+          delegationPrizePool: normalized.delegationPrizePool,
+          prizePool: normalized.totalPrizePool || normalized.prizePool,
         }),
       }).catch(() => { });
 

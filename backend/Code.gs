@@ -36,13 +36,9 @@ const CONFIG = {
       return "TBA (To Be Announced), Hyderabad";
     }
   })(),
-  PRIZE_POOL: (function() {
-    try {
-      return PropertiesService.getScriptProperties().getProperty("PRIZE_POOL") || "₹25,000+";
-    } catch (_) {
-      return "₹25,000+";
-    }
-  })(),
+  PRIZE_POOL: "TBA",
+  TOTAL_PRIZE_POOL: "TBA",
+  DELEGATION_PRIZE_POOL: "₹25,000",
   PORTAL_URL: "https://resolvemun.in",
   DASHBOARD_URL: "https://resolvemun.in/dashboard",
   RECAPTCHA_SECRET_KEY: PropertiesService.getScriptProperties().getProperty("RECAPTCHA_SECRET_KEY") || "6LesB7gtAAAAAL5lax4c0NxE6GWWanZrcgjkwISQ",
@@ -55,7 +51,7 @@ const CONFIG = {
     "UNHRC",
     "DISEC",
     "IP",
-    "LOK SABHA",
+    "Lok Sabha",
     "Marvel"
   ],
   DEFAULT_CAPACITIES: {
@@ -63,7 +59,7 @@ const CONFIG = {
     "UNHRC": 70,
     "DISEC": 80,
     "IP": 30,
-    "LOK SABHA": 85,
+    "Lok Sabha": 85,
     "Marvel": 50
   },
   FOLDERS: {

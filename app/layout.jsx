@@ -145,7 +145,7 @@ export default function RootLayout({ children }) {
                   "@id": `${siteUrl}/#event`,
                   name: "Resolve MUN 2.0",
                   description:
-                    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. Venue TBA (To Be Announced). 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
+                    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. Venue TBA (To Be Announced). 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel), cash prizes (Total CP: TBA, Delegation CP: ₹25,000), and premier diplomatic simulations.",
                   startDate: "2026-12-25T08:30:00+05:30",
                   endDate: "2026-12-27T18:30:00+05:30",
                   eventStatus: "https://schema.org/EventScheduled",
@@ -224,7 +224,7 @@ export default function RootLayout({ children }) {
                       name: "What is the best MUN in Hyderabad?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "Resolve MUN 2.0 is rated among the best MUNs in Hyderabad. It brings together over 500 delegates across 6 committees (UNCSW, UNHRC, DISEC, International Press, Lok Sabha, and Marvel Crisis Committee) on 25, 26, and 27 December 2026 with ₹2,50,000 in cash prizes.",
+                        text: "Resolve MUN 2.0 is rated among the best MUNs in Hyderabad. It brings together over 500 delegates across 6 committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel) on 25, 26, and 27 December 2026 with exciting cash prizes (Total CP: TBA, with ₹25,000 Delegation CP).",
                       },
                     },
                     {
@@ -256,7 +256,7 @@ export default function RootLayout({ children }) {
                       name: "What are the cash prizes at Resolve MUN 2.0?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "Resolve MUN 2.0 offers ₹2,50,000 in total cash prizes across all committees, along with official Best Delegate, High Commendation, and Special Mention trophies and certificates.",
+                        text: "Resolve MUN 2.0 total cash prize pool (Total CP) will be announced soon (TBA) across all committees. A guaranteed ₹25,000 cash prize pool (Delegation CP) is reserved for the Best Delegation, along with official Best Delegate, High Commendation, and Special Mention trophies and certificates.",
                       },
                     },
                     {

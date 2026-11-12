@@ -6,7 +6,7 @@ import { ChevronDown, Sparkles } from "lucide-react";
 const FAQ_ITEMS = [
   {
     q: "Why is Resolve MUN 2.0 rated the best MUN in Hyderabad?",
-    a: "Resolve MUN is built from the ground up for delegates. It brings together 500+ students from top schools and colleges across India. With 6 top-tier committees, ₹2,50,000 in cash prizes, and experienced executive boards that genuinely help delegates speak and grow, Resolve is recognized as the best MUN in Hyderabad.",
+    a: "Resolve MUN is built from the ground up for delegates. It brings together 500+ students from top schools and colleges across India. With 6 top-tier committees, exciting cash prizes (Total CP: TBA, with ₹25,000 Delegation CP), and experienced executive boards that genuinely help delegates speak and grow, Resolve is recognized as the best MUN in Hyderabad.",
   },
   {
     q: "When and where is Resolve MUN 2.0 taking place?",
@@ -22,7 +22,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What are the cash prizes and delegate awards?",
-    a: "Resolve MUN 2.0 features a prize pool of ₹2,50,000 in cash across all committees, along with official Best Delegate, High Commendation, and Special Mention trophies, certificates, and letters of recommendation.",
+    a: "The Total Cash Prize (Total CP) for Resolve MUN 2.0 will be announced soon (TBA) across all committees. A guaranteed ₹25,000 cash prize pool (Delegation CP) is reserved for the Best Delegation, along with official Best Delegate, High Commendation, and Special Mention trophies, certificates, and letters of recommendation.",
   },
   {
     q: "How do I register and get my delegate pass?",
