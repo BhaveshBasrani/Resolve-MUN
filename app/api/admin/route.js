@@ -553,10 +553,14 @@ export async function GET(request) {
       }
     });
 
-    const mergedDelegations = dedupeByEmailOrId([sbDelegations, asDelegations], 'delegationId');
-    const mergedOc = dedupeByEmailOrId([sbOc, asOcApplicants], 'email');
-    const mergedEb = dedupeByEmailOrId([sbEb, asEbApplicants], 'email');
-    const mergedSec = dedupeByEmailOrId([sbSec, asSecApplicants], 'email');
+    const mergedDelegations = dedupeByEmailOrId([sbDelegations, asDelegations], 'delegationId')
+      .filter(d => !memoryDeletedIds.has(d.id) && !memoryDeletedIds.has(d.delegationId));
+    const mergedOc = dedupeByEmailOrId([sbOc, asOcApplicants], 'email')
+      .filter(a => !memoryDeletedIds.has(a.id) && !memoryDeletedIds.has(a.appId) && !memoryDeletedIds.has((a.email || '').toLowerCase().trim()));
+    const mergedEb = dedupeByEmailOrId([sbEb, asEbApplicants], 'email')
+      .filter(a => !memoryDeletedIds.has(a.id) && !memoryDeletedIds.has(a.appId) && !memoryDeletedIds.has((a.email || '').toLowerCase().trim()));
+    const mergedSec = dedupeByEmailOrId([sbSec, asSecApplicants], 'email')
+      .filter(a => !memoryDeletedIds.has(a.id) && !memoryDeletedIds.has(a.appId) && !memoryDeletedIds.has((a.email || '').toLowerCase().trim()));
     const mergedUsers = dedupeByEmailOrId([sbProfiles, siteUsers], 'email')
       .filter(u => u && u.email && typeof u.email === 'string' && u.email.trim().includes('@'));
 
@@ -1013,17 +1017,28 @@ export async function POST(request) {
       return NextResponse.json({ status: 'success', appId, newStatus, message: `Applicant updated to ${newStatus}` });
     }
 
-    if (action === 'ADMIN_DELETE_APPLICATION') {
+    if (action === 'ADMIN_DELETE_APPLICATION' || action === 'DELETE_APPLICATION') {
       const { appId, roleType, email } = body;
       adminDataCache = null;
 
+      const cleanAppId = appId ? String(appId).trim() : '';
+      const cleanEmail = email ? String(email).trim().toLowerCase() : '';
+
+      if (cleanAppId) memoryDeletedIds.add(cleanAppId);
+      if (cleanEmail) memoryDeletedIds.add(cleanEmail);
+
       if (supabase) {
         try {
-          const tableName = roleType === 'OC' ? 'oc_applications' : roleType === 'SEC' ? 'secretariat_applications' : 'eb_applications';
-          if (appId) {
-            await supabase.from(tableName).delete().or(`app_id.eq.${appId},id.eq.${appId}`);
-          } else if (email) {
-            await supabase.from(tableName).delete().ilike('email', email);
+          const rType = (roleType || '').toUpperCase();
+          const targetTables = rType === 'OC' ? ['oc_applications'] : rType === 'SEC' || rType === 'SECRETARIAT' ? ['secretariat_applications'] : rType === 'EB' ? ['eb_applications'] : ['oc_applications', 'secretariat_applications', 'eb_applications'];
+
+          for (const tableName of targetTables) {
+            if (cleanAppId) {
+              await supabase.from(tableName).delete().or(`app_id.eq.${cleanAppId},id.eq.${cleanAppId}`);
+            }
+            if (cleanEmail) {
+              await supabase.from(tableName).delete().ilike('email', cleanEmail);
+            }
           }
         } catch (err) {
           console.warn("[Supabase] Delete application notice:", err.message);
@@ -1036,13 +1051,13 @@ export async function POST(request) {
         body: JSON.stringify({
           action: 'DELETE_APPLICATION',
           adminKey: ADMIN_KEY,
-          appId,
-          roleType,
-          email,
+          appId: cleanAppId,
+          roleType: roleType || 'OC',
+          email: cleanEmail,
         }),
       }).catch(() => {});
 
-      return NextResponse.json({ status: 'success', appId, message: 'Application deleted successfully' });
+      return NextResponse.json({ status: 'success', appId: cleanAppId, message: 'Application deleted successfully' });
     }
 
     // 0d. USER ROLE MANAGEMENT: ADMIN_UPDATE_USER_ROLE

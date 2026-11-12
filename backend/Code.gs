@@ -360,6 +360,12 @@ function doPost(e) {
         result = adminAcceptApplicantAndSendEmail(payload);
         break;
 
+      case "ADMIN_DELETE_APPLICATION":
+      case "DELETE_APPLICATION":
+        if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
+        result = adminDeleteApplication(payload);
+        break;
+
       case "ADMIN_SEND_CUSTOM_EMAIL":
         if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
         result = adminSendCustomCrmEmail(payload);
@@ -1792,6 +1798,52 @@ function adminAcceptApplicantAndSendEmail(data) {
   }
 
   return { status: "success", appId: appId, email: email };
+}
+
+/**
+ * 8b. Permanent Team Application Deletion (OC / Secretariat / EB)
+ */
+function adminDeleteApplication(data) {
+  const email = (data.email || "").trim().toLowerCase();
+  const appId = String(data.appId || data.id || "").trim();
+  const roleType = (data.roleType || "").toUpperCase();
+
+  const targetSheetName = roleType === "OC" ? "OC_Applications" : (roleType === "SEC" || roleType === "SECRETARIAT") ? "Secretariat_Applications" : roleType === "EB" ? "EB_Applications" : null;
+  const sheetsToSearch = targetSheetName ? [targetSheetName] : ["OC_Applications", "Secretariat_Applications", "EB_Applications"];
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let deletedCount = 0;
+
+    sheetsToSearch.forEach(function(sName) {
+      const sheet = ss.getSheetByName(sName);
+      if (!sheet) return;
+      const rows = sheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) {
+        const row = rows[i];
+        let match = false;
+        if (appId) {
+          if (String(row[0]).trim() === appId || String(row[1]).trim() === appId || row.some(function(c) { return String(c).trim() === appId; })) {
+            match = true;
+          }
+        }
+        if (!match && email) {
+          if (row.some(function(c) { return String(c).trim().toLowerCase() === email; })) {
+            match = true;
+          }
+        }
+        if (match) {
+          sheet.deleteRow(i + 1);
+          deletedCount++;
+        }
+      }
+    });
+
+    tryLogEmailToSheet("APPLICATION_DELETED", email, appId || "Applicant", "DELETED: " + deletedCount + " rows");
+    return { status: "success", deletedCount: deletedCount, appId: appId };
+  } catch (err) {
+    return { status: "error", message: err.message };
+  }
 }
 
 /**

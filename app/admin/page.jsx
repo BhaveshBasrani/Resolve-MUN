@@ -379,24 +379,28 @@ export default function SuperAdminPage() {
 
   const handleDeleteApplicant = async (app) => {
     if (!app) return;
-    const appId = app.appId || app.id;
-    const roleType = app.roleType || "OC";
+    const appId = app.appId || app.id || "";
+    const roleType = (app.roleType || "OC").toUpperCase();
+    const email = (app.email || "").trim().toLowerCase();
     const name = app.fullName || app.name || "Candidate";
-    if (!confirm(`Are you sure you want to permanently delete application "${name}" (${appId})?`)) {
+    if (!confirm(`Are you sure you want to permanently delete application for "${name}" (${roleType}${appId ? " - " + appId : ""})?`)) {
       return;
     }
 
-    if (roleType === "OC") {
-      setOcApplications((prev) => prev.filter((a) => a.appId !== appId && a.id !== appId));
-    } else if (roleType === "EB") {
-      setEbApplications((prev) => prev.filter((a) => a.appId !== appId && a.id !== appId));
-    } else if (roleType === "SEC") {
-      setSecApplications((prev) => prev.filter((a) => a.appId !== appId && a.id !== appId));
-    }
-    if (selectedTeamApp && (selectedTeamApp.appId === appId || selectedTeamApp.id === appId)) {
+    const matchesApp = (a) => {
+      if (appId && (a.appId === appId || a.id === appId)) return true;
+      if (email && a.email && a.email.trim().toLowerCase() === email) return true;
+      return false;
+    };
+
+    setOcApplications((prev) => prev.filter((a) => !matchesApp(a)));
+    setEbApplications((prev) => prev.filter((a) => !matchesApp(a)));
+    setSecApplications((prev) => prev.filter((a) => !matchesApp(a)));
+
+    if (selectedTeamApp && matchesApp(selectedTeamApp)) {
       setSelectedTeamApp(null);
     }
-    notify(`Application ${appId} deleted`);
+    notify(`Application for ${name} deleted successfully!`);
 
     try {
       await fetch("/api/admin/", {
@@ -2656,8 +2660,18 @@ export default function SuperAdminPage() {
                                     setActiveTab("crm");
                                   }}
                                   className="h-7 text-xs border-white/10 hover:bg-white/10 text-zinc-300 cursor-pointer"
+                                  title="Message in CRM"
                                 >
                                   <Mail className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteApplicant(a)}
+                                  className="h-7 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+                                  title="Delete Application"
+                                >
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
                             </td>
