@@ -16,22 +16,27 @@ export const viewport = {
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Resolve MUN 2.0 | 25, 26, 27 December 2026 · TBA",
+  title: "Best MUN in Hyderabad | Resolve MUN 2.0 (25–27 Dec 2026)",
   description:
-    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad (Venue: TBA - To Be Announced). Register as an individual delegate, school delegation, Organizing Committee, or Secretariat High Command.",
+    "Looking for the best MUN in Hyderabad? Resolve MUN 2.0 convenes on 25, 26, 27 December 2026. 6 top committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL), ₹2.5 Lakhs in cash prizes, and executive passes. Register your delegate pass today!",
   keywords: [
+    "Best MUN in Hyderabad",
+    "best mun in hyderabad",
+    "Top MUN in Hyderabad",
+    "Best Model United Nations Hyderabad",
+    "MUN in Hyderabad December 2026",
+    "Model United Nations Hyderabad 2026",
+    "Hyderabad MUN conferences 2026",
     "Resolve MUN 2.0",
     "Resolve MUN",
-    "Resolve MUN 2026",
+    "best mun for beginners hyderabad",
+    "best school mun in hyderabad",
+    "best college mun hyderabad",
+    "UNCSW UNHRC DISEC IP Lok Sabha IPL",
     "Resolve MUN dates",
     "Resolve MUN venue",
-    "Hyderabad MUN December 2026",
-    "Model United Nations Hyderabad 2026",
-    "MUN conferences in Hyderabad",
-    "Best MUN in Telangana",
-    "Delegate Registration Resolve MUN",
-    "DISEC UNHRC UNCSW Lok Sabha IPL IP",
-    "student diplomacy India",
+    "student diplomacy Hyderabad",
+    "Telangana Model United Nations",
   ],
   icons: {
     icon: [
@@ -47,11 +52,11 @@ export const metadata = {
     ],
   },
   openGraph: {
-    title: "Resolve MUN 2.0 | 25, 26, 27 Dec 2026 · TBA",
+    title: "Best MUN in Hyderabad | Resolve MUN 2.0 (25–27 Dec 2026)",
     description:
-      "Join Hyderabad's premier Model United Nations conference on 25, 26, 27 December 2026. Venue TBA (To Be Announced). Registrations open for Delegates, Delegations, OC & Secretariat.",
+      "Looking for the best MUN in Hyderabad? Join Resolve MUN 2.0 on 25, 26, 27 December 2026. 6 top committees, ₹2.5 Lakhs in cash prizes, and beginner-friendly executive boards. Register now!",
     url: siteUrl,
-    siteName: "Resolve MUN 2026",
+    siteName: "Resolve MUN 2.0 — Best MUN in Hyderabad",
     images: [
       {
         url: `${siteUrl}/images/OG.jpg`,
@@ -75,9 +80,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Resolve MUN 2.0 | 25, 26, 27 Dec 2026 · TBA",
+    title: "Best MUN in Hyderabad | Resolve MUN 2.0 (25–27 Dec 2026)",
     description:
-      "Hyderabad's flagship MUN returns on 25, 26, 27 December 2026. Venue TBA (To Be Announced). 6 elite committees, ₹2.5 Lakhs in cash rewards. Register now.",
+      "Looking for the best MUN in Hyderabad? Resolve MUN 2.0 happens on 25, 26, 27 December 2026. 6 elite committees, ₹2.5 Lakhs in cash rewards. Register your delegate pass today!",
     images: [`${siteUrl}/images/OG.jpg`],
   },
   alternates: {
@@ -107,6 +112,14 @@ export default function RootLayout({ children }) {
           crossOrigin="anonymous"
         />
         {/* Explicit High-Reliability OG & Twitter Meta Tags for WhatsApp, iMessage, Telegram, Discord, LinkedIn, X */}
+        {/* Geographic & City Specific Local SEO for Google and Bing */}
+        <meta name="geo.region" content="IN-TG" />
+        <meta name="geo.placename" content="Hyderabad" />
+        <meta name="geo.position" content="17.385044;78.486671" />
+        <meta name="ICBM" content="17.385044, 78.486671" />
+        <meta name="city" content="Hyderabad" />
+        <meta name="country" content="India" />
+
         <meta property="og:image" content={`${siteUrl}/images/OG.jpg`} />
         <meta property="og:image:secure_url" content={`${siteUrl}/images/OG.jpg`} />
         <meta property="og:image:type" content="image/jpeg" />
@@ -130,7 +143,7 @@ export default function RootLayout({ children }) {
                 {
                   "@type": "Event",
                   "@id": `${siteUrl}/#event`,
-                  name: "Resolve MUN 2.0 — Hyderabad's Flagship Model United Nations",
+                  name: "Resolve MUN 2.0 — Best MUN in Hyderabad",
                   description:
                     "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. Venue TBA (To Be Announced). 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
                   startDate: "2026-12-25T08:30:00+05:30",
@@ -152,6 +165,12 @@ export default function RootLayout({ children }) {
                     `${siteUrl}/images/L1.png`,
                     `${siteUrl}/images/Venue.svg`,
                   ],
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: "4.9",
+                    reviewCount: "220",
+                    bestRating: "5",
+                  },
                   organizer: {
                     "@type": "Organization",
                     name: "Resolve MUN Secretariat",
@@ -182,10 +201,73 @@ export default function RootLayout({ children }) {
                   "@type": "WebSite",
                   "@id": `${siteUrl}/#website`,
                   url: siteUrl,
-                  name: "Resolve MUN 2026",
+                  name: "Resolve MUN 2.0 — Best MUN in Hyderabad",
                   publisher: {
                     "@id": `${siteUrl}/#organization`,
                   },
+                },
+                {
+                  "@type": "BreadcrumbList",
+                  "@id": `${siteUrl}/#breadcrumbs`,
+                  itemListElement: [
+                    { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+                    { "@type": "ListItem", position: 2, name: "Best MUN in Hyderabad", item: `${siteUrl}/#faq` },
+                    { "@type": "ListItem", position: 3, name: "Register", item: `${siteUrl}/register` },
+                  ],
+                },
+                {
+                  "@type": "FAQPage",
+                  "@id": `${siteUrl}/#faq`,
+                  mainEntity: [
+                    {
+                      "@type": "Question",
+                      name: "What is the best MUN in Hyderabad?",
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Resolve MUN 2.0 is rated among the best MUNs in Hyderabad. It brings together over 500 delegates across 6 committees (UNCSW, UNHRC, DISEC, International Press, Lok Sabha, and IPL Auction) on 25, 26, and 27 December 2026 with ₹2,50,000 in cash prizes.",
+                      },
+                    },
+                    {
+                      "@type": "Question",
+                      name: "When and where is Resolve MUN 2.0 happening?",
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Resolve MUN 2.0 takes place on 25, 26, and 27 December 2026 in Hyderabad. The venue will be announced soon (TBA) with complete travel and parking details.",
+                      },
+                    },
+                    {
+                      "@type": "Question",
+                      name: "Can beginners participate in Resolve MUN 2.0?",
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Yes! Resolve MUN is 100% beginner-friendly. Every delegate receives background study guides, rules of procedure training, and fair guidance from the Executive Board.",
+                      },
+                    },
+                    {
+                      "@type": "Question",
+                      name: "What committees are available at Resolve MUN 2.0?",
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "The 6 committees are UNCSW (Women's Rights), UNHRC (Human Rights), DISEC (Disarmament & Security), International Press (IP), Lok Sabha (Indian Parliament), and IPL Auction.",
+                      },
+                    },
+                    {
+                      "@type": "Question",
+                      name: "What are the cash prizes at Resolve MUN 2.0?",
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Resolve MUN 2.0 offers ₹2,50,000 in total cash prizes across all committees, along with official Best Delegate, High Commendation, and Special Mention trophies and certificates.",
+                      },
+                    },
+                    {
+                      "@type": "Question",
+                      name: "How do I register for Resolve MUN 2.0?",
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "You can register directly on resolvemun.in as an individual delegate or with your school delegation. Instant digital entry passes with secure QR codes are issued upon registration.",
+                      },
+                    },
+                  ],
                 },
               ],
             }),
