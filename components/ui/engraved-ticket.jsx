@@ -276,9 +276,9 @@ export default function EngravedTicket({
   portfolio = "",
   institution = "Individual",
   tagline = "RESOLVE MUN 2.0 · HYDERABAD",
-  quote = "27TH – 29TH NOVEMBER 2026",
-  venue = "MERIDIAN KOMPALLY",
-  dates = "27TH – 29TH NOVEMBER 2026",
+  quote = "25, 26, 27 DECEMBER 2026",
+  venue = "TBA",
+  dates = "25, 26, 27 DECEMBER 2026",
   rhythm = [3, 2, 3, 1],
   phases = ["VERIFIED", "ACCREDITED", "AUTHENTICATED", "ENCRYPTED"],
   breathe = true,
@@ -629,7 +629,7 @@ export default function EngravedTicket({
 
             {/* Security Verification Stamp */}
             <div className="text-center font-mono text-[9px] uppercase tracking-wider pt-1 opacity-70">
-              <span>{(dates || "27TH – 29TH NOVEMBER 2026").toUpperCase()} &bull; {(venue || "MERIDIAN SCHOOL").toUpperCase()}</span>
+              <span>{(dates || "25, 26, 27 DECEMBER 2026").toUpperCase()} &bull; {(venue || "TBA").toUpperCase()}</span>
             </div>
           </div>
 
@@ -758,7 +758,7 @@ export default function EngravedTicket({
             </div>
 
             <p className="text-xs leading-relaxed font-sans opacity-75 max-w-md">
-              Valid official credential for all committee proceedings, official socials, and plenary sessions convening at {venue || "Meridian School, Kompally, Hyderabad"} ({dates || "27th – 29th November 2026"}). Non-transferable.
+              Valid official credential for all committee proceedings, official socials, and plenary sessions convening at {venue || "TBA (To Be Announced)"} ({dates || "25, 26, 27 December 2026"}). Non-transferable.
             </p>
 
             {/* Barcode & Breath Meter */}

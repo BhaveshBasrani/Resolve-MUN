@@ -16,18 +16,16 @@ export const viewport = {
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Resolve MUN 2.0 | 27–29 November 2026 · Meridian School, Kompally",
+  title: "Resolve MUN 2.0 | 25, 26, 27 December 2026 · TBA",
   description:
-    "Resolve MUN 2.0 convenes on 27th–29th November 2026 at Meridian School, Kompally, Hyderabad. Register as an individual delegate, school delegation, Organizing Committee, or Secretariat High Command.",
+    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad (Venue: TBA - To Be Announced). Register as an individual delegate, school delegation, Organizing Committee, or Secretariat High Command.",
   keywords: [
     "Resolve MUN 2.0",
     "Resolve MUN",
     "Resolve MUN 2026",
     "Resolve MUN dates",
     "Resolve MUN venue",
-    "Meridian School Kompally MUN",
-    "Meridian School Kompally",
-    "Hyderabad MUN November 2026",
+    "Hyderabad MUN December 2026",
     "Model United Nations Hyderabad 2026",
     "MUN conferences in Hyderabad",
     "Best MUN in Telangana",
@@ -49,9 +47,9 @@ export const metadata = {
     ],
   },
   openGraph: {
-    title: "Resolve MUN 2.0 | 27–29 Nov 2026 · Meridian School, Kompally",
+    title: "Resolve MUN 2.0 | 25, 26, 27 Dec 2026 · TBA",
     description:
-      "Join Hyderabad's premier Model United Nations conference on 27th–29th November 2026 at Meridian School, Kompally. Registrations open for Delegates, Delegations, OC & Secretariat.",
+      "Join Hyderabad's premier Model United Nations conference on 25, 26, 27 December 2026. Venue TBA (To Be Announced). Registrations open for Delegates, Delegations, OC & Secretariat.",
     url: siteUrl,
     siteName: "Resolve MUN 2026",
     images: [
@@ -59,7 +57,7 @@ export const metadata = {
         url: "/images/OG.jpg",
         width: 1200,
         height: 630,
-        alt: "Resolve MUN 2.0 — 27–29 November 2026 at Meridian School, Kompally, Hyderabad",
+        alt: "Resolve MUN 2.0 — 25, 26, 27 December 2026 in Hyderabad",
       },
     ],
     locale: "en_IN",
@@ -67,9 +65,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Resolve MUN 2.0 | 27–29 Nov 2026 · Meridian School, Kompally",
+    title: "Resolve MUN 2.0 | 25, 26, 27 Dec 2026 · TBA",
     description:
-      "Hyderabad's flagship MUN returns on 27–29 November 2026 at Meridian School, Kompally. 6 elite committees, ₹2.5 Lakhs in cash rewards. Register now.",
+      "Hyderabad's flagship MUN returns on 25, 26, 27 December 2026. Venue TBA (To Be Announced). 6 elite committees, ₹2.5 Lakhs in cash rewards. Register now.",
     images: ["/images/OG.jpg"],
   },
   alternates: {
@@ -113,21 +111,18 @@ export default function RootLayout({ children }) {
                   "@id": `${siteUrl}/#event`,
                   name: "Resolve MUN 2.0 — Hyderabad's Flagship Model United Nations",
                   description:
-                    "Resolve MUN 2.0 convenes on 27th–29th November 2026 at Meridian School, Kompally, Hyderabad. 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
-                  startDate: "2026-11-27T08:30:00+05:30",
-                  endDate: "2026-11-29T18:30:00+05:30",
+                    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. Venue TBA (To Be Announced). 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
+                  startDate: "2026-12-25T08:30:00+05:30",
+                  endDate: "2026-12-27T18:30:00+05:30",
                   eventStatus: "https://schema.org/EventScheduled",
                   eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
                   location: {
                     "@type": "Place",
-                    name: "Meridian School, Kompally",
-                    sameAs: "https://meridianschool.edu.in",
+                    name: "TBA (To Be Announced)",
                     address: {
                       "@type": "PostalAddress",
-                      streetAddress: "Kompally, Near Medchal Highway",
                       addressLocality: "Hyderabad",
                       addressRegion: "Telangana",
-                      postalCode: "500014",
                       addressCountry: "IN",
                     },
                   },

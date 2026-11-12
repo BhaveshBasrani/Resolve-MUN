@@ -436,7 +436,7 @@ export const homeHtml = `
       <div class="terms-modal-topline">
         <div class="terms-modal-title-group">
           <h2 class="terms-modal-title">LEGAL POLICIES &amp; TERMS</h2>
-          <span class="terms-modal-subtitle">Resolve Model United Nations 2.0 · 27–29 November 2026 · Meridian School, Kompally</span>
+          <span class="terms-modal-subtitle">Resolve Model United Nations 2.0 · 25, 26, 27 December 2026 · TBA (To Be Announced)</span>
         </div>
         <button class="terms-close-btn" onclick="closeTermsModal()" aria-label="Close modal">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -459,7 +459,7 @@ export const homeHtml = `
       <div id="termsDelegateContent" style="display: block;">
         <div class="legal-preamble-card">
           <strong style="color: #ffffff; display: block; margin-bottom: 4px; font-size: 13px;">Delegate Terms &amp; Conditions · Resolve MUN 2.0</strong>
-          These Terms &amp; Conditions govern the participation of every delegate in Resolve MUN 2.0 (the “Conference”), to be held on 27, 28 and 29 November 2026 at Meridian School, Kompally. In these Terms &amp; Conditions, “Secretariat” means the Secretariat of Resolve MUN, and “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder).
+          These Terms &amp; Conditions govern the participation of every delegate in Resolve MUN 2.0 (the “Conference”), to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced). In these Terms &amp; Conditions, “Secretariat” means the Secretariat of Resolve MUN, and “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder).
         </div>
 
         <!-- Section 1 -->
@@ -766,7 +766,7 @@ export const homeHtml = `
       <div id="termsOcContent" style="display: none;">
         <div class="legal-preamble-card">
           <strong style="color: #ffffff; display: block; margin-bottom: 4px; font-size: 13px;">Organizing Committee (OC) Terms &amp; Conditions · Resolve MUN 2.0</strong>
-          These Terms &amp; Conditions govern the engagement of every member of the Organizing Committee (“OC”) of Resolve MUN 2.0 (the “Conference”), to be held on 27, 28 and 29 November 2026 at Meridian School, Kompally. In these Terms &amp; Conditions, “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder), and “OC Head” means the head of the Organizing Committee, to whom all OC members report.
+          These Terms &amp; Conditions govern the engagement of every member of the Organizing Committee (“OC”) of Resolve MUN 2.0 (the “Conference”), to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced). In these Terms &amp; Conditions, “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder), and “OC Head” means the head of the Organizing Committee, to whom all OC members report.
         </div>
 
         <!-- Section 1 -->
@@ -1003,7 +1003,7 @@ export const homeHtml = `
             <h4 class="legal-card-title">Applicability, General &amp; Acceptance</h4>
           </div>
           <ul class="legal-clause-list">
-            <li class="legal-clause-item"><span class="legal-num">58.</span><p class="legal-text">These Terms &amp; Conditions, and every term, responsibility, remuneration, position and right set out in them, apply only to Resolve 2.0, to be held on 27, 28 and 29 November 2026 at Meridian School, Kompally. They do not extend to any previous or future edition of Resolve MUN.</p></li>
+            <li class="legal-clause-item"><span class="legal-num">58.</span><p class="legal-text">These Terms &amp; Conditions, and every term, responsibility, remuneration, position and right set out in them, apply only to Resolve 2.0, to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced). They do not extend to any previous or future edition of Resolve MUN.</p></li>
             <li class="legal-clause-item"><span class="legal-num">59.</span><p class="legal-text">These Terms &amp; Conditions record an understanding of voluntary engagement and do not create an employment relationship, partnership or agency. An OC member has no authority to bind Resolve to any contract or financial commitment without the written approval of the Founders.</p></li>
             <li class="legal-clause-item"><span class="legal-num">60.</span><p class="legal-text">These Terms &amp; Conditions are governed by the laws of India. Any dispute shall first be attempted to be resolved amicably, failing which the courts at Hyderabad shall have jurisdiction.</p></li>
             <li class="legal-clause-item"><span class="legal-num">61.</span><p class="legal-text">By accepting an OC position, the member confirms that they have read, understood, and agreed to these Terms &amp; Conditions.</p></li>
@@ -1028,7 +1028,7 @@ export const homeHtml = `
             <h4 class="legal-card-title">Scope &amp; Application</h4>
           </div>
           <ul class="legal-clause-list">
-            <li class="legal-clause-item"><span class="legal-num">1.1.</span><p class="legal-text">This Privacy Policy applies to personal information processed in connection with Resolve MUN 2.0, scheduled to be held on 27, 28 and 29 November 2026 at Meridian School, Kompally, Hyderabad, Telangana, India.</p></li>
+            <li class="legal-clause-item"><span class="legal-num">1.1.</span><p class="legal-text">This Privacy Policy applies to personal information processed in connection with Resolve MUN 2.0, scheduled to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced), Hyderabad, Telangana, India.</p></li>
             <li class="legal-clause-item"><span class="legal-num">1.2.</span><p class="legal-text">It applies to delegates, prospective delegates, parents or guardians, Organizing Committee members, applicants, Executive Board members, volunteers, sponsors, guests, website visitors and individuals who communicate with Resolve through its official channels.</p></li>
             <li class="legal-clause-item"><span class="legal-num">1.3.</span><p class="legal-text">This Policy should be read together with the applicable Delegate Terms &amp; Conditions, Organizing Committee Terms &amp; Conditions, registration notices and any specific consent request presented at the point of collection. If a specific notice explains a particular processing activity in greater detail, that notice will apply to that activity to the extent of any inconsistency.</p></li>
             <li class="legal-clause-item"><span class="legal-num">1.4.</span><p class="legal-text">This Policy concerns personal information. It does not govern third-party websites, platforms or services that Resolve does not own or control, even where links to those services appear on the Resolve website.</p></li>
@@ -1078,7 +1078,7 @@ export const homeHtml = `
           </div>
           <ul class="legal-clause-list">
             <li class="legal-clause-item"><span class="legal-num">4.1.</span><p class="legal-text">Access to personal information within Resolve is limited to the Founders, Secretariat, authorised OC members and other persons who reasonably require the information to perform an assigned Conference function. Access should be limited to the information necessary for that function.</p></li>
-            <li class="legal-clause-item"><span class="legal-num">4.2.</span><p class="legal-text">We may share relevant information with Meridian School or other venue personnel, event service providers, website hosting and form providers, communication platforms, payment processors, technology providers, photographers or media personnel, and professional advisers, where their involvement is reasonably necessary for Conference operations or the purposes described in this Policy.</p></li>
+            <li class="legal-clause-item"><span class="legal-num">4.2.</span><p class="legal-text">We may share relevant information with designated venue personnel, event service providers, website hosting and form providers, communication platforms, payment processors, technology providers, photographers or media personnel, and professional advisers, where their involvement is reasonably necessary for Conference operations or the purposes described in this Policy.</p></li>
             <li class="legal-clause-item"><span class="legal-num">4.3.</span><p class="legal-text">We may disclose information to a parent or guardian where appropriate for a participant under 18, or to an educational institution where necessary for a legitimate Conference, safety or disciplinary matter and permitted by applicable law.</p></li>
             <li class="legal-clause-item"><span class="legal-num">4.4.</span><p class="legal-text">We may disclose information where required by law, court order, governmental authority or lawful request, or where reasonably necessary to protect the safety, rights or property of participants, Resolve, the venue or another person.</p></li>
             <li class="legal-clause-item"><span class="legal-num">4.5.</span><p class="legal-text">We do not intend to sell personal information to third parties. Where a service provider processes information on our behalf, it should use that information only for the agreed service and subject to appropriate confidentiality and security obligations.</p></li>
@@ -1454,7 +1454,7 @@ export const homeHtml = `
         <div class="venue-map-frame">
           <iframe
             id="venueMapIframe"
-            src="https://maps.google.com/maps?q=Meridian+School+Kompally+Hyderabad&t=&z=15&ie=UTF8&iwloc=&output=embed"
+            src="https://maps.google.com/maps?q=Hyderabad+Telangana&t=&z=12&ie=UTF8&iwloc=&output=embed"
             class="venue-map-iframe"
             allowfullscreen=""
             loading="lazy"
@@ -1473,8 +1473,8 @@ export const homeHtml = `
               </svg>
             </div>
             <div class="venue-address-text">
-              <strong id="venueAddressText">Survey No. 108 & 109/B, Satyam Enclave, Behind Cine Planet, Kompally, Hyderabad, Telangana 500014</strong>
-              <span class="venue-landmark-sub">Landmark: Opposite Subiksha Towers & Behind Cine Planet (Directly off NH 44 Medchal Highway)</span>
+              <strong id="venueAddressText">TBA (To Be Announced), Hyderabad</strong>
+              <span class="venue-landmark-sub">Venue details and official location guide will be announced shortly.</span>
             </div>
           </div>
 
@@ -1482,7 +1482,7 @@ export const homeHtml = `
           <div class="venue-actions-row">
             <a
               id="venueMapLink"
-              href="https://www.google.com/maps/search/?api=1&query=Meridian+School+Kompally+Hyderabad"
+              href="https://www.google.com/maps/search/?api=1&query=Hyderabad+Telangana"
               target="_blank"
               rel="noopener noreferrer"
               class="venue-nav-btn venue-nav-btn--primary"

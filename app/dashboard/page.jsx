@@ -689,10 +689,10 @@ export default function DelegateDashboard() {
 
               <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-white/40 font-mono">
                 <div>
-                  Venue: <span className="text-white/70 font-sans">{systemSettings.conferenceVenue || "Meridian School, Kompally"}</span>
+                  Venue: <span className="text-white/70 font-sans">{systemSettings.conferenceVenue || "TBA (To Be Announced)"}</span>
                 </div>
                 <div>
-                  Dates: <span className="text-white/70 font-sans">{systemSettings.conferenceDates || "27th – 29th November 2026"}</span>
+                  Dates: <span className="text-white/70 font-sans">{systemSettings.conferenceDates || "25, 26, 27 December 2026"}</span>
                 </div>
               </div>
             </section>
@@ -848,7 +848,7 @@ export default function DelegateDashboard() {
                         Official Digital Pass
                       </h3>
                       <p className="text-xs text-white/50 mt-1 font-sans">
-                        Present this QR pass at the entrance desk at {systemSettings.venueShort || systemSettings.conferenceVenue || "Meridian School, Kompally"}.
+                        Present this QR pass at the entrance desk at {systemSettings.venueShort || systemSettings.conferenceVenue || "TBA (To Be Announced)"}.
                       </p>
                     </div>
 
@@ -940,11 +940,11 @@ export default function DelegateDashboard() {
                             committee={delegateRecord.allocatedCommittee || "Awaiting Allotment"}
                             portfolio={delegateRecord.allocatedCountry || ""}
                             tagline={`RESOLVE MUN 2.0\n${(delegateRecord.roleType || "DELEGATE").toUpperCase()} PASS`}
-                            quote={`“${(systemSettings.conferenceDates || "27TH – 29TH NOV 2026").toUpperCase()}”`}
-                            venue={systemSettings.venueShort || systemSettings.conferenceVenue || "Meridian School, Kompally"}
-                            dates={systemSettings.conferenceDates || "27th – 29th November 2026"}
-                            body={`Official delegate admission credential for Resolve MUN 2026. Convenes at ${systemSettings.conferenceVenue || "Meridian School, Kompally, Hyderabad"}. Present this unique scannable pass at the entrance registration desk upon arrival.`}
-                            notes={`ADMIT ONE\n${delegateRecord.delegateId}\n${(systemSettings.venueShort || "MERIDIAN KOMPALLY").toUpperCase()}\nACTIVE PASS`}
+                            quote={`“${(systemSettings.conferenceDates || "25, 26, 27 DEC 2026").toUpperCase()}”`}
+                            venue={systemSettings.venueShort || systemSettings.conferenceVenue || "TBA (To Be Announced)"}
+                            dates={systemSettings.conferenceDates || "25, 26, 27 December 2026"}
+                            body={`Official delegate admission credential for Resolve MUN 2026. Convenes at ${systemSettings.conferenceVenue || "TBA (To Be Announced), Hyderabad"}. Present this unique scannable pass at the entrance registration desk upon arrival.`}
+                            notes={`ADMIT ONE\n${delegateRecord.delegateId}\n${(systemSettings.venueShort || "TBA").toUpperCase()}\nACTIVE PASS`}
                             width="100%"
                             className="max-w-2xl"
                           />
@@ -983,7 +983,7 @@ export default function DelegateDashboard() {
                           </div>
 
                           <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs font-mono text-white/40">
-                            <span>{systemSettings.venueShort || systemSettings.conferenceVenue || "Meridian School, Kompally"}</span>
+                            <span>{systemSettings.venueShort || systemSettings.conferenceVenue || "TBA (To Be Announced)"}</span>
                             <span className="text-white/80 font-semibold flex items-center gap-1.5">
                               <ShieldCheck className="w-3.5 h-3.5 text-white" />
                               Verified Digital Credential

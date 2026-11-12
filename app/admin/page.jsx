@@ -1677,7 +1677,7 @@ export default function SuperAdminPage() {
                         stage: "4. Gatekeeper Venue Check-Ins",
                         count: registrations.filter((r) => r.checkInDay1 === "Present" || r.checkInDay2 === "Present" || r.checkInDay3 === "Present").length,
                         pct: registrations.length ? Math.round((registrations.filter((r) => r.checkInDay1 === "Present" || r.checkInDay2 === "Present" || r.checkInDay3 === "Present").length / registrations.length) * 100) : 0,
-                        desc: `Scanned at ${siteSettings.venueShort || "Meridian Kompally"} registration desk`,
+                        desc: `Scanned at ${siteSettings.venueShort || "TBA"} registration desk`,
                         color: "bg-cyan-500",
                       },
                     ].map((step, idx) => (
@@ -1775,7 +1775,7 @@ export default function SuperAdminPage() {
                           path: "/register/delegate",
                           badgeColor: "bg-purple-500/15 text-purple-300 border-purple-500/30",
                           desc: "Direct individual registration modal with committee preferences & study guides",
-                          whatsappText: `Hi! Register as an official Delegate for Resolve MUN 2.0 (${siteSettings.conferenceDates || "27th-29th Nov 2026"} at ${siteSettings.venueShort || "Meridian School, Hyderabad"}) here: https://resolvemun.in/register/delegate`,
+                          whatsappText: `Hi! Register as an official Delegate for Resolve MUN 2.0 (${siteSettings.conferenceDates || "25, 26, 27 December 2026"} at ${siteSettings.venueShort || "TBA (To Be Announced)"}) here: https://resolvemun.in/register/delegate`,
                         },
                         {
                           title: "School / Delegation",
@@ -2808,14 +2808,14 @@ export default function SuperAdminPage() {
                       </label>
                       <input
                         type="text"
-                        value={siteSettings.conferenceDates || "27th – 29th November 2026"}
+                        value={siteSettings.conferenceDates || "25, 26, 27 December 2026"}
                         onChange={(e) =>
                           setSiteSettings((prev) => ({
                             ...prev,
                             conferenceDates: e.target.value,
                           }))
                         }
-                        placeholder="e.g. 27th – 29th November 2026"
+                        placeholder="e.g. 25, 26, 27 December 2026"
                         className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
                       />
                       <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
@@ -2850,14 +2850,14 @@ export default function SuperAdminPage() {
                       </label>
                       <input
                         type="text"
-                        value={siteSettings.conferenceVenue || "Meridian School, Kompally, Hyderabad"}
+                        value={siteSettings.conferenceVenue || "TBA (To Be Announced)"}
                         onChange={(e) =>
                           setSiteSettings((prev) => ({
                             ...prev,
                             conferenceVenue: e.target.value,
                           }))
                         }
-                        placeholder="e.g. Meridian School, Kompally, Hyderabad"
+                        placeholder="e.g. TBA (To Be Announced)"
                         className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
                       />
                       <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
@@ -2871,14 +2871,14 @@ export default function SuperAdminPage() {
                       </label>
                       <input
                         type="text"
-                        value={siteSettings.venueShort || "Meridian School, Kompally"}
+                        value={siteSettings.venueShort || "TBA"}
                         onChange={(e) =>
                           setSiteSettings((prev) => ({
                             ...prev,
                             venueShort: e.target.value,
                           }))
                         }
-                        placeholder="e.g. Meridian School, Kompally"
+                        placeholder="e.g. TBA"
                         className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-sans text-white focus:outline-none focus:border-white/40"
                       />
                       <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
@@ -2892,7 +2892,7 @@ export default function SuperAdminPage() {
                       </label>
                       <input
                         type="text"
-                        value={siteSettings.venueAddress || "Survey No. 108 & 109/B, Satyam Enclave, Behind Cine Planet, Kompally, Hyderabad, Telangana 500014"}
+                        value={siteSettings.venueAddress || "TBA (To Be Announced), Hyderabad"}
                         onChange={(e) =>
                           setSiteSettings((prev) => ({
                             ...prev,
@@ -2910,7 +2910,7 @@ export default function SuperAdminPage() {
                       </label>
                       <input
                         type="text"
-                        value={siteSettings.venueMapUrl || "https://maps.google.com/maps?q=Meridian+School+Kompally+Hyderabad"}
+                        value={siteSettings.venueMapUrl || ""}
                         onChange={(e) =>
                           setSiteSettings((prev) => ({
                             ...prev,

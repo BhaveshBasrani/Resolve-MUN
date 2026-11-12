@@ -277,24 +277,24 @@ export default function Footer() {
   const revealAt = React.useRef(null);
   const [inView, setInView] = React.useState(false);
   const [footerInfo, setFooterInfo] = React.useState({
-    dates: "27–29 November 2026",
-    venue: "Meridian School, Kompally",
+    dates: "25, 26, 27 December 2026",
+    venue: "TBA (To Be Announced)",
   });
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       if (window.__siteSettings) {
         setFooterInfo({
-          dates: window.__siteSettings.conferenceDates || "27–29 November 2026",
-          venue: window.__siteSettings.venueShort || window.__siteSettings.conferenceVenue || "Meridian School, Kompally",
+          dates: window.__siteSettings.conferenceDates || "25, 26, 27 December 2026",
+          venue: window.__siteSettings.venueShort || window.__siteSettings.conferenceVenue || "TBA (To Be Announced)",
         });
       }
       const handleUpdate = (e) => {
         const s = e?.detail || window.__siteSettings;
         if (s) {
           setFooterInfo({
-            dates: s.conferenceDates || "27–29 November 2026",
-            venue: s.venueShort || s.conferenceVenue || "Meridian School, Kompally",
+            dates: s.conferenceDates || "25, 26, 27 December 2026",
+            venue: s.venueShort || s.conferenceVenue || "TBA (To Be Announced)",
           });
         }
       };

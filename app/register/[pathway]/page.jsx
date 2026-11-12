@@ -4,12 +4,12 @@ const PATHWAY_CONFIG = {
   delegate: {
     title: "Individual Delegate Registration | Resolve MUN 2026",
     description:
-      "Register as an individual delegate for Resolve MUN 2.0 (27th–29th November 2026 at Meridian School, Kompally, Hyderabad). High-stakes diplomacy across 6 elite committees.",
+      "Register as an individual delegate for Resolve MUN 2.0 (25, 26, 27 December 2026, TBA (To Be Announced), Hyderabad). High-stakes diplomacy across 6 elite committees.",
   },
   del: {
     title: "Individual Delegate Registration | Resolve MUN 2026",
     description:
-      "Register as an individual delegate for Resolve MUN 2.0 (27th–29th November 2026 at Meridian School, Kompally, Hyderabad).",
+      "Register as an individual delegate for Resolve MUN 2.0 (25, 26, 27 December 2026, TBA (To Be Announced), Hyderabad).",
   },
   delegation: {
     title: "School & Institutional Delegation Registration | Resolve MUN 2026",
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }) {
   const key = (pathway || "").toLowerCase();
   const meta = PATHWAY_CONFIG[key] || {
     title: "Registration | Resolve MUN 2026",
-    description: "Official registration link for Resolve MUN 2.0 at Meridian School, Kompally, Hyderabad.",
+    description: "Official registration link for Resolve MUN 2.0 in Hyderabad (Venue: TBA - To Be Announced).",
   };
 
   return {

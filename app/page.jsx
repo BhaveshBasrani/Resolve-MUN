@@ -1038,12 +1038,12 @@ export default function Home() {
         if (vIframe && (settings.venueMapUrl || settings.conferenceVenue)) {
           const mapUrl = (settings.venueMapUrl && settings.venueMapUrl.includes("output=embed"))
             ? settings.venueMapUrl
-            : `https://maps.google.com/maps?q=${encodeURIComponent(settings.conferenceVenue || settings.venueAddress || "Meridian School Kompally Hyderabad")}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+            : `https://maps.google.com/maps?q=${encodeURIComponent(settings.conferenceVenue || settings.venueAddress || "Hyderabad Telangana")}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
           vIframe.src = mapUrl;
         }
         const vLink = document.getElementById("venueMapLink");
         if (vLink && (settings.venueMapUrl || settings.conferenceVenue)) {
-          vLink.href = settings.venueMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.conferenceVenue || "Meridian School Kompally Hyderabad")}`;
+          vLink.href = settings.venueMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.conferenceVenue || "Hyderabad Telangana")}`;
         }
 
         // Update live prize pool in DOM
@@ -2532,7 +2532,7 @@ export default function Home() {
         <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "900px", margin: "0 auto" }}>
           {/* Eyebrow */}
           <div className="hero-eyebrow">
-            {(siteSettings.conferenceDates || "27TH – 29TH NOVEMBER 2026").toUpperCase()}
+            {(siteSettings.conferenceDates || "25, 26, 27 DECEMBER 2026").toUpperCase()}
           </div>
 
           {/* Adaptive Hero Title — NEVER overlaps navbar */}
@@ -2728,7 +2728,7 @@ export default function Home() {
                 Signed In
               </span>
               <span className="text-white/20">|</span>
-              <span className="text-white/70">{siteSettings.conferenceDates || "27–29 November 2026"}</span>
+              <span className="text-white/70">{siteSettings.conferenceDates || "25, 26, 27 December 2026"}</span>
             </div>
 
             {/* Action Buttons */}

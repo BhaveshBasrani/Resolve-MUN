@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
   };
 
   const title = titles[key] || "Official Application | Resolve MUN 2026";
-  const description = `Direct application pathway for ${key.toUpperCase()} at Resolve MUN 2.0 (27th–29th November 2026, Meridian School, Kompally, Hyderabad).`;
+  const description = `Direct application pathway for ${key.toUpperCase()} at Resolve MUN 2.0 (25, 26, 27 December 2026, TBA (To Be Announced), Hyderabad).`;
 
   return {
     title,

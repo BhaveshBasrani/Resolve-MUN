@@ -3,10 +3,10 @@
  * RESOLVE MUN 2.0 — DIPLOMATIC ENGINE & OFFICIAL MAILING SYSTEM
  * Version: 5.0.0 (Prestige Diplomatic Engine · Sovereign Secretariat Dispatch)
  * 
- * Venue: Meridian School, Kompally, Hyderabad
- * Dates: 27th – 29th November 2026
+ * Venue: TBA (To Be Announced)
+ * Dates: 25, 26, 27 December 2026
  * Portals: https://resolvemun.in
- * Official Committees (6): DISEC, UNHRC, UNSC, LOK SABHA, COMMITTEE X, IP
+ * Official Committees (6): UNCSW, UNHRC, DISEC, IP, LOK SABHA, IPL
  * ============================================================================
  */
 
@@ -15,8 +15,8 @@ const CONFIG = {
   REPLY_TO: "resolve.mun@gmail.com",
   SUPPORT_EMAIL: "support@resolvemun.in",
   HELPLINE: "+91 92121 07797",
-  CONFERENCE_DATES: "27th – 29th November 2026",
-  VENUE: "Meridian School, Kompally, Hyderabad",
+  CONFERENCE_DATES: "25, 26, 27 December 2026",
+  VENUE: "TBA (To Be Announced)",
   PORTAL_URL: "https://resolvemun.in",
   DASHBOARD_URL: "https://resolvemun.in/dashboard",
   RECAPTCHA_SECRET_KEY: PropertiesService.getScriptProperties().getProperty("RECAPTCHA_SECRET_KEY") || "6LesB7gtAAAAAL5lax4c0NxE6GWWanZrcgjkwISQ",
@@ -1261,9 +1261,9 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="font-size: 11px; color: rgba(255, 255, 255, 0.85); line-height: 1.6;">
-                    <strong style="color: #ffffff;">🏛️ Venue:</strong> Meridian School, Kompally, Hyderabad<br>
-                    <strong style="color: #ffffff;">📅 Conference Dates:</strong> 27th – 29th November 2026<br>
-                    <strong style="color: #ffffff;">🏛️ Committees:</strong> DISEC · UNHRC · UNSC · LOK SABHA · COMMITTEE X · IP
+                    <strong style="color: #ffffff;">🏛️ Venue:</strong> TBA (To Be Announced)<br>
+                    <strong style="color: #ffffff;">📅 Conference Dates:</strong> 25, 26, 27 December 2026<br>
+                    <strong style="color: #ffffff;">🏛️ Committees:</strong> UNCSW · UNHRC · DISEC · IP · LOK SABHA · IPL
                   </td>
                 </tr>
               </table>
@@ -1312,7 +1312,7 @@ function sendVerificationCode(email, code, fullName) {
   const name = fullName || "Delegate";
   const subject = `Your Verification Code: ${code} — Resolve MUN 2.0`;
   const htmlBody = buildVerificationCodeHtml(name, code);
-  const plainText = `Hi ${name},\n\nYour 6-digit login verification code for Resolve MUN 2.0 is: ${code}\n\nValid for 10 minutes.\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nYour 6-digit login verification code for Resolve MUN 2.0 is: ${code}\n\nValid for 10 minutes.\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("AUTH_CODE_SENT", email, name, "SENT");
@@ -1352,7 +1352,7 @@ function sendPaymentVerifiedEmail(email, fullName, regId, amount, utr) {
   const name = fullName || "Delegate";
   const subject = `Payment Confirmed & Seat Reserved — Resolve MUN 2.0 [${regId}]`;
   const htmlBody = buildPaymentVerifiedHtml(name, regId, amount, utr);
-  const plainText = `Hi ${name},\n\nGreat news! Your payment of INR ${amount} (UTR: ${utr}) has been successfully verified. Your seat at Resolve MUN 2.0 is officially confirmed!\n\nDelegate ID: ${regId}\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th – 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nGreat news! Your payment of INR ${amount} (UTR: ${utr}) has been successfully verified. Your seat at Resolve MUN 2.0 is officially confirmed!\n\nDelegate ID: ${regId}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("PAYMENT_VERIFIED", email, name, "SENT");
@@ -1417,7 +1417,7 @@ function sendAllocationEmail(email, fullName, delegateId, committee, country) {
   const name = fullName || "Delegate";
   const subject = `Your Allotment: ${country} in ${committee} — Resolve MUN 2.0 [${delegateId}]`;
   const htmlBody = buildAllocationHtml(name, delegateId, committee, country, email);
-  const plainText = `Hi ${name},\n\nCongratulations! Your committee and country allotment for Resolve MUN 2.0 is confirmed:\n\nDelegate ID: ${delegateId}\nAssigned Committee: ${committee}\nAllotted Country / Portfolio: ${country}\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nShow your digital QR entry pass at the registration desk when you arrive.\n\nAccess your delegate dashboard: https://resolvemun.in/dashboard\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nCongratulations! Your committee and country allotment for Resolve MUN 2.0 is confirmed:\n\nDelegate ID: ${delegateId}\nAssigned Committee: ${committee}\nAllotted Country / Portfolio: ${country}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nShow your digital QR entry pass at the registration desk when you arrive.\n\nAccess your delegate dashboard: https://resolvemun.in/dashboard\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("ALLOCATION_SENT", email, name, "SENT");
@@ -1477,16 +1477,16 @@ function buildAllocationHtml(fullName, delegateId, committee, country, email) {
       </div>
 
       <div style="font-size: 11px; color: rgba(255, 255, 255, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 14px; font-family: monospace;">
-        Meridian School, Kompally · Active Entry Pass
+        TBA (To Be Announced) · Active Entry Pass
       </div>
     </div>
 
     <!-- ARRIVAL INSTRUCTIONS -->
     <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 18px 20px; margin-bottom: 24px;">
       <div style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.7;">
-        <strong style="color: #ffffff;">Entrance Check-In:</strong> Show this QR pass or open your digital badge on your phone at the registration desk on <strong>27th November 2026</strong>.<br><br>
+        <strong style="color: #ffffff;">Entrance Check-In:</strong> Show this QR pass or open your digital badge on your phone at the registration desk on <strong>25th December 2026</strong>.<br><br>
         <strong style="color: #ffffff;">Venue:</strong> ${CONFIG.VENUE}<br>
-        <strong style="color: #ffffff;">Conference Dates:</strong> 27th – 29th November 2026
+        <strong style="color: #ffffff;">Conference Dates:</strong> 25, 26, 27 December 2026
       </div>
     </div>
 
@@ -1506,7 +1506,7 @@ function sendApplicationReceivedEmail(email, fullName, formType, refId) {
   const reference = refId || ("RM26-DEL-" + Math.floor(1000 + Math.random() * 9000));
   const subject = `Registration Received — Resolve MUN 2.0 [${reference}]`;
   const htmlBody = buildApplicationReceivedHtml(fullName, formType, reference);
-  const plainText = `Hi ${fullName},\n\nWe have received your ${formType} registration for Resolve MUN 2.0.\n\nReference: ${reference}\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th – 29th November 2026\n\nOur team is reviewing your payment reference/screenshot. You will receive an official payment confirmation once verified.\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${fullName},\n\nWe have received your ${formType} registration for Resolve MUN 2.0.\n\nReference: ${reference}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nOur team is reviewing your payment reference/screenshot. You will receive an official payment confirmation once verified.\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("APPLICATION_RECEIVED", email, fullName, "SENT");
@@ -1558,7 +1558,7 @@ function sendSecretariatApplicationReceivedEmail(email, fullName, position, appI
   const reference = appId || ("RM26-SEC-" + Math.floor(1000 + Math.random() * 9000));
   const subject = `Secretariat Application Received: ${position} — Resolve MUN 2.0 [${reference}]`;
   const htmlBody = buildSecretariatReceivedHtml(fullName, position, reference);
-  const plainText = `Hi ${fullName},\n\nWe have received your Secretariat application for Resolve MUN 2.0.\n\nPosition: ${position}\nApplication ID: ${reference}\n\nSecretariat applications are strictly free. Shortlisted applicants will be invited for personal interviews.\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${fullName},\n\nWe have received your Secretariat application for Resolve MUN 2.0.\n\nPosition: ${position}\nApplication ID: ${reference}\n\nSecretariat applications are strictly free. Shortlisted applicants will be invited for personal interviews.\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("SECRETARIAT_APP_RECEIVED", email, fullName, "SENT");
@@ -1632,7 +1632,7 @@ function sendSocialsPassEmail(email, fullName, passId) {
       <div style="font-family: monospace; font-size: 12px; color: #94a3b8;">${passId}</div>
     </div>
   `;
-  const plainText = `Hi ${name},\n\nYour Socials Night Pass for Resolve MUN 2.0 is confirmed!\nPass ID: ${passId}\nVenue: Meridian School, Kompally, Hyderabad\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nYour Socials Night Pass for Resolve MUN 2.0 is confirmed!\nPass ID: ${passId}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
   dispatchMail(email, subject, wrapInEmbassyLayout("SOC-PASS", "Socials Pass", body), plainText);
   tryLogEmailToSheet("SOCIALS_PASS_SENT", email, name, "SENT");
 }
@@ -1674,7 +1674,7 @@ function adminDispatchLeadReminder(data) {
     </div>
   `;
 
-  const plainText = `Hi ${name},\n\nYou started your registration for Resolve MUN 2.0 but didn't finish (${step}).\n\nSeats are closing quickly across all 6 committees. Complete your registration here: ${CONFIG.PORTAL_URL}/?open=delegate\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nYou started your registration for Resolve MUN 2.0 but didn't finish (${step}).\n\nSeats are closing quickly across all 6 committees. Complete your registration here: ${CONFIG.PORTAL_URL}/?open=delegate\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
   dispatchMail(email, subject, wrapInEmbassyLayout("REMINDER", "Registration Reminder", bodyHtml), plainText);
   tryLogEmailToSheet("LEAD_REMINDER_SENT", email, name, "SENT");
 
@@ -1726,7 +1726,7 @@ function adminAcceptApplicantAndSendEmail(data) {
         Our team will reach out shortly with onboarding details, team groups, and briefings. Welcome to the Resolve MUN 2.0 team!
       </p>
     `;
-    const plainText = `Congratulations ${fullName}!\n\nYour appointment for ${position} at Resolve MUN 2.0 (App ID: ${appId}) has been approved!\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\n\nResolve MUN 2.0 Secretariat`;
+    const plainText = `Congratulations ${fullName}!\n\nYour appointment for ${position} at Resolve MUN 2.0 (App ID: ${appId}) has been approved!\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
     dispatchMail(email, subject, wrapInEmbassyLayout("APPOINTMENT", "Appointment Offer", bodyHtml), plainText);
     tryLogEmailToSheet("ADMIN_ACCEPT_APPLICANT", email, fullName, "SENT");
   }
@@ -1756,7 +1756,7 @@ function adminSendCustomCrmEmail(data) {
         ${formattedBody}
       </div>
     `;
-    const plainText = bodyText + `\n\nVenue: Meridian School, Kompally, Hyderabad\nDates: 27th - 29th November 2026\nResolve MUN 2.0 Secretariat`;
+    const plainText = bodyText + `\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\nResolve MUN 2.0 Secretariat`;
 
     try {
       dispatchMail(toEmail, subject, wrapInEmbassyLayout("NOTICE", "Official Notice", bodyHtml), plainText);

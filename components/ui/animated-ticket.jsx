@@ -374,18 +374,18 @@ export function PaymentReceiptModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[10005] bg-black/90 backdrop-blur-md overflow-y-auto overscroll-contain p-4 sm:p-6">
+    <div className="fixed inset-0 z-[10005] bg-black/95 backdrop-blur-md overflow-y-auto overscroll-contain flex flex-col items-center p-4 sm:p-6">
       {/* Floating Close Button */}
       <button
         type="button"
         onClick={handleContinue}
-        className="fixed top-4 right-4 z-[10010] w-9 h-9 rounded-full bg-zinc-900/90 border border-white/20 text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-xl"
+        className="fixed top-4 right-4 z-[10010] w-10 h-10 rounded-full bg-zinc-900/90 border border-white/25 text-white/80 hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-2xl active:scale-95"
         aria-label="Close pass dialog"
       >
         <CloseIcon />
       </button>
 
-      <div className="min-h-full flex flex-col items-center justify-center py-6 sm:py-8 my-auto">
+      <div className="w-full max-w-sm flex flex-col items-center my-auto py-8 sm:py-12">
         <AnimatedTicket
           ticketId={receipt.ticketId}
           amount={receipt.amount}
@@ -395,7 +395,7 @@ export function PaymentReceiptModal() {
           passCategory={receipt.passCategory}
           barcodeValue={receipt.barcodeValue}
         />
-        <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-sm z-20 pb-4">
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full z-20 pb-2">
           <button
             type="button"
             onClick={() => window.print()}
