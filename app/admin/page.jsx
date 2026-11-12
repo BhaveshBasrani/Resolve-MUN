@@ -32,6 +32,8 @@ import {
   AlertCircle,
   Copy,
   ChevronDown,
+  ChevronUp,
+  ArrowUpDown,
   Edit3,
   Trash2,
   Layers,
@@ -127,6 +129,41 @@ const COMMITTEES_CONFIG = [
   { id: "IPL", name: "Indian Premier League (Auction Crisis)", totalSeats: 50, type: "High-Stakes Sports & Strategy Crisis" },
 ];
 
+const parseDateMs = (val) => {
+  if (!val) return 0;
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed.includes("/")) {
+      const parts = trimmed.split(" ");
+      const dParts = parts[0].split("/");
+      if (dParts.length === 3) {
+        const d = parseInt(dParts[0], 10);
+        const m = parseInt(dParts[1], 10) - 1;
+        const y = parseInt(dParts[2], 10);
+        const tParts = parts[1] ? parts[1].split(":") : [0, 0, 0];
+        const dateObj = new Date(y, m, d, parseInt(tParts[0] || 0, 10), parseInt(tParts[1] || 0, 10), parseInt(tParts[2] || 0, 10));
+        const ms = dateObj.getTime();
+        if (!isNaN(ms)) return ms;
+      }
+    }
+    const ms = new Date(trimmed).getTime();
+    if (!isNaN(ms)) return ms;
+  }
+  return 0;
+};
+
+const formatDisplayDate = (val) => {
+  if (!val) return "Live";
+  const ms = parseDateMs(val);
+  if (!ms) return String(val).slice(0, 10);
+  return new Date(ms).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export default function SuperAdminPage() {
   // Authentication & Access State
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
@@ -157,6 +194,7 @@ export default function SuperAdminPage() {
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
   const [committeeFilter, setCommitteeFilter] = useState("ALL");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [delegateSortBy, setDelegateSortBy] = useState("DATE_DESC");
   const [leadFilter, setLeadFilter] = useState("ALL");
   const [appTypeFilter, setAppTypeFilter] = useState("ALL");
 
@@ -1217,9 +1255,9 @@ export default function SuperAdminPage() {
     ];
   }, [registrations, delegations]);
 
-  // Filtered Delegates
+  // Filtered & Sorted Delegates
   const filteredDelegates = useMemo(() => {
-    return registrations.filter((d) => {
+    const list = registrations.filter((d) => {
       const q = searchQuery.toLowerCase().trim();
       const matchSearch =
         !q ||
@@ -1240,7 +1278,53 @@ export default function SuperAdminPage() {
 
       return matchSearch && matchComm && matchPay;
     });
-  }, [registrations, searchQuery, committeeFilter, paymentFilter]);
+
+    return list.sort((a, b) => {
+      switch (delegateSortBy) {
+        case "DATE_ASC": {
+          const tA = parseDateMs(a.timestamp);
+          const tB = parseDateMs(b.timestamp);
+          return tA - tB;
+        }
+        case "DATE_DESC": {
+          const tA = parseDateMs(a.timestamp);
+          const tB = parseDateMs(b.timestamp);
+          return tB - tA;
+        }
+        case "NAME_ASC":
+          return (a.fullName || "").localeCompare(b.fullName || "");
+        case "NAME_DESC":
+          return (b.fullName || "").localeCompare(a.fullName || "");
+        case "STATUS_UNALLOTTED": {
+          const aAllotted = a.allocatedCommittee ? 1 : 0;
+          const bAllotted = b.allocatedCommittee ? 1 : 0;
+          return aAllotted - bAllotted;
+        }
+        case "STATUS_ALLOTTED": {
+          const aAllotted = a.allocatedCommittee ? 1 : 0;
+          const bAllotted = b.allocatedCommittee ? 1 : 0;
+          return bAllotted - aAllotted;
+        }
+        case "PAYMENT_PENDING": {
+          const aVer = a.paymentStatus === "VERIFIED" ? 1 : 0;
+          const bVer = b.paymentStatus === "VERIFIED" ? 1 : 0;
+          return aVer - bVer;
+        }
+        case "PAYMENT_VERIFIED": {
+          const aVer = a.paymentStatus === "VERIFIED" ? 1 : 0;
+          const bVer = b.paymentStatus === "VERIFIED" ? 1 : 0;
+          return bVer - aVer;
+        }
+        case "COMMITTEE_ASC": {
+          const cA = a.allocatedCommittee || "zzz";
+          const cB = b.allocatedCommittee || "zzz";
+          return cA.localeCompare(cB);
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [registrations, searchQuery, committeeFilter, paymentFilter, delegateSortBy]);
 
   // =========================================================================
   // LOGIN / LOCKED STATE
@@ -1824,8 +1908,8 @@ export default function SuperAdminPage() {
                   </div>
                 </div>
 
-                {/* Filter Controls */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3">
+                {/* Filter & Sort Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-3">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
                     <input
@@ -1857,6 +1941,22 @@ export default function SuperAdminPage() {
                     <option value="VERIFIED">Verified Only</option>
                     <option value="PENDING">Pending Only</option>
                   </select>
+
+                  <select
+                    value={delegateSortBy}
+                    onChange={(e) => setDelegateSortBy(e.target.value)}
+                    className="h-8 px-2.5 rounded-lg border border-white/10 bg-zinc-900/60 text-xs text-white focus:outline-none font-sans"
+                  >
+                    <option value="DATE_DESC">Date: Newest First</option>
+                    <option value="DATE_ASC">Date: Oldest First</option>
+                    <option value="NAME_ASC">Name: A to Z</option>
+                    <option value="NAME_DESC">Name: Z to A</option>
+                    <option value="STATUS_UNALLOTTED">Unallocated First</option>
+                    <option value="STATUS_ALLOTTED">Allocated First</option>
+                    <option value="PAYMENT_PENDING">Pending Payment First</option>
+                    <option value="PAYMENT_VERIFIED">Verified Payment First</option>
+                    <option value="COMMITTEE_ASC">Committee: Alphabetical</option>
+                  </select>
                 </div>
               </CardHeader>
 
@@ -1864,12 +1964,56 @@ export default function SuperAdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
-                        <th className="px-4 py-3">ID / Date</th>
-                        <th className="px-4 py-3">Delegate Name & School</th>
+                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase select-none">
+                        <th
+                          className="px-4 py-3 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => setDelegateSortBy((prev) => (prev === "DATE_DESC" ? "DATE_ASC" : "DATE_DESC"))}
+                          title="Click to toggle date sort"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>ID / Date</span>
+                            {delegateSortBy === "DATE_DESC" && <ChevronDown className="h-3 w-3 text-white" />}
+                            {delegateSortBy === "DATE_ASC" && <ChevronUp className="h-3 w-3 text-white" />}
+                            {!delegateSortBy.startsWith("DATE") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                          </div>
+                        </th>
+                        <th
+                          className="px-4 py-3 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => setDelegateSortBy((prev) => (prev === "NAME_ASC" ? "NAME_DESC" : "NAME_ASC"))}
+                          title="Click to toggle name sort"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>Delegate Name & School</span>
+                            {delegateSortBy === "NAME_ASC" && <ChevronUp className="h-3 w-3 text-white" />}
+                            {delegateSortBy === "NAME_DESC" && <ChevronDown className="h-3 w-3 text-white" />}
+                            {!delegateSortBy.startsWith("NAME") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                          </div>
+                        </th>
                         <th className="px-4 py-3">Contact</th>
-                        <th className="px-4 py-3">Assigned Committee & Portfolio</th>
-                        <th className="px-4 py-3">Payment UTR</th>
+                        <th
+                          className="px-4 py-3 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => setDelegateSortBy((prev) => (prev === "STATUS_UNALLOTTED" ? "STATUS_ALLOTTED" : "STATUS_UNALLOTTED"))}
+                          title="Click to toggle allocation sort"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>Assigned Committee & Portfolio</span>
+                            {delegateSortBy === "STATUS_UNALLOTTED" && <ChevronUp className="h-3 w-3 text-white" />}
+                            {delegateSortBy === "STATUS_ALLOTTED" && <ChevronDown className="h-3 w-3 text-white" />}
+                            {!delegateSortBy.startsWith("STATUS") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                          </div>
+                        </th>
+                        <th
+                          className="px-4 py-3 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => setDelegateSortBy((prev) => (prev === "PAYMENT_PENDING" ? "PAYMENT_VERIFIED" : "PAYMENT_PENDING"))}
+                          title="Click to toggle payment sort"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>Payment UTR</span>
+                            {delegateSortBy === "PAYMENT_PENDING" && <ChevronUp className="h-3 w-3 text-white" />}
+                            {delegateSortBy === "PAYMENT_VERIFIED" && <ChevronDown className="h-3 w-3 text-white" />}
+                            {!delegateSortBy.startsWith("PAYMENT") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                          </div>
+                        </th>
                         <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -1888,7 +2032,7 @@ export default function SuperAdminPage() {
                                 {d.regId}
                               </span>
                               <span className="text-[10px] text-zinc-500 font-mono">
-                                {d.timestamp ? new Date(d.timestamp).toLocaleDateString() : "Live"}
+                                {formatDisplayDate(d.timestamp)}
                               </span>
                             </td>
 
