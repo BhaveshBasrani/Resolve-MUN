@@ -125,9 +125,17 @@ export async function GET(request) {
             allocatedCommittee: d.allocated_committee || '',
             allocatedCountry: d.allocated_country || '',
             paymentUTR: d.payment_utr || '',
-            paymentStatus: (d.payment_status || 'PENDING_VERIFICATION').toUpperCase() === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
-            paymentVerified: (d.payment_status || '').toUpperCase() === 'VERIFIED' ? 'verified' : 'Pending',
             paymentScreenshotURL: d.payment_screenshot_url || '',
+            paymentStatus: (() => {
+              const hasProof = Boolean(d.payment_screenshot_url && String(d.payment_screenshot_url).trim().startsWith('http'));
+              const isVer = (d.payment_status || 'PENDING_VERIFICATION').toUpperCase() === 'VERIFIED';
+              return (isVer && hasProof) ? 'VERIFIED' : 'PENDING';
+            })(),
+            paymentVerified: (() => {
+              const hasProof = Boolean(d.payment_screenshot_url && String(d.payment_screenshot_url).trim().startsWith('http'));
+              const isVer = (d.payment_status || '').toUpperCase() === 'VERIFIED';
+              return (isVer && hasProof) ? 'verified' : 'Pending';
+            })(),
             status: d.status || (d.allocated_committee ? 'ALLOTTED' : 'Confirmed'),
             checkInDay1: d.check_in_day1 || 'Absent',
             checkInDay2: d.check_in_day2 || 'Absent',
@@ -314,9 +322,19 @@ export async function GET(request) {
       allocatedCommittee: r.AllocatedCommittee || r.allocatedCommittee || '',
       allocatedCountry: r.AllocatedCountry || r.allocatedCountry || '',
       paymentUTR: r.PaymentUTR || r.paymentUTR || r.utr || '',
-      paymentStatus: (r.PaymentStatus || r.paymentStatus || (r.PaymentUTR ? 'VERIFIED' : 'PENDING')).toUpperCase(),
-      paymentVerified: (r.PaymentStatus || '').toUpperCase() === 'VERIFIED' ? 'verified' : 'Pending',
       paymentScreenshotURL: r.PaymentScreenshotURL || r.paymentScreenshotURL || r.payment_screenshot_url || r.Payment_Screenshot_URL || r.PaymentScreenshot || r.Screenshot || r.DriveURL || r.driveUrl || r.payment_screenshot_link || '',
+      paymentStatus: (() => {
+        const screenshotUrl = r.PaymentScreenshotURL || r.paymentScreenshotURL || r.payment_screenshot_url || r.Payment_Screenshot_URL || r.PaymentScreenshot || r.Screenshot || r.DriveURL || r.driveUrl || '';
+        const hasProof = Boolean(screenshotUrl && String(screenshotUrl).trim().startsWith('http'));
+        const rawStatus = (r.PaymentStatus || r.paymentStatus || '').toUpperCase();
+        return (rawStatus === 'VERIFIED' && hasProof) ? 'VERIFIED' : 'PENDING';
+      })(),
+      paymentVerified: (() => {
+        const screenshotUrl = r.PaymentScreenshotURL || r.paymentScreenshotURL || r.payment_screenshot_url || r.Payment_Screenshot_URL || r.PaymentScreenshot || r.Screenshot || r.DriveURL || r.driveUrl || '';
+        const hasProof = Boolean(screenshotUrl && String(screenshotUrl).trim().startsWith('http'));
+        const rawStatus = (r.PaymentStatus || r.paymentStatus || '').toUpperCase();
+        return (rawStatus === 'VERIFIED' && hasProof) ? 'verified' : 'Pending';
+      })(),
       status: r.Status || r.status || 'Confirmed',
       checkInDay1: r.CheckInDay1 || r.checkInDay1 || 'Absent',
       checkInDay2: r.CheckInDay2 || r.checkInDay2 || 'Absent',

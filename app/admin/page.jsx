@@ -476,22 +476,31 @@ export default function SuperAdminPage() {
         const json = await res.json();
         if (json.status === "success" || json.registrations) {
           const rawDels = json.registrations || [];
-          const normalizedDels = rawDels.map((d, idx) => ({
-            ...d,
-            regId: d.regId || d.delegateId || d.id || `RM26-DEL-${1000 + idx}`,
-            fullName: d.fullName || d.name || "Delegate",
-            email: d.email || "",
-            phone: String(d.phone || ""),
-            institution: d.institution || d.school || "",
-            grade: d.grade || "",
-            dob: d.dob || "",
-            allocatedCommittee: d.allocatedCommittee || "",
-            allocatedCountry: d.allocatedCountry || "",
-            paymentUTR: d.paymentUTR || d.utr || "",
-            paymentStatus: (d.paymentStatus || (d.paymentVerified === "verified" ? "VERIFIED" : "PENDING")).toUpperCase(),
-            paymentScreenshotURL: d.paymentScreenshotURL || d.payment_screenshot_url || d.screenshotUrl || d.driveUrl || d.DriveURL || d.PaymentScreenshotURL || "",
-            timestamp: d.timestamp || d.created_at || "",
-          }));
+          const normalizedDels = rawDels.map((d, idx) => {
+            const screenshotUrl = d.paymentScreenshotURL || d.payment_screenshot_url || d.screenshotUrl || d.driveUrl || d.DriveURL || d.PaymentScreenshotURL || "";
+            const hasValidProof = Boolean(screenshotUrl && String(screenshotUrl).trim().startsWith("http"));
+            const rawPay = (d.paymentStatus || (d.paymentVerified === "verified" ? "VERIFIED" : "PENDING")).toUpperCase();
+            // A delegate CANNOT be verified if they haven't submitted a valid payment screenshot proof
+            const isVerified = rawPay === "VERIFIED" && hasValidProof;
+
+            return {
+              ...d,
+              regId: d.regId || d.delegateId || d.id || `RM26-DEL-${1000 + idx}`,
+              fullName: d.fullName || d.name || "Delegate",
+              email: d.email || "",
+              phone: String(d.phone || ""),
+              institution: d.institution || d.school || "",
+              grade: d.grade || "",
+              dob: d.dob || "",
+              allocatedCommittee: d.allocatedCommittee || "",
+              allocatedCountry: d.allocatedCountry || "",
+              paymentUTR: d.paymentUTR || d.utr || "",
+              paymentStatus: isVerified ? "VERIFIED" : "PENDING",
+              paymentScreenshotURL: screenshotUrl,
+              hasValidProof,
+              timestamp: d.timestamp || d.created_at || "",
+            };
+          });
 
           const rawDelegations = json.delegations || [];
           const normalizedDelegations = rawDelegations.map((d, idx) => ({
