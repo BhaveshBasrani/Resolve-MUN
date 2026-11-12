@@ -6,7 +6,7 @@
  * Venue: Meridian School, Kompally, Hyderabad
  * Dates: 27th – 29th November 2026
  * Portals: https://resolvemun.in
- * Official Committees (6): DISEC, UNHRC, UNSC, LOK SABHA, COMMITTEE X, IP
+ * Official Committees (6): UNCSW, UNHRC, DISEC, IP, LOK SABHA, IPL
  * ============================================================================
  */
 
@@ -51,20 +51,20 @@ const CONFIG = {
   ENABLE_RECAPTCHA_VERIFY: true,
   VERSION: "5.0.0",
   COMMITTEES: [
-    "DISEC",
+    "UNCSW",
     "UNHRC",
-    "UNSC",
+    "DISEC",
+    "IP",
     "LOK SABHA",
-    "COMMITTEE X",
-    "IP"
+    "IPL"
   ],
   DEFAULT_CAPACITIES: {
-    "DISEC": 80,
+    "UNCSW": 60,
     "UNHRC": 70,
-    "UNSC": 40,
+    "DISEC": 80,
+    "IP": 30,
     "LOK SABHA": 85,
-    "COMMITTEE X": 45,
-    "IP": 30
+    "IPL": 50
   },
   FOLDERS: {
     ROOT: "Resolve_MUN_2026",
@@ -1289,7 +1289,7 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
                   <td style="font-size: 11px; color: rgba(255, 255, 255, 0.85); line-height: 1.6;">
                     <strong style="color: #ffffff;">🏛️ Venue:</strong> ${CONFIG.VENUE}<br>
                     <strong style="color: #ffffff;">📅 Conference Dates:</strong> ${CONFIG.CONFERENCE_DATES}<br>
-                    <strong style="color: #ffffff;">🏛️ Committees:</strong> DISEC · UNHRC · UNSC · LOK SABHA · COMMITTEE X · IP
+                    <strong style="color: #ffffff;">🏛️ Committees:</strong> UNCSW · UNHRC · DISEC · IP · LOK SABHA · IPL
                   </td>
                 </tr>
               </table>
@@ -1420,7 +1420,7 @@ function buildPaymentVerifiedHtml(fullName, regId, amount, utr) {
         Next Step: Committee &amp; Country Allotment
       </div>
       <p style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0 0 10px 0;">
-        We are now reviewing committee and country preferences across our 6 committees (DISEC, UNHRC, UNSC, Lok Sabha, Committee X, and IP).
+        We are now reviewing committee and country preferences across our 6 committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and IPL).
       </p>
       <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); line-height: 1.5; margin: 0;">
         Once your allotment is ready, you will receive an email with your assigned committee, country/portfolio, and your <strong>Digital Scannable QR Entry Pass</strong>.
@@ -1689,7 +1689,7 @@ function adminDispatchLeadReminder(data) {
         Seats Are Filling Fast!
       </div>
       <p style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin: 0;">
-        Committees (DISEC, UNHRC, UNSC, Lok Sabha, Committee X, and IP) are reaching capacity. Complete your registration now to secure your preferred committee and country portfolio!
+        Committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and IPL) are reaching capacity. Complete your registration now to secure your preferred committee and country portfolio!
       </p>
     </div>
 
