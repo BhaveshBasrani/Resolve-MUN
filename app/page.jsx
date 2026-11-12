@@ -1066,7 +1066,7 @@ export default function Home() {
         });
 
         window.copyVenueAddress = () => {
-          const addr = window.__siteSettings?.venueAddress || "Survey No. 108 & 109/B, Satyam Enclave, Behind Cine Planet, Kompally, Hyderabad, Telangana 500014";
+          const addr = window.__siteSettings?.venueAddress || "TBA (To Be Announced)";
           navigator.clipboard?.writeText(addr);
           if (window.showCustomAlert) window.showCustomAlert("Venue address copied to clipboard!", "success");
           else alert("Venue address copied to clipboard!");
@@ -2602,7 +2602,7 @@ export default function Home() {
           <div className="marquee-group">
             <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">{(siteSettings.conferenceDates || "27–29 NOVEMBER 2026").toUpperCase()}</span>
+            <span className="ticker-item">{(siteSettings.conferenceDates || "25, 26, 27 DECEMBER 2026").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>
@@ -2627,7 +2627,7 @@ export default function Home() {
           <div className="marquee-group" aria-hidden="true">
             <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">{(siteSettings.conferenceDates || "27–29 NOVEMBER 2026").toUpperCase()}</span>
+            <span className="ticker-item">{(siteSettings.conferenceDates || "25, 26, 27 DECEMBER 2026").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>

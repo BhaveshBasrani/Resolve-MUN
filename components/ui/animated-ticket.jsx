@@ -374,45 +374,47 @@ export function PaymentReceiptModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[10005] bg-black/95 backdrop-blur-md overflow-y-auto overscroll-contain flex flex-col items-center p-4 sm:p-6">
-      {/* Floating Close Button */}
+    <div className="fixed inset-0 z-[10005] bg-black/95 backdrop-blur-md overflow-y-auto overscroll-contain">
+      {/* Floating High-Contrast Close Button */}
       <button
         type="button"
         onClick={handleContinue}
-        className="fixed top-4 right-4 z-[10010] w-10 h-10 rounded-full bg-zinc-900/90 border border-white/25 text-white/80 hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-2xl active:scale-95"
+        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[10010] w-10 h-10 rounded-full bg-zinc-900/95 border border-white/30 text-white hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-[0_0_20px_rgba(0,0,0,0.8)] active:scale-95"
         aria-label="Close pass dialog"
       >
         <CloseIcon />
       </button>
 
-      <div className="w-full max-w-sm flex flex-col items-center my-auto py-8 sm:py-12">
-        <AnimatedTicket
-          ticketId={receipt.ticketId}
-          amount={receipt.amount}
-          date={receipt.date}
-          cardHolder={receipt.cardHolder}
-          utrNumber={receipt.utrNumber}
-          passCategory={receipt.passCategory}
-          barcodeValue={receipt.barcodeValue}
-        />
-        <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full z-20 pb-2">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl border border-white/25 bg-[#111] text-white text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            Print / Save PDF
-          </button>
-          <button
-            type="button"
-            onClick={handleContinue}
-            className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl border border-white bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer"
-          >
-            Open Dashboard →
-          </button>
+      {/* Natural scroll wrapper — centers when room allows, scrolls smoothly with bottom padding when height is constrained */}
+      <div className="min-h-full w-full flex flex-col items-center justify-center p-3 sm:p-6 py-8 sm:py-12">
+        <div className="w-full max-w-[360px] sm:max-w-sm flex flex-col items-center">
+          <AnimatedTicket
+            ticketId={receipt.ticketId}
+            amount={receipt.amount}
+            date={receipt.date}
+            cardHolder={receipt.cardHolder}
+            utrNumber={receipt.utrNumber}
+            passCategory={receipt.passCategory}
+            barcodeValue={receipt.barcodeValue}
+          />
+          <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full z-20 pb-6">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/25 bg-[#111] text-white text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center shadow-lg"
+            >
+              Print / Save PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleContinue}
+              className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.25)]"
+            >
+              Open Dashboard →
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

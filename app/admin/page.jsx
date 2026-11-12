@@ -418,6 +418,9 @@ export default function SuperAdminPage() {
   const [crmSubject, setCrmSubject] = useState("Official Notice — Resolve MUN 2.0");
   const [crmMessageBody, setCrmMessageBody] = useState("");
   const [crmSending, setCrmSending] = useState(false);
+  const [appsScriptStatus, setAppsScriptStatus] = useState(null);
+  const [appsScriptChecking, setAppsScriptChecking] = useState(false);
+  const [showAppsScriptGuide, setShowAppsScriptGuide] = useState(false);
 
   // Settings State
   const [siteSettings, setSiteSettings] = useState({

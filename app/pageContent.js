@@ -1345,7 +1345,7 @@ export const homeHtml = `
         </div>
         <div class="letterhead-meta">
           <span class="lh-meta-row"><em>Ref.</em> RMUN/2026/FO-01</span>
-          <span class="lh-meta-row"><em>Edition</em> 2.0 · 27–29 Nov 2026</span>
+          <span class="lh-meta-row"><em>Edition</em> 2.0 · 25–27 Dec 2026</span>
           <span class="lh-meta-row"><em>Venue</em> Hyderabad, India</span>
         </div>
       </header>

@@ -1237,6 +1237,37 @@ export async function POST(request) {
       });
     }
 
+        // ADMIN_TEST_APPS_SCRIPT: Ping Apps Script to check connection and deployment permissions
+    if (action === 'ADMIN_TEST_APPS_SCRIPT' || action === 'TEST_APPS_SCRIPT') {
+      try {
+        const asRes = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'PING', adminKey: ADMIN_KEY }),
+        });
+        const text = await asRes.text();
+        if (asRes.status === 403 || text.includes('You need permission') || text.includes('accounts.google.com') || text.includes('docs-drivelogo')) {
+          return NextResponse.json({
+            status: 'warning',
+            connected: false,
+            code: 'APPS_SCRIPT_ACCESS_RESTRICTED',
+            message: 'Google Apps Script deployment access is restricted (HTTP 403: "You need permission"). In Google Apps Script, click Deploy > Manage deployments > Edit (pencil icon) and set "Who has access" to "Anyone", then click Deploy to authorize email dispatches.',
+          }, { status: 403 });
+        }
+        return NextResponse.json({
+          status: 'success',
+          connected: true,
+          message: 'Connected to Resolve MUN Google Apps Script mailing engine successfully!',
+        });
+      } catch (err) {
+        return NextResponse.json({
+          status: 'error',
+          connected: false,
+          message: 'Apps Script connection test failed: ' + err.message,
+        }, { status: 500 });
+      }
+    }
+
     // 3. GOD-MODE: ADMIN_UPDATE_DELEGATE
     if (action === 'ADMIN_UPDATE_DELEGATE') {
       const targetId = (body.regId || body.delegateId || body.id || '').trim();
@@ -1342,7 +1373,7 @@ export async function POST(request) {
             q2 = q2.eq('id', targetId);
           } else if (targetId.startsWith('RM26-DEL-')) {
             q1 = q1.eq('delegate_id', targetId);
-            q2 = q2.eq('id', targetId);
+            q2 = q2.eq('reg_id', targetId);
           } else if (targetEmail) {
             q1 = q1.ilike('email', targetEmail);
             q2 = q2.ilike('email', targetEmail);
@@ -1353,15 +1384,56 @@ export async function POST(request) {
         }
       }
 
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ ...body, adminKey: ADMIN_KEY }),
-      }).catch(() => { });
+      // Fetch delegate metadata for email dispatch if missing
+      let delEmail = targetEmail;
+      let delName = body.fullName || body.name || '';
+      let delRegId = targetId;
+      if (supabase && (!delEmail || !delName)) {
+        try {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+          let dq = supabase.from('delegate_applications').select('name, email, reg_id');
+          if (isUuid) dq = dq.eq('id', targetId);
+          else if (targetId.startsWith('RM26-DEL-')) dq = dq.eq('reg_id', targetId);
+          else if (targetEmail) dq = dq.ilike('email', targetEmail);
+          const { data: dData } = await dq.maybeSingle();
+          if (dData) {
+            delEmail = delEmail || dData.email;
+            delName = delName || dData.name;
+            delRegId = delRegId || dData.reg_id;
+          }
+        } catch (_) {}
+      }
+
+      // Dispatch allotment credential email via Apps Script
+      let dispatchStatus = 'sent';
+      try {
+        const asRes = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            ...body,
+            action: 'ADMIN_ALLOT_COMMITTEE',
+            adminKey: ADMIN_KEY,
+            email: delEmail,
+            fullName: delName,
+            name: delName,
+            regId: delRegId,
+            committee: body.committee,
+            country: body.country,
+          }),
+        });
+        const asText = await asRes.text();
+        if (asRes.status === 403 || asText.includes('You need permission') || asText.includes('accounts.google.com')) {
+          dispatchStatus = 'permission_required';
+        }
+      } catch (err) {
+        dispatchStatus = 'failed: ' + err.message;
+      }
 
       return NextResponse.json({
         status: 'success',
         message: `Allotted ${body.country} in ${body.committee} to delegate`,
+        dispatchStatus,
       });
     }
 
@@ -1400,7 +1472,7 @@ export async function POST(request) {
             q2 = q2.eq('id', targetId);
           } else if (targetId.startsWith('RM26-DEL-')) {
             q1 = q1.eq('delegate_id', targetId);
-            q2 = q2.eq('id', targetId);
+            q2 = q2.eq('reg_id', targetId);
           } else if (targetEmail) {
             q1 = q1.ilike('email', targetEmail);
             q2 = q2.ilike('email', targetEmail);
