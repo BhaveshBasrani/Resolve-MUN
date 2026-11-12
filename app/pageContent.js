@@ -60,7 +60,7 @@ export const homeHtml = `
         <div class="selection-card-body" style="padding: 8px 0;">
           <h3 style="font-size: 1.25rem; color: #ffffff;">INDIVIDUAL DELEGATE</h3>
           <p style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.78); line-height: 1.45;">
-            Represent a portfolio across 6 dynamic committees (DISEC, UNHRC, UNSC, Lok Sabha, International Press, Committee X).
+            Represent a portfolio across 6 dynamic committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL).
           </p>
         </div>
         <div class="selection-card-action">
@@ -240,12 +240,12 @@ export const homeHtml = `
           <label for="pref1_committee">Committee Preference 1 <span style="color:#f87171;">*</span></label>
           <select id="pref1_committee" required data-required="true" onchange="updatePortfolioOptions(1)">
             <option value="" disabled selected>Select Committee Preference 1</option>
-            <option value="DISEC">DISEC</option>
+            <option value="UNCSW">UNCSW</option>
             <option value="UNHRC">UNHRC</option>
-            <option value="UNSC">UNSC</option>
-            <option value="LOK SABHA">Lok Sabha</option>
-            <option value="COMMITTEE X">Committee X</option>
+            <option value="DISEC">DISEC</option>
             <option value="IP">International Press</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="IPL">IPL</option>
           </select>
           <div id="pref1_container" style="display: none; margin-top: 10px;">
             <div id="pref1_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -265,12 +265,12 @@ export const homeHtml = `
           <label for="pref2_committee">Committee Preference 2 <span style="color:#f87171;">*</span></label>
           <select id="pref2_committee" required data-required="true" onchange="updatePortfolioOptions(2)">
             <option value="" disabled selected>Select Committee Preference 2</option>
-            <option value="DISEC">DISEC</option>
+            <option value="UNCSW">UNCSW</option>
             <option value="UNHRC">UNHRC</option>
-            <option value="UNSC">UNSC</option>
-            <option value="LOK SABHA">Lok Sabha</option>
-            <option value="COMMITTEE X">Committee X</option>
+            <option value="DISEC">DISEC</option>
             <option value="IP">International Press</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="IPL">IPL</option>
           </select>
           <div id="pref2_container" style="display: none; margin-top: 10px;">
             <div id="pref2_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -290,12 +290,12 @@ export const homeHtml = `
           <label for="pref3_committee">Committee Preference 3 <span style="color:#f87171;">*</span></label>
           <select id="pref3_committee" required data-required="true" onchange="updatePortfolioOptions(3)">
             <option value="" disabled selected>Select Committee Preference 3</option>
-            <option value="DISEC">DISEC</option>
+            <option value="UNCSW">UNCSW</option>
             <option value="UNHRC">UNHRC</option>
-            <option value="UNSC">UNSC</option>
-            <option value="LOK SABHA">Lok Sabha</option>
-            <option value="COMMITTEE X">Committee X</option>
+            <option value="DISEC">DISEC</option>
             <option value="IP">International Press</option>
+            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="IPL">IPL</option>
           </select>
           <div id="pref3_container" style="display: none; margin-top: 10px;">
             <div id="pref3_portfolios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -2039,24 +2039,24 @@ export const homeHtml = `
             <label for="ebPref1">Committee Preference 1 <span style="color:#f87171;">*</span></label>
             <select id="ebPref1" required data-required="true">
               <option value="" disabled selected>Select Committee 1</option>
-              <option value="DISEC">DISEC</option>
+              <option value="UNCSW">UNCSW</option>
               <option value="UNHRC">UNHRC</option>
-              <option value="UNSC">UNSC</option>
-              <option value="LOK SABHA">Lok Sabha</option>
-              <option value="COMMITTEE X">Committee X</option>
+              <option value="DISEC">DISEC</option>
               <option value="IP">International Press</option>
+              <option value="LOK SABHA">Lok Sabha</option>
+              <option value="IPL">IPL</option>
             </select>
           </div>
           <div>
             <label for="ebPref2">Committee Preference 2 <span style="color:#f87171;">*</span></label>
             <select id="ebPref2" required data-required="true">
               <option value="" disabled selected>Select Committee 2</option>
-              <option value="DISEC">DISEC</option>
+              <option value="UNCSW">UNCSW</option>
               <option value="UNHRC">UNHRC</option>
-              <option value="UNSC">UNSC</option>
-              <option value="LOK SABHA">Lok Sabha</option>
-              <option value="COMMITTEE X">Committee X</option>
+              <option value="DISEC">DISEC</option>
               <option value="IP">International Press</option>
+              <option value="LOK SABHA">Lok Sabha</option>
+              <option value="IPL">IPL</option>
             </select>
           </div>
         </div>

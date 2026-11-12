@@ -32,7 +32,7 @@ export const metadata = {
     "MUN conferences in Hyderabad",
     "Best MUN in Telangana",
     "Delegate Registration Resolve MUN",
-    "DISEC UNHRC UNSC Lok Sabha Committee X IP",
+    "DISEC UNHRC UNCSW Lok Sabha IPL IP",
     "student diplomacy India",
   ],
   icons: {
@@ -113,7 +113,7 @@ export default function RootLayout({ children }) {
                   "@id": `${siteUrl}/#event`,
                   name: "Resolve MUN 2.0 — Hyderabad's Flagship Model United Nations",
                   description:
-                    "Resolve MUN 2.0 convenes on 27th–29th November 2026 at Meridian School, Kompally, Hyderabad. 6 elite committees (DISEC, UNHRC, UNSC, Lok Sabha, Committee X, IP), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
+                    "Resolve MUN 2.0 convenes on 27th–29th November 2026 at Meridian School, Kompally, Hyderabad. 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, IPL), ₹2.5 Lakhs in cash rewards, and premier diplomatic simulations.",
                   startDate: "2026-11-27T08:30:00+05:30",
                   endDate: "2026-11-29T18:30:00+05:30",
                   eventStatus: "https://schema.org/EventScheduled",

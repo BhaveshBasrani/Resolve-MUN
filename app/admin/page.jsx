@@ -110,21 +110,21 @@ const VALID_PASSWORDS = [
 ];
 
 const COMMITTEES = [
-  "DISEC",
+  "UNCSW",
   "UNHRC",
-  "UNSC",
-  "LOK SABHA",
-  "COMMITTEE X",
+  "DISEC",
   "IP",
+  "LOK SABHA",
+  "IPL",
 ];
 
 const COMMITTEES_CONFIG = [
-  { id: "DISEC", name: "Disarmament & International Security", totalSeats: 80, type: "Security & Disarmament" },
+  { id: "UNCSW", name: "UN Commission on the Status of Women", totalSeats: 60, type: "Gender Equality & Global Rights" },
   { id: "UNHRC", name: "United Nations Human Rights Council", totalSeats: 70, type: "Human Rights & Global Law" },
-  { id: "UNSC", name: "United Nations Security Council", totalSeats: 40, type: "Flagship Crisis & Global Security" },
-  { id: "LOK SABHA", name: "Lok Sabha (Indian Parliament)", totalSeats: 85, type: "National Parliamentary Crisis" },
-  { id: "COMMITTEE X", name: "Committee X (Classified / Specialized)", totalSeats: 45, type: "Specialized Historical / Crisis" },
+  { id: "DISEC", name: "Disarmament & International Security", totalSeats: 80, type: "Security & Disarmament" },
   { id: "IP", name: "International Press Corps", totalSeats: 30, type: "Journalism & Media Oversight" },
+  { id: "LOK SABHA", name: "Lok Sabha (Indian Parliament)", totalSeats: 85, type: "National Parliamentary Crisis" },
+  { id: "IPL", name: "Indian Premier League (Auction Crisis)", totalSeats: 50, type: "High-Stakes Sports & Strategy Crisis" },
 ];
 
 export default function SuperAdminPage() {
@@ -186,12 +186,12 @@ export default function SuperAdminPage() {
 
   // Committee Capacities & Dossier Files
   const [committeeCapacities, setCommitteeCapacities] = useState({
-    "DISEC": 80,
+    "UNCSW": 60,
     "UNHRC": 70,
-    "UNSC": 40,
-    "LOK SABHA": 85,
-    "COMMITTEE X": 45,
+    "DISEC": 80,
     "IP": 30,
+    "LOK SABHA": 85,
+    "IPL": 50,
   });
   const [committeeDocuments, setCommitteeDocuments] = useState({});
   const [capacitiesSaving, setCapacitiesSaving] = useState(false);
@@ -2341,7 +2341,7 @@ export default function SuperAdminPage() {
                                     onClick={() => {
                                       setCrmEmailTo(l.email);
                                       setCrmSubject("Complete Your Resolve MUN 2.0 Registration");
-                                      setCrmMessageBody(`Dear ${l.fullName || l.name || "Delegate"},\n\nWe noticed you began your delegate registration for Resolve MUN 2.0 but didn't finish submitting your committee preferences.\n\nSlots across DISEC, UNHRC, UNSC, Lok Sabha, Committee X, and IP are moving quickly. You can resume your application directly at https://resolvemun.in/?open=delegate\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`);
+                                      setCrmMessageBody(`Dear ${l.fullName || l.name || "Delegate"},\n\nWe noticed you began your delegate registration for Resolve MUN 2.0 but didn't finish submitting your committee preferences.\n\nSlots across UNCSW, UNHRC, DISEC, IP, Lok Sabha, and IPL are moving quickly. You can resume your application directly at https://resolvemun.in/?open=delegate\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`);
                                       setCrmRecipientMode("SINGLE");
                                       setActiveTab("crm");
                                     }}
