@@ -1220,123 +1220,80 @@ function adminVerifyPaymentAndSendEmail(data) {
 /*      AUTHENTIC DIPLOMATIC EMBASSY-GRADE HTML TEMPLATES (LUXURY MUN)        */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/*       CLEAN, MINIMAL, PROFESSIONAL EMAIL TEMPLATES (NO CLUTTER, NO AI)     */
+/* -------------------------------------------------------------------------- */
+
 function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
-  const badgeLabel = heading ? heading.toUpperCase() : "RESOLVE MUN 2.0";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>${heading} — Resolve MUN 2.0</title>
+  <title>${heading || "Resolve MUN 2.0"}</title>
   <!--[if mso]>
   <style type="text/css">
     body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
   </style>
   <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: #07090E; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #07090E; width: 100%; margin: 0; padding: 0;">
+<body style="margin: 0; padding: 0; background-color: #0A0A0A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; color: #E4E4E7;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0A0A0A; width: 100%; margin: 0; padding: 0;">
     <tr>
-      <td align="center" style="padding: 28px 12px 40px 12px;">
+      <td align="center" style="padding: 32px 14px 48px 14px;">
         
-        <!-- Main Chassis -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #0D121F; border: 1px solid #1E293B; border-radius: 16px; overflow: hidden;">
+        <!-- Main Card -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; background-color: #121212; border: 1px solid #27272A; border-radius: 12px; overflow: hidden;">
           
-          <!-- Prestige Gold Crown Bar -->
+          <!-- Header -->
           <tr>
-            <td height="4" style="background-color: #D4AF37; font-size: 0; line-height: 0;">&nbsp;</td>
-          </tr>
-
-          <!-- Header Banner -->
-          <tr>
-            <td style="padding: 24px 28px 20px 28px; background-color: #111726; border-bottom: 1px solid #1E293B;">
+            <td style="padding: 28px 28px 20px 28px; border-bottom: 1px solid #27272A;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td valign="middle">
-                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 800; color: #D4AF37; letter-spacing: 0.16em; text-transform: uppercase;">
-                      RESOLVE MODEL UNITED NATIONS 2.0
+                  <td>
+                    <div style="font-size: 15px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.04em; text-transform: uppercase;">
+                      RESOLVE MUN 2.0
                     </div>
-                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 21px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.01em; margin-top: 4px; text-transform: uppercase;">
-                      ${badgeLabel}
-                    </div>
-                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #94A3B8; margin-top: 4px;">
-                      Official Diplomatic Dispatch &bull; Edition 2.0
+                    <div style="font-size: 12px; color: #71717A; margin-top: 3px;">
+                      25, 26, 27 December 2026 &bull; Hyderabad
                     </div>
                   </td>
                   <td align="right" valign="top">
-                    <table role="presentation" border="0" cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td style="padding: 6px 14px; border: 1px solid #D4AF37; border-radius: 6px; background-color: #172033; font-family: monospace; font-size: 11px; font-weight: 800; color: #D4AF37; letter-spacing: 0.1em; text-transform: uppercase;">
-                          HYD 2026
-                        </td>
-                      </tr>
-                    </table>
+                    <span style="font-size: 11px; font-weight: 600; color: #A1A1AA; background-color: #1C1C1F; border: 1px solid #2E2E33; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
+                      Edition 2.0
+                    </span>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Main Document Content -->
+          <!-- Body -->
           <tr>
-            <td style="padding: 32px 28px 36px 28px; background-color: #0D121F;">
+            <td style="padding: 28px 28px 32px 28px;">
               ${bodyHtml}
             </td>
           </tr>
 
-          <!-- Verified Conference Schedule & Venue Banner -->
+          <!-- Simple Conference Details Bar -->
           <tr>
-            <td style="padding: 18px 28px; background-color: #111726; border-top: 1px solid #1E293B; border-bottom: 1px solid #1E293B;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td style="font-size: 12px; color: #CBD5E1; line-height: 1.7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                    <strong style="color: #FFFFFF;">📅 Conference Dates:</strong> 25, 26, 27 December 2026<br>
-                    <strong style="color: #FFFFFF;">🏛️ Official Venue:</strong> ${CONFIG.VENUE}<br>
-                    <strong style="color: #FFFFFF;">⚖️ 6 Elite Committees:</strong> UNCSW &bull; UNHRC &bull; DISEC &bull; IP &bull; LOK SABHA &bull; MARVEL
-                  </td>
-                </tr>
-              </table>
+            <td style="padding: 18px 28px; background-color: #0D0D0E; border-top: 1px solid #27272A; font-size: 12px; color: #A1A1AA; line-height: 1.6;">
+              <strong style="color: #FFFFFF;">Dates:</strong> 25, 26, 27 December 2026<br>
+              <strong style="color: #FFFFFF;">Venue:</strong> ${CONFIG.VENUE}<br>
+              <strong style="color: #FFFFFF;">Committees:</strong> UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel
             </td>
           </tr>
 
-          <!-- Official Embassy Footer -->
+          <!-- Footer -->
           <tr>
-            <td style="padding: 24px 28px; background-color: #080B12;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <div style="font-size: 12px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.08em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                      Resolve MUN 2.0 Executive Secretariat
-                    </div>
-                    <div style="font-size: 11px; color: #64748B; line-height: 1.6; margin-top: 6px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                      Official Helpline: <strong style="color: #E2E8F0;">${CONFIG.HELPLINE}</strong><br>
-                      Secretariat Contact: <a href="mailto:${CONFIG.REPLY_TO}" style="color: #D4AF37; text-decoration: none;">${CONFIG.REPLY_TO}</a><br>
-                      Diplomatic Portal: <a href="${CONFIG.PORTAL_URL}" style="color: #FFFFFF; text-decoration: underline;">resolvemun.in</a>
-                    </div>
-                  </td>
-                  <td align="right" valign="bottom">
-                    <div style="font-family: monospace; font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.1em;">
-                      ${dispatchCode || "RESOLVE26"}
-                    </div>
-                  </td>
-                </tr>
-              </table>
+            <td style="padding: 20px 28px 24px 28px; background-color: #0A0A0A; border-top: 1px solid #1F1F23; font-size: 11px; color: #52525B; line-height: 1.6; text-align: center;">
+              Resolve MUN 2.0 &bull; Hyderabad, India<br>
+              Have a question? Reply directly to this email or write to <a href="mailto:${CONFIG.SUPPORT_EMAIL}" style="color: #A1A1AA; text-decoration: none;">${CONFIG.SUPPORT_EMAIL}</a><br>
+              <a href="${CONFIG.PORTAL_URL}" style="color: #71717A; text-decoration: none; margin-top: 4px; display: inline-block;">resolvemun.in</a>
             </td>
           </tr>
 
         </table>
-
-        <!-- Sub-footer Notice -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin-top: 14px;">
-          <tr>
-            <td align="center" style="font-size: 10px; color: #475569; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5;">
-              This is an official communication dispatched on behalf of Resolve Model United Nations 2.0.<br>
-              &copy; 2026 Resolve MUN Secretariat. All diplomatic rights reserved.
-            </td>
-          </tr>
-        </table>
-
       </td>
     </tr>
   </table>
@@ -1345,13 +1302,13 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
 }
 
 /**
- * 1. Verification Code Email (One-Time Login Password)
+ * 1. Verification Code Email
  */
-function sendVerificationCode(email, code, fullName) {
+function sendVerificationCodeEmail(email, fullName, code) {
   const name = fullName || "Delegate";
   const subject = `Your Verification Code: ${code} — Resolve MUN 2.0`;
   const htmlBody = buildVerificationCodeHtml(name, code);
-  const plainText = `Hi ${name},\n\nYour 6-digit login verification code for Resolve MUN 2.0 is: ${code}\n\nValid for 10 minutes.\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nYour login verification code for Resolve MUN 2.0 is: ${code}\n\nValid for 10 minutes.\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("AUTH_CODE_SENT", email, name, "SENT");
@@ -1360,116 +1317,135 @@ function sendVerificationCode(email, code, fullName) {
 
 function buildVerificationCodeHtml(fullName, code) {
   const body = `
-    <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-      Dear <strong style="color: #FFFFFF;">${fullName}</strong>,
+    <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+      Hi ${fullName},
     </div>
-    <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 22px;">
-      Here is your one-time 6-digit verification code to securely access the Resolve MUN 2.0 portal:
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 24px;">
+      Here is your verification code to access your Resolve MUN 2.0 account:
     </div>
 
-    <!-- CODE CHASSIS -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 1px solid #D4AF37; border-radius: 14px; padding: 26px; text-align: center; margin: 24px 0;">
-      <tr>
-        <td align="center">
-          <div style="font-family: 'Courier New', Courier, monospace; font-size: 42px; font-weight: 800; letter-spacing: 12px; color: #FFFFFF;">
-            ${code}
-          </div>
-          <div style="font-size: 11px; color: #D4AF37; margin-top: 10px; font-family: monospace; letter-spacing: 0.1em; text-transform: uppercase;">
-            Valid for 10 minutes &bull; Do not share this passkey
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div style="background-color: #18181B; border: 1px solid #27272A; border-radius: 8px; padding: 22px; text-align: center; margin: 20px 0;">
+      <div style="font-family: monospace; font-size: 38px; font-weight: 700; letter-spacing: 10px; color: #FFFFFF;">
+        ${code}
+      </div>
+      <div style="font-size: 11px; color: #71717A; margin-top: 8px;">
+        Valid for 10 minutes &bull; Do not share this code with anyone
+      </div>
+    </div>
 
-    <div style="font-size: 12px; color: #64748B; line-height: 1.6; margin-top: 20px;">
-      If you did not request this login verification code, please ignore this email or contact support at <a href="mailto:${CONFIG.SUPPORT_EMAIL}" style="color: #94A3B8;">${CONFIG.SUPPORT_EMAIL}</a>.
+    <div style="font-size: 12px; color: #71717A; line-height: 1.5; margin-top: 24px;">
+      If you did not request this login code, you can safely ignore this email.
     </div>
   `;
   return wrapInEmbassyLayout("AUTH-KEY", "Verification Code", body);
 }
 
 /**
- * 2. Payment Verified Email (Payment Confirmation & Seat Reserved)
+ * 2. Payment Verified Email (WITH EVENT ENTRY QR PASS)
  */
 function sendPaymentVerifiedEmail(email, fullName, regId, amount, utr) {
   const name = fullName || "Delegate";
-  const subject = `Payment Confirmed & Seat Reserved — Resolve MUN 2.0 [${regId}]`;
-  const htmlBody = buildPaymentVerifiedHtml(name, regId, amount, utr);
-  const plainText = `Hi ${name},\n\nGreat news! Your payment of INR ${amount} (UTR: ${utr}) has been successfully verified. Your seat at Resolve MUN 2.0 is officially confirmed!\n\nDelegate ID: ${regId}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
+  const subject = `Payment Verified & Entry Pass — Resolve MUN 2.0 [${regId}]`;
+  const htmlBody = buildPaymentVerifiedHtml(name, regId, amount, utr, email);
+  const plainText = `Hi ${name},\n\nYour payment of INR ${amount} (UTR: ${utr}) has been verified. Your seat at Resolve MUN 2.0 is confirmed!\n\nDelegate ID: ${regId}\nDates: 25, 26, 27 December 2026\nVenue: ${CONFIG.VENUE}\n\nYour official Event Entry QR pass is ready in this email and on your dashboard: ${CONFIG.DASHBOARD_URL}\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("PAYMENT_VERIFIED", email, name, "SENT");
   return { status: "success", email: email, message: "Payment confirmation sent." };
 }
 
-function buildPaymentVerifiedHtml(fullName, regId, amount, utr) {
+function buildPaymentVerifiedHtml(fullName, regId, amount, utr, email) {
+  const qrUrl = "https://quickchart.io/qr?size=300&margin=1&text=" + encodeURIComponent("RESOLVE26:ENTRY:" + regId + ":" + (email || ""));
+
   const body = `
-    <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-      Dear <strong style="color: #FFFFFF;">${fullName}</strong>,
+    <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+      Hi ${fullName},
     </div>
-    <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 22px;">
-      We are delighted to confirm that your registration payment has been verified by the Finance Directorate. <strong style="color: #FFFFFF;">Your delegate seat for Resolve Model United Nations 2.0 is officially secured.</strong>
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 24px;">
+      Your payment has been successfully verified. Your seat for <strong style="color: #FFFFFF;">Resolve MUN 2.0</strong> is confirmed.
     </div>
 
-    <!-- RECEIPT CARD -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 1px solid #23304B; border-radius: 12px; margin-bottom: 24px; overflow: hidden;">
+    <!-- OFFICIAL EVENT ENTRY PASS WITH QR -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #18181B; border: 1px solid #3F3F46; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
       <tr>
-        <td colspan="2" style="padding: 12px 20px; background-color: #1A2438; border-bottom: 1px solid #23304B; font-family: monospace; font-size: 11px; font-weight: 800; color: #10B981; letter-spacing: 0.1em; text-transform: uppercase;">
-          ✓ TRANSACTION VERIFIED &bull; OFFICIAL RECEIPT
+        <td style="padding: 12px 18px; background-color: #27272A; border-bottom: 1px solid #3F3F46;">
+          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="font-size: 11px; font-weight: 700; color: #10B981; text-transform: uppercase; letter-spacing: 0.08em;">
+                &bull; OFFICIAL EVENT ENTRY PASS
+              </td>
+              <td align="right" style="font-family: monospace; font-size: 12px; font-weight: 700; color: #FFFFFF;">
+                ${regId}
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
       <tr>
-        <td style="padding: 14px 20px; border-bottom: 1px solid #1E293B; font-size: 12px; color: #94A3B8;">Delegate Registration ID</td>
-        <td align="right" style="padding: 14px 20px; border-bottom: 1px solid #1E293B; font-family: monospace; font-size: 14px; font-weight: 800; color: #FFFFFF;">${regId}</td>
-      </tr>
-      <tr>
-        <td style="padding: 14px 20px; border-bottom: 1px solid #1E293B; font-size: 12px; color: #94A3B8;">Verified Amount</td>
-        <td align="right" style="padding: 14px 20px; border-bottom: 1px solid #1E293B; font-size: 16px; font-weight: 800; color: #D4AF37;">&#8377;${amount}</td>
-      </tr>
-      <tr>
-        <td style="padding: 14px 20px; border-bottom: 1px solid #1E293B; font-size: 12px; color: #94A3B8;">Transaction Reference (UTR)</td>
-        <td align="right" style="padding: 14px 20px; border-bottom: 1px solid #1E293B; font-family: monospace; font-size: 13px; color: #CBD5E1;">${utr}</td>
-      </tr>
-      <tr>
-        <td style="padding: 14px 20px; font-size: 12px; color: #94A3B8;">Seat Reservation Status</td>
-        <td align="right" style="padding: 14px 20px; font-family: monospace; font-size: 12px; font-weight: 800; color: #10B981; text-transform: uppercase;">CONFIRMED &amp; SEAT SECURED ✓</td>
-      </tr>
-    </table>
-
-    <!-- NEXT STEPS: ALLOCATION IN PROCESS -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #131A29; border: 1px solid #1E293B; border-radius: 12px; margin-bottom: 24px; padding: 20px;">
-      <tr>
-        <td>
-          <div style="font-family: monospace; font-size: 11px; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 8px;">
-            Next Step: Committee &amp; Country Allotment
+        <td align="center" style="padding: 24px 20px;">
+          <!-- QR Code -->
+          <div style="display: inline-block; background-color: #FFFFFF; padding: 10px; border-radius: 8px; margin-bottom: 16px;">
+            <img src="${qrUrl}" alt="Event Entry QR" width="160" height="160" style="display: block; border: 0;" />
           </div>
-          <p style="font-size: 12px; color: #CBD5E1; line-height: 1.7; margin: 0 0 10px 0;">
-            Our Executive Board is currently processing committee preferences across our 6 committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel).
-          </p>
-          <p style="font-size: 12px; color: #94A3B8; line-height: 1.6; margin: 0;">
-            Once allotments are finalized, you will receive an official allotment notice containing your assigned portfolio and your <strong>Scannable VIP Entry Pass</strong>.
-          </p>
+
+          <div style="font-size: 17px; font-weight: 700; color: #FFFFFF; margin-bottom: 3px;">
+            ${fullName}
+          </div>
+          <div style="font-size: 12px; color: #A1A1AA; margin-bottom: 16px;">
+            Delegate Pass &bull; ${regId}
+          </div>
+
+          <div style="border-top: 1px solid #27272A; padding-top: 14px; text-align: left;">
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 12px; color: #A1A1AA; line-height: 1.8;">
+              <tr>
+                <td>Verified Amount:</td>
+                <td align="right" style="color: #FFFFFF; font-weight: 600;">&#8377;${amount}</td>
+              </tr>
+              <tr>
+                <td>Payment Reference (UTR):</td>
+                <td align="right" style="color: #FFFFFF; font-family: monospace;">${utr || "Verified"}</td>
+              </tr>
+              <tr>
+                <td>Conference Dates:</td>
+                <td align="right" style="color: #FFFFFF;">25, 26, 27 December 2026</td>
+              </tr>
+              <tr>
+                <td>Venue:</td>
+                <td align="right" style="color: #FFFFFF;">${CONFIG.VENUE}</td>
+              </tr>
+            </table>
+          </div>
         </td>
       </tr>
     </table>
 
-    <div style="text-align: center; margin: 28px 0 10px 0;">
-      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; padding: 15px 34px; background-color: #D4AF37; color: #090C14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
+    <div style="font-size: 12px; color: #A1A1AA; line-height: 1.6; text-align: center; margin-bottom: 24px;">
+      Save this email or take a screenshot of your QR pass. Present it at the venue registration desk on <strong>25 December 2026</strong> for entry and badge collection.
+    </div>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; background-color: #FFFFFF; color: #000000; font-size: 13px; font-weight: 600; padding: 12px 28px; border-radius: 6px; text-decoration: none;">
         Open Delegate Dashboard &rarr;
       </a>
     </div>
+
+    <div style="font-size: 13px; color: #71717A; line-height: 1.6; margin-top: 24px;">
+      Warm regards,<br>
+      <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
+    </div>
   `;
-  return wrapInEmbassyLayout("PAYMENT-VERIFIED", "Payment Confirmed", body);
+  return wrapInEmbassyLayout("PAYMENT-VERIFIED", "Payment Confirmed & Entry Pass", body);
 }
 
 /**
- * 3. Committee Allocation Email (Includes Scannable QR Pass)
+ * 3. Committee Allocation Email (With Assigned Committee & Event QR)
  */
 function sendAllocationEmail(email, fullName, delegateId, committee, country) {
   const name = fullName || "Delegate";
-  const subject = `Your Allotment: ${country} in ${committee} — Resolve MUN 2.0 [${delegateId}]`;
+  const subject = `Committee Allotment: ${country} (${committee}) — Resolve MUN 2.0 [${delegateId}]`;
   const htmlBody = buildAllocationHtml(name, delegateId, committee, country, email);
-  const plainText = `Hi ${name},\n\nCongratulations! Your committee and country allotment for Resolve MUN 2.0 is confirmed:\n\nDelegate ID: ${delegateId}\nAssigned Committee: ${committee}\nAllotted Country / Portfolio: ${country}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nShow your digital QR entry pass at the registration desk when you arrive.\n\nAccess your delegate dashboard: https://resolvemun.in/dashboard\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nYour committee allotment for Resolve MUN 2.0 is confirmed:\n\nCommittee: ${committee}\nCountry / Portfolio: ${country}\nDelegate ID: ${delegateId}\nDates: 25, 26, 27 December 2026\nVenue: ${CONFIG.VENUE}\n\nAccess your study guides and pass on your dashboard: ${CONFIG.DASHBOARD_URL}\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("ALLOCATION_SENT", email, name, "SENT");
@@ -1477,27 +1453,24 @@ function sendAllocationEmail(email, fullName, delegateId, committee, country) {
 }
 
 function buildAllocationHtml(fullName, delegateId, committee, country, email) {
-  const qrUrl = "https://quickchart.io/qr?size=320&text=" + encodeURIComponent("RESOLVE26:DELEGATE:" + delegateId + ":" + (email || ""));
+  const qrUrl = "https://quickchart.io/qr?size=300&margin=1&text=" + encodeURIComponent("RESOLVE26:ENTRY:" + delegateId + ":" + (email || ""));
 
   const body = `
-    <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-      Distinguished Delegate <strong style="color: #FFFFFF;">${fullName}</strong>,
+    <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+      Hi ${fullName},
     </div>
-    <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 22px;">
-      The Executive Secretariat of Resolve Model United Nations 2.0 has finalized committee allocations. We take immense pleasure in confirming your diplomatic assignment:
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 24px;">
+      Your committee and portfolio assignment for Resolve MUN 2.0 has been finalized.
     </div>
 
-    <!-- DIPLOMATIC ALLOTMENT CREDENTIAL -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 2px solid #D4AF37; border-radius: 14px; margin-bottom: 24px; overflow: hidden;">
+    <!-- ALLOTMENT CARD -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #18181B; border: 1px solid #3F3F46; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
       <tr>
-        <td style="padding: 14px 20px; background-color: #1A2438; border-bottom: 1px solid #283754;">
+        <td style="padding: 12px 18px; background-color: #27272A; border-bottom: 1px solid #3F3F46;">
           <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
-              <td style="font-family: monospace; font-size: 11px; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.15em;">
-                OFFICIAL DIPLOMATIC ALLOTMENT
-              </td>
-              <td align="right" style="font-family: monospace; font-size: 12px; font-weight: 800; color: #FFFFFF;">
-                ${delegateId}
+              <td style="font-size: 11px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.08em;">
+                OFFICIAL ALLOTMENT &bull; ${delegateId}
               </td>
             </tr>
           </table>
@@ -1505,71 +1478,53 @@ function buildAllocationHtml(fullName, delegateId, committee, country, email) {
       </tr>
       <tr>
         <td style="padding: 22px 20px;">
-          <div style="font-size: 10px; font-family: monospace; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px;">
+          <div style="font-size: 11px; font-weight: 600; color: #71717A; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">
             Assigned Committee
           </div>
-          <div style="font-size: 24px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.02em; margin-bottom: 16px;">
+          <div style="font-size: 22px; font-weight: 700; color: #FFFFFF; margin-bottom: 18px;">
             ${committee}
           </div>
 
-          <div style="border-top: 1px solid #23304B; padding-top: 16px;">
-            <div style="font-size: 10px; font-family: monospace; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px;">
-              Allotted Country / Portfolio
+          <div style="border-top: 1px solid #27272A; padding-top: 16px;">
+            <div style="font-size: 11px; font-weight: 600; color: #71717A; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">
+              Allotted Portfolio / Country
             </div>
-            <div style="font-size: 20px; font-weight: 800; color: #F5D77F; letter-spacing: 0.01em;">
+            <div style="font-size: 19px; font-weight: 700; color: #FFFFFF;">
               ${country}
             </div>
           </div>
         </td>
       </tr>
-    </table>
-
-    <!-- VIP DIGITAL ENTRY PASS -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #090C14; border: 1px solid #23304B; border-radius: 16px; margin-bottom: 24px; padding: 24px 20px; text-align: center;">
       <tr>
-        <td align="center">
-          <div style="display: inline-block; padding: 5px 14px; background-color: #172033; border: 1px solid #D4AF37; border-radius: 20px; font-family: monospace; font-size: 10px; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 18px;">
-            OFFICIAL ADMISSION PASS &bull; ADMIT ONE
+        <td align="center" style="padding: 20px; border-top: 1px solid #27272A; background-color: #141416;">
+          <div style="display: inline-block; background-color: #FFFFFF; padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+            <img src="${qrUrl}" alt="Event Pass QR" width="140" height="140" style="display: block; border: 0;" />
           </div>
-
-          <!-- White High-Contrast QR Code Card -->
-          <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto 16px auto;">
-            <tr>
-              <td style="background-color: #FFFFFF; padding: 12px; border-radius: 12px; text-align: center;">
-                <img src="${qrUrl}" alt="Delegate Pass QR Code" width="160" height="160" style="display: block; border: 0; outline: none;" />
-              </td>
-            </tr>
-          </table>
-
-          <div style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin-bottom: 3px;">
-            ${fullName}
-          </div>
-          <div style="font-family: monospace; font-size: 12px; font-weight: 700; color: #94A3B8; margin-bottom: 14px;">
-            ${delegateId} &bull; ${committee} &bull; ${country}
-          </div>
-
-          <div style="border-top: 1px solid #1E293B; padding-top: 12px; font-size: 11px; color: #10B981; font-family: monospace; font-weight: 700;">
-            ✓ Active Digital Entry Pass &bull; Present on Mobile at Registration Desk
+          <div style="font-size: 11px; color: #71717A;">
+            Present this QR pass at the venue registration desk on Day 1.
           </div>
         </td>
       </tr>
     </table>
 
-    <!-- ARRIVAL & PREPARATION INSTRUCTIONS -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #131A29; border: 1px solid #1E293B; border-radius: 12px; margin-bottom: 24px; padding: 18px 20px;">
-      <tr>
-        <td style="font-size: 12px; color: #CBD5E1; line-height: 1.8;">
-          <strong style="color: #FFFFFF;">1. Delegate Dashboard:</strong> Access your study guides, rules of procedure, and position paper guidelines directly on your portal.<br>
-          <strong style="color: #FFFFFF;">2. Check-In Registration:</strong> Open this email or your pass on your smartphone upon arrival on <strong>25th December 2026</strong> for rapid gatekeeper check-in.<br>
-          <strong style="color: #FFFFFF;">3. Formal Diplomatic Attire:</strong> Western business formal or Indian traditional diplomatic formal is required for all committee sessions.
-        </td>
-      </tr>
-    </table>
+    <!-- INSTRUCTIONS -->
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.7; margin-bottom: 24px;">
+      <strong style="color: #FFFFFF;">Next Steps:</strong><br>
+      &bull; <strong>Study Guides:</strong> Access your committee background guides and rules of procedure from your dashboard.<br>
+      &bull; <strong>Dress Code:</strong> Western business formal or Indian formal is required for all committee sessions.<br>
+      &bull; <strong>Event Dates:</strong> 25, 26, 27 December 2026.
+    </div>
 
-    <div style="text-align: center; margin: 28px 0 10px 0;">
-      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; padding: 15px 34px; background-color: #D4AF37; color: #090C14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
-        Open Delegate Dashboard &amp; Background Guides &rarr;
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; background-color: #FFFFFF; color: #000000; font-size: 13px; font-weight: 600; padding: 12px 28px; border-radius: 6px; text-decoration: none;">
+        Open Delegate Dashboard &rarr;
       </a>
+    </div>
+
+    <div style="font-size: 13px; color: #71717A; line-height: 1.6; margin-top: 24px;">
+      Warm regards,<br>
+      <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
     </div>
   `;
   return wrapInEmbassyLayout("ALLOTMENT", "Committee Allotment & Entry Pass", body);
@@ -1582,7 +1537,7 @@ function sendApplicationReceivedEmail(email, fullName, formType, refId) {
   const reference = refId || ("RM26-DEL-" + Math.floor(1000 + Math.random() * 9000));
   const subject = `Registration Received — Resolve MUN 2.0 [${reference}]`;
   const htmlBody = buildApplicationReceivedHtml(fullName, formType, reference);
-  const plainText = `Hi ${fullName},\n\nWe have received your ${formType} registration for Resolve MUN 2.0.\n\nReference: ${reference}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nOur team is reviewing your payment reference/screenshot. You will receive an official payment confirmation once verified.\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${fullName},\n\nWe have received your ${formType} registration for Resolve MUN 2.0.\n\nReference: ${reference}\nDates: 25, 26, 27 December 2026\nVenue: ${CONFIG.VENUE}\n\nOur team is verifying your payment details. You will receive an official payment confirmation and QR entry pass once verified.\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("APPLICATION_RECEIVED", email, fullName, "SENT");
@@ -1591,63 +1546,58 @@ function sendApplicationReceivedEmail(email, fullName, formType, refId) {
 
 function buildApplicationReceivedHtml(fullName, formType, refId) {
   const body = `
-    <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-      Dear <strong style="color: #FFFFFF;">${fullName}</strong>,
+    <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+      Hi ${fullName},
     </div>
-    <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 22px;">
-      Thank you for registering for Resolve Model United Nations 2.0! We have formally logged your <strong style="color: #FFFFFF;">${formType}</strong> application.
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 24px;">
+      Thank you for registering for Resolve MUN 2.0. We have received your application.
     </div>
 
-    <!-- APPLICATION RECEIPT CARD -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 1px solid #23304B; border-radius: 12px; margin-bottom: 24px; padding: 20px;">
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #18181B; border: 1px solid #27272A; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
       <tr>
         <td>
-          <div style="font-size: 10px; font-family: monospace; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 4px;">
+          <div style="font-size: 11px; color: #71717A; text-transform: uppercase; margin-bottom: 4px;">
             Registration Reference
           </div>
-          <div style="font-family: monospace; font-size: 18px; font-weight: 800; color: #FFFFFF; margin-bottom: 12px;">
+          <div style="font-family: monospace; font-size: 18px; font-weight: 700; color: #FFFFFF; margin-bottom: 12px;">
             ${refId}
           </div>
-          <div style="display: inline-block; padding: 5px 12px; border-radius: 6px; background-color: #1A2E26; border: 1px solid #10B981; font-family: monospace; font-size: 11px; font-weight: 700; color: #34D399;">
-            STATUS: REGISTRATION LOGGED &bull; PAYMENT VERIFICATION IN PROGRESS
+          <div style="font-size: 12px; color: #34D399; font-weight: 600;">
+            Status: Registration Logged &bull; Payment Verification In Progress
           </div>
         </td>
       </tr>
     </table>
 
-    <!-- 3-STAGE PIPELINE -->
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #131A29; border: 1px solid #1E293B; border-radius: 12px; margin-bottom: 24px; padding: 20px;">
-      <tr>
-        <td>
-          <div style="font-family: monospace; font-size: 11px; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 12px;">
-            What Happens Next?
-          </div>
-          <div style="font-size: 12px; color: #CBD5E1; line-height: 1.8;">
-            <strong style="color: #FFFFFF;">1. Payment Verification (Current):</strong> Our finance team is validating your UPI reference/screenshot.<br>
-            <strong style="color: #FFFFFF;">2. Seat Confirmation:</strong> Once verified, an official confirmation receipt will be dispatched.<br>
-            <strong style="color: #FFFFFF;">3. Committee Allotment:</strong> You will receive your assigned committee, portfolio, and Digital Scannable Pass.
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.7; margin-bottom: 24px;">
+      <strong style="color: #FFFFFF;">What happens next:</strong><br>
+      1. Our team is verifying your transaction details.<br>
+      2. Once verified, you will receive an official confirmation email with your <strong>Event Entry QR Code</strong>.<br>
+      3. Your committee allotment will follow shortly.
+    </div>
 
-    <div style="text-align: center; margin: 28px 0 10px 0;">
-      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; padding: 14px 32px; background-color: #D4AF37; color: #090C14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${CONFIG.DASHBOARD_URL}" style="display: inline-block; background-color: #FFFFFF; color: #000000; font-size: 13px; font-weight: 600; padding: 12px 28px; border-radius: 6px; text-decoration: none;">
         Track Status on Portal &rarr;
       </a>
+    </div>
+
+    <div style="font-size: 13px; color: #71717A; line-height: 1.6; margin-top: 24px;">
+      Warm regards,<br>
+      <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
     </div>
   `;
   return wrapInEmbassyLayout("REG-RECEIVED", "Registration Received", body);
 }
 
 /**
- * 5. Secretariat Application Received Email (Free Application)
+ * 5. Secretariat Application Received Email
  */
 function sendSecretariatApplicationReceivedEmail(email, fullName, position, appId) {
   const reference = appId || ("RM26-SEC-" + Math.floor(1000 + Math.random() * 9000));
   const subject = `Secretariat Application Received: ${position} — Resolve MUN 2.0 [${reference}]`;
   const htmlBody = buildSecretariatReceivedHtml(fullName, position, reference);
-  const plainText = `Hi ${fullName},\n\nWe have received your Secretariat application for Resolve MUN 2.0.\n\nPosition: ${position}\nApplication ID: ${reference}\n\nSecretariat applications are strictly free. Shortlisted applicants will be invited for personal interviews.\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${fullName},\n\nWe have received your Secretariat application for Resolve MUN 2.0.\n\nPosition: ${position}\nApplication ID: ${reference}\n\nShortlisted applicants will be invited for personal interviews.\n\nResolve MUN 2.0 Secretariat`;
 
   dispatchMail(email, subject, htmlBody, plainText);
   tryLogEmailToSheet("SECRETARIAT_APP_RECEIVED", email, fullName, "SENT");
@@ -1656,41 +1606,42 @@ function sendSecretariatApplicationReceivedEmail(email, fullName, position, appI
 
 function buildSecretariatReceivedHtml(fullName, position, appId) {
   const body = `
-    <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-      Dear <strong style="color: #FFFFFF;">${fullName}</strong>,
+    <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+      Hi ${fullName},
     </div>
-    <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 22px;">
-      Thank you for applying to join the Executive Secretariat for <strong style="color: #FFFFFF;">Resolve Model United Nations 2.0</strong>.
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 24px;">
+      Thank you for applying to join the Secretariat for <strong style="color: #FFFFFF;">Resolve MUN 2.0</strong>.
     </div>
 
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 1px solid #23304B; border-radius: 12px; margin-bottom: 24px; padding: 22px;">
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #18181B; border: 1px solid #27272A; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
       <tr>
         <td style="padding-bottom: 12px;">
-          <div style="font-size: 10px; font-family: monospace; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px;">Application ID</div>
-          <div style="font-family: monospace; font-size: 17px; font-weight: 800; color: #FFFFFF;">${appId}</div>
+          <div style="font-size: 11px; color: #71717A; text-transform: uppercase; margin-bottom: 4px;">Application ID</div>
+          <div style="font-family: monospace; font-size: 16px; font-weight: 700; color: #FFFFFF;">${appId}</div>
         </td>
       </tr>
       <tr>
-        <td style="padding-top: 12px; border-top: 1px solid #1E293B;">
-          <div style="font-size: 10px; font-family: monospace; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px;">Position Applied</div>
-          <div style="font-size: 16px; font-weight: 700; color: #FFFFFF;">${position}</div>
+        <td style="padding-top: 12px; border-top: 1px solid #27272A;">
+          <div style="font-size: 11px; color: #71717A; text-transform: uppercase; margin-bottom: 4px;">Position Applied</div>
+          <div style="font-size: 15px; font-weight: 600; color: #FFFFFF;">${position}</div>
         </td>
       </tr>
       <tr>
-        <td style="padding-top: 12px; border-top: 1px solid #1E293B;">
-          <div style="font-size: 10px; font-family: monospace; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px;">Application Fee</div>
-          <div style="font-size: 13px; font-weight: 700; color: #10B981;">Free (₹0)</div>
+        <td style="padding-top: 12px; border-top: 1px solid #27272A;">
+          <div style="font-size: 11px; color: #71717A; text-transform: uppercase; margin-bottom: 4px;">Application Fee</div>
+          <div style="font-size: 13px; font-weight: 600; color: #34D399;">Free (₹0)</div>
         </td>
       </tr>
     </table>
 
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #131A29; border: 1px solid #1E293B; border-radius: 10px; padding: 16px; margin-bottom: 22px;">
-      <tr>
-        <td style="font-size: 12px; color: #CBD5E1; line-height: 1.7;">
-          <strong style="color: #D4AF37;">Interview Process:</strong> Shortlisted candidates will be contacted individually for a personal interview. Final appointments will be based on leadership track record and interview performance.
-        </td>
-      </tr>
-    </table>
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 24px;">
+      Our leadership team is reviewing all applications. Shortlisted candidates will be invited for a virtual or personal interview.
+    </div>
+
+    <div style="font-size: 13px; color: #71717A; line-height: 1.6; margin-top: 24px;">
+      Warm regards,<br>
+      <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
+    </div>
   `;
   return wrapInEmbassyLayout("SEC-APP", "Secretariat Application", body);
 }
@@ -1701,35 +1652,40 @@ function buildSecretariatReceivedHtml(fullName, position, appId) {
 function sendSocialsPassEmail(email, fullName, passId) {
   const name = fullName || "Pass Holder";
   const subject = `Socials Night Entry Pass — Resolve MUN 2.0 [${passId}]`;
-  const qrUrl = "https://quickchart.io/qr?size=320&text=" + encodeURIComponent("RESOLVE26:SOCIALS:" + passId + ":" + email);
+  const qrUrl = "https://quickchart.io/qr?size=300&margin=1&text=" + encodeURIComponent("RESOLVE26:SOCIALS:" + passId + ":" + email);
   const body = `
-    <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-      Dear <strong style="color: #FFFFFF;">${name}</strong>,
+    <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+      Hi ${name},
     </div>
-    <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 24px;">
-      Your admission pass for the official <strong>Resolve MUN 2.0 Socials Night</strong> has been registered!
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 24px;">
+      Your pass for the official <strong>Resolve MUN 2.0 Socials Night</strong> is confirmed.
     </div>
 
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #090C14; border: 2px solid #D4AF37; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #18181B; border: 1px solid #3F3F46; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
       <tr>
         <td align="center">
-          <div style="font-family: monospace; font-size: 10px; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 16px;">
-            SOCIALS NIGHT ENTRY PASS &bull; ADMIT ONE
+          <div style="font-size: 11px; font-weight: 700; color: #FB7185; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">
+            SOCIALS NIGHT PASS &bull; ADMIT ONE
           </div>
-          <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto 16px auto;">
-            <tr>
-              <td style="background-color: #FFFFFF; padding: 12px; border-radius: 12px; text-align: center;">
-                <img src="${qrUrl}" alt="Socials QR Pass" width="160" height="160" style="display: block; border: 0;" />
-              </td>
-            </tr>
-          </table>
-          <div style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin-bottom: 2px;">${name}</div>
-          <div style="font-family: monospace; font-size: 13px; font-weight: 700; color: #D4AF37;">${passId}</div>
+          <div style="display: inline-block; background-color: #FFFFFF; padding: 10px; border-radius: 8px; margin-bottom: 14px;">
+            <img src="${qrUrl}" alt="Socials QR Pass" width="160" height="160" style="display: block; border: 0;" />
+          </div>
+          <div style="font-size: 17px; font-weight: 700; color: #FFFFFF; margin-bottom: 2px;">${name}</div>
+          <div style="font-family: monospace; font-size: 13px; color: #A1A1AA;">${passId}</div>
         </td>
       </tr>
     </table>
+
+    <div style="font-size: 12px; color: #71717A; text-align: center; line-height: 1.5; margin-bottom: 24px;">
+      Present this QR pass on your mobile at the gate for entry.
+    </div>
+
+    <div style="font-size: 13px; color: #71717A; line-height: 1.6; margin-top: 24px;">
+      Warm regards,<br>
+      <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
+    </div>
   `;
-  const plainText = `Hi ${name},\n\nYour Socials Night Pass for Resolve MUN 2.0 is confirmed!\nPass ID: ${passId}\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${name},\n\nYour Socials Night Pass for Resolve MUN 2.0 is confirmed!\nPass ID: ${passId}\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
   dispatchMail(email, subject, wrapInEmbassyLayout("SOC-PASS", "Socials Pass", body), plainText);
   tryLogEmailToSheet("SOCIALS_PASS_SENT", email, name, "SENT");
 }
@@ -1748,35 +1704,33 @@ function adminDispatchLeadReminder(data) {
 
   const subject = `Complete Your Registration — Resolve MUN 2.0`;
   const bodyHtml = `
-    <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-      Dear <strong style="color: #FFFFFF;">${name}</strong>,
+    <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+      Hi ${name},
     </div>
-    <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 20px;">
-      We noticed that you started registering for Resolve MUN 2.0 but haven't completed your application (${step}).
+    <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 20px;">
+      We noticed you started registering for Resolve MUN 2.0 but didn't finish your application (${step}).
     </div>
 
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 1px solid #D4AF37; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-      <tr>
-        <td>
-          <div style="font-family: monospace; font-size: 11px; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 6px;">
-            Seats Are Filling Fast!
-          </div>
-          <p style="font-size: 13px; color: #CBD5E1; line-height: 1.7; margin: 0;">
-            Committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel) are reaching maximum capacity. Complete your registration now to guarantee your preferred committee and country portfolio!
-          </p>
-        </td>
-      </tr>
-    </table>
+    <div style="background-color: #18181B; border: 1px solid #27272A; border-radius: 8px; padding: 18px; margin-bottom: 24px;">
+      <p style="font-size: 13px; color: #E4E4E7; line-height: 1.6; margin: 0;">
+        Committee slots across UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel are moving quickly. Complete your registration to lock in your preferred portfolio.
+      </p>
+    </div>
 
-    <div style="text-align: center; margin: 28px 0 10px 0;">
-      <a href="${CONFIG.PORTAL_URL}/?open=delegate" style="display: inline-block; padding: 14px 34px; background-color: #D4AF37; color: #090C14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
-        Complete Registration Now &rarr;
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${CONFIG.PORTAL_URL}/?open=delegate" style="display: inline-block; background-color: #FFFFFF; color: #000000; font-size: 13px; font-weight: 600; padding: 12px 28px; border-radius: 6px; text-decoration: none;">
+        Complete Registration &rarr;
       </a>
+    </div>
+
+    <div style="font-size: 13px; color: #71717A; line-height: 1.6; margin-top: 24px;">
+      Warm regards,<br>
+      <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
     </div>
   `;
 
-  const plainText = `Hi ${name},\n\nYou started your registration for Resolve MUN 2.0 but didn't finish (${step}).\n\nSeats are closing quickly across all 6 committees. Complete your registration here: ${CONFIG.PORTAL_URL}/?open=delegate\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
-  dispatchMail(email, subject, wrapInEmbassyLayout("REMINDER", "Registration Reminder", bodyHtml), plainText);
+  const plainText = `Hi ${name},\n\nYou started your registration for Resolve MUN 2.0 but didn't finish (${step}).\n\nComplete your registration here: ${CONFIG.PORTAL_URL}/?open=delegate\n\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
+  dispatchMail(email, subject, wrapInEmbassyLayout("REMINDER", "Complete Registration", bodyHtml), plainText);
   tryLogEmailToSheet("LEAD_REMINDER_SENT", email, name, "SENT");
 
   return { status: "success", email: email, message: "Reminder successfully dispatched." };
@@ -1808,31 +1762,36 @@ function adminAcceptApplicantAndSendEmail(data) {
   } catch (_) {}
 
   if (email) {
-    const subject = `Congratulations! You're Selected: ${position} — Resolve MUN 2.0 [${appId}]`;
+    const subject = `Application Update: ${position} — Resolve MUN 2.0 [${appId}]`;
     const bodyHtml = `
-      <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-        Dear <strong style="color: #FFFFFF;">${fullName}</strong>,
+      <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 8px;">
+        Hi ${fullName},
       </div>
-      <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 22px;">
-        Congratulations! On behalf of the Founders and High Command, we are delighted to inform you that your application for <strong style="color: #FFFFFF;">${position}</strong> for Resolve Model United Nations 2.0 has been <strong style="color: #10B981;">Approved</strong>!
+      <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 20px;">
+        We are pleased to inform you that your application for <strong style="color: #FFFFFF;">${position}</strong> for Resolve MUN 2.0 has been <strong style="color: #34D399;">Accepted</strong>.
       </div>
 
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 1px solid #D4AF37; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #18181B; border: 1px solid #27272A; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
         <tr>
           <td>
-            <div style="font-size: 10px; font-family: monospace; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 4px;">Assigned Position</div>
-            <div style="font-size: 22px; font-weight: 800; color: #FFFFFF; margin-bottom: 8px;">${position}</div>
-            <div style="font-size: 12px; font-family: monospace; color: #94A3B8;">Application ID: ${appId}</div>
+            <div style="font-size: 11px; color: #71717A; text-transform: uppercase; margin-bottom: 4px;">Assigned Role</div>
+            <div style="font-size: 18px; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">${position}</div>
+            <div style="font-size: 12px; font-family: monospace; color: #A1A1AA;">ID: ${appId}</div>
           </td>
         </tr>
       </table>
 
-      <div style="font-size: 13px; color: #CBD5E1; line-height: 1.7; margin-bottom: 20px;">
-        Our leadership team will reach out shortly with onboarding details, team groups, and schedule briefings. Welcome to the Resolve MUN 2.0 team!
+      <div style="font-size: 13px; color: #A1A1AA; line-height: 1.6; margin-bottom: 20px;">
+        Our team will reach out with onboarding details, team groups, and meeting schedules shortly. Welcome to the team!
+      </div>
+
+      <div style="font-size: 13px; color: #71717A; line-height: 1.6; margin-top: 24px;">
+        Warm regards,<br>
+        <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
       </div>
     `;
-    const plainText = `Congratulations ${fullName}!\n\nYour appointment for ${position} at Resolve MUN 2.0 (App ID: ${appId}) has been approved!\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
-    dispatchMail(email, subject, wrapInEmbassyLayout("APPOINTMENT", "Appointment Offer", bodyHtml), plainText);
+    const plainText = `Congratulations ${fullName}!\n\nYour application for ${position} at Resolve MUN 2.0 (ID: ${appId}) has been approved!\n\nDates: 25, 26, 27 December 2026\n\nResolve MUN 2.0 Secretariat`;
+    dispatchMail(email, subject, wrapInEmbassyLayout("APPOINTMENT", "Application Approved", bodyHtml), plainText);
     tryLogEmailToSheet("ADMIN_ACCEPT_APPLICANT", email, fullName, "SENT");
   }
 
@@ -1852,45 +1811,29 @@ function adminSendCustomCrmEmail(data) {
   let sentCount = 0;
   const formattedBody = bodyText
     .split("\n\n")
-    .map(function(p) { return '<p style="margin: 0 0 16px 0;">' + p.replace(/\n/g, "<br>") + '</p>'; })
+    .map(function(p) { return '<p style="margin: 0 0 14px 0; line-height: 1.6;">' + p.replace(/\n/g, "<br>") + '</p>'; })
     .join("");
 
   recipients.forEach(function(r) {
     const toEmail = (r.email || "").trim().toLowerCase();
     if (!toEmail || !toEmail.includes("@")) return;
-    const recipientName = r.name || "Distinguished Participant";
+    const recipientName = r.name || "Delegate";
 
     const bodyHtml = `
-      <div style="font-size: 15px; color: #F1F5F9; line-height: 1.6; margin-bottom: 8px;">
-        Dear <strong style="color: #FFFFFF;">${recipientName}</strong>,
-      </div>
-      <div style="font-size: 11px; font-family: monospace; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px;">
-        OFFICIAL NOTICE &bull; RESOLVE MUN 2.0 SECRETARIAT
+      <div style="font-size: 15px; color: #FFFFFF; font-weight: 600; margin-bottom: 16px;">
+        Hi ${recipientName},
       </div>
 
-      <!-- COMMUNIQUE CHASSIS -->
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #141B2B; border: 1px solid #23304B; border-radius: 12px; margin-bottom: 24px; padding: 22px;">
-        <tr>
-          <td style="font-size: 14px; line-height: 1.8; color: #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            ${formattedBody}
-          </td>
-        </tr>
-      </table>
+      <div style="font-size: 14px; color: #D4D4D8; line-height: 1.7; margin-bottom: 24px;">
+        ${formattedBody}
+      </div>
 
-      <!-- SIGN-OFF BLOCK -->
-      <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; border-top: 1px solid #1E293B; padding-top: 18px;">
+      <div style="font-size: 13px; color: #71717A; line-height: 1.6; border-top: 1px solid #27272A; padding-top: 18px; margin-top: 24px;">
         Warm regards,<br>
-        <strong style="color: #FFFFFF;">The Executive Secretariat</strong><br>
-        Resolve Model United Nations 2.0
-      </div>
-
-      <div style="text-align: center; margin: 28px 0 10px 0;">
-        <a href="${CONFIG.PORTAL_URL}" style="display: inline-block; padding: 13px 30px; background-color: #D4AF37; color: #090C14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; text-decoration: none; border-radius: 8px;">
-          Visit Official Portal &rarr;
-        </a>
+        <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
       </div>
     `;
-    const plainText = `Hi ${recipientName},\n\n${bodyText}\n\nVenue: TBA (To Be Announced)\nDates: 25, 26, 27 December 2026\nResolve MUN 2.0 Secretariat`;
+    const plainText = `Hi ${recipientName},\n\n${bodyText}\n\nDates: 25, 26, 27 December 2026\nResolve MUN 2.0 Secretariat`;
 
     try {
       dispatchMail(toEmail, subject, wrapInEmbassyLayout("OFFICIAL-NOTICE", subject, bodyHtml), plainText);
@@ -1901,223 +1844,5 @@ function adminSendCustomCrmEmail(data) {
     }
   });
 
-  return { status: "success", sentCount: sentCount };
-}
-
-/* -------------------------------------------------------------------------- */
-/*      CORE ENGINE INFRASTRUCTURE & DUAL FAILOVER MAILING ENGINE             */
-/* -------------------------------------------------------------------------- */
-
-function dispatchMail(to, subject, htmlBody, plainText) {
-  try {
-    MailApp.sendEmail({
-      to: to,
-      subject: subject,
-      htmlBody: htmlBody,
-      body: plainText,
-      name: CONFIG.SENDER_NAME,
-      replyTo: CONFIG.REPLY_TO
-    });
-  } catch (err) {
-    Logger.log("Primary MailApp notice, falling back to GmailApp: " + err.message);
-    GmailApp.sendEmail(to, subject, plainText, {
-      htmlBody: htmlBody,
-      name: CONFIG.SENDER_NAME,
-      replyTo: CONFIG.REPLY_TO
-    });
-  }
-}
-
-function tryLogEmailToSheet(action, email, name, status) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Email_Logs");
-    if (!sheet) {
-      sheet = ss.insertSheet("Email_Logs");
-      sheet.appendRow(SCHEMAS.Email_Logs);
-      sheet.setFrozenRows(1);
-    }
-    sheet.appendRow([new Date().toISOString(), action, email, name, status]);
-  } catch (_) {}
-}
-
-function logAudit(action, actor, status, details) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Audit_Logs");
-    if (!sheet) {
-      sheet = ss.insertSheet("Audit_Logs");
-      sheet.appendRow(SCHEMAS.Audit_Logs);
-      sheet.setFrozenRows(1);
-    }
-    sheet.appendRow([new Date().toISOString(), action, actor, status, details]);
-  } catch (_) {}
-}
-
-function repairAndInitDatabase() {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    for (const sheetName in SCHEMAS) {
-      let sheet = ss.getSheetByName(sheetName);
-      if (!sheet) {
-        sheet = ss.insertSheet(sheetName);
-        sheet.appendRow(SCHEMAS[sheetName]);
-        sheet.setFrozenRows(1);
-        const headerRange = sheet.getRange(1, 1, 1, SCHEMAS[sheetName].length);
-        headerRange.setBackground("#0a0e1a");
-        headerRange.setFontColor("#f1f5f9");
-        headerRange.setFontWeight("bold");
-        headerRange.setFontFamily("Roboto Mono");
-      }
-    }
-  } catch (_) {}
-}
-
-function syncUserAccount(data) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Users");
-    if (!sheet) {
-      sheet = ss.insertSheet("Users");
-      sheet.appendRow(SCHEMAS.Users);
-      sheet.setFrozenRows(1);
-    }
-    const uid = String(data.uid || data.id || "").trim();
-    const email = String(data.email || "").trim().toLowerCase();
-    const name = String(data.name || data.fullName || "").trim();
-    const adminList = [
-      "bhaveshkumarbasrani@gmail.com",
-      "adityabejugam@gmail.com",
-      "support@resolvemun.in",
-      "admin@resolvemun.in",
-      "resolve.mun@gmail.com",
-      "munresolve@gmail.com"
-    ];
-    const role = (data.role || (adminList.includes(email) ? "ADMIN" : "DELEGATE")).toUpperCase();
-    const avatar = String(data.avatarUrl || data.avatar || "").trim();
-    const now = new Date().toISOString();
-
-    if (!email) return { status: "error", message: "Missing email" };
-
-    const rows = sheet.getDataRange().getValues();
-    for (let i = 1; i < rows.length; i++) {
-      const rowEmail = String(rows[i][3]).trim().toLowerCase();
-      if (rowEmail === email) {
-        sheet.getRange(i + 1, 1, 1, 7).setValues([[
-          now, uid || rows[i][1], name || rows[i][2], email, role, avatar || rows[i][5], now
-        ]]);
-        return { status: "success", message: "User updated", email: email, role: role };
-      }
-    }
-
-    sheet.appendRow([now, uid, name, email, role, avatar, now]);
-    return { status: "success", message: "User enrolled", email: email, role: role };
-  } catch (err) {
-    return { status: "error", message: err.message };
-  }
-}
-
-function getSiteSettings() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Site_Settings");
-  const defaults = {
-    registrationsOpen: true,
-    roundName: "Round 1 Priority Applications",
-    delegateFee: 2500,
-    delegationFee: 2200,
-    venue: CONFIG.VENUE,
-    conferenceDates: CONFIG.CONFERENCE_DATES,
-    committees: CONFIG.COMMITTEES
-  };
-  if (!sheet || sheet.getLastRow() <= 1) return defaults;
-  const rows = sheet.getDataRange().getValues();
-  const out = { ...defaults };
-  for (let i = 1; i < rows.length; i++) {
-    const k = rows[i][0];
-    const v = rows[i][1];
-    if (k) out[k] = v;
-  }
-  return out;
-}
-
-function updateSiteSettings(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName("Site_Settings");
-  if (!sheet) {
-    repairAndInitDatabase();
-    sheet = ss.getSheetByName("Site_Settings");
-  }
-  const settings = data.settings || data;
-  const now = new Date().toISOString();
-
-  // Persist core conference logistics to ScriptProperties so all outgoing emails dynamically pick them up
-  try {
-    const props = PropertiesService.getScriptProperties();
-    if (settings.conferenceDates) {
-      props.setProperty("CONFERENCE_DATES", String(settings.conferenceDates));
-      CONFIG.CONFERENCE_DATES = String(settings.conferenceDates);
-    }
-    if (settings.conferenceVenue) {
-      props.setProperty("VENUE", String(settings.conferenceVenue));
-      CONFIG.VENUE = String(settings.conferenceVenue);
-    }
-    if (settings.venueAddress) {
-      props.setProperty("VENUE_ADDRESS", String(settings.venueAddress));
-      CONFIG.VENUE_ADDRESS = String(settings.venueAddress);
-    }
-    if (settings.prizePool) {
-      props.setProperty("PRIZE_POOL", String(settings.prizePool));
-      CONFIG.PRIZE_POOL = String(settings.prizePool);
-    }
-  } catch (propErr) {
-    console.warn("ScriptProperties update note: " + propErr);
-  }
-
-  Object.keys(settings).forEach(function(k) {
-    sheet.appendRow([k, settings[k], now, data.updatedBy || "Admin"]);
-  });
-  return { status: "success", settings: settings, venue: CONFIG.VENUE, dates: CONFIG.CONFERENCE_DATES };
-}
-
-function verifyPassCredential(passId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const cleanId = String(passId || "").trim();
-  if (!cleanId) return { status: "invalid", message: "Invalid pass identifier" };
-
-  const regSheet = ss.getSheetByName("Registrations");
-  if (regSheet) {
-    const rows = regSheet.getDataRange().getValues();
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][1]).trim() === cleanId) {
-        return {
-          status: "valid",
-          delegateId: cleanId,
-          fullName: rows[i][3],
-          email: rows[i][4],
-          institution: rows[i][6],
-          committee: rows[i][14] || "Unassigned",
-          country: rows[i][15] || "Unassigned",
-          paymentStatus: rows[i][13],
-          venue: CONFIG.VENUE,
-          dates: CONFIG.CONFERENCE_DATES
-        };
-      }
-    }
-  }
-  return { status: "not_found", message: "Credential not found in registry" };
-}
-
-function jsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function errorResponse(msg, code = 400) {
-  return ContentService.createTextOutput(JSON.stringify({
-    status: "error",
-    code: code,
-    message: msg,
-    venue: CONFIG.VENUE,
-    timestamp: new Date().toISOString()
-  })).setMimeType(ContentService.MimeType.JSON);
+  return { status: "success", sentCount: sentCount, total: recipients.length };
 }

@@ -48,8 +48,8 @@ const COMMITTEES = [
   },
   {
     id: "ip",
-    label: "International Press",
-    meta: "Press Corps · 4 Files",
+    label: "IP",
+    meta: "International Press · 4 Files",
     tone: "dark",
     art: "dusk",
     seed: 505,
@@ -76,7 +76,7 @@ const COMMITTEES = [
   },
   {
     id: "marvel",
-    label: "MARVEL",
+    label: "Marvel",
     meta: "Crisis Committee · 4 Files",
     tone: "dark",
     art: "ember",

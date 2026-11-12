@@ -65,6 +65,35 @@ const PASSES = [
     },
   },
   {
+    id: "secretariat",
+    label: "Secretariat Pass",
+    stub: "SECRETARIAT PASS",
+    accent: "#34d399",
+    glow: "rgba(52, 211, 153, 0.25)",
+    texture: {
+      engine: "generative",
+      colorBack: "#021309",
+      colorFront: "#059669",
+      colorHighlight: "#34d399",
+      shape: "wave",
+      type: "4x4",
+      size: 1.2,
+      speed: 0.3,
+    },
+    action: () => {
+      if (typeof window !== "undefined") {
+        if (window.selectPathway) {
+          window.selectPathway("secretariat");
+        } else if (window.openSecModal) {
+          window.openSecModal();
+        } else if (window.openAuthModal) {
+          window.pendingPathway = "secretariat";
+          window.openAuthModal("signup");
+        }
+      }
+    },
+  },
+  {
     id: "eb",
     label: "EB Pass",
     stub: "EB PASS",
@@ -119,35 +148,6 @@ const PASSES = [
           window.openSocialsModal();
         } else if (window.openAuthModal) {
           window.pendingPathway = "socials";
-          window.openAuthModal("signup");
-        }
-      }
-    },
-  },
-  {
-    id: "secretariat",
-    label: "Secretariat Pass",
-    stub: "SECRETARIAT PASS",
-    accent: "#34d399",
-    glow: "rgba(52, 211, 153, 0.25)",
-    texture: {
-      engine: "generative",
-      colorBack: "#021309",
-      colorFront: "#059669",
-      colorHighlight: "#34d399",
-      shape: "wave",
-      type: "4x4",
-      size: 1.2,
-      speed: 0.3,
-    },
-    action: () => {
-      if (typeof window !== "undefined") {
-        if (window.selectPathway) {
-          window.selectPathway("secretariat");
-        } else if (window.openSecModal) {
-          window.openSecModal();
-        } else if (window.openAuthModal) {
-          window.pendingPathway = "secretariat";
           window.openAuthModal("signup");
         }
       }

@@ -116,7 +116,7 @@ const COMMITTEES = [
   "UNHRC",
   "DISEC",
   "IP",
-  "LOK SABHA",
+  "Lok Sabha",
   "Marvel",
 ];
 
@@ -125,7 +125,7 @@ const COMMITTEES_CONFIG = [
   { id: "UNHRC", name: "United Nations Human Rights Council", totalSeats: 70, type: "Human Rights & Global Law" },
   { id: "DISEC", name: "Disarmament & International Security", totalSeats: 80, type: "Security & Disarmament" },
   { id: "IP", name: "International Press Corps", totalSeats: 30, type: "Journalism & Media Oversight" },
-  { id: "LOK SABHA", name: "Lok Sabha (Indian Parliament)", totalSeats: 85, type: "National Parliamentary Crisis" },
+  { id: "Lok Sabha", name: "Lok Sabha (Indian Parliament)", totalSeats: 85, type: "National Parliamentary Crisis" },
   { id: "Marvel", name: "Marvel Crisis Committee", totalSeats: 50, type: "Continuous Crisis & Tactical Multiverse" },
 ];
 
@@ -228,6 +228,7 @@ export default function SuperAdminPage() {
     "UNHRC": 70,
     "DISEC": 80,
     "IP": 30,
+    "Lok Sabha": 85,
     "LOK SABHA": 85,
     "Marvel": 50,
   });

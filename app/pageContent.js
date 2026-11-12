@@ -243,8 +243,8 @@ export const homeHtml = `
             <option value="UNCSW">UNCSW</option>
             <option value="UNHRC">UNHRC</option>
             <option value="DISEC">DISEC</option>
-            <option value="IP">International Press</option>
-            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="IP">IP (International Press)</option>
+            <option value="Lok Sabha">Lok Sabha</option>
             <option value="Marvel">Marvel</option>
           </select>
           <div id="pref1_container" style="display: none; margin-top: 10px;">
@@ -268,8 +268,8 @@ export const homeHtml = `
             <option value="UNCSW">UNCSW</option>
             <option value="UNHRC">UNHRC</option>
             <option value="DISEC">DISEC</option>
-            <option value="IP">International Press</option>
-            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="IP">IP (International Press)</option>
+            <option value="Lok Sabha">Lok Sabha</option>
             <option value="Marvel">Marvel</option>
           </select>
           <div id="pref2_container" style="display: none; margin-top: 10px;">
@@ -293,8 +293,8 @@ export const homeHtml = `
             <option value="UNCSW">UNCSW</option>
             <option value="UNHRC">UNHRC</option>
             <option value="DISEC">DISEC</option>
-            <option value="IP">International Press</option>
-            <option value="LOK SABHA">Lok Sabha</option>
+            <option value="IP">IP (International Press)</option>
+            <option value="Lok Sabha">Lok Sabha</option>
             <option value="Marvel">Marvel</option>
           </select>
           <div id="pref3_container" style="display: none; margin-top: 10px;">
@@ -2042,8 +2042,8 @@ export const homeHtml = `
               <option value="UNCSW">UNCSW</option>
               <option value="UNHRC">UNHRC</option>
               <option value="DISEC">DISEC</option>
-              <option value="IP">International Press</option>
-              <option value="LOK SABHA">Lok Sabha</option>
+              <option value="IP">IP (International Press)</option>
+              <option value="Lok Sabha">Lok Sabha</option>
               <option value="Marvel">Marvel</option>
             </select>
           </div>
@@ -2054,8 +2054,8 @@ export const homeHtml = `
               <option value="UNCSW">UNCSW</option>
               <option value="UNHRC">UNHRC</option>
               <option value="DISEC">DISEC</option>
-              <option value="IP">International Press</option>
-              <option value="LOK SABHA">Lok Sabha</option>
+              <option value="IP">IP (International Press)</option>
+              <option value="Lok Sabha">Lok Sabha</option>
               <option value="Marvel">Marvel</option>
             </select>
           </div>
