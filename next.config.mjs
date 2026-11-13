@@ -6,7 +6,7 @@ const nextConfig = {
   devIndicators: false,
   output: isExport ? 'export' : undefined,
   trailingSlash: true,
-  allowedDevOrigins: ['192.168.88.7'],
+  allowedDevOrigins: ['192.168.88.7', '192.168.88.4', 'localhost:3000'],
   images: {
     unoptimized: true,
     remotePatterns: [
