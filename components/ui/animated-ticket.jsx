@@ -374,47 +374,191 @@ export function PaymentReceiptModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[10005] bg-black/95 backdrop-blur-md overflow-y-auto overscroll-contain">
-      {/* Floating High-Contrast Close Button */}
-      <button
-        type="button"
-        onClick={handleContinue}
-        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[10010] w-10 h-10 rounded-full bg-zinc-900/95 border border-white/30 text-white hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-[0_0_20px_rgba(0,0,0,0.8)] active:scale-95"
-        aria-label="Close pass dialog"
-      >
-        <CloseIcon />
-      </button>
+    <>
+      {/* SCREEN-ONLY MODAL (HIDDEN ON PRINT) */}
+      <div className="no-print fixed inset-0 z-[10005] bg-black/95 backdrop-blur-md overflow-y-auto overscroll-contain">
+        {/* Floating High-Contrast Close Button */}
+        <button
+          type="button"
+          onClick={handleContinue}
+          className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[10010] w-10 h-10 rounded-full bg-zinc-900/95 border border-white/30 text-white hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-[0_0_20px_rgba(0,0,0,0.8)] active:scale-95"
+          aria-label="Close pass dialog"
+        >
+          <CloseIcon />
+        </button>
 
-      {/* Natural scroll wrapper — centers when room allows, scrolls smoothly with bottom padding when height is constrained */}
-      <div className="min-h-full w-full flex flex-col items-center justify-center p-3 sm:p-6 py-8 sm:py-12">
-        <div className="w-full max-w-[360px] sm:max-w-sm flex flex-col items-center">
-          <AnimatedTicket
-            ticketId={receipt.ticketId}
-            amount={receipt.amount}
-            date={receipt.date}
-            cardHolder={receipt.cardHolder}
-            utrNumber={receipt.utrNumber}
-            passCategory={receipt.passCategory}
-            barcodeValue={receipt.barcodeValue}
-          />
-          <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full z-20 pb-6">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/25 bg-[#111] text-white text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center shadow-lg"
-            >
-              Print / Save PDF
-            </button>
-            <button
-              type="button"
-              onClick={handleContinue}
-              className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.25)]"
-            >
-              Open Dashboard →
-            </button>
+        {/* Natural scroll wrapper — centers when room allows, scrolls smoothly with bottom padding when height is constrained */}
+        <div className="min-h-full w-full flex flex-col items-center justify-center p-3 sm:p-6 py-8 sm:py-12">
+          <div className="w-full max-w-[360px] sm:max-w-sm flex flex-col items-center">
+            <AnimatedTicket
+              ticketId={receipt.ticketId}
+              amount={receipt.amount}
+              date={receipt.date}
+              cardHolder={receipt.cardHolder}
+              utrNumber={receipt.utrNumber}
+              passCategory={receipt.passCategory}
+              barcodeValue={receipt.barcodeValue}
+            />
+            <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full z-20 pb-6">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/25 bg-[#111] text-white text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center shadow-lg"
+              >
+                Print / Save PDF
+              </button>
+              <button
+                type="button"
+                onClick={handleContinue}
+                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.25)]"
+              >
+                Open Dashboard →
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* =========================================================================
+          OFFICIAL EMBASSY-GRADE PRINTABLE RECEIPT / TAX INVOICE (SHOWN ONLY ON PRINT)
+          ========================================================================= */}
+      <div className="print-only w-full max-w-2xl mx-auto p-10 bg-white text-zinc-950 font-sans border-2 border-zinc-900 rounded-xl my-6">
+        {/* Letterhead */}
+        <div className="flex items-center justify-between border-b-2 border-zinc-900 pb-5">
+          <div className="flex items-center gap-3">
+            <img
+              src="https://resolvemun.in/images/Logo.svg"
+              alt="Resolve MUN Emblem"
+              className="w-12 h-12 object-contain"
+            />
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-tight text-zinc-900 font-serif">
+                RESOLVE MUN 2.0
+              </h1>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">
+                Official Registration Receipt &amp; Tax Invoice
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="inline-block px-3 py-1 bg-emerald-100 border border-emerald-600 text-emerald-800 text-[10px] font-mono font-bold uppercase rounded-md">
+              ✓ Verified &amp; Confirmed
+            </span>
+            <p className="text-[11px] font-mono text-zinc-500 mt-1">
+              Doc Ref: {receipt.ticketId}
+            </p>
+          </div>
+        </div>
+
+        {/* Metadata Grid */}
+        <div className="grid grid-cols-2 gap-6 py-6 border-b border-zinc-200 text-xs">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
+              Applicant Details
+            </span>
+            <p className="font-bold text-sm text-zinc-900">{receipt.cardHolder}</p>
+            <p className="text-zinc-600 mt-0.5 font-mono">{receipt.passCategory || "Individual Delegate"}</p>
+            <p className="text-zinc-500 text-[11px] mt-1">Convenes: 25, 26, 27 December 2026 • Hyderabad</p>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
+              Transaction Details
+            </span>
+            <p className="font-mono text-zinc-800">
+              <span className="text-zinc-500">Date: </span>
+              {new Date(receipt.date).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+            <p className="font-mono text-zinc-800 mt-0.5">
+              <span className="text-zinc-500">Mode: </span>UPI Transfer
+            </p>
+            <p className="font-mono font-semibold text-zinc-900 mt-0.5">
+              <span className="text-zinc-500 font-normal">UTR Ref: </span>
+              {receipt.utrNumber || "VERIFIED-DIRECT"}
+            </p>
+          </div>
+        </div>
+
+        {/* Itemized Table */}
+        <div className="py-6 border-b border-zinc-200">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-zinc-300 text-left font-mono text-[10px] uppercase text-zinc-500">
+                <th className="pb-2">Description</th>
+                <th className="pb-2 text-center">Sessions</th>
+                <th className="pb-2 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 font-sans">
+              <tr>
+                <td className="py-3">
+                  <p className="font-semibold text-zinc-900">
+                    Resolve MUN 2.0 — {receipt.passCategory || "Delegate Pass"}
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    Includes 3-day admission, committee pack, high tea, delegate kit &amp; socials entry
+                  </p>
+                </td>
+                <td className="py-3 text-center font-mono text-zinc-600">3 Days</td>
+                <td className="py-3 text-right font-mono font-bold text-zinc-900">
+                  ₹{Number(receipt.amount || 2500).toLocaleString("en-IN")}.00
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2.5 text-zinc-600">Conference Materials, Working Papers &amp; Kit</td>
+                <td className="py-2.5 text-center font-mono text-zinc-600">Full</td>
+                <td className="py-2.5 text-right font-mono text-zinc-500">Included</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 text-zinc-600">Payment Gateway / Processing Surcharge</td>
+                <td className="py-2.5 text-center font-mono text-zinc-600">—</td>
+                <td className="py-2.5 text-right font-mono text-zinc-500">₹0.00</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-zinc-900 font-bold">
+                <td colSpan={2} className="pt-3 text-right font-mono uppercase text-xs">
+                  Total Paid (INR):
+                </td>
+                <td className="pt-3 text-right font-mono text-base text-zinc-950">
+                  ₹{Number(receipt.amount || 2500).toLocaleString("en-IN")}.00
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Verification Footer & QR */}
+        <div className="flex items-center justify-between pt-6 text-[11px]">
+          <div className="space-y-1 max-w-sm">
+            <p className="font-bold uppercase tracking-wider text-zinc-900 font-mono text-[10px]">
+              Secretariat Directorate of Finance
+            </p>
+            <p className="text-zinc-600 leading-relaxed text-[10px]">
+              This is a computer-generated official receipt issued by Resolve MUN 2.0.
+              Retain this receipt for your records and present it at the entrance desk if requested.
+            </p>
+            <p className="text-[9px] font-mono text-zinc-400 pt-1">
+              Auth Hash: RMUN26-{receipt.ticketId.slice(-8)}-VERIFIED
+            </p>
+          </div>
+          <div className="flex flex-col items-center">
+            <img
+              src={`https://quickchart.io/qr?size=150&text=${encodeURIComponent(
+                "RESOLVE_RECEIPT:" + receipt.ticketId + ":" + receipt.cardHolder + ":" + (receipt.amount || 2500)
+              )}`}
+              alt="Receipt Verification QR"
+              className="w-20 h-20 object-contain border border-zinc-300 rounded p-1"
+            />
+            <span className="text-[8px] font-mono uppercase tracking-widest text-zinc-500 mt-1">
+              Scan to Verify
+            </span>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

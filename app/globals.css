@@ -11688,3 +11688,87 @@ select:-webkit-autofill {
     background-clip: padding-box !important;
   }
 }
+
+/* ==========================================================================
+   DIPLOMATIC EMBASSY-GRADE PRINT ENGINE (NO SCREENSHOTS, VECTOR PDF)
+   ========================================================================== */
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  *, *:before, *:after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Hide screen-only interactive elements, headers, nav, footers, buttons */
+  nav,
+  header,
+  footer,
+  aside,
+  button,
+  input,
+  select,
+  textarea,
+  .no-print,
+  [role= navigation],
+  .fixed:not(.print-fixed-allow),
+  .ticker-wrap,
+  #submitSpinner,
+  .confetti-container,
+  canvas {
+    display: none !important;
+  }
+
+  /* Reset document body to crisp, clean white page */
+  html, body {
+    background: #ffffff !important;
+    color: #09090b !important;
+    font-size: 11pt !important;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Prevent parent overflow clips */
+  main, #main-container, [id^=__next] {
+    overflow: visible !important;
+    height: auto !important;
+    background: transparent !important;
+  }
+
+  /* Print-only container becomes the sole visible document */
+  .print-only {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #09090b !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* When printing, hide dashboard screen content */
+  body.print-pass-active #dashboard-screen-content,
+  body.print-pass-active .screen-only {
+    display: none !important;
+  }
+}

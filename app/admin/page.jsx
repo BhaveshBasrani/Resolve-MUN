@@ -51,7 +51,8 @@ import {
   MessageSquare,
   Phone,
   UserPlus,
-  Link2
+  Link2,
+  Printer
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -4498,6 +4499,15 @@ export default function SuperAdminPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => window.print()}
+                  className="h-8 px-3 text-xs border-white/15 text-zinc-300 hover:text-white cursor-pointer"
+                  title="Print Official Delegate Dossier & Registration Slip"
+                >
+                  <Printer className="h-3 w-3 mr-1" /> Print Slip
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setEditingDelegate(viewingDossier);
                     setViewingDossier(null);
@@ -4515,6 +4525,113 @@ export default function SuperAdminPage() {
                   Close
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          OFFICIAL PRINTABLE SECRETARIAT DELEGATE DOSSIER / DESK SLIP (PRINT ONLY)
+          ========================================================================= */}
+      {viewingDossier && (
+        <div className="print-only w-full max-w-3xl mx-auto p-8 bg-white text-zinc-950 font-sans border-2 border-zinc-900 rounded-xl my-4">
+          <div className="flex items-center justify-between border-b-2 border-zinc-900 pb-4 mb-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="https://resolvemun.in/images/Logo.svg"
+                alt="Resolve MUN Emblem"
+                className="w-12 h-12 object-contain"
+              />
+              <div>
+                <h1 className="text-lg font-black uppercase tracking-tight text-zinc-900 font-serif">
+                  RESOLVE MUN 2.0 • SECRETARIAT REGISTRATION DOSSIER
+                </h1>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">
+                  Entrance Verification &amp; Credential Issuance Slip
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="inline-block px-2.5 py-0.5 bg-zinc-900 text-white text-[10px] font-mono font-bold uppercase rounded">
+                REG ID: {viewingDossier.regId || viewingDossier.id}
+              </span>
+              <p className="text-[10px] font-mono text-zinc-500 mt-1">
+                Status: {viewingDossier.paymentStatus || "PENDING"}
+              </p>
+            </div>
+          </div>
+
+          {/* Delegate Info */}
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-zinc-200 bg-zinc-50 mb-4 text-xs">
+            <div>
+              <span className="text-[9px] font-mono uppercase text-zinc-500 block">Full Name</span>
+              <p className="font-bold text-sm text-zinc-900">{viewingDossier.fullName}</p>
+              <p className="text-zinc-600 mt-0.5">{viewingDossier.institution || "Independent"} · Grade {viewingDossier.grade || "N/A"}</p>
+              <p className="text-zinc-500 text-[11px] mt-1 font-mono">DOB: {viewingDossier.dob || "N/A"}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-[9px] font-mono uppercase text-zinc-500 block">Contact Credentials</span>
+              <p className="font-mono text-zinc-800">{viewingDossier.email || "—"}</p>
+              <p className="font-mono text-zinc-800 mt-0.5">+91 {viewingDossier.phone || "—"}</p>
+              <p className="text-[11px] text-zinc-600 mt-1">Transport: {viewingDossier.transport || "No"}</p>
+            </div>
+          </div>
+
+          {/* Address & Logistics */}
+          <div className="p-3 border border-zinc-200 rounded-lg mb-4 text-xs">
+            <span className="text-[9px] font-mono uppercase text-zinc-500 block mb-0.5">Residential Address</span>
+            <p className="text-zinc-800">{viewingDossier.address || "No address provided."}</p>
+          </div>
+
+          {/* MUN Experience */}
+          <div className="p-3 border border-zinc-200 rounded-lg mb-4 text-xs">
+            <span className="text-[9px] font-mono uppercase text-zinc-500 block mb-0.5">Past MUN Experience &amp; Background</span>
+            <p className="text-zinc-800 whitespace-pre-wrap">{viewingDossier.experience || "First-time delegate."}</p>
+          </div>
+
+          {/* Preferences vs Allocation */}
+          <div className="grid grid-cols-2 gap-4 p-3 border border-zinc-200 rounded-lg mb-4 text-xs">
+            <div>
+              <span className="text-[9px] font-mono uppercase text-zinc-500 block mb-1">Committee Preferences</span>
+              <p className="text-[11px] font-mono text-zinc-700">1. {viewingDossier.pref1_committee || "—"} ({viewingDossier.pref1_country || "—"})</p>
+              <p className="text-[11px] font-mono text-zinc-700">2. {viewingDossier.pref2_committee || "—"} ({viewingDossier.pref2_country || "—"})</p>
+              <p className="text-[11px] font-mono text-zinc-700">3. {viewingDossier.pref3_committee || "—"} ({viewingDossier.pref3_country || "—"})</p>
+            </div>
+            <div>
+              <span className="text-[9px] font-mono uppercase text-zinc-500 block mb-1">Final Confirmed Allocation</span>
+              <p className="font-bold text-sm text-zinc-900 font-mono">{viewingDossier.allocatedCommittee || "Awaiting Allotment"}</p>
+              <p className="text-xs text-zinc-700 mt-0.5">{viewingDossier.allocatedCountry || "General Delegate"}</p>
+            </div>
+          </div>
+
+          {/* Check-In Stations */}
+          <div className="border border-zinc-300 rounded-lg p-3 mb-4 text-xs">
+            <span className="text-[9px] font-mono uppercase text-zinc-500 block mb-2">Registration Desk Check-In Tracker</span>
+            <div className="grid grid-cols-3 gap-2 text-center font-mono text-[11px]">
+              <div className="border border-zinc-300 p-2 rounded">
+                <span className="block font-bold">DAY 1</span>
+                <span className="block text-zinc-500 mt-1">[ &nbsp; &nbsp; ] Initial Check</span>
+              </div>
+              <div className="border border-zinc-300 p-2 rounded">
+                <span className="block font-bold">DAY 2</span>
+                <span className="block text-zinc-500 mt-1">[ &nbsp; &nbsp; ] Committee Check</span>
+              </div>
+              <div className="border border-zinc-300 p-2 rounded">
+                <span className="block font-bold">DAY 3</span>
+                <span className="block text-zinc-500 mt-1">[ &nbsp; &nbsp; ] Plenary &amp; Kit</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Verification & Officer Sign-off */}
+          <div className="flex items-center justify-between pt-4 border-t border-zinc-300 text-[10px] font-mono">
+            <div>
+              <p className="text-zinc-500">UTR / Ref: {viewingDossier.paymentUTR || "OFFLINE"}</p>
+              <p className="text-zinc-500">Payment Status: {viewingDossier.paymentStatus || "PENDING"}</p>
+            </div>
+            <div className="text-right">
+              <p className="border-b border-zinc-400 w-44 mb-1"></p>
+              <p className="text-zinc-600 uppercase">Secretariat Desk Officer Signature</p>
             </div>
           </div>
         </div>

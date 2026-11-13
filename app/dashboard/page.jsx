@@ -654,7 +654,7 @@ export default function DelegateDashboard() {
   if (!user) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col justify-between selection:bg-white selection:text-black">
-        <Navbar />
+        <div className="no-print"><Navbar /></div>
         <div className="flex-1 flex items-center justify-center p-4 pt-28">
           <div className="w-full max-w-md p-8 rounded-2xl border border-white/15 bg-[#080808] text-center space-y-6">
             <div className="w-12 h-12 rounded-xl border border-white/20 bg-white/[0.04] flex items-center justify-center mx-auto text-white">
@@ -679,16 +679,16 @@ export default function DelegateDashboard() {
             </Link>
           </div>
         </div>
-        <Footer />
+        <div className="no-print"><Footer /></div>
       </div>
     );
   }
 
   return (
       <div id="dashboard-root" className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black flex flex-col justify-between">
-        <Navbar />
+        <div className="no-print"><Navbar /></div>
 
-          <main id="dashboard-main" className="max-w-4xl w-full mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-5 flex-1">
+          <main id="dashboard-main" className="no-print max-w-4xl w-full mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-5 flex-1">
 
             {/* 1. IDENTITY & PROFILE CARD */}
             <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#080808] p-4 sm:p-7 shadow-sm">
@@ -1536,6 +1536,171 @@ export default function DelegateDashboard() {
           </div>
         )}
         </main>
+
+        {/* =========================================================================
+            OFFICIAL EMBASSY-GRADE PRINTABLE DELEGATE CREDENTIAL & PASS (PRINT ONLY)
+            ========================================================================= */}
+        {delegateRecord && (
+          <div className="print-only w-full max-w-3xl mx-auto p-8 bg-white text-zinc-950 font-sans border-4 border-zinc-900 rounded-2xl my-4">
+            {/* Decorative Diplomatic Top Border */}
+            <div className="flex items-center justify-between border-b-2 border-zinc-900 pb-4 mb-5">
+              <div className="flex items-center gap-3.5">
+                <img
+                  src="https://resolvemun.in/images/Logo.svg"
+                  alt="Resolve MUN Emblem"
+                  className="w-14 h-14 object-contain"
+                />
+                <div>
+                  <h1 className="text-xl font-black uppercase tracking-tight text-zinc-900 font-serif leading-none">
+                    RESOLVE MODEL UNITED NATIONS 2.0
+                  </h1>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-600 mt-1">
+                    Official Admission Credential &amp; Security Pass
+                  </p>
+                  <p className="text-[9px] font-serif italic text-zinc-500 mt-0.5">
+                    Resolve · Reform · Reconcile
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="inline-block px-3 py-1 bg-zinc-900 text-white text-[10px] font-mono font-bold uppercase rounded tracking-wider">
+                  {(delegateRecord.roleType || "DELEGATE").toUpperCase()} PASS
+                </div>
+                <p className="text-[11px] font-mono font-bold text-zinc-800 mt-1">
+                  {delegateRecord.delegateId || delegateRecord.regId || "RM26-CONFIRMED"}
+                </p>
+              </div>
+            </div>
+
+            {/* Delegate Identification Core Card */}
+            <div className="border border-zinc-300 rounded-xl p-5 bg-zinc-50 mb-5">
+              <div className="flex flex-row justify-between items-start gap-4">
+                <div className="space-y-3 flex-1">
+                  <div>
+                    <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 block">
+                      Accredited Delegate
+                    </span>
+                    <h2 className="text-2xl font-black text-zinc-950 tracking-tight font-serif mt-0.5">
+                      {delegateRecord.fullName || user.displayName || "Delegate"}
+                    </h2>
+                    <p className="text-xs font-medium text-zinc-700 mt-0.5">
+                      {delegateRecord.institution || "Independent Institution"} · Grade {delegateRecord.grade || "N/A"}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-200">
+                    <div>
+                      <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 block">
+                        Assigned Committee
+                      </span>
+                      <p className="text-sm font-bold text-zinc-900 font-mono mt-0.5">
+                        {delegateRecord.allocatedCommittee || "Awaiting Allotment"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 block">
+                        Country / Portfolio
+                      </span>
+                      <p className="text-sm font-bold text-zinc-900 mt-0.5">
+                        {delegateRecord.allocatedCountry || "General Delegate"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security QR Code */}
+                <div className="flex flex-col items-center bg-white p-2.5 rounded-lg border border-zinc-300 shrink-0">
+                  <img
+                    src={`https://quickchart.io/qr?size=180&text=${encodeURIComponent(
+                      "RESOLVE_PASS:" +
+                        (delegateRecord.roleType || "DELEGATE") +
+                        ":" +
+                        (delegateRecord.delegateId || delegateRecord.regId) +
+                        ":" +
+                        (delegateRecord.email || "")
+                    )}`}
+                    alt="Security Access QR"
+                    className="w-28 h-28 object-contain"
+                  />
+                  <span className="text-[8px] font-mono uppercase tracking-widest text-zinc-500 mt-1">
+                    Gate Scan Code
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Conference Logistics & Session Information */}
+            <div className="grid grid-cols-3 gap-3 border border-zinc-200 rounded-lg p-3.5 mb-5 text-center font-sans text-xs">
+              <div className="border-r border-zinc-200">
+                <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 block">
+                  Conference Dates
+                </span>
+                <p className="font-bold text-zinc-900 mt-0.5">
+                  {systemSettings.conferenceDates || "25, 26, 27 DEC 2026"}
+                </p>
+              </div>
+              <div className="border-r border-zinc-200">
+                <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 block">
+                  Conference Venue
+                </span>
+                <p className="font-bold text-zinc-900 mt-0.5 truncate px-1">
+                  {systemSettings.venueShort || "Hyderabad, Telangana"}
+                </p>
+              </div>
+              <div>
+                <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 block">
+                  Reporting Protocol
+                </span>
+                <p className="font-bold text-zinc-900 mt-0.5">
+                  08:00 AM IST • Desk 1
+                </p>
+              </div>
+            </div>
+
+            {/* Security Barcode & Status Banner */}
+            <div className="flex items-center justify-between border-t border-b border-zinc-200 py-3 mb-5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                <span className="font-mono text-[11px] font-bold text-zinc-900 uppercase">
+                  Status: Verified &amp; Accredited
+                </span>
+                <span className="text-zinc-400 font-mono text-[10px]">
+                  · UTR: {delegateRecord.paymentUTR || "CONFIRMED"}
+                </span>
+              </div>
+              <div className="font-mono text-[10px] text-zinc-500 tracking-widest">
+                ADMIT ONE DELEGATE · NON-TRANSFERABLE
+              </div>
+            </div>
+
+            {/* Mandatory Delegate Instructions */}
+            <div className="bg-zinc-100 rounded-lg p-4 mb-4 text-[11px] space-y-1.5 text-zinc-700">
+              <p className="font-bold uppercase tracking-wider text-zinc-900 font-mono text-[10px]">
+                Official Delegate Instructions &amp; Admission Protocol:
+              </p>
+              <ol className="list-decimal list-inside space-y-1 text-[10px] leading-relaxed">
+                <li>Present this original credential (printed copy or digital PDF) at the registration desk on Day 1 for badge collection.</li>
+                <li>Carry a valid government-issued photo ID (Aadhaar / Passport) or current school/college photo ID card for verification.</li>
+                <li>Dress Code: Formal Western Business Attire (Blazers/Suits/Ties) or Formal Traditional Indian Attire is mandatory across all committee sessions.</li>
+                <li>This pass grants admission solely to the designated committee chamber and all official socials &amp; high tea receptions.</li>
+              </ol>
+            </div>
+
+            {/* Secretariat Seal & Sign-off Footer */}
+            <div className="flex items-center justify-between text-[9px] font-mono text-zinc-500 pt-2 border-t border-zinc-200">
+              <div>
+                <p className="font-bold text-zinc-800 uppercase">Executive Secretariat Directorate</p>
+                <p>Resolve Model United Nations 2.0 • Hyderabad</p>
+              </div>
+              <div className="text-right">
+                <p>Security Hash: RM26-{String(delegateRecord.delegateId || delegateRecord.regId).slice(-6).toUpperCase()}-ACCREDITED</p>
+                <p>Official Digital Pass • Validated for Sessions I, II, III</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+
 
           <Footer />
       </div>
