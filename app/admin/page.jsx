@@ -927,18 +927,39 @@ export default function SuperAdminPage() {
     }
   };
 
-  // Delegate Mutation: Verify Payment (Optimistic)
+  // Delegate Mutation: Verify Payment (Optimistic & Resilient)
   const handleVerifyPayment = async (regId, email, newStatus = "VERIFIED") => {
-    // 1. Optimistic update
+    const isVer = newStatus === "VERIFIED";
+    const statusVal = isVer ? "VERIFIED" : "FAILED";
+    const verifiedVal = isVer ? "verified" : "Pending";
+
+    const matchesDel = (d) => {
+      if (!d) return false;
+      if (regId && (d.regId === regId || d.id === regId || d.delegateId === regId)) return true;
+      if (email && d.email && d.email.trim().toLowerCase() === email.trim().toLowerCase()) return true;
+      return false;
+    };
+
+    // 1. Optimistic update across all registrations
     setRegistrations((prev) =>
       prev.map((d) =>
-        d.regId === regId ? { ...d, paymentStatus: newStatus, paymentVerified: newStatus === "VERIFIED" ? "verified" : "Pending" } : d
+        matchesDel(d)
+          ? { ...d, paymentStatus: statusVal, paymentVerified: verifiedVal }
+          : d
       )
     );
-    notify(`Payment marked as ${newStatus} for ${regId}`);
+
+    // 2. Also update viewingDelegate if open
+    setViewingDelegate((prev) =>
+      prev && matchesDel(prev)
+        ? { ...prev, paymentStatus: statusVal, paymentVerified: verifiedVal }
+        : prev
+    );
+
+    notify(`Payment marked as ${statusVal} for ${regId || email}`);
 
     try {
-      await fetch("/api/admin/", {
+      const res = await fetch("/api/admin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -946,9 +967,19 @@ export default function SuperAdminPage() {
           action: "ADMIN_VERIFY_PAYMENT",
           regId,
           email,
-          paymentStatus: newStatus,
+          paymentStatus: statusVal,
         }),
       });
+      const data = await res.json();
+      if (data && data.status === "success") {
+        setRegistrations((prev) =>
+          prev.map((d) =>
+            matchesDel(d)
+              ? { ...d, paymentStatus: statusVal, paymentVerified: verifiedVal }
+              : d
+          )
+        );
+      }
     } catch (err) {
       notify("Failed to verify payment in cloud", "error");
     }

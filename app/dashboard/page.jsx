@@ -15,7 +15,8 @@ import EngravedTicket from "@/components/ui/engraved-ticket";
 import {
   CheckCircle2, Clock, Lock, ArrowRight,
   RefreshCw, ShieldCheck, ChevronRight,
-  Globe, ExternalLink, Trash2, Printer
+  Globe, ExternalLink, Trash2, Printer,
+  Pencil, MapPin, Award, X, Save, Bus
 } from "lucide-react";
 
 const DRAFT_DEFINITIONS = [
@@ -285,6 +286,96 @@ export default function DelegateDashboard() {
   const [ticketFormat, setTicketFormat] = useState("badge");
   const [drafts, setDrafts] = useState([]);
 
+  // Delegate Self-Edit Modal State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editSuccessMsg, setEditSuccessMsg] = useState("");
+
+  const openEditProfileModal = () => {
+    if (!delegateRecord) return;
+    setEditForm({
+      fullName: delegateRecord.fullName || "",
+      phone: delegateRecord.phone || "",
+      institution: delegateRecord.institution || "",
+      grade: delegateRecord.grade || "",
+      dob: delegateRecord.dob || "",
+      address: delegateRecord.address || "",
+      transport: delegateRecord.transport || "No",
+      experience: delegateRecord.experience || "",
+      pref1_committee: delegateRecord.pref1_committee || "",
+      pref1_country: delegateRecord.pref1_country || "",
+      pref2_committee: delegateRecord.pref2_committee || "",
+      pref2_country: delegateRecord.pref2_country || "",
+      pref3_committee: delegateRecord.pref3_committee || "",
+      pref3_country: delegateRecord.pref3_country || "",
+    });
+    setEditSuccessMsg("");
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setEditSaving(true);
+    setEditSuccessMsg("");
+
+    try {
+      const targetEmail = (delegateRecord?.email || user?.email || "").trim().toLowerCase();
+      const targetId = delegateRecord?.regId || delegateRecord?.delegateId || "";
+
+      const res = await fetch("/api/delegate/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...editForm,
+          email: targetEmail,
+          regId: targetId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data && (data.success || data.found !== false)) {
+        const updatedPref1 = editForm.pref1_committee
+          ? `${editForm.pref1_committee}${editForm.pref1_country ? ' · ' + editForm.pref1_country : ''}`
+          : delegateRecord.pref1;
+        const updatedPref2 = editForm.pref2_committee
+          ? `${editForm.pref2_committee}${editForm.pref2_country ? ' · ' + editForm.pref2_country : ''}`
+          : delegateRecord.pref2;
+        const updatedPref3 = editForm.pref3_committee
+          ? `${editForm.pref3_committee}${editForm.pref3_country ? ' · ' + editForm.pref3_country : ''}`
+          : delegateRecord.pref3;
+
+        const updated = {
+          ...delegateRecord,
+          ...editForm,
+          pref1: updatedPref1,
+          pref2: updatedPref2,
+          pref3: updatedPref3,
+        };
+
+        setDelegateRecord(updated);
+
+        // Update session storage cache
+        try {
+          const cacheKey = `resolve_delegate_cache_${targetEmail}`;
+          sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: updated }));
+        } catch (_) {}
+
+        setEditSuccessMsg("Your details have been updated successfully!");
+        setTimeout(() => {
+          setIsEditingProfile(false);
+          setEditSuccessMsg("");
+        }, 1200);
+      } else {
+        alert("Failed to save changes: " + (data.message || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Error saving changes. Please check your internet connection.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   useEffect(() => {
     setDrafts(inspectDrafts(false));
 
@@ -372,6 +463,16 @@ export default function DelegateDashboard() {
           email: record.email || email,
           phone: record.phone || "",
           grade: record.grade || record["Grade"] || "",
+          dob: record.dob || record["DOB"] || record["Date of Birth"] || "",
+          address: record.address || record.residential_address || record.residentialAddress || record["Address"] || "",
+          transport: record.transport || record.transport_needed || record.transportNeeded || record["Transport"] || "No",
+          experience: record.experience || record.mun_experience || record.munExperience || record["Experience"] || "",
+          pref1_committee: record.pref1_committee || record.committeePref1 || "",
+          pref1_country: record.pref1_country || record.pref1_portfolio1 || "",
+          pref2_committee: record.pref2_committee || record.committeePref2 || "",
+          pref2_country: record.pref2_country || record.pref2_portfolio1 || "",
+          pref3_committee: record.pref3_committee || record.committeePref3 || "",
+          pref3_country: record.pref3_country || record.pref3_portfolio1 || "",
           paymentUTR,
           paymentStatus: isPaymentOk ? "VERIFIED" : "PENDING_VERIFICATION",
           status,
@@ -407,15 +508,15 @@ export default function DelegateDashboard() {
           checkInDay1: Boolean(record.checkInDay1 || record.check_in_day1),
           checkInDay2: Boolean(record.checkInDay2 || record.check_in_day2),
           checkInDay3: Boolean(record.checkInDay3 || record.check_in_day3),
-          pref1: record.pref1_committee
+          pref1: record.pref1 || (record.pref1_committee
             ? `${record.pref1_committee} · ${record.pref1_country || "General"}`
-            : record.committeePref1 || record.pref1 || null,
-          pref2: record.pref2_committee
+            : record.committeePref1 || null),
+          pref2: record.pref2 || (record.pref2_committee
             ? `${record.pref2_committee} · ${record.pref2_country || "General"}`
-            : record.committeePref2 || record.pref2 || null,
-          pref3: record.pref3_committee
+            : record.committeePref2 || null),
+          pref3: record.pref3 || (record.pref3_committee
             ? `${record.pref3_committee} · ${record.pref3_country || "General"}`
-            : record.committeePref3 || record.pref3 || null,
+            : record.committeePref3 || null),
         });
       } else {
         const isLocallyRegistered =
@@ -760,8 +861,8 @@ export default function DelegateDashboard() {
             {isReg && (
               <div className="space-y-5">
                 {/* REGISTRATION DETAILS */}
-                <section className="rounded-2xl border border-white/15 bg-[#080808] p-6 sm:p-7 shadow-sm space-y-5">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <section className="rounded-2xl border border-white/15 bg-[#080808] p-6 sm:p-7 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-3">
                     <div>
                       <p className="text-[10px] uppercase font-mono tracking-wider font-semibold text-white/40">
                         YOUR REGISTRATION
@@ -770,38 +871,118 @@ export default function DelegateDashboard() {
                         Registration Overview
                       </h3>
                     </div>
-                    <span className="text-xs font-mono text-white/50">
-                      {delegateRecord.delegationCode && delegateRecord.delegationCode !== "Independent"
-                        ? `Team: ${delegateRecord.delegationCode}`
-                        : "Individual Registration"}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono text-white/50 hidden sm:inline">
+                        {delegateRecord.delegationCode && delegateRecord.delegationCode !== "Independent"
+                          ? `Team: ${delegateRecord.delegationCode}`
+                          : "Individual Registration"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={openEditProfileModal}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-colors cursor-pointer shadow-sm"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Edit Details</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Committee Preferences */}
-                  {(delegateRecord.pref1 || delegateRecord.pref2 || delegateRecord.pref3) && (
-                    <div>
-                      <p className="text-xs font-mono text-white/40 uppercase tracking-wider mb-2 font-semibold">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-mono text-white/40 uppercase tracking-wider font-semibold">
                         Submitted Committee Choices
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        {[1, 2, 3].map((n) => (
-                          <div key={n} className="p-3.5 rounded-xl bg-[#090909] border border-white/10">
-                            <span className="text-[10px] font-mono text-white/40 block font-semibold">Choice {n}</span>
+                      <button
+                        type="button"
+                        onClick={openEditProfileModal}
+                        className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Pencil className="w-3 h-3" /> Change Choices
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {[1, 2, 3].map((n) => {
+                        const comm = delegateRecord[`pref${n}_committee`];
+                        const ctry = delegateRecord[`pref${n}_country`];
+                        const displayVal = delegateRecord[`pref${n}`] || (comm ? `${comm}${ctry ? ' · ' + ctry : ''}` : "Not specified");
+                        return (
+                          <div key={n} className="p-3.5 rounded-xl bg-[#090909] border border-white/10 space-y-1">
+                            <span className="text-[10px] font-mono text-white/40 block font-semibold uppercase">Choice {n}</span>
                             <span className="text-xs sm:text-sm font-semibold text-white mt-1 block leading-snug truncate">
-                              {delegateRecord[`pref${n}`] || "—"}
+                              {displayVal}
                             </span>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Data Grid */}
+                  {/* Core Data Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     <DataTile label="Institution" value={delegateRecord.institution || "Individual"} />
-                    <DataTile label="Grade / Year" value={delegateRecord.grade || "—"} />
+                    <DataTile label="Grade / Class" value={delegateRecord.grade || "—"} />
+                    <DataTile label="Date of Birth" value={delegateRecord.dob || "—"} />
+                    <DataTile
+                      label="Transportation"
+                      value={
+                        delegateRecord.transport && String(delegateRecord.transport).toLowerCase().includes("yes")
+                          ? "Yes (Opted In)"
+                          : "No (Self Commute)"
+                      }
+                    />
                     <DataTile label="Assigned Committee" value={isAllotted ? delegateRecord.allocatedCommittee : "Awaiting Allotment"} />
                     <DataTile label="Country / Portfolio" value={isAllotted ? (delegateRecord.allocatedCountry || "Delegate") : "Awaiting Allotment"} />
+                    <DataTile label="Contact Phone" value={delegateRecord.phone || "—"} />
+                    <DataTile label="Registered Email" value={delegateRecord.email || user?.email || "—"} />
+                  </div>
+
+                  {/* Address & MUN Experience Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Residential Address */}
+                    <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 font-semibold">
+                            Full Residential Address
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={openEditProfileModal}
+                          className="text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <p className="text-xs text-zinc-300 leading-relaxed font-sans">
+                        {delegateRecord.address || "No residential address provided yet. Click 'Edit Details' to add your address."}
+                      </p>
+                    </div>
+
+                    {/* MUN Experience */}
+                    <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Award className="w-3.5 h-3.5 text-zinc-400" />
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 font-semibold">
+                            MUN Experience
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={openEditProfileModal}
+                          className="text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <p className="text-xs text-zinc-300 leading-relaxed font-sans line-clamp-3">
+                        {delegateRecord.experience || "First Timer / N/A"}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Payment Verification Box */}
@@ -813,13 +994,13 @@ export default function DelegateDashboard() {
                       <div className="flex items-center gap-2">
                         {isPaid ? (
                           <>
-                            <ShieldCheck className="w-4 h-4 text-white" />
-                            <span className="text-xs sm:text-sm font-bold text-white font-mono">Payment Verified</span>
+                            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                            <span className="text-xs sm:text-sm font-bold text-emerald-300 font-mono">Payment Verified</span>
                           </>
                         ) : (
                           <>
-                            <Clock className="w-4 h-4 text-white/50 animate-pulse" />
-                            <span className="text-xs sm:text-sm font-bold text-white/80 font-mono">Verification in Progress</span>
+                            <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                            <span className="text-xs sm:text-sm font-bold text-amber-300 font-mono">Verification in Progress</span>
                           </>
                         )}
                       </div>
@@ -831,7 +1012,7 @@ export default function DelegateDashboard() {
                     </div>
 
                     {isPaid && (
-                      <span className="text-xs font-mono font-semibold uppercase tracking-wider text-white self-start sm:self-auto">
+                      <span className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400 self-start sm:self-auto">
                         Seat Confirmed
                       </span>
                     )}
@@ -1075,7 +1256,286 @@ export default function DelegateDashboard() {
                 </button>
               </div>
             </section>
-          </main>
+                  {/* =========================================================================
+            MODAL: DELEGATE SELF-EDIT DETAILS (ALL FIELDS MUTABLE)
+            ========================================================================= */}
+        {isEditingProfile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+            <div className="relative w-full max-w-2xl bg-[#0d0d0d] border border-white/20 rounded-2xl p-5 sm:p-7 shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto">
+              
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider font-semibold">
+                    Delegate Dashboard · Profile Management
+                  </span>
+                  <h3 className="text-lg font-bold text-white mt-0.5">
+                    Edit Registration &amp; Preferences
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)}
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {editSuccessMsg && (
+                <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>{editSuccessMsg}</span>
+                </div>
+              )}
+
+              {/* Edit Form */}
+              <form onSubmit={handleSaveProfile} className="space-y-5 text-left">
+                
+                {/* 1. Personal & Academic */}
+                <div>
+                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                    1. Personal &amp; Academic Details
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        value={editForm.fullName || ""}
+                        onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                        required
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Contact Phone (WhatsApp)</label>
+                      <input
+                        type="tel"
+                        value={editForm.phone || ""}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        required
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">School / College / Institution</label>
+                      <input
+                        type="text"
+                        value={editForm.institution || ""}
+                        onChange={(e) => setEditForm({ ...editForm, institution: e.target.value })}
+                        required
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Grade / Class / Year</label>
+                      <input
+                        type="text"
+                        value={editForm.grade || ""}
+                        onChange={(e) => setEditForm({ ...editForm, grade: e.target.value })}
+                        placeholder="e.g. 10th / 12th / 2nd Year"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Logistics & Transport */}
+                <div className="pt-2 border-t border-white/10">
+                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                    2. Logistics &amp; Transport
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Date of Birth</label>
+                      <input
+                        type="text"
+                        value={editForm.dob || ""}
+                        onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })}
+                        placeholder="DD/MM/YYYY"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Do You Need Transportation?</label>
+                      <select
+                        value={editForm.transport || "No"}
+                        onChange={(e) => setEditForm({ ...editForm, transport: e.target.value })}
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                      >
+                        <option value="No">No — Self Commute</option>
+                        <option value="Yes">Yes — Transport Required</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-mono text-zinc-400 block mb-1">
+                      Full Residential Address (for route mapping)
+                    </label>
+                    <textarea
+                      value={editForm.address || ""}
+                      onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                      rows={2}
+                      placeholder="Enter your complete house address, area, city, pincode"
+                      className="w-full px-3 py-2 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. MUN Experience */}
+                <div className="pt-2 border-t border-white/10">
+                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                    3. Prior MUN Experience
+                  </h4>
+                  <textarea
+                    value={editForm.experience || ""}
+                    onChange={(e) => setEditForm({ ...editForm, experience: e.target.value })}
+                    rows={3}
+                    placeholder="List past MUNs, committees, awards, or enter 'First Timer / N/A'"
+                    className="w-full px-3 py-2 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                {/* 4. Committee & Portfolio Preferences */}
+                <div className="pt-2 border-t border-white/10">
+                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                    4. Committee &amp; Country Preferences
+                  </h4>
+                  <div className="space-y-3">
+                    
+                    {/* Choice 1 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                          Committee Choice 1
+                        </label>
+                        <select
+                          value={editForm.pref1_committee || ""}
+                          onChange={(e) => setEditForm({ ...editForm, pref1_committee: e.target.value })}
+                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        >
+                          <option value="">Select Committee 1</option>
+                          <option value="UNCSW">UNCSW</option>
+                          <option value="UNHRC">UNHRC</option>
+                          <option value="DISEC">DISEC</option>
+                          <option value="IP">IP (International Press)</option>
+                          <option value="Lok Sabha">Lok Sabha</option>
+                          <option value="Marvel">Marvel</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                          Country / Portfolio Preference
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.pref1_country || ""}
+                          onChange={(e) => setEditForm({ ...editForm, pref1_country: e.target.value })}
+                          placeholder="e.g. USA / India / Journalist"
+                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Choice 2 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                          Committee Choice 2
+                        </label>
+                        <select
+                          value={editForm.pref2_committee || ""}
+                          onChange={(e) => setEditForm({ ...editForm, pref2_committee: e.target.value })}
+                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        >
+                          <option value="">Select Committee 2</option>
+                          <option value="UNCSW">UNCSW</option>
+                          <option value="UNHRC">UNHRC</option>
+                          <option value="DISEC">DISEC</option>
+                          <option value="IP">IP (International Press)</option>
+                          <option value="Lok Sabha">Lok Sabha</option>
+                          <option value="Marvel">Marvel</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                          Country / Portfolio Preference
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.pref2_country || ""}
+                          onChange={(e) => setEditForm({ ...editForm, pref2_country: e.target.value })}
+                          placeholder="e.g. France / UK / Photographer"
+                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Choice 3 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                          Committee Choice 3
+                        </label>
+                        <select
+                          value={editForm.pref3_committee || ""}
+                          onChange={(e) => setEditForm({ ...editForm, pref3_committee: e.target.value })}
+                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        >
+                          <option value="">Select Committee 3</option>
+                          <option value="UNCSW">UNCSW</option>
+                          <option value="UNHRC">UNHRC</option>
+                          <option value="DISEC">DISEC</option>
+                          <option value="IP">IP (International Press)</option>
+                          <option value="Lok Sabha">Lok Sabha</option>
+                          <option value="Marvel">Marvel</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                          Country / Portfolio Preference
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.pref3_country || ""}
+                          onChange={(e) => setEditForm({ ...editForm, pref3_country: e.target.value })}
+                          placeholder="e.g. Germany / Russia"
+                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Form Footer */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(false)}
+                    disabled={editSaving}
+                    className="px-4 py-2 rounded-lg border border-white/15 text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editSaving}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-white text-black font-bold text-xs hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editSaving ? "Saving Changes..." : "Save All Changes"}</span>
+                  </button>
+                </div>
+
+              </form>
+
+            </div>
+          </div>
+        )}
+        </main>
 
           <Footer />
       </div>

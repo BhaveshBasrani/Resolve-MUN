@@ -127,14 +127,14 @@ export async function GET(request) {
             paymentUTR: d.payment_utr || '',
             paymentScreenshotURL: d.payment_screenshot_url || '',
             paymentStatus: (() => {
-              const hasProof = Boolean(d.payment_screenshot_url && String(d.payment_screenshot_url).trim().startsWith('http'));
-              const isVer = (d.payment_status || 'PENDING_VERIFICATION').toUpperCase() === 'VERIFIED';
-              return (isVer && hasProof) ? 'VERIFIED' : 'PENDING';
+              const raw = String(d.payment_status || d.paymentStatus || d.status || '').toUpperCase();
+              if (raw === 'VERIFIED' || raw.includes('VERIF')) return 'VERIFIED';
+              return 'PENDING';
             })(),
             paymentVerified: (() => {
-              const hasProof = Boolean(d.payment_screenshot_url && String(d.payment_screenshot_url).trim().startsWith('http'));
-              const isVer = (d.payment_status || '').toUpperCase() === 'VERIFIED';
-              return (isVer && hasProof) ? 'verified' : 'Pending';
+              const raw = String(d.payment_status || d.paymentStatus || d.status || '').toUpperCase();
+              if (raw === 'VERIFIED' || raw.includes('VERIF')) return 'verified';
+              return 'Pending';
             })(),
             status: d.status || (d.allocated_committee ? 'ALLOTTED' : 'Confirmed'),
             checkInDay1: d.check_in_day1 || 'Absent',
@@ -324,16 +324,14 @@ export async function GET(request) {
       paymentUTR: r.PaymentUTR || r.paymentUTR || r.utr || '',
       paymentScreenshotURL: r.PaymentScreenshotURL || r.paymentScreenshotURL || r.payment_screenshot_url || r.Payment_Screenshot_URL || r.PaymentScreenshot || r.Screenshot || r.DriveURL || r.driveUrl || r.payment_screenshot_link || '',
       paymentStatus: (() => {
-        const screenshotUrl = r.PaymentScreenshotURL || r.paymentScreenshotURL || r.payment_screenshot_url || r.Payment_Screenshot_URL || r.PaymentScreenshot || r.Screenshot || r.DriveURL || r.driveUrl || '';
-        const hasProof = Boolean(screenshotUrl && String(screenshotUrl).trim().startsWith('http'));
-        const rawStatus = (r.PaymentStatus || r.paymentStatus || '').toUpperCase();
-        return (rawStatus === 'VERIFIED' && hasProof) ? 'VERIFIED' : 'PENDING';
+        const raw = String(r.PaymentStatus || r.paymentStatus || r.Status || r.status || '').toUpperCase();
+        if (raw === 'VERIFIED' || raw.includes('VERIF')) return 'VERIFIED';
+        return 'PENDING';
       })(),
       paymentVerified: (() => {
-        const screenshotUrl = r.PaymentScreenshotURL || r.paymentScreenshotURL || r.payment_screenshot_url || r.Payment_Screenshot_URL || r.PaymentScreenshot || r.Screenshot || r.DriveURL || r.driveUrl || '';
-        const hasProof = Boolean(screenshotUrl && String(screenshotUrl).trim().startsWith('http'));
-        const rawStatus = (r.PaymentStatus || r.paymentStatus || '').toUpperCase();
-        return (rawStatus === 'VERIFIED' && hasProof) ? 'verified' : 'Pending';
+        const raw = String(r.PaymentStatus || r.paymentStatus || r.Status || r.status || '').toUpperCase();
+        if (raw === 'VERIFIED' || raw.includes('VERIF')) return 'verified';
+        return 'Pending';
       })(),
       status: r.Status || r.status || 'Confirmed',
       checkInDay1: r.CheckInDay1 || r.checkInDay1 || 'Absent',
@@ -1519,27 +1517,49 @@ export async function POST(request) {
       const targetId = (body.regId || body.delegateId || body.id || '').trim();
       const targetEmail = (body.email || '').trim().toLowerCase();
       const newStatus = (body.paymentStatus || 'VERIFIED').toUpperCase();
+      const isVer = newStatus === 'VERIFIED';
+      const statusVal = isVer ? 'VERIFIED' : 'FAILED';
+      const verifiedVal = isVer ? 'verified' : 'Pending';
 
-      const memoryKey = targetId || targetEmail;
-      if (memoryKey) {
-        const existing = memoryUpdatedDelegates.get(memoryKey) || {};
-        memoryUpdatedDelegates.set(memoryKey, {
+      adminDataCache = null;
+
+      if (targetId) {
+        const existing = memoryUpdatedDelegates.get(targetId) || {};
+        memoryUpdatedDelegates.set(targetId, {
           ...existing,
-          paymentStatus: newStatus,
-          paymentVerified: newStatus === 'VERIFIED' ? 'verified' : 'Pending',
+          paymentStatus: statusVal,
+          paymentVerified: verifiedVal,
+        });
+      }
+      if (targetEmail) {
+        const existing = memoryUpdatedDelegates.get(targetEmail) || {};
+        memoryUpdatedDelegates.set(targetEmail, {
+          ...existing,
+          paymentStatus: statusVal,
+          paymentVerified: verifiedVal,
         });
       }
 
       if (supabase) {
         try {
-          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q = supabase.from('delegate_applications').update({
-            payment_status: newStatus === 'VERIFIED' ? 'VERIFIED' : 'PENDING_VERIFICATION',
+          const updatePayload = {
+            payment_status: isVer ? 'VERIFIED' : 'PENDING_VERIFICATION',
             updated_at: new Date().toISOString(),
-          });
-          if (isUuid) q = q.eq('id', targetId);
-          else if (targetEmail) q = q.ilike('email', targetEmail);
-          await q;
+          };
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+
+          let filterStr = '';
+          if (isUuid) filterStr = `id.eq.${targetId}`;
+          else if (targetId && targetEmail) filterStr = `delegate_id.eq.${targetId},email.ilike.${targetEmail}`;
+          else if (targetId) filterStr = `delegate_id.eq.${targetId},id.eq.${targetId}`;
+          else if (targetEmail) filterStr = `email.ilike.${targetEmail}`;
+
+          if (filterStr) {
+            await Promise.allSettled([
+              supabase.from('delegate_applications').update(updatePayload).or(filterStr),
+              supabase.from('delegates').update(updatePayload).or(filterStr),
+            ]);
+          }
         } catch (e) {
           console.warn("[Supabase] Payment verify notice:", e.message);
         }
@@ -1553,7 +1573,7 @@ export async function POST(request) {
 
       return NextResponse.json({
         status: 'success',
-        message: `Payment status set to ${newStatus}`,
+        message: `Payment status set to ${statusVal}`,
       });
     }
 

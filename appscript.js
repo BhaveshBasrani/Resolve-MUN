@@ -297,6 +297,11 @@ function doPost(e) {
         result = adminUpdateDelegateStatus(payload);
         break;
 
+      case "UPDATE_DELEGATE":
+      case "ADMIN_UPDATE_DELEGATE":
+        result = adminUpdateDelegateRecord(payload);
+        break;
+
       case "ADMIN_ALLOT_COMMITTEE":
       case "ADMIN_CONFIRM_ALLOTMENT":
         if (!isAuthorized(payload.adminKey)) return errorResponse("Unauthorized", 401);
@@ -1170,20 +1175,37 @@ function adminVerifyPaymentAndSendEmail(data) {
   const sheet = ss.getSheetByName("Registrations");
   if (!sheet) return { status: "error", message: "Registrations sheet not found" };
 
-  const regId = data.regId || data.id || data.delegateId;
-  let targetEmail = data.email || "";
+  const regId = String(data.regId || data.id || data.delegateId || "").trim();
+  let targetEmail = String(data.email || "").trim().toLowerCase();
   let targetName = data.fullName || data.name || "Delegate";
   let utr = data.utr || data.paymentUTR || "CONFIRMED-BY-SECRETARIAT";
   let amount = data.amount || "2500";
+  const newStatus = (data.paymentStatus || "VERIFIED").toUpperCase() === "VERIFIED" ? "Verified" : "Pending";
 
   const rows = sheet.getDataRange().getValues();
   let found = false;
 
+  const headers = rows[0] || [];
+  let statusColIdx = 14; // Default to column 14 (1-based)
+  for (let c = 0; c < headers.length; c++) {
+    const h = String(headers[c] || "").trim().toLowerCase();
+    if (h === "status" || h === "paymentstatus" || h === "payment_status" || h === "paymentverified") {
+      statusColIdx = c + 1;
+      break;
+    }
+  }
+
   for (let i = 1; i < rows.length; i++) {
     const rowRegId = String(rows[i][1] || "").trim();
     const rowEmail = String(rows[i][4] || "").trim().toLowerCase();
-    if ((regId && rowRegId === regId) || (targetEmail && rowEmail === targetEmail.toLowerCase())) {
-      sheet.getRange(i + 1, 14).setValue("Verified");
+    let isMatch = false;
+
+    if (regId && rowRegId.toLowerCase() === regId.toLowerCase()) isMatch = true;
+    else if (targetEmail && rowEmail === targetEmail) isMatch = true;
+    else if (regId && rows[i].some(function(cell) { return String(cell).trim().toLowerCase() === regId.toLowerCase(); })) isMatch = true;
+
+    if (isMatch) {
+      sheet.getRange(i + 1, statusColIdx).setValue(newStatus);
       targetEmail = targetEmail || rows[i][4];
       targetName = (targetName === "Delegate" && rows[i][3]) ? rows[i][3] : targetName;
       utr = utr === "CONFIRMED-BY-SECRETARIAT" && rows[i][11] ? rows[i][11] : utr;
@@ -1192,11 +1214,86 @@ function adminVerifyPaymentAndSendEmail(data) {
     }
   }
 
-  if (targetEmail) {
-    sendPaymentVerifiedEmail(targetEmail, targetName, regId, amount, utr);
+  if (targetEmail && newStatus === "Verified") {
+    sendPaymentVerifiedEmail(targetEmail, targetName, regId || "RM26-DEL", amount, utr);
   }
 
-  return { status: "success", regId: regId, verified: true, emailSent: Boolean(targetEmail) };
+  return { status: "success", regId: regId, verified: newStatus === "Verified", emailSent: Boolean(targetEmail) };
+}
+
+function adminUpdateDelegateRecord(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Registrations");
+  if (!sheet) return { status: "error", message: "Registrations sheet not found" };
+
+  const regId = String(data.regId || data.id || data.delegateId || "").trim();
+  const targetEmail = String(data.email || "").trim().toLowerCase();
+
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { status: "error", message: "No data in sheet" };
+
+  const headers = rows[0].map(function(h) { return String(h || "").trim().toLowerCase(); });
+
+  function getCol(names) {
+    for (let j = 0; j < names.length; j++) {
+      const idx = headers.indexOf(names[j].toLowerCase());
+      if (idx !== -1) return idx + 1;
+    }
+    return -1;
+  }
+
+  const nameCol = getCol(["FullName", "Name", "Delegate Name"]);
+  const phoneCol = getCol(["Phone", "Contact Number", "Mobile"]);
+  const instCol = getCol(["Institution", "School", "College", "Institute"]);
+  const expCol = getCol(["Experience", "MUNExperience", "MUN_Experience"]);
+  const pref1Col = getCol(["CommitteePref1", "Preference 1", "Pref1"]);
+  const pref2Col = getCol(["CommitteePref2", "Preference 2", "Pref2"]);
+  const pref3Col = getCol(["CommitteePref3", "Preference 3", "Pref3"]);
+  const dobCol = getCol(["DOB", "Date of Birth", "BirthDate"]);
+  const addrCol = getCol(["ResidentialAddress", "Address"]);
+  const transportCol = getCol(["TransportNeeded", "Transport"]);
+  const gradeCol = getCol(["Grade", "Class"]);
+
+  let updatedRowIndex = -1;
+
+  for (let i = 1; i < rows.length; i++) {
+    const rowRegId = String(rows[i][1] || "").trim();
+    const rowEmail = String(rows[i][4] || "").trim().toLowerCase();
+    let isMatch = false;
+
+    if (regId && rowRegId.toLowerCase() === regId.toLowerCase()) isMatch = true;
+    else if (targetEmail && rowEmail === targetEmail) isMatch = true;
+    else if (regId && rows[i].some(function(cell) { return String(cell).trim().toLowerCase() === regId.toLowerCase(); })) isMatch = true;
+
+    if (isMatch) {
+      updatedRowIndex = i + 1;
+      const r = i + 1;
+      if (nameCol > 0 && (data.fullName || data.name)) sheet.getRange(r, nameCol).setValue(data.fullName || data.name);
+      if (phoneCol > 0 && data.phone) sheet.getRange(r, phoneCol).setValue(String(data.phone));
+      if (instCol > 0 && (data.institution || data.school)) sheet.getRange(r, instCol).setValue(data.institution || data.school);
+      if (expCol > 0 && (data.experience || data.munExperience)) sheet.getRange(r, expCol).setValue(data.experience || data.munExperience);
+      if (pref1Col > 0 && (data.pref1_committee || data.pref1_country)) {
+        sheet.getRange(r, pref1Col).setValue((data.pref1_committee || "") + (data.pref1_country ? " - " + data.pref1_country : ""));
+      }
+      if (pref2Col > 0 && (data.pref2_committee || data.pref2_country)) {
+        sheet.getRange(r, pref2Col).setValue((data.pref2_committee || "") + (data.pref2_country ? " - " + data.pref2_country : ""));
+      }
+      if (pref3Col > 0 && (data.pref3_committee || data.pref3_country)) {
+        sheet.getRange(r, pref3Col).setValue((data.pref3_committee || "") + (data.pref3_country ? " - " + data.pref3_country : ""));
+      }
+      if (dobCol > 0 && data.dob) sheet.getRange(r, dobCol).setValue(data.dob);
+      if (addrCol > 0 && data.address) sheet.getRange(r, addrCol).setValue(data.address);
+      if (transportCol > 0 && data.transport) sheet.getRange(r, transportCol).setValue(data.transport);
+      if (gradeCol > 0 && data.grade) sheet.getRange(r, gradeCol).setValue(data.grade);
+      break;
+    }
+  }
+
+  if (updatedRowIndex === -1) {
+    return { status: "not_found", message: "Delegate row not found in Registrations" };
+  }
+
+  return { status: "success", message: "Delegate updated successfully", row: updatedRowIndex };
 }
 
 /* -------------------------------------------------------------------------- */

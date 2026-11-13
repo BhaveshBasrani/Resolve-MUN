@@ -37,24 +37,25 @@ export async function GET(request) {
             ...delRow,
             id: delRow.id,
             _id: delRow.id,
-            regId: delRow.delegate_id || delRow.regId || delRow.id,
-            delegateId: delRow.delegate_id || delRow.regId || delRow.id,
+            regId: delRow.delegate_id || delRow.reg_id || delRow.regId || delRow.id,
+            delegateId: delRow.delegate_id || delRow.reg_id || delRow.regId || delRow.id,
             fullName: delRow.full_name || delRow.name || '',
             name: delRow.full_name || delRow.name || '',
             email: delRow.email || '',
             phone: delRow.phone || '',
             grade: delRow.grade || '',
-            institution: delRow.school || delRow.institute || 'Individual Delegate',
+            dob: delRow.dob || '',
+            institution: delRow.school || delRow.institute || delRow.institution || 'Individual Delegate',
             institute: delRow.school || delRow.institute || '',
-            status: delRow.status || 'Confirmed',
-            paymentStatus: delRow.payment_status || (delRow.payment_utr ? 'VERIFIED' : 'PENDING_VERIFICATION'),
-            paymentUTR: delRow.payment_utr || '',
-            allocatedCommittee: delRow.allocated_committee || '',
-            allocatedCountry: delRow.allocated_country || '',
-            delegationCode: delRow.delegation_code || 'Independent',
-            checkInDay1: delRow.check_in_day1 || 'Absent',
-            checkInDay2: delRow.check_in_day2 || 'Absent',
-            checkInDay3: delRow.check_in_day3 || 'Absent',
+            address: delRow.address || delRow.residential_address || '',
+            transport: delRow.transport || delRow.transport_needed || 'No',
+            experience: delRow.experience || delRow.mun_experience || '',
+            pref1_committee: delRow.pref1_committee || '',
+            pref1_country: delRow.pref1_country || delRow.pref1_portfolio1 || '',
+            pref2_committee: delRow.pref2_committee || '',
+            pref2_country: delRow.pref2_country || delRow.pref2_portfolio1 || '',
+            pref3_committee: delRow.pref3_committee || '',
+            pref3_country: delRow.pref3_country || delRow.pref3_portfolio1 || '',
             pref1: delRow.pref1_committee
               ? `${delRow.pref1_committee} · ${[delRow.pref1_portfolio1 || delRow.pref1_country, delRow.pref1_portfolio2].filter(Boolean).join(' / ') || 'General'}`
               : null,
@@ -64,6 +65,15 @@ export async function GET(request) {
             pref3: delRow.pref3_committee
               ? `${delRow.pref3_committee} · ${[delRow.pref3_portfolio1 || delRow.pref3_country, delRow.pref3_portfolio2].filter(Boolean).join(' / ') || 'General'}`
               : null,
+            status: delRow.status || 'Confirmed',
+            paymentStatus: String(delRow.payment_status || '').toUpperCase() === 'VERIFIED' ? 'VERIFIED' : (delRow.payment_utr ? 'VERIFIED' : 'PENDING_VERIFICATION'),
+            paymentUTR: delRow.payment_utr || '',
+            allocatedCommittee: delRow.allocated_committee || '',
+            allocatedCountry: delRow.allocated_country || '',
+            delegationCode: delRow.delegation_code || 'Independent',
+            checkInDay1: delRow.check_in_day1 || 'Absent',
+            checkInDay2: delRow.check_in_day2 || 'Absent',
+            checkInDay3: delRow.check_in_day3 || 'Absent',
             roleType: 'DELEGATE',
             created_at: delRow.created_at || '',
           };
@@ -243,5 +253,109 @@ export async function GET(request) {
     return NextResponse.json({ found: false, message: 'Delegate record not found' });
   } catch (err) {
     return NextResponse.json({ found: false, message: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const email = (body.email || '').trim().toLowerCase();
+    const regId = (body.regId || body.delegateId || body.id || '').trim();
+
+    if (!email && !regId) {
+      return NextResponse.json({ success: false, message: 'Email or registration ID required' }, { status: 400 });
+    }
+
+    const updatePayload = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (body.fullName || body.name) {
+      const nm = (body.fullName || body.name).trim();
+      updatePayload.name = nm;
+      updatePayload.full_name = nm;
+    }
+    if (body.phone) updatePayload.phone = String(body.phone).trim();
+    if (body.institution || body.school || body.institute) {
+      const inst = (body.institution || body.school || body.institute).trim();
+      updatePayload.school = inst;
+      updatePayload.institute = inst;
+      updatePayload.institution = inst;
+    }
+    if (body.grade) updatePayload.grade = body.grade;
+    if (body.dob) updatePayload.dob = body.dob;
+    if (body.address) {
+      const addr = body.address.trim();
+      updatePayload.address = addr;
+      updatePayload.residential_address = addr;
+    }
+    if (body.transport) {
+      updatePayload.transport = body.transport;
+      updatePayload.transport_needed = body.transport;
+    }
+    if (body.experience || body.munExperience) {
+      const exp = (body.experience || body.munExperience).trim();
+      updatePayload.experience = exp;
+      updatePayload.mun_experience = exp;
+    }
+
+    // Committee preferences
+    if (body.pref1_committee) updatePayload.pref1_committee = body.pref1_committee;
+    if (body.pref1_country) {
+      updatePayload.pref1_country = body.pref1_country;
+      updatePayload.pref1_portfolio1 = body.pref1_country;
+    }
+    if (body.pref2_committee) updatePayload.pref2_committee = body.pref2_committee;
+    if (body.pref2_country) {
+      updatePayload.pref2_country = body.pref2_country;
+      updatePayload.pref2_portfolio1 = body.pref2_country;
+    }
+    if (body.pref3_committee) updatePayload.pref3_committee = body.pref3_committee;
+    if (body.pref3_country) {
+      updatePayload.pref3_country = body.pref3_country;
+      updatePayload.pref3_portfolio1 = body.pref3_country;
+    }
+
+    // 1. Update in Supabase
+    if (supabase) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(regId);
+        let filterStr = '';
+        if (isUuid) filterStr = `id.eq.${regId}`;
+        else if (regId && email) filterStr = `delegate_id.eq.${regId},reg_id.eq.${regId},email.ilike.${email}`;
+        else if (regId) filterStr = `delegate_id.eq.${regId},reg_id.eq.${regId},id.eq.${regId}`;
+        else if (email) filterStr = `email.ilike.${email}`;
+
+        if (filterStr) {
+          await Promise.allSettled([
+            supabase.from('delegate_applications').update(updatePayload).or(filterStr),
+            supabase.from('delegates').update(updatePayload).or(filterStr),
+          ]);
+        }
+      } catch (sbErr) {
+        console.warn('[API /api/delegate POST] Supabase update notice:', sbErr.message);
+      }
+    }
+
+    // 2. Dispatch to Google Apps Script via UPDATE_DELEGATE
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'UPDATE_DELEGATE',
+        adminKey: 'ResolveMUNAdmin2026@Secure',
+        regId,
+        email,
+        ...body,
+      }),
+    }).catch(() => {});
+
+    return NextResponse.json({
+      success: true,
+      message: 'Delegate details updated successfully',
+      updated: updatePayload,
+    });
+  } catch (err) {
+    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }
