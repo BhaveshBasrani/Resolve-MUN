@@ -2656,11 +2656,11 @@ export default function Home() {
 
       {/* Main Page HTML Content with Interactive Committees & Secretariat Team */}
       <div id="main-container" ref={containerRef}>
-        <div dangerouslySetInnerHTML={HOME_PART1_HTML} />
+        <div dangerouslySetInnerHTML={HOME_PART1_HTML} suppressHydrationWarning />
         <CommitteesSection />
-        {HOME_PART2_HTML && <div dangerouslySetInnerHTML={HOME_PART2_HTML} />}
+        {HOME_PART2_HTML && <div dangerouslySetInnerHTML={HOME_PART2_HTML} suppressHydrationWarning />}
         <SecretariatSection />
-        {HOME_PART3_HTML && <div dangerouslySetInnerHTML={HOME_PART3_HTML} />}
+        {HOME_PART3_HTML && <div dangerouslySetInnerHTML={HOME_PART3_HTML} suppressHydrationWarning />}
       </div>
       
       {/* Best MUN in Hyderabad FAQ Section */}

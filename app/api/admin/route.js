@@ -115,7 +115,10 @@ export async function GET(request) {
             institution: d.institute || d.school || 'Individual',
             school: d.school || d.institute || 'Individual',
             grade: d.grade || '',
-            dob: d.dob || '',
+            dob: d.dob || d.birth_date || '',
+            address: d.address || d.residential_address || '',
+            transport: d.transport || d.transport_needed || '',
+            experience: d.experience || d.mun_experience || '',
             pref1_committee: d.pref1_committee || '',
             pref1_country: d.pref1_country || d.pref1_portfolio1 || '',
             pref2_committee: d.pref2_committee || '',
@@ -311,13 +314,17 @@ export async function GET(request) {
       email: r.Email || r.email || '',
       phone: r.Phone && r.Phone !== '#ERROR!' ? String(r.Phone) : '',
       grade: r.Grade || r.grade || '',
+      dob: r.DOB || r.dob || r.BirthDate || '',
+      address: r.ResidentialAddress || r.Address || r.address || r.residential_address || '',
+      transport: r.TransportNeeded || r.Transport || r.transport || '',
+      experience: r.Experience || r.MUNExperience || r.mun_experience || r.experience || '',
       institution: r.School || r.Institute || r.institution || 'Individual',
       school: r.School || r.Institute || r.institution || 'Individual',
-      pref1_committee: r.Pref1_Committee || r.pref1_committee || '',
+      pref1_committee: r.Pref1_Committee || r.pref1_committee || r.CommitteePref1 || '',
       pref1_country: r.Pref1_Country || r.pref1_country || '',
-      pref2_committee: r.Pref2_Committee || r.pref2_committee || '',
+      pref2_committee: r.Pref2_Committee || r.pref2_committee || r.CommitteePref2 || '',
       pref2_country: r.Pref2_Country || r.pref2_country || '',
-      pref3_committee: r.Pref3_Committee || r.pref3_committee || '',
+      pref3_committee: r.Pref3_Committee || r.pref3_committee || r.CommitteePref3 || '',
       pref3_country: r.Pref3_Country || r.pref3_country || '',
       allocatedCommittee: r.AllocatedCommittee || r.allocatedCommittee || '',
       allocatedCountry: r.AllocatedCountry || r.allocatedCountry || '',
@@ -1311,6 +1318,16 @@ export async function POST(request) {
           if (body.institution !== undefined) { patch.institute = body.institution; patch.school = body.institution; }
           if (body.school !== undefined) { patch.institute = body.school; patch.school = body.school; }
           if (body.grade !== undefined) patch.grade = body.grade;
+          if (body.dob !== undefined) patch.dob = body.dob;
+          if (body.address !== undefined) { patch.address = body.address; patch.residential_address = body.address; }
+          if (body.transport !== undefined) { patch.transport = body.transport; patch.transport_needed = body.transport; }
+          if (body.experience !== undefined) { patch.experience = body.experience; patch.mun_experience = body.experience; }
+          if (body.pref1_committee !== undefined) patch.pref1_committee = body.pref1_committee;
+          if (body.pref1_country !== undefined) { patch.pref1_country = body.pref1_country; patch.pref1_portfolio1 = body.pref1_country; }
+          if (body.pref2_committee !== undefined) patch.pref2_committee = body.pref2_committee;
+          if (body.pref2_country !== undefined) { patch.pref2_country = body.pref2_country; patch.pref2_portfolio1 = body.pref2_country; }
+          if (body.pref3_committee !== undefined) patch.pref3_committee = body.pref3_committee;
+          if (body.pref3_country !== undefined) { patch.pref3_country = body.pref3_country; patch.pref3_portfolio1 = body.pref3_country; }
           if (body.allocatedCommittee !== undefined) patch.allocated_committee = body.allocatedCommittee;
           if (body.allocatedCountry !== undefined) patch.allocated_country = body.allocatedCountry;
           if (body.paymentUTR !== undefined) patch.payment_utr = body.paymentUTR;
@@ -1336,6 +1353,7 @@ export async function POST(request) {
             }
           }
           await Promise.all([q1, q2]);
+          adminDataCache = null;
         } catch (e) {
           console.warn("[Supabase] Update delegate notice:", e.message);
         }
