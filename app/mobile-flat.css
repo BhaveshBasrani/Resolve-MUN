@@ -901,43 +901,64 @@
   .rdf-root {
     min-height: auto !important;
     background: #000000 !important;
-    border-top: 1px solid #262626 !important;
+    border-top: 1px solid #1f1f1f !important;
     color: #ffffff !important;
   }
 
   .rdf-top {
-    padding: 40px 20px 28px !important;
-    gap: 28px !important;
+    padding: 36px 20px 28px !important;
+    gap: 28px 20px !important;
   }
 
-  .rdf-tag {
-    font-size: 13.5px !important;
-    color: #a3a3a3 !important;
-    line-height: 1.6 !important;
+  .rdf-brand {
+    gap: 14px !important;
   }
 
-  .rdf-social a {
-    width: 40px !important;
-    height: 40px !important;
-    background: #000000 !important;
-    border: 1px solid #262626 !important;
-    color: #ffffff !important;
-    border-radius: 8px !important;
-  }
-
-  .rdf-col h3 {
-    color: #ffffff !important;
-    margin-bottom: 14px !important;
-  }
-
-  .rdf-col ul {
+  .rdf-logo {
+    font-size: 22px !important;
     gap: 10px !important;
   }
 
+  .rdf-logo img {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .rdf-tag {
+    font-size: 13px !important;
+    color: #8c8c8c !important;
+    line-height: 1.55 !important;
+  }
+
+  .rdf-social a {
+    width: 36px !important;
+    height: 36px !important;
+    background: #000000 !important;
+    border: 1px solid #262626 !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+  }
+
+  .rdf-col {
+    min-width: 0 !important;
+  }
+
+  .rdf-col h3 {
+    color: #737373 !important;
+    font-size: 10px !important;
+    letter-spacing: 0.14em !important;
+    margin: 0 0 12px 0 !important;
+  }
+
+  .rdf-col ul {
+    gap: 8px !important;
+  }
+
   .rdf-link {
-    color: #d4d4d4 !important;
-    font-size: 14px !important;
-    padding: 4px 0 !important;
+    color: #e5e5e5 !important;
+    font-size: 13.5px !important;
+    line-height: 1.35 !important;
+    padding: 2px 0 !important;
   }
 
   .rdf-link::before {
@@ -945,13 +966,20 @@
   }
 
   .rdf-bar {
-    padding: 18px 20px 28px !important;
-    border-top: 1px solid #262626 !important;
+    padding: 16px 20px 24px !important;
+    border-top: 1px solid #1f1f1f !important;
+    gap: 6px !important;
   }
 
-  .rdf-bar p,
+  .rdf-bar p {
+    font-size: 10px !important;
+    letter-spacing: 0.1em !important;
+    color: #737373 !important;
+  }
+
   .rdf-credit {
-    color: #a3a3a3 !important;
+    font-size: 11px !important;
+    color: #737373 !important;
   }
 
   /* 12. ALL MODALS & FORMS (100% VISIBLE, SCROLLABLE, FLAT B&W) */

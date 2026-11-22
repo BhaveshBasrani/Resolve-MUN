@@ -331,24 +331,24 @@ export default function Footer() {
 
   const columns = [
     {
-      title: "Registrations",
+      title: "Register",
       links: [
-        { label: "Delegate Registration", href: "/register/delegate" },
-        { label: "Delegation Registration", href: "/register/delegation" },
+        { label: "Delegate", href: "/register/delegate" },
+        { label: "Delegation", href: "/register/delegation" },
         { label: "Organizing Committee", href: "/register/oc" },
-        { label: "Secretariat High Command", href: "/register/secretariat" },
-        { label: "Socials Night Pass", href: "/register/socials" },
-        { label: "All Application Pathways", href: "/register" },
+        { label: "Secretariat", href: "/register/secretariat" },
+        { label: "Socials Pass", href: "/register/socials" },
+        { label: "All Registrations", href: "/register" },
       ],
     },
     {
       title: "Conference",
       links: [
         { label: "About", href: "/#about" },
-        { label: "Founder's Letter", href: "/#letter" },
         { label: "Committees", href: "/#committees" },
-        { label: "Official Passes", href: "/#delegate-pass" },
-        { label: "Host Campus", href: "/#venue" },
+        { label: "Passes", href: "/#delegate-pass" },
+        { label: "Venue", href: "/#venue" },
+        { label: "FAQ", href: "/#faq" },
       ],
     },
     {
@@ -731,7 +731,7 @@ export default function Footer() {
 
             {/* Simpler, Professional, Clutter-Free Description */}
             <p className="rdf-tag rdf-r" style={{ "--d": 220 }}>
-              Hyderabad&apos;s premier Model United Nations conference. Convening at {footerInfo.venue} on {footerInfo.dates}.
+              Model United Nations conference in Hyderabad. {footerInfo.venue} · {footerInfo.dates}.
             </p>
 
             {/* Social Icons */}

@@ -1855,12 +1855,12 @@ export default function SuperAdminPage() {
                           whatsappText: "Apply for the Organizing Committee (OC) at Resolve MUN 2.0 here: https://resolvemun.in/register/oc",
                         },
                         {
-                          title: "Secretariat High Command",
-                          badge: "Leadership",
+                          title: "Secretariat",
+                          badge: "Secretariat",
                           path: "/register/secretariat",
                           badgeColor: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-                          desc: "Application for conference leadership & procedural directorship",
-                          whatsappText: "Apply for Secretariat High Command at Resolve MUN 2.0 here: https://resolvemun.in/register/secretariat",
+                          desc: "Application for Secretariat roles",
+                          whatsappText: "Apply for Secretariat at Resolve MUN 2.0 here: https://resolvemun.in/register/secretariat",
                         },
                         {
                           title: "Socials Night Pass",
@@ -5615,7 +5615,7 @@ export default function SuperAdminPage() {
                     <div className="space-y-2 text-xs">
                       <div>
                         <span className="text-zinc-500 font-mono block text-[10px]">Secretariat Position Applied:</span>
-                        <span className="font-bold text-white text-sm">{selectedTeamApp.position || "Secretariat High Command"}</span>
+                        <span className="font-bold text-white text-sm">{selectedTeamApp.position || "Secretariat"}</span>
                       </div>
                       {selectedTeamApp.dailyCommitment && (
                         <div className="pt-1 border-t border-white/5">
