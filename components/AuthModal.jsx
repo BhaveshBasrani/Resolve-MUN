@@ -397,22 +397,29 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         if (password.length < 6) throw new Error("Password must be at least 6 characters.");
 
         const fullName = `${firstName} ${lastName}`.trim() || "Delegate";
-        const otpCode = String(Math.floor(100000 + Math.random() * 900000));
 
-        setPendingSignup({
-          email: email.trim(),
-          password,
-          fullName,
-          code: otpCode,
-        });
+        // Create account directly in Firebase Auth & dispatch real native Firebase verification email
+        const u = await signUpWithEmail(email.trim(), password, fullName);
 
-        // Dispatch verification code via Google Apps Script mailer
-        await sendVerificationCodeEmail(email.trim(), otpCode, fullName);
+        try {
+          if (u) {
+            const { sendEmailVerification } = await import("firebase/auth");
+            await sendEmailVerification(u);
+          }
+        } catch (verifyErr) {
+          console.warn("[AuthModal] Firebase verification email notice:", verifyErr?.message || verifyErr);
+        }
 
-        setCode(["", "", "", "", "", ""]);
-        setResendCooldown(45);
-        setMode("code");
-        setSuccess(`Verification code sent to ${email.trim()}. Enter below to activate.`);
+        if (typeof window !== "undefined") {
+          const resolvedName = fullName || u?.displayName || email.trim().split("@")[0] || "Delegate";
+          localStorage.setItem("resolve_user_name", resolvedName);
+          localStorage.setItem("resolve_user_email", email.trim());
+          localStorage.setItem("resolve_user_verified", "true");
+          if (window.autofillAllKnownFields && u) window.autofillAllKnownFields(u);
+        }
+
+        setSuccess(`Account created! A verification link has been sent to ${email.trim()}.`);
+        setMode("success");
         setLoading(false);
         return;
       } else {

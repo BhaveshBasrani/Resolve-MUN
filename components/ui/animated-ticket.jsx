@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { printOfficialReceipt } from "@/lib/receiptGenerator";
 
 const CheckCircleIcon = (props) => (
   <svg
@@ -216,6 +217,7 @@ export const AnimatedTicket = React.forwardRef(
     const [showConfetti, setShowConfetti] = React.useState(false);
 
     React.useEffect(() => {
+      if (typeof window !== "undefined" && window.innerWidth <= 768) return;
       const mountTimer = setTimeout(() => setShowConfetti(true), 100);
       const unmountTimer = setTimeout(() => setShowConfetti(false), 5500);
       return () => {
@@ -242,7 +244,7 @@ export const AnimatedTicket = React.forwardRef(
       hour12: false,
     })
       .format(date || new Date())
-      .replace(",", " •");
+      .replace(",", " ·");
 
     return (
       <>
@@ -250,81 +252,85 @@ export const AnimatedTicket = React.forwardRef(
         <div
           ref={ref}
           className={cn(
-            "relative w-full max-w-sm bg-[#090909] text-white rounded-2xl shadow-2xl font-sans z-10 border border-white/20",
-            "animate-in fade-in-0 zoom-in-95 duration-300",
+            "relative w-full max-w-sm bg-[#080808] text-white rounded-xl font-sans z-10 border border-[#262626] overflow-hidden",
             className
           )}
+          style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}
           {...props}
         >
-          <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black border-r border-white/20" />
-          <div className="absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black border-l border-white/20" />
-
-          <div className="p-4 sm:p-5 flex flex-col items-center text-center">
-            <div className="p-2 sm:p-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full animate-in zoom-in-50 delay-150 duration-300">
-              <CheckCircleIcon className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
+          {/* Header */}
+          <div className="px-5 pt-6 pb-4 flex flex-col items-center text-center">
+            <div className="w-11 h-11 rounded-full bg-white text-black flex items-center justify-center mb-3">
+              <CheckCircleIcon className="w-6 h-6 text-black" />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold mt-2.5 text-white tracking-tight">
+            <h2
+              className="m-0 text-lg font-bold text-white tracking-tight leading-snug"
+              style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}
+            >
               {title}
             </h2>
-            <p className="text-xs text-white/60 mt-0.5 max-w-[280px]">
+            <p className="m-0 text-xs text-zinc-400 mt-1 max-w-[260px] leading-relaxed">
               {subtitle}
             </p>
           </div>
 
-          <div className="px-5 sm:px-6 pb-5 space-y-3 sm:space-y-3.5">
-            <DashedLine />
+          <div className="px-5 pb-5 space-y-4">
+            <div className="border-t border-dashed border-[#262626]" />
 
-            <div className="grid grid-cols-2 gap-3 text-left">
-              <div>
-                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
+            {/* Row 1: Reference ID & Amount */}
+            <div className="grid grid-cols-2 gap-3 text-left items-end">
+              <div className="min-w-0">
+                <p className="m-0 text-[10px] text-zinc-500 uppercase tracking-widest font-mono leading-none">
                   Reference ID
                 </p>
-                <p className="font-mono font-semibold text-xs sm:text-sm text-white mt-0.5 truncate">
+                <p className="m-0 font-mono font-semibold text-xs text-white mt-1.5 truncate leading-none">
                   {ticketId}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
+              <div className="text-right min-w-0">
+                <p className="m-0 text-[10px] text-zinc-500 uppercase tracking-widest font-mono leading-none">
                   Amount Paid
                 </p>
-                <p className="font-bold text-base sm:text-lg text-white mt-0.5">
+                <p className="m-0 font-bold text-base text-white mt-1.5 leading-none">
                   {formattedAmount}
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-left">
-              <div>
-                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
+            {/* Row 2: Date & Category */}
+            <div className="grid grid-cols-2 gap-3 text-left items-end">
+              <div className="min-w-0">
+                <p className="m-0 text-[10px] text-zinc-500 uppercase tracking-widest font-mono leading-none">
                   Date &amp; Time
                 </p>
-                <p className="text-xs font-medium text-white/85 mt-0.5">
+                <p className="m-0 text-xs font-medium text-zinc-200 mt-1.5 leading-snug">
                   {formattedDate}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] text-white/50 uppercase tracking-widest font-mono">
+              <div className="text-right min-w-0">
+                <p className="m-0 text-[10px] text-zinc-500 uppercase tracking-widest font-mono leading-none">
                   Pass Category
                 </p>
-                <p className="text-xs font-semibold text-white mt-0.5">
+                <p className="m-0 text-xs font-semibold text-white mt-1.5 leading-snug">
                   {passCategory}
                 </p>
               </div>
             </div>
 
-            <div className="bg-white/[0.04] border border-white/15 p-3 rounded-xl flex items-center space-x-3 text-left">
+            {/* Applicant & UPI UTR strip */}
+            <div className="bg-black border border-[#262626] px-3.5 py-2.5 rounded-lg flex items-center gap-3 text-left">
               <UpiBadgeIcon className="shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-xs sm:text-sm text-white truncate">
+                <p className="m-0 font-semibold text-xs text-white truncate leading-tight">
                   {cardHolder}
                 </p>
-                <p className="text-white/60 font-mono text-[11px] tracking-wider truncate mt-0.5">
+                <p className="m-0 text-zinc-400 font-mono text-[11px] tracking-wide truncate mt-1 leading-tight">
                   {utrNumber ? `UPI UTR: ${utrNumber}` : "Verified Application"}
                 </p>
               </div>
             </div>
 
-            <DashedLine />
+            <div className="border-t border-dashed border-[#262626]" />
 
             <Barcode value={barcodeValue || ticketId} />
           </div>
@@ -376,19 +382,19 @@ export function PaymentReceiptModal() {
   return (
     <>
       {/* SCREEN-ONLY MODAL (HIDDEN ON PRINT) */}
-      <div className="no-print fixed inset-0 z-[10005] bg-black/95 backdrop-blur-md overflow-y-auto overscroll-contain">
-        {/* Floating High-Contrast Close Button */}
+      <div className="no-print fixed inset-0 z-[10005] bg-black overflow-y-auto overscroll-contain">
+        {/* Clean Close Button */}
         <button
           type="button"
           onClick={handleContinue}
-          className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[10010] w-10 h-10 rounded-full bg-zinc-900/95 border border-white/30 text-white hover:text-white flex items-center justify-center transition-all cursor-pointer hover:bg-zinc-800 shadow-[0_0_20px_rgba(0,0,0,0.8)] active:scale-95"
+          className="fixed top-4 right-4 z-[10010] w-9 h-9 rounded-lg bg-black border border-[#262626] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
           aria-label="Close pass dialog"
         >
           <CloseIcon />
         </button>
 
-        {/* Natural scroll wrapper — centers when room allows, scrolls smoothly with bottom padding when height is constrained */}
-        <div className="min-h-full w-full flex flex-col items-center justify-center p-3 sm:p-6 py-8 sm:py-12">
+        {/* Scrollable Centered Receipt Wrapper */}
+        <div className="min-h-full w-full flex flex-col items-center justify-center px-4 pt-16 pb-10">
           <div className="w-full max-w-[360px] sm:max-w-sm flex flex-col items-center">
             <AnimatedTicket
               ticketId={receipt.ticketId}
@@ -399,20 +405,30 @@ export function PaymentReceiptModal() {
               passCategory={receipt.passCategory}
               barcodeValue={receipt.barcodeValue}
             />
-            <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 w-full z-20 pb-6">
+            <div className="mt-3.5 grid grid-cols-2 gap-2.5 w-full z-20">
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/25 bg-[#111] text-white text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center shadow-lg"
+                onClick={() =>
+                  printOfficialReceipt({
+                    ticketId: receipt.ticketId,
+                    cardHolder: receipt.cardHolder,
+                    passCategory: receipt.passCategory,
+                    amount: receipt.amount,
+                    utrNumber: receipt.utrNumber,
+                    date: receipt.date,
+                    paymentStatus: "Recorded · Pending Verification",
+                  })
+                }
+                className="h-11 px-3 rounded-lg border border-[#333333] bg-black text-white text-[11px] font-semibold uppercase tracking-wider cursor-pointer flex items-center justify-center"
               >
-                Print / Save PDF
+                Print E-Receipt
               </button>
               <button
                 type="button"
                 onClick={handleContinue}
-                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl border border-white bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-white/90 transition-colors cursor-pointer flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.25)]"
+                className="h-11 px-3 rounded-lg border border-white bg-white text-black text-[11px] font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center"
               >
-                Open Dashboard →
+                Dashboard →
               </button>
             </div>
           </div>

@@ -1324,7 +1324,7 @@ export const homeHtml = `
 
 <div class="glow-line"></div>
 
-<!-- FOUNDER'S LETTER -->
+<!-- SECRETARY-GENERAL'S LETTER -->
 <section id="letter" class="reveal">
   <!-- Interactive Monochrome Wave Shader Backdrop -->
   <div class="letter-shader-backdrop">
@@ -1333,59 +1333,55 @@ export const homeHtml = `
   </div>
 
   <div class="letter-inner">
-    <div class="section-label reveal letter-section-label">Founder's Letter</div>
-    <h2 class="section-title reveal letter-section-title">A Letter from the Founder</h2>
+    <div class="section-label reveal letter-section-label">Secretary-General's Letter</div>
+    <h2 class="section-title reveal letter-section-title">A Letter from the Secretary-General</h2>
     
-    <article class="letter-container reveal reveal-delay-2" aria-label="Letter from the Founder">
+    <article class="letter-container reveal reveal-delay-2" aria-label="Letter from the Secretary-General">
       <div class="letter-content">
         <p class="letter-salutation">Dear Delegates,</p>
 
         <p class="letter-lead">
-          Every conference makes a promise. Very few take the responsibility of keeping it.
+          It gives me immense pleasure to welcome you to Resolve MUN.
         </p>
 
         <p class="letter-first">
-          When we envisioned Resolve, we wanted to build something that extended beyond the usual expectations of a Model United Nations conference. We wanted a room where ideas mattered, where disagreements were meaningful, where research was evident in every argument, and where leadership was measured not by the position one held, but by the substance one brought to the table.
+          Having spent a considerable part of my journey within the Model United Nations circuit, I have come to realise that MUN is an experience that extends far beyond committee rooms, draft resolutions and the pursuit of accolades. It is an exercise in understanding perspectives different from our own, engaging with questions that rarely have straightforward answers, and learning to navigate disagreements with both conviction and humility.
+        </p>
+
+        <p>
+          Resolve MUN is an endeavour that represents much more than the coming together of delegates for a few days of deliberation. It is a reflection of an ambition to create an experience that challenges convention, encourages intellectual curiosity and sets a meaningful standard for what a Model United Nations conference can aspire to be. We envision Resolve as a platform where the quality of discourse is matched by the depth of thought behind it, where questions are welcomed rather than avoided, and where every individual is afforded the opportunity to contribute meaningfully to the conversations that unfold. It is our endeavour to create an environment that does not merely accommodate diverse perspectives but actively encourages their exchange.
+        </p>
+
+        <p>
+          Over the years, having experienced conferences in various capacities as a delegate, an Executive Board member and an organiser, I have come to appreciate that the true value of a conference is not measured solely by its scale, the number of committees it hosts or the accolades it distributes. It is measured by the experiences it creates, the conversations it facilitates and, most importantly, the people it brings together. At Resolve, we hope to bring together individuals who are willing to question established narratives, defend their convictions and engage with ideas that may fundamentally challenge their own. We hope that every committee becomes more than an exercise in procedure and every debate becomes an opportunity to think beyond the obvious.
         </p>
 
         <p class="letter-emphasis">
-          That vision continues to define Resolve MUN 2.0.
+          However, there is one thing I sincerely hope you carry with you throughout this conference. Strive to be a good person before striving to be a good delegate.
         </p>
 
         <p>
-          We believe that diplomacy should be challenging. It should demand preparation, reward intellectual honesty, encourage constructive disagreement and, above all, leave room for perspectives that challenge conventional thinking. We have worked towards creating an environment that reflects these values, with committees designed to encourage meaningful deliberation and an Executive Board committed to maintaining the highest standards of debate.
+          In a circuit that often places considerable emphasis on awards, recognition and competitive excellence, it is easy to lose sight of what makes this experience meaningful in the first place. Research, rhetoric, negotiation and diplomacy are valuable skills, but they mean very little without the character to accompany them. Be gracious in victory, composed in disagreement and considerate of those around you. Challenge arguments without diminishing the individuals presenting them. Recognise that the person sitting across the committee table is not your adversary outside it. An award may recognise your performance in a committee, but it is your conduct that leaves a lasting impression on the people you encounter. If Resolve manages to leave you with anything beyond the experience of a conference, I hope it is a greater appreciation for empathy, humility and the responsibility that comes with having a voice.
         </p>
 
         <p>
-          But a conference is ultimately more than its committees, its agenda or the arrangements behind it. It is defined by the people who walk into its rooms. By the delegate who questions an established position, the individual who finds common ground where none seemed possible, and the person who leaves with a perspective they did not have before.
-        </p>
-
-        <p class="letter-emphasis">
-          That is what we hope Resolve will offer you.
+          I hope you approach this conference with an open mind and an eagerness to learn. Do not be afraid to question established narratives, venture beyond conventional arguments or engage with perspectives that challenge your own. Equally, do not measure the success of your experience by the outcome of a committee alone. Some of the most valuable lessons in MUN are learnt in moments that never make it into an award citation.
         </p>
 
         <p>
-          As you prepare to join us, I encourage you to come with an open mind, an appetite for learning and the willingness to be challenged. Do not measure your experience solely by the awards you receive or the positions you secure. Measure it by the arguments you construct, the people you engage with and the ideas you carry forward.
-        </p>
-
-        <p>
-          Building Resolve has been an immensely meaningful journey, and seeing this vision take shape through the efforts of our Secretariat, Organizing Committee, Executive Board and everyone who has contributed to this edition makes it all the more worthwhile.
-        </p>
-
-        <p>
-          Thank you for placing your trust in us.
+          As we begin this edition, I hope Resolve MUN becomes more than a conference you attend and eventually leave behind. I hope it becomes an experience you look back upon with fondness, a platform that challenges the way you think and an environment in which you find people, ideas and conversations worth remembering.
         </p>
 
         <p class="letter-conclusion">
-          We look forward to welcoming you to Resolve MUN 2.0.
+          Welcome to Resolve MUN. It is our privilege to have you with us, and I look forward to everything we will accomplish together.
         </p>
       </div>
 
       <div class="letter-signature-block">
-        <p class="letter-signoff">With regards,</p>
+        <p class="letter-signoff">Warm regards,</p>
         <div class="letter-founder-info">
-          <div class="founder-sig-name">Niveditt Basrani</div>
-          <div class="founder-sig-role">Founder, Resolve Model United Nations</div>
+          <div class="founder-sig-name">Vibhav Reddy,</div>
+          <div class="founder-sig-role">Secretary-General, Resolve MUN</div>
         </div>
       </div>
 

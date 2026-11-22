@@ -191,6 +191,15 @@ export default function SuperAdminPage() {
   const [ebApplications, setEbApplications] = useState([]);
   const [ocApplications, setOcApplications] = useState([]);
   const [secApplications, setSecApplications] = useState([]);
+  const [secretariatRoster, setSecretariatRoster] = useState([]);
+  const [secRosterForm, setSecRosterForm] = useState({
+    fullName: "",
+    email: "",
+    allottedRole: "USG Delegate Affairs",
+    department: "",
+  });
+  const [secRosterSaving, setSecRosterSaving] = useState(false);
+  const [secLinkCopied, setSecLinkCopied] = useState(false);
   const [siteUsers, setSiteUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -497,7 +506,8 @@ export default function SuperAdminPage() {
             const screenshotUrl = d.paymentScreenshotURL || d.payment_screenshot_url || d.screenshotUrl || d.driveUrl || d.DriveURL || d.PaymentScreenshotURL || "";
             const hasValidProof = Boolean(screenshotUrl && String(screenshotUrl).trim().startsWith("http"));
             const rawPay = (d.paymentStatus || (d.paymentVerified === "verified" ? "VERIFIED" : "PENDING")).toUpperCase();
-            const isVerified = rawPay === "VERIFIED" || rawPay.includes("VERIF");
+            const isFailed = rawPay.includes("FAIL") || rawPay.includes("REJECT");
+            const isVerified = !isFailed && (rawPay === "VERIFIED" || rawPay.includes("VERIF"));
 
             return {
               ...d,
@@ -520,7 +530,7 @@ export default function SuperAdminPage() {
               allocatedCommittee: d.allocatedCommittee || "",
               allocatedCountry: d.allocatedCountry || "",
               paymentUTR: d.paymentUTR || d.utr || "",
-              paymentStatus: isVerified ? "VERIFIED" : "PENDING",
+              paymentStatus: isFailed ? "FAILED" : isVerified ? "VERIFIED" : "PENDING",
               paymentScreenshotURL: screenshotUrl,
               hasValidProof,
               timestamp: d.timestamp || d.created_at || "",
@@ -566,6 +576,7 @@ export default function SuperAdminPage() {
           setAbandonedLeads(validLeads);
           setOcApplications(json.ocApplicants || []);
           setSecApplications(json.secretariatApplicants || []);
+          setSecretariatRoster(json.secretariatRoster || []);
           setEbApplications(json.ebApplicants || []);
           setSiteUsers(normalizedUsers);
 
@@ -948,7 +959,7 @@ export default function SuperAdminPage() {
   const handleVerifyPayment = async (regId, email, newStatus = "VERIFIED") => {
     const isVer = newStatus === "VERIFIED";
     const statusVal = isVer ? "VERIFIED" : "FAILED";
-    const verifiedVal = isVer ? "verified" : "Pending";
+    const verifiedVal = isVer ? "verified" : "Failed";
 
     const matchesDel = (d) => {
       if (!d) return false;
@@ -996,6 +1007,14 @@ export default function SuperAdminPage() {
               : d
           )
         );
+        if (data.emailDispatched) {
+          showBanner("success", data.message || `Payment marked ${statusVal} & email sent.`);
+        } else {
+          showBanner(
+            "info",
+            `Payment saved as ${statusVal} in database. Email not sent yet — redeploy Apps Script as "Anyone" or add RESEND_API_KEY in .env.local.`
+          );
+        }
       }
     } catch (err) {
       notify("Failed to verify payment in cloud", "error");
@@ -1265,9 +1284,10 @@ export default function SuperAdminPage() {
       delegations: delegations.length,
       leads: abandonedLeads.length,
       applications: ocApplications.length + secApplications.length + ebApplications.length,
+      secretariatRoster: secretariatRoster.length,
       users: siteUsers.length,
     }),
-    [registrations, delegations, abandonedLeads, ocApplications, secApplications, ebApplications, siteUsers]
+    [registrations, delegations, abandonedLeads, ocApplications, secApplications, ebApplications, secretariatRoster, siteUsers]
   );
 
   // Dynamic Chart Data based on live registrations
@@ -2765,6 +2785,291 @@ export default function SuperAdminPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* ===============================================================
+              TAB: SECRETARIAT ROSTER & GROUP ONBOARDING
+              =============================================================== */}
+          {activeTab === "secretariat" && (() => {
+            const origin = typeof window !== "undefined" ? window.location.origin : "https://resolvemun.in";
+            const onboardingLink = `${origin}/secretariat`;
+
+            const handleCopyOnboardingLink = async () => {
+              try {
+                if (navigator.clipboard && window.isSecureContext) {
+                  await navigator.clipboard.writeText(onboardingLink);
+                } else {
+                  const ta = document.createElement("textarea");
+                  ta.value = onboardingLink;
+                  ta.style.position = "fixed";
+                  ta.style.opacity = "0";
+                  document.body.appendChild(ta);
+                  ta.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(ta);
+                }
+                setSecLinkCopied(true);
+                setTimeout(() => setSecLinkCopied(false), 2000);
+              } catch (_) {
+                window.prompt("Copy Secretariat Onboarding Link:", onboardingLink);
+              }
+            };
+
+            const handleAddRosterMember = async (e) => {
+              e.preventDefault();
+              const cleanEmail = secRosterForm.email.trim().toLowerCase();
+              if (!cleanEmail || !cleanEmail.includes("@")) {
+                showBanner("error", "Enter a valid email address for the Secretariat member.");
+                return;
+              }
+              setSecRosterSaving(true);
+              try {
+                const res = await fetch("/api/admin/", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    action: "ADMIN_ADD_SECRETARIAT_MEMBER",
+                    adminKey: adminKey || "ResolveMUNAdmin2026@Secure",
+                    fullName: secRosterForm.fullName.trim(),
+                    email: cleanEmail,
+                    allottedRole: secRosterForm.allottedRole.trim() || "Secretariat Member",
+                    department: secRosterForm.department.trim(),
+                  }),
+                });
+                const json = await res.json();
+                if (!res.ok || json.status !== "success") {
+                  showBanner("error", json.message || "Could not add Secretariat member.");
+                } else {
+                  setSecretariatRoster((prev) => {
+                    const filtered = prev.filter((m) => (m.email || "").toLowerCase() !== cleanEmail);
+                    return [json.member, ...filtered];
+                  });
+                  setSecRosterForm({ fullName: "", email: "", allottedRole: "USG Delegate Affairs", department: "" });
+                  showBanner("success", json.message);
+                }
+              } catch (_) {
+                showBanner("error", "Network error adding Secretariat member.");
+              } finally {
+                setSecRosterSaving(false);
+              }
+            };
+
+            const handleDeleteRosterMember = async (member) => {
+              if (!confirm(`Remove ${member.fullName || member.email} from the Secretariat Roster?`)) return;
+              try {
+                const res = await fetch("/api/admin/", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    action: "ADMIN_DELETE_SECRETARIAT_MEMBER",
+                    adminKey: adminKey || "ResolveMUNAdmin2026@Secure",
+                    id: member.id,
+                    email: member.email,
+                  }),
+                });
+                const json = await res.json();
+                if (res.ok && json.status === "success") {
+                  setSecretariatRoster((prev) => prev.filter((m) => m.id !== member.id));
+                  showBanner("success", "Removed from Secretariat Roster.");
+                }
+              } catch (_) {}
+            };
+
+            const onboardedCount = secretariatRoster.filter((m) => m.onboarded).length;
+
+            return (
+              <div className="space-y-5">
+                {/* Shareable Group Onboarding Link Banner */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <CardTitle className="text-base font-semibold">
+                          Secretariat Group Onboarding Link
+                        </CardTitle>
+                        <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                          Add your allotted Secretariat members below, then drop this link in the Sec WhatsApp group. They sign in, see their allotted role, fill their details, and immediately set up their referral codes.
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          type="button"
+                          onClick={handleCopyOnboardingLink}
+                          className="h-9 px-3.5 text-xs bg-white text-black hover:bg-zinc-200 cursor-pointer"
+                        >
+                          {secLinkCopied ? "Copied Link!" : "Copy Sec Portal Link"}
+                        </Button>
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(
+                            `Welcome to Resolve MUN 2.0 Secretariat!\n\nLog in here with your email to complete your Secretariat onboarding, view your allotted role, and set up your personal referral code (₹400 cash pool per verified delegate):\n${onboardingLink}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center h-9 px-3.5 rounded-md border border-white/15 bg-zinc-900 hover:bg-zinc-800 text-xs font-medium text-white"
+                        >
+                          Share in Group
+                        </a>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-black border border-white/10 font-mono text-xs text-zinc-300">
+                      <span className="truncate">{onboardingLink}</span>
+                      <span className="text-[11px] text-zinc-500 shrink-0">
+                        {onboardedCount}/{secretariatRoster.length} Onboarded
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Manual Add Secretariat Member Form */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold">
+                      Add Secretariat Member &amp; Allot Role
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                      Enter members who are confirmed in the Secretariat. They will automatically unlock onboarding &amp; referral code setup when they sign in with this email.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleAddRosterMember} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-zinc-400">Member Name</label>
+                        <Input
+                          value={secRosterForm.fullName}
+                          onChange={(e) => setSecRosterForm((p) => ({ ...p, fullName: e.target.value }))}
+                          placeholder="e.g. Aarav Sharma"
+                          className="h-9 bg-black border-white/15 text-xs text-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-zinc-400">Login Email *</label>
+                        <Input
+                          type="email"
+                          required
+                          value={secRosterForm.email}
+                          onChange={(e) => setSecRosterForm((p) => ({ ...p, email: e.target.value }))}
+                          placeholder="member@gmail.com"
+                          className="h-9 bg-black border-white/15 text-xs text-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-zinc-400">Allotted Role *</label>
+                        <Input
+                          required
+                          list="sec-role-presets"
+                          value={secRosterForm.allottedRole}
+                          onChange={(e) => setSecRosterForm((p) => ({ ...p, allottedRole: e.target.value }))}
+                          placeholder="e.g. USG Delegate Affairs"
+                          className="h-9 bg-black border-white/15 text-xs text-white"
+                        />
+                        <datalist id="sec-role-presets">
+                          <option value="Secretary General" />
+                          <option value="Deputy Secretary General" />
+                          <option value="Director General" />
+                          <option value="Chief of Staff" />
+                          <option value="USG Delegate Affairs" />
+                          <option value="USG Finance" />
+                          <option value="USG Logistics" />
+                          <option value="USG Marketing & PR" />
+                          <option value="USG Design & Media" />
+                          <option value="USG Tech & IT" />
+                          <option value="USG Hospitality" />
+                          <option value="Head of Operations" />
+                          <option value="Secretariat Member" />
+                        </datalist>
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          type="submit"
+                          disabled={secRosterSaving}
+                          className="w-full h-9 bg-white text-black hover:bg-zinc-200 text-xs font-semibold cursor-pointer"
+                        >
+                          {secRosterSaving ? "Adding..." : "+ Add to Secretariat"}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                {/* Live Secretariat Roster Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold">
+                      Confirmed Secretariat Roster ({secretariatRoster.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-y border-white/10 bg-zinc-950 text-[10px] font-mono uppercase tracking-wider text-zinc-400">
+                            <th className="py-2.5 px-4">Member</th>
+                            <th className="py-2.5 px-4">Allotted Role</th>
+                            <th className="py-2.5 px-4">Status</th>
+                            <th className="py-2.5 px-4">Contact &amp; School</th>
+                            <th className="py-2.5 px-4">UPI ID (Payouts)</th>
+                            <th className="py-2.5 px-4 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10 text-xs">
+                          {secretariatRoster.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="py-10 text-center text-zinc-500">
+                                No Secretariat members added yet. Add your team above and share the portal link in the Sec group.
+                              </td>
+                            </tr>
+                          ) : (
+                            secretariatRoster.map((m) => (
+                              <tr key={m.id || m.email} className="hover:bg-white/[0.02]">
+                                <td className="py-3 px-4">
+                                  <div className="font-medium text-white">{m.fullName || "Pending Name"}</div>
+                                  <div className="text-[11px] font-mono text-zinc-400">{m.email}</div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className="inline-flex px-2 py-0.5 rounded border border-white/15 bg-white/[0.04] text-[11px] font-medium text-white">
+                                    {m.allottedRole}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  {m.onboarded ? (
+                                    <span className="inline-flex px-2 py-0.5 rounded bg-white text-black text-[10px] font-bold uppercase tracking-wider">
+                                      Onboarded
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex px-2 py-0.5 rounded border border-white/15 text-zinc-400 text-[10px] font-mono uppercase">
+                                      Pending Login
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 text-zinc-300">
+                                  <div>{m.phone || "—"}</div>
+                                  <div className="text-[11px] text-zinc-500">{m.school || "—"}</div>
+                                </td>
+                                <td className="py-3 px-4 font-mono text-[11px] text-zinc-300">
+                                  {m.upiId || "—"}
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteRosterMember(m)}
+                                    className="h-7 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
 
           {/* ===============================================================
               TAB: BROADCAST CRM (DIRECT EMAIL DISPATCH)
@@ -4787,7 +5092,7 @@ export default function SuperAdminPage() {
                     size="sm"
                     onClick={() => {
                       handleVerifyPayment(viewingDossier.regId, viewingDossier.email, "FAILED");
-                      setViewingDossier((prev) => prev ? { ...prev, paymentStatus: "PENDING" } : null);
+                      setViewingDossier((prev) => prev ? { ...prev, paymentStatus: "FAILED" } : null);
                     }}
                     className="h-8 px-3 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-950/40 cursor-pointer"
                   >

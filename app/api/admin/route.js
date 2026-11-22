@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabase, DEFAULT_SITE_SETTINGS, DEFAULT_COMMITTEE_CAPACITIES, normalizeSettings } from '@/lib/supabase';
+import { buildResolveEmailHtml } from '@/lib/emailTemplates';
 
 const APPS_SCRIPT_URL =
   process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
-  "https://script.google.com/macros/s/AKfycbyfh1S7g1oJ9ej06z-OUZnn9BJhVSbSFuCmBESJ53bPTQsPPDL-s5P3HOaZ4RzfWna1/exec";
+  "https://script.google.com/macros/s/AKfycbyoC8dZ2L6h1Es_n3Rx3LRSwuiy_8iLklKerZK2jWseNBDzD4i3Gr7JHDNdS7jJzhuWEA/exec";
 const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY || "ResolveMUNAdmin2026@Secure";
 
 const ADMIN_EMAILS = [
@@ -131,13 +132,19 @@ export async function GET(request) {
             paymentUTR: d.payment_utr || '',
             paymentScreenshotURL: d.payment_screenshot_url || '',
             paymentStatus: (() => {
-              const raw = String(d.payment_status || d.paymentStatus || d.status || '').toUpperCase();
-              if (raw === 'VERIFIED' || raw.includes('VERIF')) return 'VERIFIED';
+              const raw = String(d.payment_status || d.paymentStatus || '').toUpperCase().trim();
+              const st = String(d.status || '').toUpperCase().trim();
+              if (raw.includes('FAIL') || raw.includes('REJECT') || st.includes('FAIL')) return 'FAILED';
+              if (raw.includes('PENDING') || raw.includes('REVIEW')) return 'PENDING';
+              if (raw === 'VERIFIED' || raw === 'PAID' || raw === 'APPROVED' || raw === 'CONFIRMED') return 'VERIFIED';
               return 'PENDING';
             })(),
             paymentVerified: (() => {
-              const raw = String(d.payment_status || d.paymentStatus || d.status || '').toUpperCase();
-              if (raw === 'VERIFIED' || raw.includes('VERIF')) return 'verified';
+              const raw = String(d.payment_status || d.paymentStatus || '').toUpperCase().trim();
+              const st = String(d.status || '').toUpperCase().trim();
+              if (raw.includes('FAIL') || raw.includes('REJECT') || st.includes('FAIL')) return 'Failed';
+              if (raw.includes('PENDING') || raw.includes('REVIEW')) return 'Pending';
+              if (raw === 'VERIFIED' || raw === 'PAID' || raw === 'APPROVED' || raw === 'CONFIRMED') return 'verified';
               return 'Pending';
             })(),
             status: d.status || (d.allocated_committee ? 'ALLOTTED' : 'Confirmed'),
@@ -164,7 +171,12 @@ export async function GET(request) {
             totalAmount: d.total_amount || 0,
             paymentUTR: d.payment_utr || '',
             paymentScreenshotURL: d.payment_screenshot_url || '',
-            paymentStatus: (d.payment_status || 'PENDING_VERIFICATION').toUpperCase() === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
+            paymentStatus: (() => {
+              const raw = String(d.payment_status || 'PENDING_VERIFICATION').toUpperCase();
+              if (raw.includes('FAIL') || raw.includes('REJECT')) return 'FAILED';
+              if (raw === 'VERIFIED' || raw.includes('VERIF')) return 'VERIFIED';
+              return 'PENDING';
+            })(),
             status: d.status || 'Pending',
             timestamp: d.created_at,
           }));
@@ -614,6 +626,31 @@ export async function GET(request) {
       });
     }
 
+    let sbRoster = [];
+    if (supabase) {
+      try {
+        const { data: rosterRows } = await supabase
+          .from('secretariat_roster')
+          .select('*')
+          .order('created_at', { ascending: false });
+        sbRoster = (rosterRows || []).map((r) => ({
+          id: r.id,
+          email: r.email,
+          fullName: r.full_name || '',
+          allottedRole: r.allotted_role || 'Secretariat Member',
+          department: r.department || '',
+          phone: r.phone || '',
+          school: r.school || '',
+          grade: r.grade || '',
+          upiId: r.upi_id || '',
+          instagram: r.instagram || '',
+          onboarded: Boolean(r.onboarded),
+          onboardedAt: r.onboarded_at || null,
+          createdAt: r.created_at,
+        }));
+      } catch (_) {}
+    }
+
     const resultPayload = {
       status: 'success',
       settings: liveSettings,
@@ -624,6 +661,7 @@ export async function GET(request) {
       ebApplicants: mergedEb,
       ocApplicants: mergedOc,
       secretariatApplicants: mergedSec,
+      secretariatRoster: sbRoster,
       waitlist: asWaitlist,
       siteUsers: mergedUsers,
       auditLogs: asData.Audit_Logs || asData.auditLogs || [],
@@ -921,12 +959,70 @@ export async function POST(request) {
         }),
       }).catch(err => console.warn("Google Apps Script async dispatch notice:", err.message));
 
+      // Send official Registration Received email immediately
+      let registrationEmailSent = false;
+      if (cleanEmail && cleanEmail.includes('@')) {
+        const regSubject = `Registration Received — Resolve MUN 2.0 (${generatedId})`;
+        const regBodyText = `Dear ${delegateName},\n\nThank you for registering for Resolve MUN 2.0 (26–27 December 2026 at Northfield International School, Hyderabad).\n\nWe have received your application and UPI transaction reference (${utr || 'Submitted'}). Our Secretariat team is currently verifying your payment.\n\nYou will receive a confirmation email as soon as your payment is verified, and your Digital Gate Pass will unlock automatically in your dashboard:\nhttps://resolvemun.in/dashboard\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`;
+        try {
+          const regHtml = buildResolveEmailHtml({
+            eyebrow: 'Registration Received',
+            title: 'Application Submitted — Resolve MUN 2.0',
+            recipientName: delegateName,
+            bodyText: regBodyText,
+            ctaLabel: 'Open Delegate Dashboard',
+            ctaUrl: 'https://resolvemun.in/dashboard',
+            highlightBox: {
+              label: 'Registration ID & Payment Ref',
+              value: `${generatedId} · UTR: ${utr || 'Submitted'} · ₹${Number(fee || 2500).toLocaleString('en-IN')}`,
+            },
+          });
+
+          if (process.env.RESEND_API_KEY) {
+            const fromAddr = process.env.RESEND_FROM_EMAIL || 'Resolve MUN 2.0 <onboarding@resend.dev>';
+            const r = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: fromAddr,
+                to: [cleanEmail],
+                subject: regSubject,
+                text: regBodyText,
+                html: regHtml,
+              }),
+            });
+            registrationEmailSent = r.ok;
+          } else {
+            const r = await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify({
+                action: 'ADMIN_SEND_CUSTOM_EMAIL',
+                adminKey: ADMIN_KEY,
+                subject: regSubject,
+                messageBody: regBodyText,
+                htmlBody: regHtml,
+                email: cleanEmail,
+                recipients: [{ email: cleanEmail, name: delegateName }],
+              }),
+            });
+            registrationEmailSent = r.ok;
+          }
+        } catch (mailErr) {
+          console.warn('[SUBMIT_DELEGATE] Registration email notice:', mailErr.message);
+        }
+      }
+
       return NextResponse.json({
         status: 'success',
         regId: generatedId,
         delegateId: generatedId,
         id: generatedId,
         ticketId: generatedId,
+        emailDispatched: registrationEmailSent,
         message: 'Registration submitted successfully!'
       });
     }
@@ -939,6 +1035,82 @@ export async function POST(request) {
     // Bust SWR cache on any mutation
     adminDataCache = null;
     adminDataCacheTime = 0;
+
+    // 0a. SECRETARIAT ROSTER MANAGEMENT (Admin manually adds/removes allotted Secretariat members)
+    if (action === 'ADMIN_ADD_SECRETARIAT_MEMBER') {
+      const email = String(body.email || '').trim().toLowerCase();
+      const fullName = String(body.fullName || body.name || '').trim();
+      const allottedRole = String(body.allottedRole || body.role || 'Secretariat Member').trim();
+      const department = String(body.department || '').trim();
+
+      if (!email || !email.includes('@')) {
+        return NextResponse.json({ status: 'error', message: 'Valid member email is required.' }, { status: 400 });
+      }
+      if (!allottedRole) {
+        return NextResponse.json({ status: 'error', message: 'Allotted role is required.' }, { status: 400 });
+      }
+
+      if (supabase) {
+        const nowIso = new Date().toISOString();
+        const { data: savedRow, error: insErr } = await supabase
+          .from('secretariat_roster')
+          .upsert(
+            {
+              email,
+              full_name: fullName,
+              allotted_role: allottedRole,
+              department,
+              updated_at: nowIso,
+            },
+            { onConflict: 'email' }
+          )
+          .select('*')
+          .single();
+
+        if (insErr) {
+          return NextResponse.json({ status: 'error', message: insErr.message }, { status: 500 });
+        }
+
+        return NextResponse.json({
+          status: 'success',
+          member: {
+            id: savedRow.id,
+            email: savedRow.email,
+            fullName: savedRow.full_name || '',
+            allottedRole: savedRow.allotted_role || allottedRole,
+            department: savedRow.department || '',
+            phone: savedRow.phone || '',
+            school: savedRow.school || '',
+            grade: savedRow.grade || '',
+            upiId: savedRow.upi_id || '',
+            instagram: savedRow.instagram || '',
+            onboarded: Boolean(savedRow.onboarded),
+            onboardedAt: savedRow.onboarded_at || null,
+            createdAt: savedRow.created_at,
+          },
+          message: `${fullName || email} added to Secretariat Roster as ${allottedRole}.`,
+        });
+      }
+      return NextResponse.json({ status: 'error', message: 'Supabase unavailable.' }, { status: 500 });
+    }
+
+    if (action === 'ADMIN_DELETE_SECRETARIAT_MEMBER') {
+      const id = String(body.id || '').trim();
+      const email = String(body.email || '').trim().toLowerCase();
+      if (!id && !email) {
+        return NextResponse.json({ status: 'error', message: 'Member ID or email required.' }, { status: 400 });
+      }
+      if (supabase) {
+        let q = supabase.from('secretariat_roster').delete();
+        if (id) q = q.eq('id', id);
+        else q = q.ilike('email', email);
+        const { error: delErr } = await q;
+        if (delErr) {
+          return NextResponse.json({ status: 'error', message: delErr.message }, { status: 500 });
+        }
+      }
+      return NextResponse.json({ status: 'success', message: 'Secretariat member removed.' });
+    }
 
     // 0b. COMMITTEE CAPACITIES: UPDATE_COMMITTEE_CAPACITIES
     if (action === 'UPDATE_COMMITTEE_CAPACITIES') {
@@ -1357,60 +1529,54 @@ export async function POST(request) {
         });
       }
 
-      // Update Supabase with schema-exact payloads for both delegates & delegate_applications
+      // Update Supabase underlying `delegate_applications` directly with schema-exact columns
       if (supabase) {
         try {
-          const delPatch = {};
-          const legPatch = { updated_at: new Date().toISOString() };
+          const patch = { updated_at: new Date().toISOString() };
 
           const nameVal = body.fullName !== undefined ? body.fullName : body.name;
-          if (nameVal !== undefined) { delPatch.full_name = nameVal; legPatch.name = nameVal; legPatch.full_name = nameVal; }
-          if (body.phone !== undefined) { delPatch.phone = body.phone; legPatch.phone = body.phone; }
+          if (nameVal !== undefined) patch.name = nameVal;
+          if (body.phone !== undefined) patch.phone = body.phone;
           const instVal = body.institution !== undefined ? body.institution : body.school;
-          if (instVal !== undefined) { delPatch.school = instVal; legPatch.institute = instVal; legPatch.school = instVal; }
-          if (body.grade !== undefined) { delPatch.grade = body.grade; legPatch.grade = body.grade; }
-          if (body.dob !== undefined) { delPatch.dob = body.dob; legPatch.dob = body.dob; }
-          if (body.address !== undefined) { delPatch.address = body.address; legPatch.address = body.address; legPatch.residential_address = body.address; }
-          if (body.transport !== undefined) { delPatch.transport = body.transport; legPatch.transport = body.transport; legPatch.transport_needed = body.transport; }
-          if (body.experience !== undefined) { delPatch.experience = body.experience; legPatch.experience = body.experience; legPatch.mun_experience = body.experience; }
-          if (body.pref1_committee !== undefined) { delPatch.pref1_committee = body.pref1_committee; legPatch.pref1_committee = body.pref1_committee; }
-          if (body.pref1_country !== undefined) { delPatch.pref1_portfolio1 = body.pref1_country; legPatch.pref1_country = body.pref1_country; legPatch.pref1_portfolio1 = body.pref1_country; }
-          if (body.pref2_committee !== undefined) { delPatch.pref2_committee = body.pref2_committee; legPatch.pref2_committee = body.pref2_committee; }
-          if (body.pref2_country !== undefined) { delPatch.pref2_portfolio1 = body.pref2_country; legPatch.pref2_country = body.pref2_country; legPatch.pref2_portfolio1 = body.pref2_country; }
-          if (body.pref3_committee !== undefined) { delPatch.pref3_committee = body.pref3_committee; legPatch.pref3_committee = body.pref3_committee; }
-          if (body.pref3_country !== undefined) { delPatch.pref3_portfolio1 = body.pref3_country; legPatch.pref3_country = body.pref3_country; legPatch.pref3_portfolio1 = body.pref3_country; }
-          if (body.allocatedCommittee !== undefined) { delPatch.allocated_committee = body.allocatedCommittee; legPatch.allocated_committee = body.allocatedCommittee; }
-          if (body.allocatedCountry !== undefined) { delPatch.allocated_country = body.allocatedCountry; legPatch.allocated_country = body.allocatedCountry; }
-          if (body.paymentUTR !== undefined) { delPatch.payment_utr = body.paymentUTR; legPatch.payment_utr = body.paymentUTR; }
+          if (instVal !== undefined) patch.institute = instVal;
+          if (body.grade !== undefined) patch.grade = body.grade;
+          if (body.dob !== undefined) patch.dob = body.dob;
+          if (body.address !== undefined) patch.address = body.address;
+          if (body.transport !== undefined) patch.transport = body.transport;
+          if (body.experience !== undefined) patch.experience = body.experience;
+          if (body.pref1_committee !== undefined) patch.pref1_committee = body.pref1_committee;
+          if (body.pref1_country !== undefined) patch.pref1_country = body.pref1_country;
+          if (body.pref2_committee !== undefined) patch.pref2_committee = body.pref2_committee;
+          if (body.pref2_country !== undefined) patch.pref2_country = body.pref2_country;
+          if (body.pref3_committee !== undefined) patch.pref3_committee = body.pref3_committee;
+          if (body.pref3_country !== undefined) patch.pref3_country = body.pref3_country;
+          if (body.allocatedCommittee !== undefined) patch.allocated_committee = body.allocatedCommittee;
+          if (body.allocatedCountry !== undefined) patch.allocated_country = body.allocatedCountry;
+          if (body.paymentUTR !== undefined) patch.payment_utr = body.paymentUTR;
           if (body.paymentStatus !== undefined) {
-            const ps = body.paymentStatus.toUpperCase() === 'VERIFIED' ? 'VERIFIED' : 'PENDING_VERIFICATION';
-            delPatch.payment_status = ps;
-            legPatch.payment_status = ps;
+            const rawPs = String(body.paymentStatus || '').toUpperCase();
+            const ps = rawPs.includes('FAIL') || rawPs.includes('REJECT')
+              ? 'FAILED'
+              : rawPs === 'VERIFIED' || rawPs.includes('VERIF')
+              ? 'VERIFIED'
+              : 'PENDING_VERIFICATION';
+            patch.payment_status = ps;
+            if (ps === 'FAILED') patch.status = 'PAYMENT_FAILED';
           }
-          if (body.allocatedCommittee && !delPatch.status) {
-            delPatch.status = 'ALLOTTED';
-            legPatch.status = 'ALLOTTED';
+          if (body.allocatedCommittee && !patch.status) {
+            patch.status = 'ALLOTTED';
           }
 
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          const ops = [];
-          if (Object.keys(delPatch).length > 0) {
-            let q1 = supabase.from('delegates').update(delPatch);
-            if (isUuid) q1 = q1.eq('id', targetId);
-            else if (targetId && targetEmail) q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetEmail}`);
-            else if (targetId) q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
-            else if (targetEmail) q1 = q1.ilike('email', targetEmail);
-            ops.push(q1);
+          if (Object.keys(patch).length > 1) {
+            let q = supabase.from('delegate_applications').update(patch);
+            if (isUuid) q = q.eq('id', targetId);
+            else if (targetId && targetEmail) q = q.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+            else if (targetId) q = q.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
+            else if (targetEmail) q = q.ilike('email', targetEmail);
+            const { error: updErr } = await q;
+            if (updErr) console.warn("[Supabase] Update delegate error:", updErr.message);
           }
-          if (Object.keys(legPatch).length > 1) {
-            let q2 = supabase.from('delegate_applications').update(legPatch);
-            if (isUuid) q2 = q2.eq('id', targetId);
-            else if (targetId && targetEmail) q2 = q2.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
-            else if (targetId) q2 = q2.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
-            else if (targetEmail) q2 = q2.ilike('email', targetEmail);
-            ops.push(q2);
-          }
-          await Promise.allSettled(ops);
           adminDataCache = null;
         } catch (e) {
           console.warn("[Supabase] Update delegate notice:", e.message);
@@ -1611,10 +1777,12 @@ export async function POST(request) {
     if (action === 'ADMIN_VERIFY_PAYMENT') {
       const targetId = (body.regId || body.delegateId || body.id || '').trim();
       const targetEmail = (body.email || '').trim().toLowerCase();
+      const targetName = (body.fullName || body.name || 'Delegate').trim();
       const newStatus = (body.paymentStatus || 'VERIFIED').toUpperCase();
       const isVer = newStatus === 'VERIFIED';
       const statusVal = isVer ? 'VERIFIED' : 'FAILED';
-      const verifiedVal = isVer ? 'verified' : 'Pending';
+      const verifiedVal = isVer ? 'verified' : 'Failed';
+      const regStatusVal = isVer ? 'Confirmed' : 'PAYMENT_FAILED';
 
       adminDataCache = null;
 
@@ -1624,6 +1792,7 @@ export async function POST(request) {
           ...existing,
           paymentStatus: statusVal,
           paymentVerified: verifiedVal,
+          status: regStatusVal,
         });
       }
       if (targetEmail) {
@@ -1632,54 +1801,123 @@ export async function POST(request) {
           ...existing,
           paymentStatus: statusVal,
           paymentVerified: verifiedVal,
+          status: regStatusVal,
         });
       }
 
+      let resolvedEmail = targetEmail;
+      let resolvedName = targetName;
+
       if (supabase) {
         try {
-          const delPayload = {
-            payment_status: isVer ? 'VERIFIED' : 'PENDING_VERIFICATION',
-          };
-          const legPayload = {
-            payment_status: isVer ? 'VERIFIED' : 'PENDING_VERIFICATION',
+          const payPatch = {
+            payment_status: statusVal,
+            status: regStatusVal,
             updated_at: new Date().toISOString(),
           };
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
 
-          let delFilter = '';
-          let legFilter = '';
+          let filter = '';
           if (isUuid) {
-            delFilter = `id.eq.${targetId}`;
-            legFilter = `id.eq.${targetId}`;
+            filter = `id.eq.${targetId}`;
           } else if (targetId && targetEmail) {
-            delFilter = `delegate_id.eq.${targetId},email.ilike.${targetEmail}`;
-            legFilter = `reg_id.eq.${targetId},email.ilike.${targetEmail}`;
+            filter = `reg_id.eq.${targetId},email.ilike.${targetEmail}`;
           } else if (targetId) {
-            delFilter = `delegate_id.eq.${targetId}`;
-            legFilter = `reg_id.eq.${targetId}`;
+            filter = `reg_id.eq.${targetId}`;
           } else if (targetEmail) {
-            delFilter = `email.ilike.${targetEmail}`;
-            legFilter = `email.ilike.${targetEmail}`;
+            filter = `email.ilike.${targetEmail}`;
           }
 
-          const ops = [];
-          if (delFilter) ops.push(supabase.from('delegates').update(delPayload).or(delFilter));
-          if (legFilter) ops.push(supabase.from('delegate_applications').update(legPayload).or(legFilter));
-          if (ops.length > 0) await Promise.allSettled(ops);
+          // Lookup email/name if not provided in request body so notification email always sends
+          if (!resolvedEmail && filter) {
+            const { data: foundRow } = await supabase.from('delegate_applications').select('email, name').or(filter).limit(1).maybeSingle();
+            if (foundRow?.email) resolvedEmail = foundRow.email.trim().toLowerCase();
+            if (foundRow?.name) resolvedName = foundRow.name;
+          }
+
+          if (filter) {
+            const { error: payErr } = await supabase.from('delegate_applications').update(payPatch).or(filter);
+            if (payErr) console.warn("[Supabase] Payment verify error:", payErr.message);
+          }
         } catch (e) {
           console.warn("[Supabase] Payment verify notice:", e.message);
         }
       }
 
+      // Forward status update to Apps Script
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ ...body, adminKey: ADMIN_KEY }),
+        body: JSON.stringify({ ...body, paymentStatus: statusVal, adminKey: ADMIN_KEY }),
       }).catch(() => { });
+
+      // Dispatch official email notification to the delegate (Verified or Failed)
+      let emailDispatched = false;
+      if (resolvedEmail && resolvedEmail.includes('@')) {
+        const subject = isVer
+          ? 'Payment Verified & Seat Confirmed — Resolve MUN 2.0'
+          : 'Action Required: Payment Verification Failed — Resolve MUN 2.0';
+        const messageBody = isVer
+          ? `Dear ${resolvedName},\n\nYour UPI payment for Resolve MUN 2.0 (26–27 December 2026 at Northfield International School, Hyderabad) has been verified and your seat is officially confirmed.\n\nYou can now access your Digital Gate Pass, committee updates, and RES referral rewards at:\nhttps://resolvemun.in/dashboard\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`
+          : `Dear ${resolvedName},\n\nWe could not verify the UPI payment / UTR submitted with your Resolve MUN 2.0 registration (${targetId || resolvedEmail}). Your payment status has been marked as FAILED and your Digital Gate Pass is temporarily on hold.\n\nPlease review your status on https://resolvemun.in/dashboard and reply to this email or message us on WhatsApp at +91 92121 07797 with your valid 12-digit UPI UTR and payment screenshot so we can resolve this immediately.\n\nRegards,\nSecretariat, Resolve MUN 2.0\nresolve.mun@gmail.com`;
+
+        try {
+          const htmlBody = buildResolveEmailHtml({
+            eyebrow: isVer ? 'Payment Verified' : 'Action Required',
+            title: isVer ? 'Seat Confirmed — Resolve MUN 2.0' : 'Payment Verification Failed',
+            recipientName: resolvedName,
+            bodyText: messageBody,
+            ctaLabel: isVer ? 'Open Digital Gate Pass' : 'Check Dashboard Status',
+            ctaUrl: 'https://resolvemun.in/dashboard',
+            highlightBox: {
+              label: 'Registration Reference',
+              value: `${targetId || resolvedEmail} · ${statusVal}`,
+            },
+          });
+
+          if (process.env.RESEND_API_KEY) {
+            const fromAddr = process.env.RESEND_FROM_EMAIL || 'Resolve MUN 2.0 <onboarding@resend.dev>';
+            const r = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: fromAddr,
+                to: [resolvedEmail],
+                subject,
+                text: messageBody,
+                html: htmlBody,
+              }),
+            });
+            emailDispatched = r.ok;
+          } else {
+            const mailRes = await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify({
+                action: 'ADMIN_SEND_CUSTOM_EMAIL',
+                adminKey: ADMIN_KEY,
+                subject,
+                messageBody,
+                htmlBody,
+                email: resolvedEmail,
+                recipients: [{ email: resolvedEmail, name: resolvedName }],
+              }),
+            });
+            emailDispatched = mailRes.ok;
+          }
+        } catch (mailErr) {
+          console.warn('[ADMIN_VERIFY_PAYMENT] Email dispatch error:', mailErr.message);
+        }
+      }
 
       return NextResponse.json({
         status: 'success',
-        message: `Payment status set to ${statusVal}`,
+        paymentStatus: statusVal,
+        emailDispatched,
+        message: `Payment marked ${statusVal}${emailDispatched ? ` & email sent to ${resolvedEmail}` : ''}`,
       });
     }
 

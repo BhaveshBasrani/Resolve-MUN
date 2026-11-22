@@ -72,6 +72,13 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
       hint: "OC, Sec & EB",
     },
     {
+      id: "secretariat",
+      label: "Secretariat Roster",
+      icon: ShieldCheck,
+      count: counts.secretariatRoster || 0,
+      hint: "Allot Roles & Onboarding",
+    },
+    {
       id: "users",
       label: "Site Accounts",
       icon: ShieldCheck,

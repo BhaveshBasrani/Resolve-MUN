@@ -12,6 +12,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EngravedTicket from "@/components/ui/engraved-ticket";
+import { printOfficialReceipt, downloadQrPassImage, printQrPassPdf } from "@/lib/receiptGenerator";
 import {
   getDelegateReferralCode,
   getStallCouponCode,
@@ -214,8 +215,8 @@ function ChoosePathwayBlock({ onSelect, settings = {} }) {
               }
             }}
             className={`group relative flex flex-col justify-between gap-3 rounded-xl border border-white/10 bg-[#090909] p-4 text-left transition-all duration-200 ${p.open
-                ? "hover:border-white/30 hover:bg-[#111111] cursor-pointer active:scale-[0.99]"
-                : "opacity-40 cursor-not-allowed"
+              ? "hover:border-white/30 hover:bg-[#111111] cursor-pointer active:scale-[0.99]"
+              : "opacity-40 cursor-not-allowed"
               }`}
           >
             <div className="space-y-1">
@@ -254,6 +255,7 @@ export default function DelegateDashboard() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [copiedField, setCopiedField] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -262,44 +264,145 @@ export default function DelegateDashboard() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const handleCopyValue = (val, key) => {
+  // Works reliably over BOTH HTTPS and LAN HTTP (e.g. http://192.168.x.x:3000)
+  const handleCopyValue = async (val, key) => {
     if (!val) return;
-    navigator.clipboard?.writeText(val);
-    setCopiedField(key);
-    setTimeout(() => setCopiedField(""), 1800);
+    let copied = false;
+    try {
+      if (navigator?.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(val);
+        copied = true;
+      }
+    } catch (_) {}
+
+    if (!copied) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = val;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, val.length);
+        copied = document.execCommand("copy");
+        ta.remove();
+      } catch (_) {}
+    }
+
+    if (copied) {
+      setCopiedField(key);
+      setTimeout(() => setCopiedField(""), 1800);
+    } else {
+      window.prompt("Copy this link:", val);
+    }
   };
 
-  const handleSelfDeleteAccount = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to permanently delete your account?\n\nThis will permanently erase your profile, registration details, allocated portfolio, and entry pass from Resolve MUN records. This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-    const targetEmail = user?.email;
+  // High-friction 3-step self-serve account deletion modal state
+  const [showDangerZone, setShowDangerZone] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1);
+  const [deleteAck1, setDeleteAck1] = useState(false);
+  const [deleteAck2, setDeleteAck2] = useState(false);
+  const [deleteAck3, setDeleteAck3] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteEmailInput, setDeleteEmailInput] = useState("");
+  const [deletePhraseInput, setDeletePhraseInput] = useState("");
+  const [deleteCooldown, setDeleteCooldown] = useState(5);
+  const [deleteError, setDeleteError] = useState("");
+
+  useEffect(() => {
+    if (!deleteModalOpen || deleteStep !== 3) return;
+    setDeleteCooldown(5);
+    const interval = setInterval(() => {
+      setDeleteCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [deleteModalOpen, deleteStep]);
+
+  const openDeleteAccountFlow = () => {
+    setDeleteStep(1);
+    setDeleteAck1(false);
+    setDeleteAck2(false);
+    setDeleteAck3(false);
+    setDeleteReason("");
+    setDeleteEmailInput("");
+    setDeletePhraseInput("");
+    setDeleteCooldown(5);
+    setDeleteError("");
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmFinalDelete = async () => {
+    const targetEmail = (user?.email || "").trim().toLowerCase();
     const targetId = user?.id || user?.uid;
     if (!targetEmail && !targetId) return;
 
+    if (deleteEmailInput.trim().toLowerCase() !== targetEmail) {
+      setDeleteError("Entered email does not match your signed-in account.");
+      return;
+    }
+    if (deletePhraseInput.trim().toUpperCase() !== "DELETE MY ACCOUNT") {
+      setDeleteError('Please type "DELETE MY ACCOUNT" exactly to confirm.');
+      return;
+    }
+    if (deleteCooldown > 0) return;
+
     setIsDeletingAccount(true);
+    setDeleteError("");
     try {
-      await fetch("/api/admin/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "USER_DELETE_SELF",
-          email: targetEmail,
-          userId: targetId,
+      const [delRes] = await Promise.allSettled([
+        fetch("/api/delegate/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "DELETE_MY_ACCOUNT",
+            email: targetEmail,
+            userId: targetId,
+            confirmPhrase: deletePhraseInput.trim(),
+            reason: deleteReason,
+          }),
         }),
-      });
-      await signOutUser();
+        fetch("/api/admin/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "USER_DELETE_SELF",
+            email: targetEmail,
+            userId: targetId,
+          }),
+        }),
+      ]);
+
+      if (delRes.status === "fulfilled" && !delRes.value.ok) {
+        throw new Error("Could not complete server-side deletion.");
+      }
+
+      // Attempt to permanently delete Firebase Auth user; fall back to signOut if recent login is required
+      try {
+        if (auth?.currentUser) {
+          const { deleteUser } = await import("firebase/auth");
+          await deleteUser(auth.currentUser);
+        }
+      } catch (_) {
+        await signOutUser();
+      }
+
       if (typeof window !== "undefined") {
         localStorage.clear();
         sessionStorage.clear();
         window.location.href = "/?account_deleted=true";
       }
-    } catch (_) {
-      alert("Failed to delete account. Please try again or contact the Secretariat.");
+    } catch (err) {
+      setDeleteError(err?.message || "Failed to delete account. Please try again or contact the Secretariat.");
       setIsDeletingAccount(false);
     }
   };
@@ -384,7 +487,7 @@ export default function DelegateDashboard() {
         try {
           const cacheKey = `resolve_delegate_cache_${targetEmail}`;
           sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: updated }));
-        } catch (_) {}
+        } catch (_) { }
 
         setEditSuccessMsg("Your details have been updated successfully!");
         setTimeout(() => {
@@ -417,7 +520,7 @@ export default function DelegateDashboard() {
           photoURL: firebaseUser.photoURL || "",
         };
         setUser(normalized);
-        fetchDelegateProfile(normalized.uid, normalized.email);
+        fetchDelegateProfile(normalized.uid, normalized.email, true);
       } else {
         setUser(null);
         setDelegateRecord(null);
@@ -468,17 +571,29 @@ export default function DelegateDashboard() {
           (roleType === "SECRETARIAT" || roleType === "EB"
             ? "HONORARY-EXEMPT"
             : "");
-        const status = record.status || "Confirmed";
-        const isPaymentOk =
-          roleType === "SECRETARIAT" ||
-          roleType === "EB" ||
-          status === "Confirmed" ||
-          status === "Payment_Verified" ||
-          status === "Manual_Approved" ||
-          status === "APPROVED" ||
-          status === "Accepted" ||
-          status === "Allocated" ||
-          (paymentUTR && String(paymentUTR).trim().length > 3);
+        const status = record.status || "Pending";
+        const rawPayUpper = String(record.paymentStatus || record.payment_status || "").toUpperCase().trim();
+        const rawStatusUpper = String(status || "").toUpperCase().trim();
+        const isPayFailed =
+          rawPayUpper.includes("FAIL") ||
+          rawPayUpper.includes("REJECT") ||
+          rawStatusUpper.includes("FAIL");
+        const isPayPending =
+          !isPayFailed &&
+          (rawPayUpper.includes("PENDING") || rawPayUpper.includes("REVIEW"));
+        const isPayVerified =
+          !isPayFailed &&
+          !isPayPending &&
+          (roleType === "SECRETARIAT" ||
+            roleType === "EB" ||
+            rawPayUpper === "VERIFIED" ||
+            rawPayUpper === "PAID" ||
+            rawPayUpper === "APPROVED" ||
+            status === "Payment_Verified" ||
+            status === "Manual_Approved" ||
+            status === "APPROVED" ||
+            status === "Accepted" ||
+            status === "Allocated");
 
         setDelegateRecord({
           ...record,
@@ -499,7 +614,7 @@ export default function DelegateDashboard() {
           pref3_committee: record.pref3_committee || record.committeePref3 || "",
           pref3_country: record.pref3_country || record.pref3_portfolio1 || "",
           paymentUTR,
-          paymentStatus: isPaymentOk ? "VERIFIED" : "PENDING_VERIFICATION",
+          paymentStatus: isPayFailed ? "FAILED" : isPayVerified ? "VERIFIED" : "PENDING_VERIFICATION",
           status,
           allocatedCommittee:
             record.allocatedCommittee ||
@@ -590,1226 +705,1769 @@ export default function DelegateDashboard() {
     }
   };
 
+  const handlePrintReceipt = () => {
+    const rec = delegateRecord || {};
+    const rawId = rec.regId || rec.delegateId || "RM26-DEL-0000";
+    const cleanId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawId)
+      ? `RM26-DEL-${rawId.slice(0, 6).toUpperCase()}`
+      : rawId;
+    printOfficialReceipt({
+      ticketId: cleanId,
+      cardHolder: rec.fullName || rec.name || user?.displayName || "Registered Delegate",
+      email: rec.email || user?.email || "",
+      phone: rec.phone || "",
+      institution: rec.institution || rec.school || "",
+      passCategory:
+        rec.roleType === "OC"
+          ? "Organizing Committee Pass"
+          : rec.roleType === "SECRETARIAT"
+            ? "Secretariat Credential"
+            : rec.roleType === "SOCIALS"
+              ? "Socials Night Pass"
+              : "Delegate Pass",
+      amount: rec.roleType === "SOCIALS" ? 999 : rec.roleType === "OC" ? 1500 : rec.roleType === "SECRETARIAT" ? 0 : 2500,
+      utrNumber: rec.paymentUTR || rec.payment_utr || "",
+      date: rec.created_at ? new Date(rec.created_at) : new Date(),
+      paymentStatus:
+        rec.paymentStatus === "VERIFIED"
+          ? "Verified & Confirmed"
+          : rec.paymentStatus === "FAILED"
+            ? "Payment Failed"
+            : "Recorded · Pending Verification",
+      conferenceDates: systemSettings?.conferenceDates || "26, 27 December 2026",
+      venue:
+        systemSettings?.conferenceVenue ||
+        "Northfield International School, Devarayamjal Road, Kompally, Hyderabad 500078",
+    });
+  };
+
+  const handleDownloadQrImage = () => {
+    const rec = delegateRecord || {};
+    const rawId = rec.regId || rec.delegateId || "RM26-DEL-0000";
+    const cleanId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawId)
+      ? `RM26-DEL-${rawId.slice(0, 6).toUpperCase()}`
+      : rawId;
+    downloadQrPassImage({
+      ticketId: cleanId,
+      cardHolder: rec.fullName || rec.name || user?.displayName || "Registered Delegate",
+      roleType: rec.roleType || "DELEGATE",
+      email: rec.email || user?.email || "",
+    });
+  };
+
   const handlePrintPass = () => {
-    document.body.classList.add("print-pass-active");
-    const cleanup = () => {
-      document.body.classList.remove("print-pass-active");
-      window.removeEventListener("afterprint", cleanup);
+    const rec = delegateRecord || {};
+    const rawId = rec.regId || rec.delegateId || "RM26-DEL-0000";
+    const cleanId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawId)
+      ? `RM26-DEL-${rawId.slice(0, 6).toUpperCase()}`
+      : rawId;
+    printQrPassPdf({
+      ticketId: cleanId,
+      cardHolder: rec.fullName || rec.name || user?.displayName || "Registered Delegate",
+      roleType: rec.roleType || "DELEGATE",
+      email: rec.email || user?.email || "",
+      committee: rec.allocatedCommittee || "",
+    });
+  };
+
+    const handleDiscardDraft = (storageKey) => {
+      if (typeof window === "undefined") return;
+      try {
+        localStorage.removeItem(storageKey);
+        setDrafts(inspectDrafts(isReg));
+      } catch (_) { }
     };
-    window.addEventListener("afterprint", cleanup);
-    setTimeout(() => {
-      window.print();
-      setTimeout(cleanup, 3000);
-    }, 100);
-  };
 
-  const handleDiscardDraft = (storageKey) => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.removeItem(storageKey);
+    const handleSignOut = async () => {
+      try {
+        await signOutUser();
+        window.location.href = "/";
+      } catch (err) {
+        console.error("Sign out error:", err);
+      }
+    };
+
+    const isReg = Boolean(
+      delegateRecord &&
+      (delegateRecord.regId ||
+        delegateRecord.delegateId ||
+        delegateRecord.fullName ||
+        delegateRecord.found)
+    );
+    const isPaymentFailed =
+      isReg &&
+      (String(delegateRecord.paymentStatus || "").toUpperCase().includes("FAIL") ||
+        String(delegateRecord.paymentStatus || "").toUpperCase().includes("REJECT") ||
+        String(delegateRecord.status || "").toUpperCase().includes("FAIL"));
+    const isPaid =
+      isReg &&
+      !isPaymentFailed &&
+      (delegateRecord.paymentStatus === "VERIFIED" ||
+        delegateRecord.status === "Manual_Approved" ||
+        delegateRecord.status === "Payment_Verified" ||
+        delegateRecord.status === "ALLOTTED" ||
+        delegateRecord.status === "APPROVED" ||
+        delegateRecord.roleType === "SECRETARIAT" ||
+        delegateRecord.roleType === "EB");
+    const isAllotted = isReg && Boolean(delegateRecord.allocatedCommittee);
+
+    useEffect(() => {
       setDrafts(inspectDrafts(isReg));
-    } catch (_) { }
-  };
+    }, [isReg]);
 
-  const handleSignOut = async () => {
-    try {
-      await signOutUser();
-      window.location.href = "/";
-    } catch (err) {
-      console.error("Sign out error:", err);
-    }
-  };
+    const initials = (user?.displayName || user?.email || "D")
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    const displayName =
+      user?.displayName || user?.email?.split("@")[0] || "Delegate";
 
-  const isReg = Boolean(
-    delegateRecord &&
-    (delegateRecord.regId ||
-      delegateRecord.delegateId ||
-      delegateRecord.fullName ||
-      delegateRecord.found)
-  );
-  const isPaid =
-    isReg &&
-    (delegateRecord.paymentStatus === "VERIFIED" ||
-      delegateRecord.status === "Confirmed" ||
-      delegateRecord.status === "Manual_Approved" ||
-      delegateRecord.status === "Payment_Verified" ||
-      delegateRecord.status === "ALLOTTED" ||
-      delegateRecord.status === "APPROVED" ||
-      delegateRecord.roleType === "SECRETARIAT" ||
-      delegateRecord.roleType === "EB" ||
-      Boolean(
-        delegateRecord.paymentUTR &&
-        String(delegateRecord.paymentUTR).trim().length > 3
-      ));
-  const isAllotted = isReg && Boolean(delegateRecord.allocatedCommittee);
-
-  useEffect(() => {
-    setDrafts(inspectDrafts(isReg));
-  }, [isReg]);
-
-  const initials = (user?.displayName || user?.email || "D")
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  const displayName =
-    user?.displayName || user?.email?.split("@")[0] || "Delegate";
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-        <div className="w-10 h-10 rounded-xl border border-white/20 bg-[#0a0a0a] flex items-center justify-center">
-          <span className="font-mono font-bold text-white text-base">R</span>
-        </div>
-        <div className="flex gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse"
-              style={{ animationDelay: `${i * 0.2}s` }}
-            />
-          ))}
-        </div>
-        <p className="text-xs text-white/40 font-mono">Authenticating...</p>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-black text-white flex flex-col justify-between selection:bg-white selection:text-black">
-        <div className="no-print"><Navbar /></div>
-        <div className="flex-1 flex items-center justify-center p-4 pt-28">
-          <div className="w-full max-w-md p-8 rounded-2xl border border-white/15 bg-[#080808] text-center space-y-6">
-            <div className="w-12 h-12 rounded-xl border border-white/20 bg-white/[0.04] flex items-center justify-center mx-auto text-white">
-              <Lock className="w-5 h-5 text-white/80" />
-            </div>
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40 font-semibold">
-                RESOLVE MUN 2026
-              </p>
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans">
-                Sign In to Your Dashboard
-              </h1>
-              <p className="text-xs text-white/50 leading-relaxed font-sans max-w-sm mx-auto">
-                Sign in to view your application status, committee assignment, event passes, and conference schedule.
-              </p>
-            </div>
-            <Link
-              href="/?open=auth"
-              className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-[0.99]"
-            >
-              Sign In <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-            </Link>
+    if (authLoading) {
+      return (
+        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+          <div className="w-10 h-10 rounded-xl border border-white/20 bg-[#0a0a0a] flex items-center justify-center">
+            <span className="font-mono font-bold text-white text-base">R</span>
           </div>
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse"
+                style={{ animationDelay: `${i * 0.2}s` }}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-white/40 font-mono">Authenticating...</p>
         </div>
-        <div className="no-print"><Footer /></div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return (
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-black text-white flex flex-col justify-between selection:bg-white selection:text-black">
+          <div className="no-print"><Navbar /></div>
+          <div className="flex-1 flex items-center justify-center p-4 pt-28">
+            <div className="w-full max-w-md p-8 rounded-2xl border border-white/15 bg-[#080808] text-center space-y-6">
+              <div className="w-12 h-12 rounded-xl border border-white/20 bg-white/[0.04] flex items-center justify-center mx-auto text-white">
+                <Lock className="w-5 h-5 text-white/80" />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40 font-semibold">
+                  RESOLVE MUN 2026
+                </p>
+                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans">
+                  Sign In to Your Dashboard
+                </h1>
+                <p className="text-xs text-white/50 leading-relaxed font-sans max-w-sm mx-auto">
+                  Sign in to view your application status, committee assignment, event passes, and conference schedule.
+                </p>
+              </div>
+              <Link
+                href="/?open=auth"
+                className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-[0.99]"
+              >
+                Sign In <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Link>
+            </div>
+          </div>
+          <div className="no-print"><Footer /></div>
+        </div>
+      );
+    }
+
+    const rawDelegateId = delegateRecord?.delegateId || delegateRecord?.regId || "";
+    const formattedDelegateId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawDelegateId)
+      ? `RM26-DEL-${rawDelegateId.slice(0, 6).toUpperCase()}`
+      : rawDelegateId;
+
+    const crmTabs = [
+      { id: "overview", label: "Overview" },
+      ...(isReg
+        ? [
+            { id: "application", label: "Application" },
+            { id: "pass", label: "Gate Pass" },
+            { id: "referrals", label: "Referrals" },
+          ]
+        : []),
+      { id: "account", label: "Account" },
+    ];
+
+    return (
       <div id="dashboard-root" className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black flex flex-col justify-between">
-        <div className="no-print"><Navbar /></div>
+        {/* DEDICATED MINIMAL SAAS WORKSPACE TOP BAR (Zero landing-page notch collision) */}
+        <header className="no-print sticky top-0 z-40 h-14 border-b border-[#1f1f1f] bg-black/95 backdrop-blur-sm">
+          <div className="max-w-6xl h-full mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Link href="/" className="flex items-center gap-2 !no-underline shrink-0">
+                <img src="/images/Logo.svg" alt="Resolve MUN" className="w-5 h-5 object-contain" />
+                <span className="text-sm font-bold tracking-wider text-white">RESOLVE MUN 2.0</span>
+              </Link>
+              <span className="text-zinc-700 hidden sm:inline">/</span>
+              <span className="text-xs text-zinc-400 hidden sm:inline truncate">Delegate Workspace</span>
+            </div>
 
-          <main id="dashboard-main" className="no-print max-w-4xl w-full mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-5 flex-1">
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
+                disabled={dataLoading}
+                className="h-8 px-2.5 rounded-md border border-[#262626] bg-black hover:bg-white/[0.04] text-xs text-zinc-300 hover:text-white flex items-center gap-1.5 cursor-pointer"
+                title="Sync latest status"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${dataLoading ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">{dataLoading ? "Syncing" : "Sync"}</span>
+              </button>
+              <Link
+                href="/"
+                className="h-8 px-2.5 rounded-md border border-[#262626] bg-black hover:bg-white/[0.04] text-xs text-zinc-300 hover:text-white flex items-center gap-1.5"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Home</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="lg:hidden h-8 px-2.5 rounded-md border border-[#262626] bg-black text-xs text-zinc-400 hover:text-white cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </header>
 
-            {/* 1. IDENTITY & PROFILE CARD */}
-            <section className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#080808] p-4 sm:p-7 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                <div className="flex items-center gap-3.5 sm:gap-5">
-                  <div className="relative shrink-0">
-                    {user.photoURL ? (
-                      <img
-                        src={user.photoURL}
-                        alt={displayName}
-                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl object-cover border border-white/20"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-[#111111] border border-white/20 flex items-center justify-center text-white font-mono font-bold text-lg sm:text-xl">
-                        {initials}
-                      </div>
-                    )}
-                    {isReg && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white text-black flex items-center justify-center border-2 border-black">
-                        <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={3} />
-                      </div>
-                    )}
+        <main id="dashboard-main" className="no-print max-w-6xl w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-20 flex-1">
+          {/* SAAS / CRM WORKSPACE SHELL: LEFT SIDEBAR ON DESKTOP + CRISP TOP TABS ON PHONES */}
+          <div className="grid grid-cols-1 lg:grid-cols-[224px_minmax(0,1fr)] gap-5 lg:gap-7 items-start">
+            {/* DESKTOP CRM SIDEBAR */}
+            <aside className="hidden lg:flex flex-col sticky top-20 border border-[#1f1f1f] bg-black rounded-md overflow-hidden">
+              <div className="p-3.5 border-b border-[#1f1f1f] flex items-center gap-2.5">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={displayName} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center text-xs font-bold text-white shrink-0">
+                    {initials}
                   </div>
-
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
-                        {systemSettings.roundName}
-                      </span>
-                      <span className="text-white/20">·</span>
-                      <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
-                        Hyderabad 2026
-                      </span>
-                    </div>
-
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans">
-                      {displayName}
-                    </h1>
-                    <p className="text-xs text-white/40 font-mono truncate">
-                      {user.email}
-                    </p>
-
-                    {/* Single Clean Monochrome Status Line */}
-                    <div className="pt-1.5 flex flex-wrap items-center gap-2">
-                      {isReg ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-bold tracking-wider uppercase text-white">
-                            {delegateRecord.roleType || "DELEGATE"} PASS
-                          </span>
-                          <span className="text-xs font-mono text-white/40">·</span>
-                          <span className="text-xs font-mono text-white/60">
-                            Payment: <strong className="text-white font-semibold">{isPaid ? "Verified" : "Under Review"}</strong>
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs font-mono text-white/50">
-                          Status: <strong className="text-white/80 font-normal">No active registration</strong>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Delegate ID & Top Actions */}
-                <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-4 sm:pt-0 border-t sm:border-t-0 border-white/10">
-                  {isReg && delegateRecord?.delegateId ? (
-                    <div className="p-3 rounded-xl bg-[#0e0e0e] border border-white/15 text-left sm:text-right">
-                      <span className="text-[9px] text-white/40 font-mono uppercase tracking-wider block font-semibold">DELEGATE ID</span>
-                      <span className="text-sm sm:text-base font-mono font-bold text-white tracking-wider block mt-0.5">
-                        {delegateRecord.delegateId}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs font-mono text-white/40">
-                      Account Verified
-                    </span>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
-                      disabled={dataLoading}
-                      className="h-8 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <RefreshCw className={`w-3 h-3 ${dataLoading ? "animate-spin" : ""}`} />
-                      <span>{dataLoading ? "Syncing..." : "Refresh"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSignOut}
-                      className="h-8 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/50 hover:text-white transition-colors cursor-pointer"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="m-0 text-xs font-semibold text-white truncate">{displayName}</p>
+                  <p className="m-0 text-[11px] text-zinc-500 truncate mt-0.5">{formattedDelegateId || user.email}</p>
                 </div>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-white/40 font-mono">
+              <div className="p-2 flex flex-col gap-0.5" role="tablist" aria-label="Dashboard sections">
+                {crmTabs.map((t) => {
+                  const active = activeTab === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setActiveTab(t.id)}
+                      className={`w-full h-9 px-3 rounded text-left text-xs font-medium flex items-center justify-between cursor-pointer transition-colors ${
+                        active
+                          ? "bg-white text-black font-semibold"
+                          : "bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04]"
+                      }`}
+                    >
+                      <span>{t.label}</span>
+                      {t.id === "pass" && isPaymentFailed && (
+                        <span className="w-2 h-2 rounded-full bg-red-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="p-2 border-t border-[#1f1f1f] space-y-0.5">
+                <Link
+                  href="/secretariat"
+                  className="w-full h-8 px-3 rounded text-left text-xs text-zinc-400 hover:text-white hover:bg-white/[0.04] flex items-center justify-between"
+                >
+                  <span>Secretariat Portal</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="w-full h-8 px-3 rounded text-left text-xs text-zinc-500 hover:text-white hover:bg-white/[0.04] cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </aside>
+
+            {/* MAIN CRM WORKSPACE COLUMN */}
+            <div className="min-w-0 space-y-4">
+              {/* MOBILE CRM HORIZONTAL TAB STRIP */}
+              <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-[#1f1f1f]">
+                {crmTabs.map((t) => {
+                  const active = activeTab === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setActiveTab(t.id)}
+                      className={`shrink-0 h-9 px-3.5 rounded-md text-xs font-medium whitespace-nowrap cursor-pointer ${
+                        active
+                          ? "bg-white text-black font-semibold"
+                          : "bg-black text-zinc-400 border border-[#262626]"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+          {/* 1. IDENTITY & PROFILE CARD (Visible on Overview tab) */}
+          {activeTab === "overview" && (isMobile ? (
+            <section className="rounded-xl border border-[#1f1f1f] bg-black p-4 space-y-4">
+              {/* Profile Header Row */}
+              <div className="flex items-center gap-3">
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={displayName}
+                    className="w-11 h-11 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center text-white font-mono font-bold text-sm shrink-0">
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h1 className="m-0 text-base font-bold text-white tracking-tight truncate leading-tight">
+                      {displayName}
+                    </h1>
+                    {isReg && (
+                      <span
+                        className={`shrink-0 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${isPaymentFailed
+                          ? "bg-red-600 text-white"
+                          : isPaid
+                            ? "bg-white text-black"
+                            : "bg-[#171717] text-[#d4d4d4] border border-[#333333]"
+                          }`}
+                      >
+                        {isPaymentFailed ? "Payment Failed" : isPaid ? "Verified" : "Pending"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="m-0 text-xs text-[#8c8c8c] truncate mt-0.5 leading-tight">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Clean 2x2 Key-Value Strip */}
+              <div className="grid grid-cols-2 gap-px bg-[#1f1f1f] border border-[#1f1f1f] rounded-lg overflow-hidden">
+                <div className="bg-black p-2.5 min-w-0">
+                  <span className="block text-[9px] font-mono uppercase tracking-widest text-[#737373]">
+                    Delegate ID
+                  </span>
+                  <span className="block text-xs font-mono font-bold text-white mt-1 truncate">
+                    {formattedDelegateId || "Not Registered"}
+                  </span>
+                </div>
+                <div className="bg-black p-2.5 min-w-0">
+                  <span className="block text-[9px] font-mono uppercase tracking-widest text-[#737373]">
+                    Pass Type
+                  </span>
+                  <span className="block text-xs font-semibold text-white mt-1 truncate">
+                    {isReg ? `${delegateRecord.roleType || "Delegate"} Pass` : "None"}
+                  </span>
+                </div>
+                <div className="bg-black p-2.5 min-w-0">
+                  <span className="block text-[9px] font-mono uppercase tracking-widest text-[#737373]">
+                    Venue
+                  </span>
+                  <span className="block text-xs text-[#d4d4d4] mt-1 truncate">
+                    Northfield Int&apos;l School
+                  </span>
+                </div>
+                <div className="bg-black p-2.5 min-w-0">
+                  <span className="block text-[9px] font-mono uppercase tracking-widest text-[#737373]">
+                    Dates
+                  </span>
+                  <span className="block text-xs text-[#d4d4d4] mt-1 truncate">
+                    26, 27 Dec 2026
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Row */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
+                  disabled={dataLoading}
+                  className="h-9 px-3 rounded-lg border border-[#262626] bg-black text-xs font-medium text-white flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${dataLoading ? "animate-spin" : ""}`} />
+                  <span>{dataLoading ? "Syncing..." : "Refresh"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="h-9 px-3 rounded-lg border border-[#262626] bg-black text-xs font-medium text-[#a3a3a3] flex items-center justify-center whitespace-nowrap cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-md border border-[#1f1f1f] bg-black p-5 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={displayName}
+                      className="w-12 h-12 rounded-md object-cover border border-[#262626] shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-md bg-[#111111] border border-[#262626] flex items-center justify-center text-white font-mono font-bold text-base shrink-0">
+                      {initials}
+                    </div>
+                  )}
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h1 className="m-0 text-lg font-bold text-white tracking-tight truncate">
+                        {displayName}
+                      </h1>
+                      {isReg && (
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider shrink-0 ${
+                            isPaymentFailed
+                              ? "bg-red-600 text-white"
+                              : isPaid
+                                ? "bg-white text-black"
+                                : "border border-[#333333] text-zinc-300"
+                          }`}
+                        >
+                          {isPaymentFailed ? "Payment Failed" : isPaid ? "Verified" : "Pending"}
+                        </span>
+                      )}
+                    </div>
+                    <p className="m-0 text-xs text-zinc-500 truncate mt-0.5">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+
+                {isReg && formattedDelegateId && (
+                  <div className="text-right shrink-0">
+                    <span className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                      Delegate ID
+                    </span>
+                    <span className="block text-sm font-mono font-semibold text-white mt-0.5">
+                      {formattedDelegateId}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3.5 border-t border-[#1f1f1f] flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
                 <div>
-                  Venue: <span className="text-white/70 font-sans">{systemSettings.conferenceVenue || "Northfield International School"}</span>
+                  Venue: <span className="text-zinc-300">{systemSettings.conferenceVenue || "Northfield International School"}</span>
                 </div>
                 <div>
-                  Dates: <span className="text-white/70 font-sans">{systemSettings.conferenceDates || "26, 27 December 2026"}</span>
+                  Dates: <span className="text-zinc-300">{systemSettings.conferenceDates || "26, 27 December 2026"}</span>
                 </div>
               </div>
             </section>
+            ))}
 
-            {/* 2. INCOMPLETE APPLICATION RESUME NOTIFICATION */}
-            {!isReg && drafts.length > 0 && (
-              <section className="space-y-2.5">
-                {drafts.map((draft) => (
-                  <div
-                    key={draft.storageKey}
-                    className="rounded-xl border border-white/20 bg-[#090909] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+            {/* CRM OVERVIEW QUICK KPI GRID & JUMP CARDS */}
+            {activeTab === "overview" && isReg && (
+              <section className="rounded-md border border-[#262626] bg-black p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                    Workspace Summary
+                  </span>
+                  <button
+                    type="button"
+                    onClick={openEditProfileModal}
+                    className="h-8 px-3 rounded-md border border-[#262626] bg-black text-xs font-medium text-white hover:bg-white/5 cursor-pointer"
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/50 font-semibold">
-                          Incomplete Draft Detected
+                    Edit Details
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-[#1f1f1f] border border-[#1f1f1f] rounded-md overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("application")}
+                    className="bg-black p-3.5 text-left cursor-pointer hover:bg-white/[0.02]"
+                  >
+                    <span className="block text-[10px] text-zinc-500">Payment</span>
+                    <span className={`block text-sm font-semibold mt-1 ${isPaymentFailed ? "text-red-400" : "text-white"}`}>
+                      {isPaymentFailed ? "Failed" : isPaid ? "Verified" : "Pending"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("application")}
+                    className="bg-black p-3.5 text-left cursor-pointer hover:bg-white/[0.02]"
+                  >
+                    <span className="block text-[10px] text-zinc-500">Allotment</span>
+                    <span className="block text-sm font-semibold text-white mt-1 truncate">
+                      {delegateRecord.allocatedCommittee || "Pending"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("pass")}
+                    className="bg-black p-3.5 text-left cursor-pointer hover:bg-white/[0.02]"
+                  >
+                    <span className="block text-[10px] text-zinc-500">Gate Pass</span>
+                    <span className="block text-sm font-semibold text-white mt-1">
+                      {isPaid ? "Active →" : "Locked"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("referrals")}
+                    className="bg-black p-3.5 text-left cursor-pointer hover:bg-white/[0.02]"
+                  >
+                    <span className="block text-[10px] text-zinc-500">RES Points</span>
+                    <span className="block text-sm font-semibold text-white mt-1">
+                      {(delegateRecord.referralStats?.activePoints || 0).toLocaleString("en-IN")} RES
+                    </span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("pass")}
+                    className="h-10 px-3 rounded-md bg-white text-black text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Open Gate Pass</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("referrals")}
+                    className="h-10 px-3 rounded-md border border-[#262626] bg-black text-white text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Share Referral</span>
+                  </button>
+                </div>
+              </section>
+            )}
+
+          {/* 2. INCOMPLETE APPLICATION RESUME NOTIFICATION */}
+          {!isReg && drafts.length > 0 && (
+            <section className="space-y-2.5">
+              {drafts.map((draft) => (
+                <div
+                  key={draft.storageKey}
+                  className="rounded-xl border border-white/20 bg-[#090909] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/50 font-semibold">
+                        Incomplete Draft Detected
+                      </span>
+                    </div>
+                    <h3 className="text-sm sm:text-base font-bold text-white tracking-tight font-sans">
+                      Continue your {draft.label}
+                    </h3>
+                    <p className="text-xs text-white/50 leading-relaxed font-sans max-w-xl">
+                      You have saved details from your previous session ({draft.filledCount} fields filled
+                      {draft.primaryField ? ` · "${draft.primaryField}"` : ""}). Pick up right where you left off.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleDiscardDraft(draft.storageKey)}
+                      title="Clear saved draft data"
+                      className="h-8 px-3 rounded-lg border border-white/10 hover:border-white/30 bg-transparent text-xs font-mono text-white/40 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Discard</span>
+                    </button>
+                    <Link
+                      href={draft.href}
+                      className="h-8 px-4 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-98"
+                    >
+                      <span>Continue Application</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* 3. UNREGISTERED STATE: CHOOSE PATHWAY */}
+          {!isReg && (
+            <section className="rounded-2xl border border-white/15 bg-[#080808] p-6 sm:p-7 shadow-sm">
+              <ChoosePathwayBlock
+                settings={systemSettings}
+                onSelect={(track) => {
+                  window.location.href = `/?open=${track}`;
+                }}
+              />
+            </section>
+          )}
+
+          {/* 4. REGISTERED STATE (TAB-SCOPED CRM PANELS) */}
+          {isReg && (
+            <div className="space-y-4">
+              {/* REGISTRATION DETAILS (Application Tab) */}
+              {activeTab === "application" && (
+              <section className="rounded-md border border-[#262626] bg-black p-5 sm:p-6 space-y-5">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase font-mono tracking-wider font-semibold text-white/40">
+                      YOUR REGISTRATION
+                    </p>
+                    <h3 className="text-base sm:text-lg font-bold text-white font-sans mt-0.5">
+                      Registration Overview
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-white/50 hidden sm:inline">
+                      {delegateRecord.delegationCode && delegateRecord.delegationCode !== "Independent"
+                        ? `Team: ${delegateRecord.delegationCode}`
+                        : "Individual Registration"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={openEditProfileModal}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-colors cursor-pointer shadow-sm"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Edit Details</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Committee Preferences */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-mono text-white/40 uppercase tracking-wider font-semibold">
+                      Submitted Committee Choices
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openEditProfileModal}
+                      className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" /> Change Choices
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {[1, 2, 3].map((n) => {
+                      const comm = delegateRecord[`pref${n}_committee`];
+                      const ctry = delegateRecord[`pref${n}_country`];
+                      const displayVal = delegateRecord[`pref${n}`] || (comm ? `${comm}${ctry ? ' · ' + ctry : ''}` : "Not specified");
+                      return (
+                        <div key={n} className="p-3.5 rounded-xl bg-[#090909] border border-white/10 space-y-1">
+                          <span className="text-[10px] font-mono text-white/40 block font-semibold uppercase">Choice {n}</span>
+                          <span className="text-xs sm:text-sm font-semibold text-white mt-1 block leading-snug truncate">
+                            {displayVal}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Core Data Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <DataTile label="Institution" value={delegateRecord.institution || "Individual"} />
+                  <DataTile label="Grade / Class" value={delegateRecord.grade || "—"} />
+                  <DataTile label="Date of Birth" value={delegateRecord.dob || "—"} />
+                  <DataTile
+                    label="Transportation"
+                    value={
+                      delegateRecord.transport && String(delegateRecord.transport).toLowerCase().includes("yes")
+                        ? "Yes (Opted In)"
+                        : "No (Self Commute)"
+                    }
+                  />
+                  <DataTile label="Assigned Committee" value={isAllotted ? delegateRecord.allocatedCommittee : "Awaiting Allotment"} />
+                  <DataTile label="Country / Portfolio" value={isAllotted ? (delegateRecord.allocatedCountry || "Delegate") : "Awaiting Allotment"} />
+                  <DataTile label="Contact Phone" value={delegateRecord.phone || "—"} />
+                  <DataTile label="Registered Email" value={delegateRecord.email || user?.email || "—"} />
+                </div>
+
+                {/* Address & MUN Experience Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Residential Address */}
+                  <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 font-semibold">
+                          Full Residential Address
                         </span>
                       </div>
-                      <h3 className="text-sm sm:text-base font-bold text-white tracking-tight font-sans">
-                        Continue your {draft.label}
-                      </h3>
-                      <p className="text-xs text-white/50 leading-relaxed font-sans max-w-xl">
-                        You have saved details from your previous session ({draft.filledCount} fields filled
-                        {draft.primaryField ? ` · "${draft.primaryField}"` : ""}). Pick up right where you left off.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleDiscardDraft(draft.storageKey)}
-                        title="Clear saved draft data"
-                        className="h-8 px-3 rounded-lg border border-white/10 hover:border-white/30 bg-transparent text-xs font-mono text-white/40 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        <span>Discard</span>
-                      </button>
-                      <Link
-                        href={draft.href}
-                        className="h-8 px-4 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-98"
-                      >
-                        <span>Continue Application</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </section>
-            )}
-
-            {/* 3. UNREGISTERED STATE: CHOOSE PATHWAY */}
-            {!isReg && (
-              <section className="rounded-2xl border border-white/15 bg-[#080808] p-6 sm:p-7 shadow-sm">
-                <ChoosePathwayBlock
-                  settings={systemSettings}
-                  onSelect={(track) => {
-                    window.location.href = `/?open=${track}`;
-                  }}
-                />
-              </section>
-            )}
-
-            {/* 4. REGISTERED STATE */}
-            {isReg && (
-              <div className="space-y-5">
-                {/* REGISTRATION DETAILS */}
-                <section className="rounded-2xl border border-white/15 bg-[#080808] p-6 sm:p-7 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-3">
-                    <div>
-                      <p className="text-[10px] uppercase font-mono tracking-wider font-semibold text-white/40">
-                        YOUR REGISTRATION
-                      </p>
-                      <h3 className="text-base sm:text-lg font-bold text-white font-sans mt-0.5">
-                        Registration Overview
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono text-white/50 hidden sm:inline">
-                        {delegateRecord.delegationCode && delegateRecord.delegationCode !== "Independent"
-                          ? `Team: ${delegateRecord.delegationCode}`
-                          : "Individual Registration"}
-                      </span>
                       <button
                         type="button"
                         onClick={openEditProfileModal}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-colors cursor-pointer shadow-sm"
+                        className="text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
-                        <span>Edit Details</span>
+                        Edit
                       </button>
                     </div>
+                    <p className="text-xs text-zinc-300 leading-relaxed font-sans">
+                      {delegateRecord.address || "No residential address provided yet. Click 'Edit Details' to add your address."}
+                    </p>
                   </div>
 
-                  {/* Committee Preferences */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-mono text-white/40 uppercase tracking-wider font-semibold">
-                        Submitted Committee Choices
-                      </p>
+                  {/* MUN Experience */}
+                  <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-zinc-400" />
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 font-semibold">
+                          MUN Experience
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={openEditProfileModal}
-                        className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                        className="text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer"
                       >
-                        <Pencil className="w-3 h-3" /> Change Choices
+                        Edit
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {[1, 2, 3].map((n) => {
-                        const comm = delegateRecord[`pref${n}_committee`];
-                        const ctry = delegateRecord[`pref${n}_country`];
-                        const displayVal = delegateRecord[`pref${n}`] || (comm ? `${comm}${ctry ? ' · ' + ctry : ''}` : "Not specified");
-                        return (
-                          <div key={n} className="p-3.5 rounded-xl bg-[#090909] border border-white/10 space-y-1">
-                            <span className="text-[10px] font-mono text-white/40 block font-semibold uppercase">Choice {n}</span>
-                            <span className="text-xs sm:text-sm font-semibold text-white mt-1 block leading-snug truncate">
-                              {displayVal}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <p className="text-xs text-zinc-300 leading-relaxed font-sans line-clamp-3">
+                      {delegateRecord.experience || "First Timer / N/A"}
+                    </p>
                   </div>
+                </div>
 
-                  {/* Core Data Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    <DataTile label="Institution" value={delegateRecord.institution || "Individual"} />
-                    <DataTile label="Grade / Class" value={delegateRecord.grade || "—"} />
-                    <DataTile label="Date of Birth" value={delegateRecord.dob || "—"} />
-                    <DataTile
-                      label="Transportation"
-                      value={
-                        delegateRecord.transport && String(delegateRecord.transport).toLowerCase().includes("yes")
-                          ? "Yes (Opted In)"
-                          : "No (Self Commute)"
-                      }
-                    />
-                    <DataTile label="Assigned Committee" value={isAllotted ? delegateRecord.allocatedCommittee : "Awaiting Allotment"} />
-                    <DataTile label="Country / Portfolio" value={isAllotted ? (delegateRecord.allocatedCountry || "Delegate") : "Awaiting Allotment"} />
-                    <DataTile label="Contact Phone" value={delegateRecord.phone || "—"} />
-                    <DataTile label="Registered Email" value={delegateRecord.email || user?.email || "—"} />
-                  </div>
-
-                  {/* Address & MUN Experience Row */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Residential Address */}
-                    <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 font-semibold">
-                            Full Residential Address
+                {/* Payment Verification Box */}
+                <div
+                  className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isPaymentFailed
+                    ? "bg-red-950/20 border-red-500/40"
+                    : "bg-[#090909] border-white/10"
+                    }`}
+                >
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 font-semibold block">
+                      Payment Status
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {isPaymentFailed ? (
+                        <>
+                          <X className="w-4 h-4 text-red-400 shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-red-400 font-mono">
+                            Payment Failed — Verification Unsuccessful
                           </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={openEditProfileModal}
-                          className="text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                      <p className="text-xs text-zinc-300 leading-relaxed font-sans">
-                        {delegateRecord.address || "No residential address provided yet. Click 'Edit Details' to add your address."}
-                      </p>
-                    </div>
-
-                    {/* MUN Experience */}
-                    <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Award className="w-3.5 h-3.5 text-zinc-400" />
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 font-semibold">
-                            MUN Experience
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={openEditProfileModal}
-                          className="text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                      <p className="text-xs text-zinc-300 leading-relaxed font-sans line-clamp-3">
-                        {delegateRecord.experience || "First Timer / N/A"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Payment Verification Box */}
-                  <div className="p-4 rounded-xl bg-[#090909] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 font-semibold block">
-                        Payment Status
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {isPaid ? (
-                          <>
-                            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                            <span className="text-xs sm:text-sm font-bold text-emerald-300 font-mono">Payment Verified</span>
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
-                            <span className="text-xs sm:text-sm font-bold text-amber-300 font-mono">Verification in Progress</span>
-                          </>
-                        )}
-                      </div>
-                      {delegateRecord.paymentUTR && (
-                        <p className="text-xs text-white/40 font-mono">
-                          UTR: <span className="text-white/70">{delegateRecord.paymentUTR}</span>
-                        </p>
+                        </>
+                      ) : isPaid ? (
+                        <>
+                          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-emerald-300 font-mono">Payment Verified</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-amber-300 font-mono">Verification in Progress</span>
+                        </>
                       )}
                     </div>
-
-                    {isPaid && (
-                      <span className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400 self-start sm:self-auto">
-                        Seat Confirmed
-                      </span>
+                    {isPaymentFailed && (
+                      <p className="text-xs text-zinc-300 leading-relaxed pt-0.5">
+                        We could not verify your submitted UPI transaction. Your Digital Gate Pass is temporarily on hold. Contact the Secretariat on WhatsApp or email with your valid 12-digit UTR &amp; payment screenshot to re-verify.
+                      </p>
+                    )}
+                    {delegateRecord.paymentUTR && (
+                      <p className="text-xs text-white/40 font-mono">
+                        UTR: <span className="text-white/70">{delegateRecord.paymentUTR}</span>
+                      </p>
                     )}
                   </div>
-                </section>
 
-                {/* RES POINTS & REFERRAL REWARDS HUB */}
-                {(() => {
-                  const refCode =
-                    delegateRecord.referralCode ||
-                    getDelegateReferralCode(delegateRecord.delegateId || delegateRecord.regId, delegateRecord.email || user?.email);
-                  const couponCode =
-                    delegateRecord.couponCode ||
-                    getStallCouponCode(delegateRecord.delegateId || delegateRecord.regId, delegateRecord.email || user?.email);
-                  const stats = delegateRecord.referralStats || {
-                    code: refCode,
-                    couponCode,
-                    ...calculateResStats([]),
-                  };
-                  const origin = typeof window !== "undefined" ? window.location.origin : "https://resolvemun.in";
-                  const shareUrl = `${origin}/?open=delegate&ref=${encodeURIComponent(refCode)}`;
-                  const whatsappText = encodeURIComponent(
-                    `Join me at Resolve MUN 2.0 (26–27 Dec 2026 at Northfield International School, Hyderabad)! Register with my referral link: ${shareUrl} (Code: ${refCode})`
-                  );
+                  {isPaymentFailed ? (
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <a
+                        href={`https://wa.me/919212107797?text=${encodeURIComponent(
+                          `Hi Resolve MUN Secretariat, my payment (${delegateRecord.delegateId || delegateRecord.email}) was marked failed. Sharing my valid UPI screenshot & UTR.`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center h-9 px-3.5 rounded-lg bg-white text-black text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                      >
+                        WhatsApp Support
+                      </a>
+                      <a
+                        href="mailto:resolve.mun@gmail.com?subject=Resolve%20MUN%202.0%20Payment%20Verification%20Issue"
+                        className="inline-flex items-center justify-center h-9 px-3.5 rounded-lg border border-white/20 bg-black text-white text-xs font-semibold whitespace-nowrap"
+                      >
+                        Email
+                      </a>
+                    </div>
+                  ) : isPaid ? (
+                    <span className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400 self-start sm:self-auto">
+                      Seat Confirmed
+                    </span>
+                  ) : null}
+                </div>
+              </section>
+              )}
 
-                  return (
-                    <section className="rounded-2xl border border-white/15 bg-[#080808] p-5 sm:p-7 space-y-5">
-                      {/* Header */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
-                        <div>
-                          <p className="text-[10px] uppercase font-mono tracking-[0.2em] font-semibold text-white/40">
-                            REFERRAL REWARDS · STALL COUPONS
-                          </p>
-                          <h3 className="text-base sm:text-lg font-bold text-white font-sans mt-0.5 flex items-center gap-2">
-                            <Gift className="w-4 h-4 text-white" />
-                            <span>RES Points &amp; Referrals</span>
-                          </h3>
-                          <p className="text-xs text-white/55 mt-1 font-sans">
-                            Earn <strong className="text-white">{RES_POINTS_PER_REFERRAL} RES Points</strong> per verified referral · <span className="font-mono">1 RES = ₹{RES_POINT_RUPEE_VALUE.toFixed(2)}</span> (<strong className="text-white">₹{RUPEES_PER_REFERRAL} Stall Coupon</strong> per friend).
-                          </p>
-                        </div>
-                        <span className="self-start sm:self-auto px-2.5 py-1 rounded-md border border-white/20 bg-white/[0.05] text-[10px] font-mono uppercase tracking-wider text-white font-bold">
-                          {stats.currentTier?.name || "Delegate"} · {stats.currentTier?.badge || "TIER 0"}
-                        </span>
-                      </div>
+              {/* RES POINTS & REFERRALS (Referrals Tab) */}
+              {activeTab === "referrals" && (() => {
+                const refCode =
+                  delegateRecord.referralCode ||
+                  getDelegateReferralCode(delegateRecord.delegateId || delegateRecord.regId, delegateRecord.email || user?.email);
+                const couponCode =
+                  delegateRecord.couponCode ||
+                  getStallCouponCode(delegateRecord.delegateId || delegateRecord.regId, delegateRecord.email || user?.email);
+                const stats = delegateRecord.referralStats || {
+                  code: refCode,
+                  couponCode,
+                  ...calculateResStats([]),
+                };
+                const origin = typeof window !== "undefined" ? window.location.origin : "https://resolvemun.in";
+                const shareUrl = `${origin}/?open=delegate&ref=${encodeURIComponent(refCode)}`;
+                const whatsappText = encodeURIComponent(
+                  `Join me at Resolve MUN 2.0 (26–27 Dec 2026 at Northfield International School, Hyderabad)! Register with my referral link: ${shareUrl} (Code: ${refCode})`
+                );
 
-                      {/* Wallet KPI Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        <div className="p-3.5 rounded-xl bg-[#090909] border border-white/15">
-                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-white/45 block">
-                            Active RES Points
-                          </span>
-                          <span className="text-xl sm:text-2xl font-bold font-mono text-white block mt-1">
-                            {stats.activePoints.toLocaleString("en-IN")}
-                          </span>
-                          <span className="text-[10px] font-mono text-white/40 block mt-0.5">
-                            {stats.verifiedCount} verified
-                          </span>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-white text-black border border-white">
-                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-black/60 block font-bold">
-                            Stall Coupon Value
-                          </span>
-                          <span className="text-xl sm:text-2xl font-extrabold font-mono text-black block mt-1">
-                            ₹{stats.rupeeValue.toLocaleString("en-IN")}
-                          </span>
-                          <span className="text-[10px] font-mono text-black/70 block mt-0.5">
-                            Redeemable at stalls
-                          </span>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-[#090909] border border-white/10">
-                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-white/45 block">
-                            Pending Points
-                          </span>
-                          <span className="text-xl sm:text-2xl font-bold font-mono text-white/80 block mt-1">
-                            {stats.pendingPoints.toLocaleString("en-IN")}
-                          </span>
-                          <span className="text-[10px] font-mono text-white/40 block mt-0.5">
-                            {stats.pendingCount} awaiting verify
-                          </span>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-[#090909] border border-white/10">
-                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-white/45 block">
-                            Your Stall Coupon
-                          </span>
-                          <span className="text-base sm:text-lg font-bold font-mono text-white block mt-1.5 tracking-wider">
-                            {couponCode}
-                          </span>
-                          <span className="text-[10px] font-mono text-white/40 block mt-0.5">
-                            Show at food/merch stalls
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Tier Milestone Progress */}
-                      <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2.5">
-                        <div className="flex items-center justify-between text-xs font-mono">
-                          <span className="text-white/70 font-semibold">
-                            {stats.nextTier
-                              ? `Next Tier: ${stats.nextTier.name} (${stats.nextTier.min} referrals · ₹${(stats.nextTier.min * RUPEES_PER_REFERRAL).toLocaleString("en-IN")})`
-                              : "Max Tier Unlocked — Grand Plenipotentiary"}
-                          </span>
-                          <span className="text-white font-bold">{stats.progressPct}%</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                          <div
-                            className="h-full bg-white rounded-full"
-                            style={{ width: `${Math.max(4, stats.progressPct)}%` }}
-                          />
-                        </div>
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono text-white/40">
-                          <span>1 ref = 400 RES (₹100)</span>
-                          <span>3 refs = 1,200 RES (₹300)</span>
-                          <span>5 refs = 2,000 RES (₹500)</span>
-                          <span>10 refs = 4,000 RES (₹1,000)</span>
-                        </div>
-                      </div>
-
-                      {/* Personal Referral Code & Shareable Link Box */}
-                      <div className="p-4 rounded-xl bg-[#090909] border border-white/15 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/45 block">
-                              Your Personal Referral Link
-                            </span>
-                            <p className="text-xs sm:text-sm font-mono text-white truncate mt-1">
-                              {shareUrl}
-                            </p>
-                          </div>
-                          <div className="shrink-0 flex items-center gap-2">
-                            <span className="px-2.5 py-1.5 rounded-lg border border-white/20 bg-black font-mono text-xs font-bold text-white tracking-wider">
-                              {refCode}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleCopyValue(shareUrl, "link")}
-                            className="min-h-[42px] px-4 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer hover:bg-zinc-200"
-                          >
-                            {copiedField === "link" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                            <span>{copiedField === "link" ? "Link Copied!" : "Copy Referral Link"}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleCopyValue(refCode, "code")}
-                            className="min-h-[42px] px-4 rounded-lg border border-white/25 bg-black text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer hover:bg-white/10"
-                          >
-                            {copiedField === "code" ? <Check className="w-3.5 h-3.5" /> : <Ticket className="w-3.5 h-3.5" />}
-                            <span>{copiedField === "code" ? "Code Copied!" : `Copy ${refCode}`}</span>
-                          </button>
-
-                          <a
-                            href={`https://wa.me/?text=${whatsappText}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="min-h-[42px] px-4 rounded-lg border border-white/25 bg-black text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-white/10"
-                          >
-                            <Share2 className="w-3.5 h-3.5" />
-                            <span>Share on WhatsApp</span>
-                          </a>
-                        </div>
-                      </div>
-
-                      {/* Referred Friends Activity List */}
-                      {stats.referrals && stats.referrals.length > 0 && (
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/45 block">
-                            Referred Delegates ({stats.referrals.length})
-                          </span>
-                          <div className="divide-y divide-white/10 rounded-xl border border-white/10 bg-[#090909]">
-                            {stats.referrals.map((ref, idx) => (
-                              <div key={idx} className="px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
-                                <span className="font-medium text-white">{ref.name}</span>
-                                <span className={`font-mono text-[11px] font-semibold ${ref.verified ? "text-white" : "text-white/50"}`}>
-                                  {ref.verified ? `+${RES_POINTS_PER_REFERRAL} RES · Verified` : "Pending Verification"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </section>
-                  );
-                })()}
-
-                {/* DIGITAL ENTRY PASS */}
-                  <section id="digital-pass-card" className="rounded-2xl border border-white/15 bg-[#080808] p-5 sm:p-7 shadow-sm">
-                    <div className="mb-5 border-b border-white/10 pb-4">
-                      <p className="text-[10px] uppercase font-mono tracking-wider font-semibold text-white/40">
-                        CREDENTIAL
-                      </p>
-                      <h3 className="text-base sm:text-lg font-bold text-white font-sans mt-0.5">
-                        Official Digital Pass
+                return (
+                  <section className="rounded-md border border-[#262626] bg-black p-5 space-y-4">
+                    {/* Minimal Header */}
+                    <div>
+                      <span className="block text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                        Referrals
+                      </span>
+                      <h3 className="m-0 text-base font-semibold text-white mt-0.5 tracking-tight">
+                        Invite Friends
                       </h3>
-                      <p className="text-xs text-white/50 mt-1 font-sans">
-                        Present this QR pass at the entrance desk at {systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}.
+                      <p className="m-0 text-xs text-zinc-400 mt-1">
+                        {RES_POINTS_PER_REFERRAL} RES points (₹{RUPEES_PER_REFERRAL} stall credit) per verified referral.
                       </p>
                     </div>
 
-                    {isPaid ? (
-                      <div className="flex flex-col items-center space-y-5">
-                        {/* Desktop Variant Switcher & Print Control */}
-                        {!isMobile && (
-                          <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/10 no-print">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
-                                  Format:
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => setTicketFormat("badge")}
-                                  className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "badge"
-                                      ? "bg-white text-black font-bold shadow-sm"
-                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                    }`}
-                                >
-                                  VIP Badge
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setTicketFormat("stub")}
-                                  className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "stub"
-                                      ? "bg-white text-black font-bold shadow-sm"
-                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                    }`}
-                                >
-                                  Ticket Stub
-                                </button>
-                              </div>
-
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
-                                  Theme:
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => setTicketVariant("paper")}
-                                  className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "paper"
-                                      ? "bg-white text-black font-bold shadow-sm"
-                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                    }`}
-                                >
-                                  Paper
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setTicketVariant("crimson")}
-                                  className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "crimson"
-                                      ? "bg-[#d9241c] text-white font-bold shadow-sm"
-                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                    }`}
-                                >
-                                  Crimson
-                                </button>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={handlePrintPass}
-                              className="h-7 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              <span>Print Pass</span>
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Mobile Flat Gate Pass (Zero Effects) vs Desktop EngravedTicket */}
-                        <div className="w-full flex justify-center py-2" id="printable-pass-container">
-                          {isMobile ? (
-                            <div className="w-full rounded-xl border border-white bg-black p-5 text-white space-y-4">
-                              <div className="flex items-center justify-between border-b border-[#262626] pb-3">
-                                <div>
-                                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#a3a3a3] block">
-                                    RESOLVE MUN 2.0
-                                  </span>
-                                  <span className="text-lg font-bold tracking-tight text-white block mt-0.5">
-                                    {delegateRecord.fullName || user.displayName}
-                                  </span>
-                                </div>
-                                <span className="px-2.5 py-1 rounded bg-white text-black font-mono text-[10px] font-bold uppercase">
-                                  {(delegateRecord.roleType || "DELEGATE").toUpperCase()}
-                                </span>
-                              </div>
-
-                              <div className="flex justify-center py-2">
-                                <div className="p-3 bg-white rounded-lg">
-                                  <img
-                                    src={`https://quickchart.io/qr?size=240&text=${encodeURIComponent(
-                                      "RESOLVE_PASS:" +
-                                      (delegateRecord.roleType || "DELEGATE") +
-                                      ":" +
-                                      delegateRecord.delegateId +
-                                      ":" +
-                                      delegateRecord.email
-                                    )}`}
-                                    alt="Delegate Gate Pass QR"
-                                    className="w-44 h-44 object-contain block"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-3 border-t border-[#262626] pt-3 text-xs">
-                                <div>
-                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Delegate ID</span>
-                                  <span className="font-mono font-bold text-white">{delegateRecord.delegateId || "RM26-CONFIRMED"}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Committee</span>
-                                  <span className="font-semibold text-white">{delegateRecord.allocatedCommittee || "Awaiting Allotment"}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Venue</span>
-                                  <span className="font-medium text-white">{systemSettings.venueShort || "Northfield International School"}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Dates</span>
-                                  <span className="font-medium text-white">{systemSettings.conferenceDates || "26, 27 Dec 2026"}</span>
-                                </div>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={handlePrintPass}
-                                className="w-full min-h-[44px] rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer no-print"
-                              >
-                                <Printer className="w-4 h-4" />
-                                <span>Print / Save Pass</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <EngravedTicket
-                              format={ticketFormat}
-                              variant={ticketVariant}
-                              word="RESOLVE"
-                              code={delegateRecord.delegateId || "RM26-CONFIRMED"}
-                              qrUrl={`https://quickchart.io/qr?size=320&text=${encodeURIComponent(
-                                "RESOLVE_PASS:" +
-                                (delegateRecord.roleType || "DELEGATE") +
-                                ":" +
-                                delegateRecord.delegateId +
-                                ":" +
-                                delegateRecord.email
-                              )}`}
-                              qrLabel={`${delegateRecord.roleType || "DELEGATE"} PASS`}
-                              delegateName={delegateRecord.fullName || user.displayName}
-                              committee={delegateRecord.allocatedCommittee || "Awaiting Allotment"}
-                              portfolio={delegateRecord.allocatedCountry || ""}
-                              tagline={`RESOLVE MUN 2.0\n${(delegateRecord.roleType || "DELEGATE").toUpperCase()} PASS`}
-                              quote={`“${(systemSettings.conferenceDates || "26, 27 DEC 2026").toUpperCase()}”`}
-                              venue={systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}
-                              dates={systemSettings.conferenceDates || "26, 27 December 2026"}
-                              body={`Official delegate admission credential for Resolve MUN 2026. Convenes at ${systemSettings.conferenceVenue || "Northfield International School, Hyderabad"}. Present this unique scannable pass at the entrance registration desk upon arrival.`}
-                              notes={`ADMIT ONE\n${delegateRecord.delegateId}\n${(systemSettings.venueShort || "NORTHFIELD").toUpperCase()}\nACTIVE PASS`}
-                              width="100%"
-                              className="max-w-2xl"
-                            />
-                          )}
-                        </div>
-
-                        {/* 2-Day Attendance Tracker */}
-                        <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#090909] p-4 space-y-3 no-print">
-                          <div className="flex items-center justify-between text-xs font-mono text-white/50">
-                            <span className="uppercase tracking-wider font-semibold text-[10px]">
-                              Conference Check-In Tracker
-                            </span>
-                            <span className="text-white/70">
-                              {delegateRecord.delegateId}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2.5">
-                            {[
-                              { day: "Day 1", date: "26 Dec 2026", checked: delegateRecord.checkInDay1 },
-                              { day: "Day 2", date: "27 Dec 2026", checked: delegateRecord.checkInDay2 },
-                            ].map((d) => (
-                              <div
-                                key={d.day}
-                                className={`p-3 rounded-lg border text-center font-mono transition-all ${d.checked
-                                    ? "bg-white text-black border-white font-bold"
-                                    : "bg-white/[0.02] border-white/10 text-white/40"
-                                  }`}
-                              >
-                                <span className="text-xs block font-bold">{d.day}</span>
-                                <span className="text-[10px] block mt-0.5 opacity-80">
-                                  {d.checked ? "Checked In ✓" : d.date}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs font-mono text-white/40">
-                            <span>{systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}</span>
-                            <span className="text-white/80 font-semibold flex items-center gap-1.5">
-                              <ShieldCheck className="w-3.5 h-3.5 text-white" />
-                              Verified Digital Credential
-                            </span>
-                          </div>
-                        </div>
+                    {/* Clean 3-Stat Hairline Row */}
+                    <div className="grid grid-cols-3 gap-px bg-[#1f1f1f] border border-[#1f1f1f] rounded-md overflow-hidden">
+                      <div className="bg-black p-3">
+                        <span className="block text-[10px] text-zinc-500 font-medium">
+                          RES Points
+                        </span>
+                        <span className="block text-lg font-semibold text-white mt-0.5">
+                          {stats.activePoints.toLocaleString("en-IN")}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center py-10 text-center space-y-4">
-                        <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto text-white/40">
-                          <Clock className="w-6 h-6 animate-pulse" />
-                        </div>
-                        <div className="space-y-1.5 max-w-md">
-                          <h4 className="text-base font-bold text-white font-sans">
-                            Pass Verification in Progress
-                          </h4>
-                          <p className="text-xs text-white/50 leading-relaxed font-sans">
-                            We're verifying your transaction (UTR:{" "}
-                            <span className="font-mono text-white">
-                              {delegateRecord.paymentUTR || "Submitted"}
-                            </span>
-                            ). Your official <strong>Engraved QR Entry Pass</strong> will unlock here automatically as soon as payment is confirmed by the Secretariat in the admin portal.
-                          </p>
+                      <div className="bg-black p-3">
+                        <span className="block text-[10px] text-zinc-500 font-medium">
+                          Stall Credit
+                        </span>
+                        <span className="block text-lg font-semibold text-white mt-0.5">
+                          ₹{stats.rupeeValue.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <div className="bg-black p-3">
+                        <span className="block text-[10px] text-zinc-500 font-medium">
+                          Coupon
+                        </span>
+                        <span className="block text-sm font-semibold text-white mt-1 truncate">
+                          {couponCode}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Single Compact Share Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-[#1f1f1f]">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
+                        <span className="text-xs text-zinc-400">Your code:</span>
+                        <span className="px-2 py-0.5 rounded border border-[#262626] bg-black text-xs font-semibold text-white">
+                          {refCode}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyValue(shareUrl, "link")}
+                          className="h-9 px-3.5 rounded-md bg-white text-black font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:bg-zinc-200 whitespace-nowrap"
+                        >
+                          {copiedField === "link" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedField === "link" ? "Copied" : "Copy Link"}</span>
+                        </button>
+                        <a
+                          href={`https://wa.me/?text=${whatsappText}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-9 px-3.5 rounded-md border border-[#262626] bg-black text-white font-medium text-xs flex items-center justify-center gap-1.5 hover:bg-white/5 whitespace-nowrap"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Referred Friends Activity List */}
+                    {stats.referrals && stats.referrals.length > 0 && (
+                      <div className="pt-3 border-t border-[#1f1f1f] space-y-2">
+                        <span className="block text-[10px] uppercase tracking-wider text-zinc-500 font-medium">
+                          Referred ({stats.referrals.length})
+                        </span>
+                        <div className="divide-y divide-[#1f1f1f]">
+                          {stats.referrals.map((ref, idx) => (
+                            <div key={idx} className="py-2 flex items-center justify-between gap-2 text-xs">
+                              <span className="font-medium text-white">{ref.name}</span>
+                              <span className={`text-[11px] font-medium ${ref.verified ? "text-white" : "text-zinc-500"}`}>
+                                {ref.verified ? `+${RES_POINTS_PER_REFERRAL} RES` : "Pending"}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
                   </section>
-              </div>
-            )}
+                );
+              })()}
 
-            {/* 5. QUICK LINKS */}
-            <section className="p-5 sm:p-6 rounded-2xl border border-white/15 bg-[#080808] space-y-3 shadow-sm">
-              <p className="text-[10px] font-mono uppercase tracking-wider font-semibold text-white/40">
-                QUICK LINKS
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <Link
-                  href="/"
-                  className="group flex items-center gap-3 p-3.5 rounded-xl bg-[#090909] hover:bg-[#111111] border border-white/10 hover:border-white/30 transition-all"
-                >
-                  <Globe className="w-4 h-4 text-white/40 group-hover:text-white transition-colors shrink-0" />
-                  <span className="text-xs font-semibold text-white/70 group-hover:text-white transition-colors">
-                    Return to Home Page
-                  </span>
-                  <ExternalLink className="w-3.5 h-3.5 text-white/20 ml-auto group-hover:text-white/60 transition-colors" />
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={() => fetchDelegateProfile(user?.id, user?.email, true)}
-                  className="group flex items-center gap-3 p-3.5 rounded-xl bg-[#090909] hover:bg-[#111111] border border-white/10 hover:border-white/30 transition-all cursor-pointer w-full text-left"
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 text-white/40 group-hover:text-white transition-colors shrink-0 ${dataLoading ? "animate-spin" : ""
-                      }`}
-                  />
-                  <span className="text-xs font-semibold text-white/70 group-hover:text-white transition-colors">
-                    Refresh Record Status
-                  </span>
-                  {dataLoading && (
-                    <span className="text-xs text-white/50 font-mono ml-auto">
-                      Syncing...
-                    </span>
-                  )}
-                </button>
-
-              </div>
-            </section>
-
-            {/* 6. DANGER ZONE: SELF-SERVE DATA PURGE */}
-            <section className="p-5 sm:p-6 rounded-2xl border border-red-500/20 bg-red-950/[0.06] space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-mono uppercase tracking-wider font-semibold text-red-400">
-                    DANGER ZONE &bull; ACCOUNT &amp; PRIVACY
+              {/* DIGITAL ENTRY PASS (Gate Pass Tab) */}
+              {activeTab === "pass" && (
+              <section id="digital-pass-card" className="rounded-md border border-[#262626] bg-black p-5 sm:p-6">
+                <div className="mb-5 border-b border-white/10 pb-4">
+                  <p className="text-[10px] uppercase font-mono tracking-wider font-semibold text-white/40">
+                    CREDENTIAL
                   </p>
-                  <p className="text-xs text-white/60 font-sans">
-                    Permanently delete your profile, committee applications, and all submitted registration data.
+                  <h3 className="text-base sm:text-lg font-bold text-white font-sans mt-0.5">
+                    Official Digital Pass
+                  </h3>
+                  <p className="text-xs text-white/50 mt-1 font-sans">
+                    Present this QR pass at the entrance desk at {systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}.
+                  </p>
+                </div>
+
+                {isPaid ? (
+                  <div className="flex flex-col items-center space-y-5">
+                    {/* Desktop Variant Switcher & Print Control */}
+                    {!isMobile && (
+                      <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/10 no-print">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                              Format:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setTicketFormat("badge")}
+                              className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "badge"
+                                ? "bg-white text-black font-bold shadow-sm"
+                                : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                }`}
+                            >
+                              VIP Badge
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTicketFormat("stub")}
+                              className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "stub"
+                                ? "bg-white text-black font-bold shadow-sm"
+                                : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                }`}
+                            >
+                              Ticket Stub
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                              Theme:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setTicketVariant("paper")}
+                              className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "paper"
+                                ? "bg-white text-black font-bold shadow-sm"
+                                : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                }`}
+                            >
+                              Paper
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTicketVariant("crimson")}
+                              className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "crimson"
+                                ? "bg-[#d9241c] text-white font-bold shadow-sm"
+                                : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                }`}
+                            >
+                              Crimson
+                            </button>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handlePrintPass}
+                          className="h-7 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                          <span>Print Pass</span>
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleDownloadQrImage}
+                            className="h-7 px-3 rounded-lg border border-white/15 bg-white text-black hover:bg-zinc-200 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <span>Save QR Pic</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePrintPass}
+                            className="h-7 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>QR PDF</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePrintReceipt}
+                            className="h-7 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <span>E-Receipt</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mobile Flat Gate Pass (Zero Effects) vs Desktop EngravedTicket */}
+                    <div className="w-full flex justify-center py-2" id="printable-pass-container">
+                      {isMobile ? (
+                        <div className="w-full rounded-xl border border-white bg-black p-5 text-white space-y-4">
+                          <div className="flex items-center justify-between border-b border-[#262626] pb-3">
+                            <div>
+                              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#a3a3a3] block">
+                                RESOLVE MUN 2.0
+                              </span>
+                              <span className="text-lg font-bold tracking-tight text-white block mt-0.5">
+                                {delegateRecord.fullName || user.displayName}
+                              </span>
+                            </div>
+                            <span className="px-2.5 py-1 rounded bg-white text-black font-mono text-[10px] font-bold uppercase">
+                              {(delegateRecord.roleType || "DELEGATE").toUpperCase()}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-center py-2">
+                            <div className="p-3 bg-white rounded-lg">
+                              <img
+                                src={`https://quickchart.io/qr?size=240&text=${encodeURIComponent(
+                                  "RESOLVE_PASS:" +
+                                  (delegateRecord.roleType || "DELEGATE") +
+                                  ":" +
+                                  delegateRecord.delegateId +
+                                  ":" +
+                                  delegateRecord.email
+                                )}`}
+                                alt="Delegate Gate Pass QR"
+                                className="w-44 h-44 object-contain block"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 border-t border-[#262626] pt-3 text-xs">
+                            <div>
+                              <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Delegate ID</span>
+                              <span className="font-mono font-bold text-white">{delegateRecord.delegateId || "RM26-CONFIRMED"}</span>
+                              <span className="font-mono font-bold text-white">{formattedDelegateId || "RM26-CONFIRMED"}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Committee</span>
+                              <span className="font-semibold text-white">{delegateRecord.allocatedCommittee || "Awaiting Allotment"}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Venue</span>
+                              <span className="font-medium text-white">{systemSettings.venueShort || "Northfield International School"}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Dates</span>
+                              <span className="font-medium text-white">{systemSettings.conferenceDates || "26, 27 Dec 2026"}</span>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handlePrintPass}
+                            className="w-full min-h-[44px] rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer no-print"
+                          >
+                            <Printer className="w-4 h-4" />
+                            <span>Print / Save Pass</span>
+                          </button>
+                          <div className="space-y-2 pt-1 no-print">
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={handleDownloadQrImage}
+                                className="h-11 rounded-md bg-white text-black font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                              >
+                                <span>Save QR Pic</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handlePrintPass}
+                                className="h-11 rounded-md border border-white bg-black text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                <span>QR Pass PDF</span>
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handlePrintReceipt}
+                              className="w-full h-10 rounded-md border border-[#333333] bg-black text-[#e5e5e5] font-semibold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <span>Download E-Receipt (PDF)</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <EngravedTicket
+                          format={ticketFormat}
+                          variant={ticketVariant}
+                          word="RESOLVE"
+                          code={delegateRecord.delegateId || "RM26-CONFIRMED"}
+                          qrUrl={`https://quickchart.io/qr?size=320&text=${encodeURIComponent(
+                            "RESOLVE_PASS:" +
+                            (delegateRecord.roleType || "DELEGATE") +
+                            ":" +
+                            delegateRecord.delegateId +
+                            ":" +
+                            delegateRecord.email
+                          )}`}
+                          qrLabel={`${delegateRecord.roleType || "DELEGATE"} PASS`}
+                          delegateName={delegateRecord.fullName || user.displayName}
+                          committee={delegateRecord.allocatedCommittee || "Awaiting Allotment"}
+                          portfolio={delegateRecord.allocatedCountry || ""}
+                          tagline={`RESOLVE MUN 2.0\n${(delegateRecord.roleType || "DELEGATE").toUpperCase()} PASS`}
+                          quote={`“${(systemSettings.conferenceDates || "26, 27 DEC 2026").toUpperCase()}”`}
+                          venue={systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}
+                          dates={systemSettings.conferenceDates || "26, 27 December 2026"}
+                          body={`Official delegate admission credential for Resolve MUN 2026. Convenes at ${systemSettings.conferenceVenue || "Northfield International School, Hyderabad"}. Present this unique scannable pass at the entrance registration desk upon arrival.`}
+                          notes={`ADMIT ONE\n${delegateRecord.delegateId}\n${(systemSettings.venueShort || "NORTHFIELD").toUpperCase()}\nACTIVE PASS`}
+                          width="100%"
+                          className="max-w-2xl"
+                        />
+                      )}
+                    </div>
+
+                    {/* 2-Day Attendance Tracker */}
+                    <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#090909] p-4 space-y-3 no-print">
+                      <div className="flex items-center justify-between text-xs font-mono text-white/50">
+                        <span className="uppercase tracking-wider font-semibold text-[10px]">
+                          Conference Check-In Tracker
+                        </span>
+                        <span className="text-white/70">
+                          {delegateRecord.delegateId}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {[
+                          { day: "Day 1", date: "26 Dec 2026", checked: delegateRecord.checkInDay1 },
+                          { day: "Day 2", date: "27 Dec 2026", checked: delegateRecord.checkInDay2 },
+                        ].map((d) => (
+                          <div
+                            key={d.day}
+                            className={`p-3 rounded-lg border text-center font-mono transition-all ${d.checked
+                              ? "bg-white text-black border-white font-bold"
+                              : "bg-white/[0.02] border-white/10 text-white/40"
+                              }`}
+                          >
+                            <span className="text-xs block font-bold">{d.day}</span>
+                            <span className="text-[10px] block mt-0.5 opacity-80">
+                              {d.checked ? "Checked In ✓" : d.date}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs font-mono text-white/40">
+                        <span>{systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}</span>
+                        <span className="text-white/80 font-semibold flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                          Verified Digital Credential
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center py-10 text-center space-y-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto text-white/40">
+                      <Clock className="w-6 h-6 animate-pulse" />
+                    </div>
+                    <div className="space-y-1.5 max-w-md">
+                      <h4 className="text-base font-bold text-white font-sans">
+                        Pass Verification in Progress
+                      </h4>
+                      <p className="text-xs text-white/50 leading-relaxed font-sans">
+                        We're verifying your transaction (UTR:{" "}
+                        <span className="font-mono text-white">
+                          {delegateRecord.paymentUTR || "Submitted"}
+                        </span>
+                        ). Your official <strong>Engraved QR Entry Pass</strong> will unlock here automatically as soon as payment is confirmed by the Secretariat in the admin portal.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </section>
+                )}
+            </div>
+          )}
+
+          {/* 6. ACCOUNT & PRIVACY (Account Tab) */}
+          {activeTab === "account" && (
+          <section className="rounded-md border border-[#262626] bg-black overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowDangerZone((v) => !v)}
+              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left cursor-pointer hover:bg-white/[0.02] transition-colors"
+            >
+              <div>
+                <p className="text-[10px] font-mono uppercase tracking-wider font-semibold text-zinc-400">
+                  ACCOUNT &amp; DATA PRIVACY
+                </p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Manage or permanently remove your account and conference records
+                </p>
+              </div>
+              <span className="text-xs font-mono text-zinc-400 shrink-0">
+                {showDangerZone ? "Hide" : "Manage"}
+              </span>
+            </button>
+
+            {showDangerZone && (
+              <div className="px-5 pb-5 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1 max-w-xl">
+                  <p className="text-xs font-semibold text-white">
+                    Permanently Delete Account &amp; Data
+                  </p>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Removes your Resolve MUN profile, committee application, Digital Gate Pass, and RES Points across our records. Requires multi-step verification and cannot be undone.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={handleSelfDeleteAccount}
+                  onClick={openDeleteAccountFlow}
                   disabled={isDeletingAccount}
-                  className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                  className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg border border-red-500/35 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 shrink-0"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>{isDeletingAccount ? "Purging Data..." : "Delete Account & Purge Data"}</span>
+                  <span>Begin Account Removal</span>
                 </button>
               </div>
-            </section>
-                  {/* =========================================================================
-            MODAL: DELEGATE SELF-EDIT DETAILS (ALL FIELDS MUTABLE)
-            ========================================================================= */}
-        {isEditingProfile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-            <div className="relative w-full max-w-2xl bg-[#0d0d0d] border border-white/20 rounded-2xl p-5 sm:p-7 shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto">
-              
-              {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div>
-                  <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider font-semibold">
-                    Delegate Dashboard · Profile Management
-                  </span>
-                  <h3 className="text-lg font-bold text-white mt-0.5">
-                    Edit Registration &amp; Preferences
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingProfile(false)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+            )}
+          </section>
+          )}
+            </div>
+          </div>
 
-              {editSuccessMsg && (
-                <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>{editSuccessMsg}</span>
+          {/* =========================================================================
+                MODAL: 3-STEP HIGH-FRICTION ACCOUNT & DATA DELETION
+                ========================================================================= */}
+          {deleteModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm overflow-y-auto">
+              <div className="relative w-full max-w-md bg-[#080808] border border-white/15 rounded-xl p-5 sm:p-6 space-y-5 my-auto">
+                <div className="flex items-start justify-between gap-3 border-b border-white/10 pb-3.5">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+                      Step {deleteStep} of 3 · Permanent Deletion
+                    </span>
+                    <h3 className="text-base font-bold text-white mt-0.5">
+                      Delete Account &amp; All Data
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => !isDeletingAccount && setDeleteModalOpen(false)}
+                    disabled={isDeletingAccount}
+                    className="w-8 h-8 rounded-lg border border-white/15 bg-black flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer"
+                    aria-label="Close deletion modal"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
 
-              {/* Edit Form */}
-              <form onSubmit={handleSaveProfile} className="space-y-5 text-left">
-                
-                {/* 1. Personal & Academic */}
-                <div>
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
-                    1. Personal &amp; Academic Details
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Full Name</label>
-                      <input
-                        type="text"
-                        value={editForm.fullName || ""}
-                        onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                        required
-                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                      />
+                {deleteError && (
+                  <div className="p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-xs text-red-300">
+                    {deleteError}
+                  </div>
+                )}
+
+                {/* STEP 1: CONSEQUENCE CHECKLIST */}
+                {deleteStep === 1 && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-zinc-300 leading-relaxed">
+                      Before continuing, please read and confirm every consequence below. This will permanently erase your details from Resolve MUN 2.0.
+                    </p>
+
+                    <div className="space-y-2.5">
+                      <label className="flex items-start gap-2.5 p-3 rounded-lg border border-white/10 bg-black cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={deleteAck1}
+                          onChange={(e) => setDeleteAck1(e.target.checked)}
+                          className="mt-0.5 accent-white shrink-0"
+                        />
+                        <span className="text-xs text-zinc-300 leading-relaxed">
+                          I understand my Digital Gate Pass, registration record, and committee allocation will be permanently invalidated.
+                        </span>
+                      </label>
+
+                      <label className="flex items-start gap-2.5 p-3 rounded-lg border border-white/10 bg-black cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={deleteAck2}
+                          onChange={(e) => setDeleteAck2(e.target.checked)}
+                          className="mt-0.5 accent-white shrink-0"
+                        />
+                        <span className="text-xs text-zinc-300 leading-relaxed">
+                          I understand all my RES Points, referral code, and unredeemed stall coupons will be permanently forfeited.
+                        </span>
+                      </label>
+
+                      <label className="flex items-start gap-2.5 p-3 rounded-lg border border-white/10 bg-black cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={deleteAck3}
+                          onChange={(e) => setDeleteAck3(e.target.checked)}
+                          className="mt-0.5 accent-white shrink-0"
+                        />
+                        <span className="text-xs text-zinc-300 leading-relaxed">
+                          I understand conference registration fees are strictly non-refundable and this deletion cannot be undone.
+                        </span>
+                      </label>
                     </div>
-                    <div>
-                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Contact Phone (WhatsApp)</label>
-                      <input
-                        type="tel"
-                        value={editForm.phone || ""}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                        required
-                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">School / College / Institution</label>
-                      <input
-                        type="text"
-                        value={editForm.institution || ""}
-                        onChange={(e) => setEditForm({ ...editForm, institution: e.target.value })}
-                        required
-                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Grade / Class / Year</label>
-                      <input
-                        type="text"
-                        value={editForm.grade || ""}
-                        onChange={(e) => setEditForm({ ...editForm, grade: e.target.value })}
-                        placeholder="e.g. 10th / 12th / 2nd Year"
-                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                      />
+
+                    <div className="flex items-center gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeleteModalOpen(false)}
+                        className="flex-1 h-10 rounded-lg border border-white/15 bg-black text-xs font-semibold text-white cursor-pointer"
+                      >
+                        Keep My Account
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!(deleteAck1 && deleteAck2 && deleteAck3)}
+                        onClick={() => {
+                          setDeleteError("");
+                          setDeleteStep(2);
+                        }}
+                        className="flex-1 h-10 rounded-lg bg-white text-black text-xs font-bold uppercase tracking-wider cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        Continue →
+                      </button>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* 2. Logistics & Transport */}
-                <div className="pt-2 border-t border-white/10">
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
-                    2. Logistics &amp; Transport
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                {/* STEP 2: REASON + EXACT EMAIL VERIFICATION */}
+                {deleteStep === 2 && (
+                  <div className="space-y-4">
                     <div>
-                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Date of Birth</label>
-                      <input
-                        type="text"
-                        value={editForm.dob || ""}
-                        onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })}
-                        placeholder="DD/MM/YYYY"
-                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">Do You Need Transportation?</label>
+                      <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                        Why are you removing your account? *
+                      </label>
                       <select
-                        value={editForm.transport || "No"}
-                        onChange={(e) => setEditForm({ ...editForm, transport: e.target.value })}
-                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        value={deleteReason}
+                        onChange={(e) => setDeleteReason(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg border border-white/15 bg-black text-xs text-white focus:outline-none focus:border-white"
                       >
-                        <option value="No">No — Self Commute</option>
-                        <option value="Yes">Yes — Transport Required</option>
+                        <option value="">Select a reason</option>
+                        <option value="No longer attending Resolve MUN 2.0">No longer attending Resolve MUN 2.0</option>
+                        <option value="Created a duplicate account">Created a duplicate account</option>
+                        <option value="Privacy / personal data removal request">Privacy / personal data removal request</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
-                  </div>
 
+                    <div>
+                      <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                        Type your exact account email to verify identity *
+                      </label>
+                      <p className="text-[11px] font-mono text-zinc-500 mb-1.5 truncate">
+                        Expected: <span className="text-zinc-300">{user?.email}</span>
+                      </p>
+                      <input
+                        type="email"
+                        value={deleteEmailInput}
+                        onChange={(e) => setDeleteEmailInput(e.target.value)}
+                        placeholder="Enter your account email"
+                        autoComplete="off"
+                        className="w-full h-10 px-3 rounded-lg border border-white/15 bg-black text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeleteStep(1)}
+                        className="h-10 px-4 rounded-lg border border-white/15 bg-black text-xs font-semibold text-white cursor-pointer"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        disabled={
+                          !deleteReason ||
+                          deleteEmailInput.trim().toLowerCase() !== (user?.email || "").trim().toLowerCase()
+                        }
+                        onClick={() => {
+                          setDeleteError("");
+                          setDeleteStep(3);
+                        }}
+                        className="flex-1 h-10 rounded-lg bg-white text-black text-xs font-bold uppercase tracking-wider cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        Final Verification →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 3: FINAL PHRASE + 5-SECOND SAFETY COOLDOWN */}
+                {deleteStep === 3 && (
+                  <div className="space-y-4">
+                    <div className="p-3 rounded-lg border border-red-500/30 bg-red-950/20 text-xs text-zinc-300 leading-relaxed">
+                      Final warning: Once deleted, <strong className="text-white">{user?.email}</strong> and all linked applications will be permanently wiped.
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                        Type <span className="text-white font-bold">DELETE MY ACCOUNT</span> below *
+                      </label>
+                      <input
+                        type="text"
+                        value={deletePhraseInput}
+                        onChange={(e) => setDeletePhraseInput(e.target.value)}
+                        placeholder="DELETE MY ACCOUNT"
+                        autoComplete="off"
+                        className="w-full h-10 px-3 rounded-lg border border-white/15 bg-black text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-white"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        disabled={isDeletingAccount}
+                        onClick={() => setDeleteStep(2)}
+                        className="h-10 px-4 rounded-lg border border-white/15 bg-black text-xs font-semibold text-white cursor-pointer disabled:opacity-40"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmFinalDelete}
+                        disabled={
+                          isDeletingAccount ||
+                          deleteCooldown > 0 ||
+                          deletePhraseInput.trim().toUpperCase() !== "DELETE MY ACCOUNT"
+                        }
+                        className="flex-1 h-10 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-wider cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        {isDeletingAccount
+                          ? "Deleting Everything..."
+                          : deleteCooldown > 0
+                            ? `Wait ${deleteCooldown}s to Confirm`
+                            : "Permanently Delete"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {/* =========================================================================
+            MODAL: DELEGATE SELF-EDIT DETAILS (ALL FIELDS MUTABLE)
+            ========================================================================= */}
+          {isEditingProfile && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+              <div className="relative w-full max-w-2xl bg-[#0d0d0d] border border-white/20 rounded-2xl p-5 sm:p-7 shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto">
+
+                {/* Modal Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div>
-                    <label className="text-[11px] font-mono text-zinc-400 block mb-1">
-                      Full Residential Address (for route mapping)
-                    </label>
-                    <textarea
-                      value={editForm.address || ""}
-                      onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                      rows={2}
-                      placeholder="Enter your complete house address, area, city, pincode"
-                      className="w-full px-3 py-2 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                    />
+                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider font-semibold">
+                      Delegate Dashboard · Profile Management
+                    </span>
+                    <h3 className="text-lg font-bold text-white mt-0.5">
+                      Edit Registration &amp; Preferences
+                    </h3>
                   </div>
-                </div>
-
-                {/* 3. MUN Experience */}
-                <div className="pt-2 border-t border-white/10">
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
-                    3. Prior MUN Experience
-                  </h4>
-                  <textarea
-                    value={editForm.experience || ""}
-                    onChange={(e) => setEditForm({ ...editForm, experience: e.target.value })}
-                    rows={3}
-                    placeholder="List past MUNs, committees, awards, or enter 'First Timer / N/A'"
-                    className="w-full px-3 py-2 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                  />
-                </div>
-
-                {/* 4. Committee & Portfolio Preferences */}
-                <div className="pt-2 border-t border-white/10">
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
-                    4. Committee &amp; Country Preferences
-                  </h4>
-                  <div className="space-y-3">
-                    
-                    {/* Choice 1 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
-                      <div>
-                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
-                          Committee Choice 1
-                        </label>
-                        <select
-                          value={editForm.pref1_committee || ""}
-                          onChange={(e) => setEditForm({ ...editForm, pref1_committee: e.target.value })}
-                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                        >
-                          <option value="">Select Committee 1</option>
-                          <option value="UNCSW">UNCSW</option>
-                          <option value="UNHRC">UNHRC</option>
-                          <option value="DISEC">DISEC</option>
-                          <option value="IP">IP (International Press)</option>
-                          <option value="Lok Sabha">Lok Sabha</option>
-                          <option value="Marvel">Marvel</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
-                          Country / Portfolio Preference
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.pref1_country || ""}
-                          onChange={(e) => setEditForm({ ...editForm, pref1_country: e.target.value })}
-                          placeholder="e.g. USA / India / Journalist"
-                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Choice 2 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
-                      <div>
-                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
-                          Committee Choice 2
-                        </label>
-                        <select
-                          value={editForm.pref2_committee || ""}
-                          onChange={(e) => setEditForm({ ...editForm, pref2_committee: e.target.value })}
-                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                        >
-                          <option value="">Select Committee 2</option>
-                          <option value="UNCSW">UNCSW</option>
-                          <option value="UNHRC">UNHRC</option>
-                          <option value="DISEC">DISEC</option>
-                          <option value="IP">IP (International Press)</option>
-                          <option value="Lok Sabha">Lok Sabha</option>
-                          <option value="Marvel">Marvel</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
-                          Country / Portfolio Preference
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.pref2_country || ""}
-                          onChange={(e) => setEditForm({ ...editForm, pref2_country: e.target.value })}
-                          placeholder="e.g. France / UK / Photographer"
-                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Choice 3 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
-                      <div>
-                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
-                          Committee Choice 3
-                        </label>
-                        <select
-                          value={editForm.pref3_committee || ""}
-                          onChange={(e) => setEditForm({ ...editForm, pref3_committee: e.target.value })}
-                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                        >
-                          <option value="">Select Committee 3</option>
-                          <option value="UNCSW">UNCSW</option>
-                          <option value="UNHRC">UNHRC</option>
-                          <option value="DISEC">DISEC</option>
-                          <option value="IP">IP (International Press)</option>
-                          <option value="Lok Sabha">Lok Sabha</option>
-                          <option value="Marvel">Marvel</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
-                          Country / Portfolio Preference
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.pref3_country || ""}
-                          onChange={(e) => setEditForm({ ...editForm, pref3_country: e.target.value })}
-                          placeholder="e.g. Germany / Russia"
-                          className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
-                        />
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Form Footer */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setIsEditingProfile(false)}
-                    disabled={editSaving}
-                    className="px-4 py-2 rounded-lg border border-white/15 text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={editSaving}
-                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-white text-black font-bold text-xs hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>{editSaving ? "Saving Changes..." : "Save All Changes"}</span>
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
-              </form>
+                {editSuccessMsg && (
+                  <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>{editSuccessMsg}</span>
+                  </div>
+                )}
 
+                {/* Edit Form */}
+                <form onSubmit={handleSaveProfile} className="space-y-5 text-left">
+
+                  {/* 1. Personal & Academic */}
+                  <div>
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                      1. Personal &amp; Academic Details
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-mono text-zinc-400 block mb-1">Full Name</label>
+                        <input
+                          type="text"
+                          value={editForm.fullName || ""}
+                          onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                          required
+                          className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-mono text-zinc-400 block mb-1">Contact Phone (WhatsApp)</label>
+                        <input
+                          type="tel"
+                          value={editForm.phone || ""}
+                          onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                          required
+                          className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-mono text-zinc-400 block mb-1">School / College / Institution</label>
+                        <input
+                          type="text"
+                          value={editForm.institution || ""}
+                          onChange={(e) => setEditForm({ ...editForm, institution: e.target.value })}
+                          required
+                          className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-mono text-zinc-400 block mb-1">Grade / Class / Year</label>
+                        <input
+                          type="text"
+                          value={editForm.grade || ""}
+                          onChange={(e) => setEditForm({ ...editForm, grade: e.target.value })}
+                          placeholder="e.g. 10th / 12th / 2nd Year"
+                          className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Logistics & Transport */}
+                  <div className="pt-2 border-t border-white/10">
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                      2. Logistics &amp; Transport
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="text-[11px] font-mono text-zinc-400 block mb-1">Date of Birth</label>
+                        <input
+                          type="text"
+                          value={editForm.dob || ""}
+                          onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })}
+                          placeholder="DD/MM/YYYY"
+                          className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-mono text-zinc-400 block mb-1">Do You Need Transportation?</label>
+                        <select
+                          value={editForm.transport || "No"}
+                          onChange={(e) => setEditForm({ ...editForm, transport: e.target.value })}
+                          className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                        >
+                          <option value="No">No — Self Commute</option>
+                          <option value="Yes">Yes — Transport Required</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-400 block mb-1">
+                        Full Residential Address (for route mapping)
+                      </label>
+                      <textarea
+                        value={editForm.address || ""}
+                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                        rows={2}
+                        placeholder="Enter your complete house address, area, city, pincode"
+                        className="w-full px-3 py-2 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 3. MUN Experience */}
+                  <div className="pt-2 border-t border-white/10">
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                      3. Prior MUN Experience
+                    </h4>
+                    <textarea
+                      value={editForm.experience || ""}
+                      onChange={(e) => setEditForm({ ...editForm, experience: e.target.value })}
+                      rows={3}
+                      placeholder="List past MUNs, committees, awards, or enter 'First Timer / N/A'"
+                      className="w-full px-3 py-2 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                    />
+                  </div>
+
+                  {/* 4. Committee & Portfolio Preferences */}
+                  <div className="pt-2 border-t border-white/10">
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
+                      4. Committee &amp; Country Preferences
+                    </h4>
+                    <div className="space-y-3">
+
+                      {/* Choice 1 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
+                        <div>
+                          <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                            Committee Choice 1
+                          </label>
+                          <select
+                            value={editForm.pref1_committee || ""}
+                            onChange={(e) => setEditForm({ ...editForm, pref1_committee: e.target.value })}
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                          >
+                            <option value="">Select Committee 1</option>
+                            <option value="UNCSW">UNCSW</option>
+                            <option value="UNHRC">UNHRC</option>
+                            <option value="DISEC">DISEC</option>
+                            <option value="IP">IP (International Press)</option>
+                            <option value="Lok Sabha">Lok Sabha</option>
+                            <option value="Marvel">Marvel</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                            Country / Portfolio Preference
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.pref1_country || ""}
+                            onChange={(e) => setEditForm({ ...editForm, pref1_country: e.target.value })}
+                            placeholder="e.g. USA / India / Journalist"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Choice 2 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
+                        <div>
+                          <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                            Committee Choice 2
+                          </label>
+                          <select
+                            value={editForm.pref2_committee || ""}
+                            onChange={(e) => setEditForm({ ...editForm, pref2_committee: e.target.value })}
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                          >
+                            <option value="">Select Committee 2</option>
+                            <option value="UNCSW">UNCSW</option>
+                            <option value="UNHRC">UNHRC</option>
+                            <option value="DISEC">DISEC</option>
+                            <option value="IP">IP (International Press)</option>
+                            <option value="Lok Sabha">Lok Sabha</option>
+                            <option value="Marvel">Marvel</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                            Country / Portfolio Preference
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.pref2_country || ""}
+                            onChange={(e) => setEditForm({ ...editForm, pref2_country: e.target.value })}
+                            placeholder="e.g. France / UK / Photographer"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Choice 3 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
+                        <div>
+                          <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                            Committee Choice 3
+                          </label>
+                          <select
+                            value={editForm.pref3_committee || ""}
+                            onChange={(e) => setEditForm({ ...editForm, pref3_committee: e.target.value })}
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                          >
+                            <option value="">Select Committee 3</option>
+                            <option value="UNCSW">UNCSW</option>
+                            <option value="UNHRC">UNHRC</option>
+                            <option value="DISEC">DISEC</option>
+                            <option value="IP">IP (International Press)</option>
+                            <option value="Lok Sabha">Lok Sabha</option>
+                            <option value="Marvel">Marvel</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                            Country / Portfolio Preference
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.pref3_country || ""}
+                            onChange={(e) => setEditForm({ ...editForm, pref3_country: e.target.value })}
+                            placeholder="e.g. Germany / Russia"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                          />
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Form Footer */}
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(false)}
+                      disabled={editSaving}
+                      className="px-4 py-2 rounded-lg border border-white/15 text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={editSaving}
+                      className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-white text-black font-bold text-xs hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{editSaving ? "Saving Changes..." : "Save All Changes"}</span>
+                    </button>
+                  </div>
+
+                </form>
+
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </main>
 
         {/* =========================================================================
@@ -1888,11 +2546,11 @@ export default function DelegateDashboard() {
                   <img
                     src={`https://quickchart.io/qr?size=180&text=${encodeURIComponent(
                       "RESOLVE_PASS:" +
-                        (delegateRecord.roleType || "DELEGATE") +
-                        ":" +
-                        (delegateRecord.delegateId || delegateRecord.regId) +
-                        ":" +
-                        (delegateRecord.email || "")
+                      (delegateRecord.roleType || "DELEGATE") +
+                      ":" +
+                      (delegateRecord.delegateId || delegateRecord.regId) +
+                      ":" +
+                      (delegateRecord.email || "")
                     )}`}
                     alt="Security Access QR"
                     className="w-28 h-28 object-contain"
@@ -1977,7 +2635,7 @@ export default function DelegateDashboard() {
 
 
 
-          <Footer />
+        <Footer />
       </div>
-      );
-}
+    );
+  }

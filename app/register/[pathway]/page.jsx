@@ -4,12 +4,12 @@ const PATHWAY_CONFIG = {
   delegate: {
     title: "Individual Delegate Registration | Resolve MUN 2026",
     description:
-      "Register as an individual delegate for Resolve MUN 2.0 (25, 26, 27 December 2026, TBA (To Be Announced), Hyderabad). High-stakes diplomacy across 6 elite committees.",
+      "Register as an individual delegate for Resolve MUN 2.0 (26, 27 December 2026, Northfield International School, Hyderabad). High-stakes diplomacy across 6 committees.",
   },
   del: {
     title: "Individual Delegate Registration | Resolve MUN 2026",
     description:
-      "Register as an individual delegate for Resolve MUN 2.0 (25, 26, 27 December 2026, TBA (To Be Announced), Hyderabad).",
+      "Register as an individual delegate for Resolve MUN 2.0 (26, 27 December 2026, Northfield International School, Hyderabad).",
   },
   delegation: {
     title: "School & Institutional Delegation Registration | Resolve MUN 2026",
@@ -24,12 +24,12 @@ const PATHWAY_CONFIG = {
   secretariat: {
     title: "Secretariat Application | Resolve MUN 2026",
     description:
-      "Apply for the Secretariat High Command of Resolve MUN 2.0. Direct diplomatic proceedings, committee frameworks, and conference leadership.",
+      "Apply for the Secretariat of Resolve MUN 2.0. Direct diplomatic proceedings, committee frameworks, and conference leadership.",
   },
   sec: {
     title: "Secretariat Application | Resolve MUN 2026",
     description:
-      "Apply for the Secretariat High Command of Resolve MUN 2.0.",
+      "Apply for the Secretariat of Resolve MUN 2.0.",
   },
   eb: {
     title: "Executive Board Application | Resolve MUN 2026",
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }) {
   const key = (pathway || "").toLowerCase();
   const meta = PATHWAY_CONFIG[key] || {
     title: "Registration | Resolve MUN 2026",
-    description: "Official registration link for Resolve MUN 2.0 in Hyderabad (Venue: TBA - To Be Announced).",
+    description: "Official registration link for Resolve MUN 2.0 at Northfield International School, Hyderabad (26, 27 December 2026).",
   };
 
   return {

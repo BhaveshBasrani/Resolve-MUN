@@ -17,25 +17,26 @@ const CONFIG = {
   HELPLINE: "+91 92121 07797",
   CONFERENCE_DATES: (function() {
     try {
-      return PropertiesService.getScriptProperties().getProperty("CONFERENCE_DATES") || "25, 26, 27 December 2026";
+      return PropertiesService.getScriptProperties().getProperty("CONFERENCE_DATES") || "26, 27 December 2026";
     } catch (_) {
-      return "25, 26, 27 December 2026";
+      return "26, 27 December 2026";
     }
   })(),
   VENUE: (function() {
     try {
-      return PropertiesService.getScriptProperties().getProperty("VENUE") || "TBA (To Be Announced)";
+      return PropertiesService.getScriptProperties().getProperty("VENUE") || "Northfield International School, Kompally, Hyderabad";
     } catch (_) {
-      return "TBA (To Be Announced)";
+      return "Northfield International School, Kompally, Hyderabad";
     }
   })(),
   VENUE_ADDRESS: (function() {
     try {
-      return PropertiesService.getScriptProperties().getProperty("VENUE_ADDRESS") || "TBA (To Be Announced), Hyderabad";
+      return PropertiesService.getScriptProperties().getProperty("VENUE_ADDRESS") || "BMR Towers, Devarayamjal Road, Kompally, Hyderabad 500078";
     } catch (_) {
-      return "TBA (To Be Announced), Hyderabad";
+      return "BMR Towers, Devarayamjal Road, Kompally, Hyderabad 500078";
     }
   })(),
+  BANNER_URL: "https://resolvemun.in/RESOLVE%20MUN.svg",
   PRIZE_POOL: "TBA",
   TOTAL_PRIZE_POOL: "TBA",
   DELEGATION_PRIZE_POOL: "₹25,000",
@@ -401,6 +402,20 @@ function doPost(e) {
 
 function isAuthorized(key) {
   return key === CONFIG.ADMIN_KEY || key === "Resolve2026" || key === "admin2026" || key === "abhilashisgoat";
+}
+
+function logAudit(action, actor, status, detail) {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+    let sheet = ss.getSheetByName(CONFIG.SHEETS.AUDIT_LOGS || "Audit_Logs");
+    if (!sheet) {
+      sheet = ss.insertSheet(CONFIG.SHEETS.AUDIT_LOGS || "Audit_Logs");
+      sheet.appendRow(["Timestamp", "Action", "Actor", "Status", "Detail"]);
+    }
+    sheet.appendRow([new Date(), action || "", actor || "", status || "", detail || ""]);
+  } catch (e) {
+    try { Logger.log("[AUDIT] " + action + " | " + actor + " | " + status + " | " + detail); } catch (_) {}
+  }
 }
 
 /**
@@ -1342,28 +1357,15 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
       <td align="center" style="padding: 32px 14px 48px 14px;">
         
         <!-- Main Card -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; background-color: #121212; border: 1px solid #27272A; border-radius: 12px; overflow: hidden;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; background-color: #050505; border: 1px solid #262626; border-radius: 8px; overflow: hidden;">
           
-          <!-- Header -->
+          <!-- Minimal Banner Header -->
           <tr>
-            <td style="padding: 28px 28px 20px 28px; border-bottom: 1px solid #27272A;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <div style="font-size: 15px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.04em; text-transform: uppercase;">
-                      RESOLVE MUN 2.0
-                    </div>
-                    <div style="font-size: 12px; color: #71717A; margin-top: 3px;">
-                      25, 26, 27 December 2026 &bull; Hyderabad
-                    </div>
-                  </td>
-                  <td align="right" valign="top">
-                    <span style="font-size: 11px; font-weight: 600; color: #A1A1AA; background-color: #1C1C1F; border: 1px solid #2E2E33; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
-                      Edition 2.0
-                    </span>
-                  </td>
-                </tr>
-              </table>
+            <td align="center" style="padding: 28px 28px 22px 28px; background-color: #000000; border-bottom: 1px solid #1F1F1F;">
+              <img src="${CONFIG.BANNER_URL}" alt="RESOLVE MUN 2.0" width="210" style="display: block; max-width: 210px; width: 100%; height: auto; margin: 0 auto 10px auto;" />
+              <div style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #737373;">
+                ${CONFIG.CONFERENCE_DATES} &bull; Northfield International School, Hyderabad
+              </div>
             </td>
           </tr>
 
@@ -1376,18 +1378,18 @@ function wrapInEmbassyLayout(dispatchCode, heading, bodyHtml) {
 
           <!-- Simple Conference Details Bar -->
           <tr>
-            <td style="padding: 18px 28px; background-color: #0D0D0E; border-top: 1px solid #27272A; font-size: 12px; color: #A1A1AA; line-height: 1.6;">
-              <strong style="color: #FFFFFF;">Dates:</strong> 25, 26, 27 December 2026<br>
+            <td style="padding: 16px 28px; background-color: #000000; border-top: 1px solid #1F1F1F; font-size: 12px; color: #A1A1AA; line-height: 1.65;">
+              <strong style="color: #FFFFFF;">Dates:</strong> ${CONFIG.CONFERENCE_DATES}<br>
               <strong style="color: #FFFFFF;">Venue:</strong> ${CONFIG.VENUE}<br>
-              <strong style="color: #FFFFFF;">Committees:</strong> UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel
+              <strong style="color: #FFFFFF;">Committees:</strong> DISEC, UNHRC, UNCSW, Lok Sabha, Marvel, IP
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 20px 28px 24px 28px; background-color: #0A0A0A; border-top: 1px solid #1F1F23; font-size: 11px; color: #52525B; line-height: 1.6; text-align: center;">
+            <td style="padding: 18px 28px 22px 28px; background-color: #000000; border-top: 1px solid #1F1F1F; font-size: 11px; color: #52525B; line-height: 1.6; text-align: center;">
               Resolve MUN 2.0 &bull; Hyderabad, India<br>
-              Have a question? Reply directly to this email or write to <a href="mailto:${CONFIG.SUPPORT_EMAIL}" style="color: #A1A1AA; text-decoration: none;">${CONFIG.SUPPORT_EMAIL}</a><br>
+              Reply directly to this email or write to <a href="mailto:${CONFIG.REPLY_TO}" style="color: #A1A1AA; text-decoration: none;">${CONFIG.REPLY_TO}</a> &bull; ${CONFIG.HELPLINE}<br>
               <a href="${CONFIG.PORTAL_URL}" style="color: #71717A; text-decoration: none; margin-top: 4px; display: inline-block;">resolvemun.in</a>
             </td>
           </tr>
@@ -1978,10 +1980,13 @@ function adminSendCustomCrmEmail(data) {
         <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
       </div>
     `;
-    const plainText = `Hi ${recipientName},\n\n${bodyText}\n\nDates: 25, 26, 27 December 2026\nResolve MUN 2.0 Secretariat`;
+    const plainText = `Hi ${recipientName},\n\n${bodyText}\n\nDates: 26, 27 December 2026\nVenue: Northfield International School, Hyderabad\nResolve MUN 2.0 Secretariat`;
+    const finalHtml = data.htmlBody && String(data.htmlBody).trim()
+      ? String(data.htmlBody)
+      : wrapInEmbassyLayout("OFFICIAL-NOTICE", subject, bodyHtml);
 
     try {
-      dispatchMail(toEmail, subject, wrapInEmbassyLayout("OFFICIAL-NOTICE", subject, bodyHtml), plainText);
+      dispatchMail(toEmail, subject, finalHtml, plainText);
       sentCount++;
       tryLogEmailToSheet("CRM_CUSTOM_EMAIL", toEmail, recipientName, "SENT");
     } catch (e) {

@@ -214,6 +214,14 @@ export default function Home() {
       } else {
         setShowWelcomeBox(false);
         setCurrentUser(null);
+        // Close any open registration forms immediately if user signs out
+        ["regModal", "delModal", "ocModal", "secModal", "ebModal", "socialsModal"].forEach((mid) => {
+          const el = document.getElementById(mid);
+          if (el && el.classList.contains("active")) {
+            el.classList.remove("active");
+            document.body.style.overflow = "";
+          }
+        });
       }
     };
 
@@ -690,9 +698,16 @@ export default function Home() {
     }
   };
 
+  const isVerifiedEmailOrGoogleUser = () => {
+    const u = auth.currentUser;
+    if (!u || u.isAnonymous || !u.email) return false;
+    const providers = (u.providerData || []).map((p) => p?.providerId);
+    return providers.includes("google.com") || providers.includes("password");
+  };
+
   const handleOpenSelection = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const isAuthenticated = Boolean(auth.currentUser);
+    const isAuthenticated = isVerifiedEmailOrGoogleUser();
 
     if (isAuthenticated) {
       scrollToPassesSection();
@@ -859,7 +874,7 @@ export default function Home() {
 
       window.openSelectionModal = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        const isAuthenticated = Boolean(auth.currentUser);
+        const isAuthenticated = isVerifiedEmailOrGoogleUser();
         if (isAuthenticated) {
           scrollToPassesSection();
         } else {
@@ -1231,11 +1246,14 @@ export default function Home() {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
         closeModalById("selectionModal");
 
-        // Auth Gate: If logged in, open modal directly; if not logged in, open AuthModal then open clicked ticket modal
-        const isAuthenticated = Boolean(auth.currentUser);
+        // Strict Auth Gate: Must be signed in via Google or Email to open any registration form
+        const isAuthenticated = isVerifiedEmailOrGoogleUser();
 
         if (!isAuthenticated) {
           window.pendingPathway = type;
+          if (window.showCustomAlert) {
+            window.showCustomAlert("Please sign in with Google or Email to open registration forms.", "info");
+          }
           setAuthInitialMode("signup");
           setAuthOpen(true);
           return;
@@ -1367,10 +1385,13 @@ export default function Home() {
 
       window.openRegistration = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        // Auth Gate
-        const isAuthenticated = Boolean(auth.currentUser);
+        // Strict Auth Gate (Google or Email required)
+        const isAuthenticated = isVerifiedEmailOrGoogleUser();
         if (!isAuthenticated) {
           window.pendingPathway = "delegate";
+          if (window.showCustomAlert) {
+            window.showCustomAlert("Please sign in with Google or Email to open registration forms.", "info");
+          }
           setAuthInitialMode("signup");
           setAuthOpen(true);
           return;
@@ -1424,10 +1445,13 @@ export default function Home() {
 
       window.openDelRegistration = function () {
         if (window.autofillAllKnownFields) window.autofillAllKnownFields();
-        // Auth Gate
-        const isAuthenticated = Boolean(auth.currentUser);
+        // Strict Auth Gate (Google or Email required)
+        const isAuthenticated = isVerifiedEmailOrGoogleUser();
         if (!isAuthenticated) {
           window.pendingPathway = "delegation";
+          if (window.showCustomAlert) {
+            window.showCustomAlert("Please sign in with Google or Email to open registration forms.", "info");
+          }
           setAuthInitialMode("signup");
           setAuthOpen(true);
           return;
@@ -1751,13 +1775,21 @@ export default function Home() {
       };
 
       const normalizeReferral = (code) => (code || "").trim().toUpperCase();
+      window.__verifiedReferralCache = window.__verifiedReferralCache || {};
+      let referralLookupTimer = null;
 
       window.getDelegateFeeFromReferral = function () {
         const val = normalizeReferral(document.getElementById("regReferral")?.value);
         const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
         if (!val) return baseFee;
 
-        // Check dynamic custom referral codes from admin settings
+        // 1. Live verified cache from /api/referrals (covers Delegate RES-XXXX + Secretariat Cash codes)
+        const cached = window.__verifiedReferralCache[val];
+        if (cached && cached.valid && typeof cached.finalFee === "number") {
+          return cached.finalFee;
+        }
+
+        // 2. Check dynamic custom referral codes from admin/secretariat settings
         const dynamicCodes = window.__siteSettings?.referralCodes || [];
         const dynamicMatch = dynamicCodes.find(
           (c) => normalizeReferral(c.code) === val && c.active !== false
@@ -1774,45 +1806,95 @@ export default function Home() {
         return REFERRAL_CODE_PRICING[val] || baseFee;
       };
 
-      window.updateDelegatePaymentUI = function () {
-        const fee = window.getDelegateFeeFromReferral();
-        const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
+      const applyFeeToPaymentControls = (fee) => {
         const feeDisplay = document.getElementById("regFeeDisplay");
         if (feeDisplay) {
           feeDisplay.innerText = `Registration Fee: ₹${Number(fee).toLocaleString("en-IN")}`;
         }
         window.generateDynamicQR(String(fee), "paymentQRImage", "upiID");
+        const upiLink = document.getElementById("payUpiMobileLink");
+        if (upiLink) {
+          upiLink.href = `upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=${encodeURIComponent(String(fee))}&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee`;
+        }
+      };
+
+      window.updateDelegatePaymentUI = function () {
+        const fee = window.getDelegateFeeFromReferral();
+        const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
+        applyFeeToPaymentControls(fee);
 
         const referralVal = normalizeReferral(document.getElementById("regReferral")?.value);
         const feedbackEl = document.getElementById("referralFeedback");
-        if (feedbackEl) {
-          if (!referralVal) {
-            feedbackEl.innerText = "";
-            feedbackEl.style.color = "";
+        if (!feedbackEl) return;
+
+        if (!referralVal) {
+          feedbackEl.innerText = "";
+          feedbackEl.style.color = "";
+          return;
+        }
+
+        const cached = window.__verifiedReferralCache[referralVal];
+        if (cached) {
+          if (cached.valid) {
+            feedbackEl.innerText = cached.message || `✓ Valid referral code applied — Pay ₹${Number(cached.finalFee ?? baseFee).toLocaleString("en-IN")}`;
+            feedbackEl.style.color = "#22c55e";
           } else {
-            const dynamicCodes = window.__siteSettings?.referralCodes || [];
-            const dynamicMatch = dynamicCodes.find(
-              (c) => normalizeReferral(c.code) === referralVal && c.active !== false
-            );
-            if (dynamicMatch) {
-              const applied = Number(dynamicMatch.finalFee ?? (baseFee - Number(dynamicMatch.discountAmount || 0)));
-              const savings = baseFee - applied;
-              const ambassador = dynamicMatch.ambassador || REFERRAL_AMBASSADORS[referralVal] || "";
-              const note = ambassador ? ` (${ambassador})` : "";
-              feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
-              feedbackEl.style.color = "#22c55e";
-            } else if (REFERRAL_CODE_PRICING[referralVal]) {
-              const applied = REFERRAL_CODE_PRICING[referralVal];
-              const savings = baseFee - applied;
-              const ambassador = REFERRAL_AMBASSADORS[referralVal];
-              const note = ambassador ? ` (${ambassador})` : "";
-              feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
-              feedbackEl.style.color = "#22c55e";
-            } else {
-              feedbackEl.innerText = "Referral code not recognized";
-              feedbackEl.style.color = "#ef4444";
-            }
+            feedbackEl.innerText = "Referral code not recognized";
+            feedbackEl.style.color = "#ef4444";
           }
+          return;
+        }
+
+        const dynamicCodes = window.__siteSettings?.referralCodes || [];
+        const dynamicMatch = dynamicCodes.find(
+          (c) => normalizeReferral(c.code) === referralVal && c.active !== false
+        );
+        if (dynamicMatch) {
+          const applied = Number(dynamicMatch.finalFee ?? (baseFee - Number(dynamicMatch.discountAmount || 0)));
+          const savings = Math.max(0, baseFee - applied);
+          const ambassador = dynamicMatch.ownerName || dynamicMatch.ambassador || dynamicMatch.label || REFERRAL_AMBASSADORS[referralVal] || "";
+          const note = ambassador ? ` (${ambassador})` : "";
+          feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
+          feedbackEl.style.color = "#22c55e";
+          return;
+        }
+
+        if (REFERRAL_CODE_PRICING[referralVal]) {
+          const applied = REFERRAL_CODE_PRICING[referralVal];
+          const savings = baseFee - applied;
+          const ambassador = REFERRAL_AMBASSADORS[referralVal];
+          const note = ambassador ? ` (${ambassador})` : "";
+          feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
+          feedbackEl.style.color = "#22c55e";
+          return;
+        }
+
+        // Live server lookup against /api/referrals (validates Delegate RES-XXXX & Secretariat Cash codes)
+        if (referralVal.length >= 3) {
+          feedbackEl.innerText = "Checking referral code...";
+          feedbackEl.style.color = "#a3a3a3";
+          if (referralLookupTimer) clearTimeout(referralLookupTimer);
+          referralLookupTimer = setTimeout(async () => {
+            try {
+              const res = await fetch(`/api/referrals/?code=${encodeURIComponent(referralVal)}`);
+              const data = await res.json();
+              window.__verifiedReferralCache[referralVal] = data;
+              const currentVal = normalizeReferral(document.getElementById("regReferral")?.value);
+              if (currentVal !== referralVal) return;
+              if (data.valid) {
+                applyFeeToPaymentControls(data.finalFee ?? baseFee);
+                feedbackEl.innerText = data.message || "✓ Valid referral code applied";
+                feedbackEl.style.color = "#22c55e";
+              } else {
+                applyFeeToPaymentControls(baseFee);
+                feedbackEl.innerText = "Referral code not recognized";
+                feedbackEl.style.color = "#ef4444";
+              }
+            } catch (_) {
+              feedbackEl.innerText = "Could not verify code right now";
+              feedbackEl.style.color = "#a3a3a3";
+            }
+          }, 250);
         }
       };
 
@@ -2538,10 +2620,29 @@ export default function Home() {
       return true;
     };
 
+    const MODAL_PATHWAY_MAP = {
+      regModal: "delegate",
+      delModal: "delegation",
+      ocModal: "oc",
+      secModal: "secretariat",
+      ebModal: "eb",
+      socialsModal: "socials",
+    };
+
     const syncStepButtons = () => {
       MODAL_IDS.forEach((id) => {
         const modal = document.getElementById(id);
         if (!modal || !modal.classList.contains("active")) return;
+
+        // Hard DOM-level Auth Guard: block any registration form from staying open without Google/Email login
+        if (!isVerifiedEmailOrGoogleUser()) {
+          modal.classList.remove("active");
+          document.body.style.overflow = "";
+          window.pendingPathway = MODAL_PATHWAY_MAP[id] || "delegate";
+          setAuthInitialMode("signup");
+          setAuthOpen(true);
+          return;
+        }
 
         const activeSteps = modal.querySelectorAll(".form-step.active");
         const containers = activeSteps.length > 0 ? Array.from(activeSteps) : Array.from(modal.querySelectorAll("form"));

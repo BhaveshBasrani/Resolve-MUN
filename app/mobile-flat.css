@@ -8,6 +8,7 @@
    ========================================================================== */
 
 @media (max-width: 768px) {
+
   /* 1. UNLOCKED NATIVE TOUCH SCROLLING + FLAT MONOCHROME FOUNDATION */
   html {
     background: #000000 !important;
@@ -176,7 +177,7 @@
     padding: 8px 16px !important;
   }
 
-  [data-mobile-nav-bar="true"] > div:first-child {
+  [data-mobile-nav-bar="true"]>div:first-child {
     height: 44px !important;
   }
 
@@ -216,7 +217,7 @@
   }
 
   [data-mobile-nav-bar="true"] button[aria-label="User menu"] img,
-  [data-mobile-nav-bar="true"] button[aria-label="User menu"] > div {
+  [data-mobile-nav-bar="true"] button[aria-label="User menu"]>div {
     width: 34px !important;
     height: 34px !important;
     min-width: 34px !important;
@@ -289,7 +290,7 @@
   }
 
   [data-user-menu-card="true"] img,
-  [data-user-menu-card="true"] > div:first-child {
+  [data-user-menu-card="true"]>div:first-child {
     width: 36px !important;
     height: 36px !important;
     min-width: 36px !important;
@@ -523,8 +524,8 @@
   }
 
   /* Primary CTA: Flat White bg + Pure Black text */
-  html body #hero .hero-actions > button:first-child,
-  html body #hero .hero-actions > button:first-child span {
+  html body #hero .hero-actions>button:first-child,
+  html body #hero .hero-actions>button:first-child span {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #000000 !important;
@@ -532,20 +533,20 @@
     border-color: #ffffff !important;
   }
 
-  html body #hero .hero-actions > button:first-child {
+  html body #hero .hero-actions>button:first-child {
     border: 1px solid #ffffff !important;
   }
 
   /* Secondary CTA: Flat Black bg + Pure White text + crisp border */
-  html body #hero .hero-actions > button:last-child,
-  html body #hero .hero-actions > button:last-child span {
+  html body #hero .hero-actions>button:last-child,
+  html body #hero .hero-actions>button:last-child span {
     background: #000000 !important;
     background-color: #000000 !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
   }
 
-  html body #hero .hero-actions > button:last-child {
+  html body #hero .hero-actions>button:last-child {
     border: 1px solid #404040 !important;
   }
 
@@ -1136,7 +1137,7 @@
     padding: 40px 20px !important;
   }
 
-  #faq > div.space-y-3 > div {
+  #faq>div.space-y-3>div {
     background: #000000 !important;
     border-radius: 10px !important;
   }
@@ -1427,7 +1428,7 @@
   html body .form-group,
   html body .modal-overlay.active .form-group,
   html body .modal-overlay.active .form-step.active .form-group,
-  html body .modal-overlay.active .form-step.active > div {
+  html body .modal-overlay.active .form-step.active>div {
     opacity: 1 !important;
     transform: none !important;
     visibility: visible !important;
@@ -1550,11 +1551,11 @@
   }
 
   /* Compact, minimal callout/info banners inside OC, Secretariat, Delegation, EB, Socials forms */
-  html body #ocModal .form-step > div[style*="border-radius"],
-  html body #secModal .form-step > div[style*="border-radius"],
-  html body #delModal .form-step > div[style*="border-radius"],
-  html body #ebModal .form-step > div[style*="border-radius"],
-  html body #socialsModal .form-step > div[style*="border-radius"] {
+  html body #ocModal .form-step>div[style*="border-radius"],
+  html body #secModal .form-step>div[style*="border-radius"],
+  html body #delModal .form-step>div[style*="border-radius"],
+  html body #ebModal .form-step>div[style*="border-radius"],
+  html body #socialsModal .form-step>div[style*="border-radius"] {
     background: #080808 !important;
     border: 1px solid #1f1f1f !important;
     border-radius: 6px !important;
@@ -1562,11 +1563,11 @@
     margin: 0 0 14px 0 !important;
   }
 
-  html body #ocModal .form-step > div[style*="border-radius"] p,
-  html body #secModal .form-step > div[style*="border-radius"] p,
-  html body #delModal .form-step > div[style*="border-radius"] p,
-  html body #ebModal .form-step > div[style*="border-radius"] p,
-  html body #socialsModal .form-step > div[style*="border-radius"] p {
+  html body #ocModal .form-step>div[style*="border-radius"] p,
+  html body #secModal .form-step>div[style*="border-radius"] p,
+  html body #delModal .form-step>div[style*="border-radius"] p,
+  html body #ebModal .form-step>div[style*="border-radius"] p,
+  html body #socialsModal .form-step>div[style*="border-radius"] p {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     font-size: 11.5px !important;
     line-height: 1.5 !important;
@@ -1576,11 +1577,11 @@
     margin: 0 !important;
   }
 
-  html body #ocModal .form-step > div[style*="border-radius"] p:first-child,
-  html body #secModal .form-step > div[style*="border-radius"] p:first-child,
-  html body #delModal .form-step > div[style*="border-radius"] p:first-child,
-  html body #ebModal .form-step > div[style*="border-radius"] p:first-child,
-  html body #socialsModal .form-step > div[style*="border-radius"] p:first-child {
+  html body #ocModal .form-step>div[style*="border-radius"] p:first-child,
+  html body #secModal .form-step>div[style*="border-radius"] p:first-child,
+  html body #delModal .form-step>div[style*="border-radius"] p:first-child,
+  html body #ebModal .form-step>div[style*="border-radius"] p:first-child,
+  html body #socialsModal .form-step>div[style*="border-radius"] p:first-child {
     font-size: 12px !important;
     font-weight: 600 !important;
     color: #ffffff !important;
@@ -1695,13 +1696,13 @@
     background: #000000 !important;
   }
 
-  html body #regModal .form-group label,
-  html body #delModal .form-group label,
-  html body #ocModal .form-group label,
-  html body #secModal .form-group label,
-  html body #ebModal .form-group label,
-  html body #socialsModal .form-group label,
-  html body .modal-overlay.active .form-group label {
+  html body #regModal .form-group label:not(.file-upload-wrapper),
+  html body #delModal .form-group label:not(.file-upload-wrapper),
+  html body #ocModal .form-group label:not(.file-upload-wrapper),
+  html body #secModal .form-group label:not(.file-upload-wrapper),
+  html body #ebModal .form-group label:not(.file-upload-wrapper),
+  html body #socialsModal .form-group label:not(.file-upload-wrapper),
+  html body .modal-overlay.active .form-group label:not(.file-upload-wrapper) {
     display: block !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     font-size: 10px !important;
@@ -1861,6 +1862,12 @@
     white-space: nowrap !important;
   }
 
+  html body #regModal .form-group label.file-upload-wrapper,
+  html body #delModal .form-group label.file-upload-wrapper,
+  html body #ocModal .form-group label.file-upload-wrapper,
+  html body #secModal .form-group label.file-upload-wrapper,
+  html body #ebModal .form-group label.file-upload-wrapper,
+  html body #socialsModal .form-group label.file-upload-wrapper,
   html body .modal-overlay.active .form-group label.file-upload-wrapper {
     display: flex !important;
     align-items: center !important;
@@ -1870,11 +1877,16 @@
     border-radius: 6px !important;
     height: 44px !important;
     min-height: 44px !important;
-    padding: 0 10px 0 6px !important;
-    margin-bottom: 0 !important;
+    padding: 0 10px 0 7px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
     text-transform: none !important;
     letter-spacing: normal !important;
     cursor: pointer !important;
+  }
+
+  html body .modal-overlay.active .form-group label.file-upload-wrapper input.file-upload-input {
+    display: none !important;
   }
 
   html body .modal-overlay.active .form-group label.file-upload-wrapper.has-file {
@@ -2239,7 +2251,7 @@
   }
 
   /* Dynamic Island Alert on phones — flat B&W */
-  #dynamic-island-container > div > div {
+  #dynamic-island-container>div>div {
     background: #000000 !important;
     border: 1px solid #ffffff !important;
     border-radius: 10px !important;
@@ -2249,15 +2261,78 @@
     color: #ffffff !important;
   }
 
-  /* 13. DASHBOARD & SECONDARY SCREENS */
+  /* 13. DASHBOARD & SECONDARY SCREENS (PURE #000000 BLACK, BRIGHT #FFFFFF WHITE, SHARP 6PX RADIUS) */
   #dashboard-root,
   #dashboard-main {
     background: #000000 !important;
+    background-color: #000000 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    -webkit-font-smoothing: antialiased !important;
+  }
+
+  #dashboard-main {
+    padding-top: 76px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-bottom: 48px !important;
   }
 
   #dashboard-main section {
     background: #000000 !important;
+    background-color: #000000 !important;
     border-color: #262626 !important;
+    border-radius: 6px !important;
+  }
+
+  /* Sharper, less-rounded pure black inner cards on phones */
+  #dashboard-main section .rounded-2xl,
+  #dashboard-main section .rounded-xl,
+  #dashboard-main section .rounded-lg {
+    border-radius: 6px !important;
+  }
+
+  #dashboard-main section [class*="bg-[#0"],
+  #dashboard-main section [class*="bg-[#1"],
+  #dashboard-main section [class*="bg-white/["],
+  #dashboard-main section [class*="bg-zinc-9"] {
+    background-color: #000000 !important;
+    border-color: #262626 !important;
+  }
+
+  /* Kill rogue browser/global <p> & heading margins and potato sizing inside dashboard cards */
+  #dashboard-main p,
+  #dashboard-main h1,
+  #dashboard-main h2,
+  #dashboard-main h3,
+  #dashboard-main h4 {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  }
+
+  #dashboard-main section p {
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+    letter-spacing: -0.01em !important;
+    color: #ffffff !important;
+  }
+
+  #dashboard-main section [class*="text-white/40"],
+  #dashboard-main section [class*="text-white/50"],
+  #dashboard-main section [class*="text-zinc-400"],
+  #dashboard-main section [class*="text-zinc-500"] {
+    color: #8c8c8c !important;
+  }
+
+  #dashboard-main section [class*="text-white/70"],
+  #dashboard-main section [class*="text-white/80"],
+  #dashboard-main section [class*="text-white/90"] {
+    color: #ffffff !important;
+  }
+
+  #dashboard-main button {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    border-radius: 6px !important;
   }
 
   /* Consistent, sharp mobile typography across Auth, Dashboard, Forms, and Scan */
