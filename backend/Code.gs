@@ -406,10 +406,11 @@ function isAuthorized(key) {
 
 function logAudit(action, actor, status, detail) {
   try {
-    const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
-    let sheet = ss.getSheetByName(CONFIG.SHEETS.AUDIT_LOGS || "Audit_Logs");
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return;
+    let sheet = ss.getSheetByName("Audit_Logs");
     if (!sheet) {
-      sheet = ss.insertSheet(CONFIG.SHEETS.AUDIT_LOGS || "Audit_Logs");
+      sheet = ss.insertSheet("Audit_Logs");
       sheet.appendRow(["Timestamp", "Action", "Actor", "Status", "Detail"]);
     }
     sheet.appendRow([new Date(), action || "", actor || "", status || "", detail || ""]);
@@ -1995,4 +1996,155 @@ function adminSendCustomCrmEmail(data) {
   });
 
   return { status: "success", sentCount: sentCount, total: recipients.length };
+}
+
+/**
+ * ============================================================================
+ * CORE HTTP, MAIL & DATABASE UTILITIES (RESTORED COMPLETE SUITE)
+ * ============================================================================
+ */
+
+function jsonResponse(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj || { status: "success" }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function errorResponse(message, code) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status: "error",
+      code: code || 400,
+      message: String(message || "Unknown error")
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function dispatchMail(toEmail, subject, htmlBody, plainText) {
+  const cleanTo = String(toEmail || "").trim();
+  if (!cleanTo || cleanTo.indexOf("@") === -1) {
+    throw new Error("Invalid recipient email: " + cleanTo);
+  }
+  const mailOpts = {
+    to: cleanTo,
+    subject: String(subject || "Resolve MUN 2.0 Notification"),
+    body: String(plainText || "Please view this message in an HTML-capable email client."),
+    htmlBody: String(htmlBody || plainText || ""),
+    name: CONFIG.SENDER_NAME || "Resolve MUN 2.0 Secretariat",
+    replyTo: CONFIG.REPLY_TO || "resolve.mun@gmail.com"
+  };
+  MailApp.sendEmail(mailOpts);
+  return true;
+}
+
+function tryLogEmailToSheet(type, email, name, status) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return;
+    let sheet = ss.getSheetByName("Email_Logs");
+    if (!sheet) {
+      sheet = ss.insertSheet("Email_Logs");
+      sheet.appendRow(["Timestamp", "Type", "Email", "Name", "Status"]);
+    }
+    sheet.appendRow([new Date(), type || "", email || "", name || "", status || ""]);
+  } catch (_) {}
+}
+
+function getSiteSettings() {
+  const props = PropertiesService.getScriptProperties();
+  return {
+    status: "success",
+    conferenceDates: props.getProperty("CONFERENCE_DATES") || CONFIG.CONFERENCE_DATES,
+    conferenceVenue: props.getProperty("VENUE") || CONFIG.VENUE,
+    delegateFee: Number(props.getProperty("DELEGATE_FEE") || 2500),
+    delegationFee: Number(props.getProperty("DELEGATION_FEE") || 2100),
+    registrationsOpen: props.getProperty("REGISTRATIONS_OPEN") !== "false"
+  };
+}
+
+function updateSiteSettings(payload) {
+  const props = PropertiesService.getScriptProperties();
+  if (payload.conferenceDates) props.setProperty("CONFERENCE_DATES", String(payload.conferenceDates));
+  if (payload.conferenceVenue) props.setProperty("VENUE", String(payload.conferenceVenue));
+  if (payload.delegateFee !== undefined) props.setProperty("DELEGATE_FEE", String(payload.delegateFee));
+  if (payload.delegationFee !== undefined) props.setProperty("DELEGATION_FEE", String(payload.delegationFee));
+  if (payload.registrationsOpen !== undefined) props.setProperty("REGISTRATIONS_OPEN", String(payload.registrationsOpen));
+  return { status: "success", settings: getSiteSettings() };
+}
+
+function repairAndInitDatabase() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return { status: "error", message: "No active spreadsheet bound" };
+  Object.keys(SCHEMAS).forEach(function(sheetName) {
+    let sh = ss.getSheetByName(sheetName);
+    if (!sh) {
+      sh = ss.insertSheet(sheetName);
+      sh.appendRow(SCHEMAS[sheetName]);
+    }
+  });
+  return { status: "success", message: "Database schema verified" };
+}
+
+function sendVerificationCode(email, code, name) {
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  if (!cleanEmail || cleanEmail.indexOf("@") === -1) {
+    return { status: "error", message: "Valid email required" };
+  }
+  const otp = String(code || Math.floor(100000 + Math.random() * 900000));
+  const recipient = name || "Delegate";
+  const subject = "Your Resolve MUN 2.0 Verification Code: " + otp;
+  const plain = "Hi " + recipient + ",\n\nYour verification code is: " + otp + "\n\nWarm regards,\nResolve MUN 2.0 Secretariat";
+  const bodyHtml = '<p style="font-size:14px;color:#D4D4D8;">Hi ' + recipient + ',</p><p style="font-size:14px;color:#D4D4D8;">Your Resolve MUN 2.0 verification code is:</p><div style="font-size:28px;font-weight:800;letter-spacing:6px;color:#FFFFFF;padding:16px;border:1px solid #262626;text-align:center;margin:16px 0;">' + otp + '</div>';
+  dispatchMail(cleanEmail, subject, wrapInEmbassyLayout("VERIFY-EMAIL", subject, bodyHtml), plain);
+  tryLogEmailToSheet("VERIFICATION_CODE", cleanEmail, recipient, "SENT");
+  return { status: "success", sent: true };
+}
+
+function syncUserAccount(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return { status: "success" };
+    let sh = ss.getSheetByName("Users");
+    if (!sh) {
+      sh = ss.insertSheet("Users");
+      sh.appendRow(SCHEMAS["Users"]);
+    }
+    const email = String(payload.email || "").trim().toLowerCase();
+    if (!email) return { status: "success" };
+    const rows = sh.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][3] || "").trim().toLowerCase() === email) {
+        sh.getRange(i + 1, 7).setValue(new Date());
+        return { status: "success", synced: true };
+      }
+    }
+    sh.appendRow([new Date(), payload.uid || "", payload.fullName || payload.name || "", email, payload.role || "DELEGATE", payload.photoURL || "", new Date()]);
+  } catch (_) {}
+  return { status: "success", synced: true };
+}
+
+function verifyPassCredential(regId) {
+  const id = String(regId || "").trim().toUpperCase();
+  if (!id) return { valid: false, message: "Missing registration ID" };
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss && ss.getSheetByName("Registrations");
+    if (sh) {
+      const rows = sh.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][1] || "").trim().toUpperCase() === id) {
+          return {
+            valid: true,
+            regId: rows[i][1],
+            fullName: rows[i][3],
+            email: rows[i][4],
+            status: rows[i][13],
+            allocatedCommittee: rows[i][14],
+            allocatedCountry: rows[i][15]
+          };
+        }
+      }
+    }
+  } catch (_) {}
+  return { valid: false, message: "Credential not found in sheet" };
 }

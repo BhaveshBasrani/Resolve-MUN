@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { getDelegateReferralCode, getStallCouponCode, calculateResStats } from '@/lib/referrals';
+import { enforceRateLimit } from '@/lib/rateLimit';
 
 const APPS_SCRIPT_URL =
   process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
   "https://script.google.com/macros/s/AKfycbyoC8dZ2L6h1Es_n3Rx3LRSwuiy_8iLklKerZK2jWseNBDzD4i3Gr7JHDNdS7jJzhuWEA/exec";
 
 export async function GET(request) {
+  const rl = enforceRateLimit(request, { keyPrefix: 'delegate_get', limit: 60, windowMs: 60_000 });
+  if (rl) return rl;
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email')?.trim()?.toLowerCase();
@@ -34,7 +37,10 @@ export async function GET(request) {
         }
 
         if (delRow) {
-          const resolvedRegId = delRow.delegate_id || delRow.reg_id || delRow.regId || delRow.id;
+          const rawId = delRow.reg_id || delRow.delegate_id || delRow.regId || delRow.id;
+          const resolvedRegId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(rawId || ''))
+            ? `RM-${String(rawId).replace(/-/g, '').slice(0, 4).toUpperCase()}`
+            : String(rawId || '').replace(/^RM26-DEL-/i, 'RM-');
           const personalRefCode = getDelegateReferralCode(resolvedRegId, delRow.email || email);
           const personalCouponCode = getStallCouponCode(resolvedRegId, delRow.email || email);
 
@@ -300,6 +306,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const rl = enforceRateLimit(request, { keyPrefix: 'delegate_post', limit: 25, windowMs: 60_000 });
+  if (rl) return rl;
   try {
     const body = await request.json();
     const email = (body.email || '').trim().toLowerCase();

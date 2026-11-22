@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase, DEFAULT_SITE_SETTINGS, DEFAULT_COMMITTEE_CAPACITIES, normalizeSettings } from '@/lib/supabase';
 import { buildResolveEmailHtml } from '@/lib/emailTemplates';
+import { enforceRateLimit } from '@/lib/rateLimit';
 
 const APPS_SCRIPT_URL =
   process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
@@ -34,6 +35,8 @@ const isAuthorizedKey = (k) =>
   k === 'abhilashisgoat';
 
 export async function GET(request) {
+  const rl = enforceRateLimit(request, { keyPrefix: 'admin_get', limit: 90, windowMs: 60_000 });
+  if (rl) return rl;
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('adminKey');
@@ -104,12 +107,17 @@ export async function GET(request) {
 
         const rawAllDelegates = [...(realDelRes.data || []), ...(appDelRes.data || [])];
         if (rawAllDelegates.length > 0) {
-          sbDelegates = rawAllDelegates.map(d => ({
+          sbDelegates = rawAllDelegates.map(d => {
+            const rawCode = d.reg_id || d.delegate_id || d.id;
+            const shortCode = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(rawCode || ''))
+              ? `RM-${String(rawCode).replace(/-/g, '').slice(0, 4).toUpperCase()}`
+              : String(rawCode || '').replace(/^RM26-DEL-/i, 'RM-');
+            return ({
             ...d,
-            id: d.delegate_id || d.id,
-            _id: d.delegate_id || d.id,
-            regId: d.delegate_id || d.id,
-            delegateId: d.delegate_id || d.id,
+            id: shortCode,
+            _id: shortCode,
+            regId: shortCode,
+            delegateId: shortCode,
             fullName: d.name || d.full_name || 'Delegate',
             name: d.name || d.full_name || 'Delegate',
             email: d.email || '',
@@ -152,7 +160,8 @@ export async function GET(request) {
             checkInDay2: d.check_in_day2 || 'Absent',
             checkInDay3: d.check_in_day3 || 'Absent',
             timestamp: d.created_at,
-          }));
+          });
+          });
         }
         const rawAllDelegations = [...(realDelegRes?.data || []), ...(delegRes?.data || [])];
         if (rawAllDelegations.length > 0) {
@@ -678,6 +687,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const rl = enforceRateLimit(request, { keyPrefix: 'admin_post', limit: 45, windowMs: 60_000 });
+  if (rl) return rl;
   try {
     const body = await request.json();
     const action = body.action;
@@ -799,7 +810,7 @@ export async function POST(request) {
         } catch (_) {}
       }
 
-      const generatedId = body.regId || body.delegateId || body.id || `RM26-DEL-${Math.floor(1000 + Math.random() * 9000)}`;
+      const generatedId = body.regId || body.delegateId || body.id || `RM-${Math.floor(1000 + Math.random() * 9000)}`;
       const cleanEmail = (body.email || '').trim().toLowerCase();
       const delegateName = (body.fullName || body.name || 'Delegate').trim();
       const phone = (body.phone ? String(body.phone) : '').trim();
@@ -938,42 +949,21 @@ export async function POST(request) {
         }
       }
 
-      // Replicate to Google Apps Script (Drive storage + auto confirmation email)
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'SUBMIT_DELEGATE',
-          regId: generatedId,
-          id: generatedId,
-          ...body,
-          name: delegateName,
-          fullName: delegateName,
-          email: cleanEmail,
-          phone: phone,
-          institute: institute,
-          payment_utr: utr,
-          payment_screenshot_link: screenshot,
-          paymentScreenshotBase64: screenshot,
-          screenshotBase64: screenshot,
-        }),
-      }).catch(err => console.warn("Google Apps Script async dispatch notice:", err.message));
-
-      // Send official Registration Received email immediately
+      // Send ONLY ONE official Registration Received email (We are verifying your payment)
       let registrationEmailSent = false;
       if (cleanEmail && cleanEmail.includes('@')) {
-        const regSubject = `Registration Received — Resolve MUN 2.0 (${generatedId})`;
-        const regBodyText = `Dear ${delegateName},\n\nThank you for registering for Resolve MUN 2.0 (26–27 December 2026 at Northfield International School, Hyderabad).\n\nWe have received your application and UPI transaction reference (${utr || 'Submitted'}). Our Secretariat team is currently verifying your payment.\n\nYou will receive a confirmation email as soon as your payment is verified, and your Digital Gate Pass will unlock automatically in your dashboard:\nhttps://resolvemun.in/dashboard\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`;
+        const regSubject = `Registration Received — Verifying Your Payment (${generatedId})`;
+        const regBodyText = `Thank you for registering for Resolve MUN 2.0 (26, 27 December 2026 at Northfield International School, Hyderabad).\n\nWe have received your application (${generatedId}) and are currently verifying your UPI payment (UTR: ${utr || 'Submitted'}).\n\nAs soon as your payment is verified, you will receive your official QR Gate Pass and committee allocation updates.`;
         try {
           const regHtml = buildResolveEmailHtml({
-            eyebrow: 'Registration Received',
-            title: 'Application Submitted — Resolve MUN 2.0',
+            eyebrow: 'Step 1 of 3 · Payment Under Verification',
+            title: 'We Are Verifying Your Payment',
             recipientName: delegateName,
             bodyText: regBodyText,
             ctaLabel: 'Open Delegate Dashboard',
             ctaUrl: 'https://resolvemun.in/dashboard',
             highlightBox: {
-              label: 'Registration ID & Payment Ref',
+              label: 'Registration ID & Payment Reference',
               value: `${generatedId} · UTR: ${utr || 'Submitted'} · ₹${Number(fee || 2500).toLocaleString('en-IN')}`,
             },
           });
@@ -1617,92 +1607,114 @@ export async function POST(request) {
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          const delegatesUpdate = {
+          const allotPatch = {
             allocated_committee: body.committee,
             allocated_country: body.country,
             status: 'ALLOTTED',
-          };
-          const legacyUpdate = {
-            ...delegatesUpdate,
             updated_at: new Date().toISOString(),
           };
 
-          let q1 = supabase.from('delegates').update(delegatesUpdate);
-          let q2 = supabase.from('delegate_applications').update(legacyUpdate);
-
+          let q = supabase.from('delegate_applications').update(allotPatch);
           if (isUuid) {
-            q1 = q1.eq('id', targetId);
-            q2 = q2.eq('id', targetId);
-          } else if (targetId.startsWith('RM26-DEL-')) {
-            q1 = q1.eq('delegate_id', targetId);
-            q2 = q2.eq('reg_id', targetId);
+            q = q.eq('id', targetId);
+          } else if (targetId && targetEmail) {
+            q = q.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+          } else if (targetId) {
+            q = q.eq('reg_id', targetId);
           } else if (targetEmail) {
-            q1 = q1.ilike('email', targetEmail);
-            q2 = q2.ilike('email', targetEmail);
+            q = q.ilike('email', targetEmail);
           }
-          await Promise.allSettled([q1, q2]);
+          await q;
           adminDataCache = null;
         } catch (e) {
           console.warn("[Supabase] Allotment notice:", e.message);
         }
       }
 
-      // Fetch delegate metadata for email dispatch if missing (check delegates first, then delegate_applications)
+      // Fetch delegate metadata for email dispatch if missing
       let delEmail = targetEmail;
       let delName = body.fullName || body.name || '';
       let delRegId = targetId;
-      if (supabase && (!delEmail || !delName)) {
+      if (supabase && (!delEmail || !delName || !delRegId)) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q1 = supabase.from('delegates').select('full_name, email, delegate_id');
-          if (isUuid) q1 = q1.eq('id', targetId);
-          else if (targetId.startsWith('RM26-DEL-')) q1 = q1.eq('delegate_id', targetId);
-          else if (targetEmail) q1 = q1.ilike('email', targetEmail);
-          const { data: realData } = await q1.maybeSingle();
-          if (realData) {
-            delEmail = delEmail || realData.email;
-            delName = delName || realData.full_name;
-            delRegId = delRegId || realData.delegate_id;
-          }
-          if (!delEmail || !delName) {
-            let dq = supabase.from('delegate_applications').select('name, email, reg_id');
-            if (isUuid) dq = dq.eq('id', targetId);
-            else if (targetId.startsWith('RM26-DEL-')) dq = dq.eq('reg_id', targetId);
-            else if (targetEmail) dq = dq.ilike('email', targetEmail);
-            const { data: dData } = await dq.maybeSingle();
-            if (dData) {
-              delEmail = delEmail || dData.email;
-              delName = delName || dData.name;
-              delRegId = delRegId || dData.reg_id;
-            }
+          let dq = supabase.from('delegate_applications').select('name, email, reg_id');
+          if (isUuid) dq = dq.eq('id', targetId);
+          else if (targetId && targetEmail) dq = dq.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+          else if (targetId) dq = dq.eq('reg_id', targetId);
+          else if (targetEmail) dq = dq.ilike('email', targetEmail);
+          const { data: dData } = await dq.limit(1).maybeSingle();
+          if (dData) {
+            delEmail = delEmail || dData.email;
+            delName = delName || dData.name;
+            delRegId = delRegId || dData.reg_id;
           }
         } catch (_) {}
       }
 
-      // Dispatch allotment credential email via Apps Script
+      const shortAllotId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(delRegId || ''))
+        ? `RM-${String(delRegId).replace(/-/g, '').slice(0, 4).toUpperCase()}`
+        : String(delRegId || 'RM-CONFIRMED').replace(/^RM26-DEL-/i, 'RM-');
+      const allotQrPayload = `RESOLVE26:${shortAllotId}:${delEmail || ''}:${body.committee || ''}`;
+      const allotQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=12&color=000000&bgcolor=ffffff&data=${encodeURIComponent(allotQrPayload)}`;
+
+      // Send ONLY ONE official Allocation & QR Desk Pass email
       let dispatchStatus = 'sent';
-      try {
-        const asRes = await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            ...body,
-            action: 'ADMIN_ALLOT_COMMITTEE',
-            adminKey: ADMIN_KEY,
-            email: delEmail,
-            fullName: delName,
-            name: delName,
-            regId: delRegId,
-            committee: body.committee,
-            country: body.country,
-          }),
+      if (delEmail && delEmail.includes('@')) {
+        const allotSubject = `Official Allocation: ${body.committee} (${body.country}) — Resolve MUN 2.0`;
+        const allotText = `Your official committee and country allocation for Resolve MUN 2.0 is now confirmed:\n\nCommittee: ${body.committee}\nPortfolio / Country: ${body.country}\nDelegate ID: ${shortAllotId}\n\nPlease show the attached QR Gate Pass at the registration desk at Northfield International School on 26, 27 December 2026 for check-in.`;
+        const allotHtml = buildResolveEmailHtml({
+          eyebrow: 'Step 3 of 3 · Official Committee Allocation',
+          title: `${body.committee} — ${body.country}`,
+          recipientName: delName || 'Delegate',
+          bodyText: allotText,
+          ctaLabel: 'Open Digital Gate Pass',
+          ctaUrl: 'https://resolvemun.in/dashboard',
+          highlightBox: {
+            label: 'Allotted Committee & Portfolio',
+            value: `${body.committee} · ${body.country} (${shortAllotId})`,
+          },
+          qrCodeUrl: allotQrUrl,
+          qrCaption: `Show this QR pass (${shortAllotId}) at the registration desk at Northfield International School`,
         });
-        const asText = await asRes.text();
-        if (asRes.status === 403 || asText.includes('You need permission') || asText.includes('accounts.google.com')) {
-          dispatchStatus = 'permission_required';
+
+        try {
+          if (process.env.RESEND_API_KEY) {
+            const fromAddr = process.env.RESEND_FROM_EMAIL || 'Resolve MUN 2.0 <onboarding@resend.dev>';
+            const r = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: fromAddr,
+                to: [delEmail],
+                subject: allotSubject,
+                text: allotText,
+                html: allotHtml,
+              }),
+            });
+            dispatchStatus = r.ok ? 'sent' : 'failed';
+          } else {
+            const asRes = await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify({
+                action: 'ADMIN_SEND_CUSTOM_EMAIL',
+                adminKey: ADMIN_KEY,
+                subject: allotSubject,
+                messageBody: allotText,
+                htmlBody: allotHtml,
+                email: delEmail,
+                recipients: [{ email: delEmail, name: delName || 'Delegate' }],
+              }),
+            });
+            dispatchStatus = asRes.ok ? 'sent' : 'failed';
+          }
+        } catch (err) {
+          dispatchStatus = 'failed: ' + err.message;
         }
-      } catch (err) {
-        dispatchStatus = 'failed: ' + err.message;
       }
 
       return NextResponse.json({
@@ -1828,51 +1840,59 @@ export async function POST(request) {
             filter = `email.ilike.${targetEmail}`;
           }
 
-          // Lookup email/name if not provided in request body so notification email always sends
-          if (!resolvedEmail && filter) {
-            const { data: foundRow } = await supabase.from('delegate_applications').select('email, name').or(filter).limit(1).maybeSingle();
-            if (foundRow?.email) resolvedEmail = foundRow.email.trim().toLowerCase();
-            if (foundRow?.name) resolvedName = foundRow.name;
+          // Lookup email/name/reg_id so notification email & QR always have exact short ID
+          let resolvedRegId = targetId;
+          if (filter) {
+            const { data: foundRow } = await supabase.from('delegate_applications').select('email, name, reg_id').or(filter).limit(1).maybeSingle();
+            if (foundRow?.email && !resolvedEmail) resolvedEmail = foundRow.email.trim().toLowerCase();
+            if (foundRow?.name && (!resolvedName || resolvedName === 'Delegate')) resolvedName = foundRow.name;
+            if (foundRow?.reg_id) resolvedRegId = foundRow.reg_id;
           }
 
           if (filter) {
             const { error: payErr } = await supabase.from('delegate_applications').update(payPatch).or(filter);
             if (payErr) console.warn("[Supabase] Payment verify error:", payErr.message);
           }
+
+          const shortVerifyId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(resolvedRegId || ''))
+            ? `RM-${String(resolvedRegId).replace(/-/g, '').slice(0, 4).toUpperCase()}`
+            : String(resolvedRegId || 'RM-CONFIRMED').replace(/^RM26-DEL-/i, 'RM-');
+
+          // Attach shortVerifyId for email block below
+          body._resolvedShortId = shortVerifyId;
         } catch (e) {
           console.warn("[Supabase] Payment verify notice:", e.message);
         }
       }
 
-      // Forward status update to Apps Script
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ ...body, paymentStatus: statusVal, adminKey: ADMIN_KEY }),
-      }).catch(() => { });
+      const shortIdForMail = body._resolvedShortId || String(targetId || 'RM-CONFIRMED').replace(/^RM26-DEL-/i, 'RM-');
+      const verifyQrPayload = `RESOLVE26:${shortIdForMail}:${resolvedEmail || ''}`;
+      const verifyQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=12&color=000000&bgcolor=ffffff&data=${encodeURIComponent(verifyQrPayload)}`;
 
-      // Dispatch official email notification to the delegate (Verified or Failed)
+      // Send ONLY ONE official email notification to the delegate (Verified with QR + Allocation Out Soon, or Failed)
       let emailDispatched = false;
       if (resolvedEmail && resolvedEmail.includes('@')) {
         const subject = isVer
-          ? 'Payment Verified & Seat Confirmed — Resolve MUN 2.0'
-          : 'Action Required: Payment Verification Failed — Resolve MUN 2.0';
+          ? `Payment Verified & QR Pass (${shortIdForMail}) — Allocation Out Soon`
+          : `Action Required: Payment Verification Failed (${shortIdForMail})`;
         const messageBody = isVer
-          ? `Dear ${resolvedName},\n\nYour UPI payment for Resolve MUN 2.0 (26–27 December 2026 at Northfield International School, Hyderabad) has been verified and your seat is officially confirmed.\n\nYou can now access your Digital Gate Pass, committee updates, and RES referral rewards at:\nhttps://resolvemun.in/dashboard\n\nWarm regards,\nSecretariat, Resolve MUN 2.0`
-          : `Dear ${resolvedName},\n\nWe could not verify the UPI payment / UTR submitted with your Resolve MUN 2.0 registration (${targetId || resolvedEmail}). Your payment status has been marked as FAILED and your Digital Gate Pass is temporarily on hold.\n\nPlease review your status on https://resolvemun.in/dashboard and reply to this email or message us on WhatsApp at +91 92121 07797 with your valid 12-digit UPI UTR and payment screenshot so we can resolve this immediately.\n\nRegards,\nSecretariat, Resolve MUN 2.0\nresolve.mun@gmail.com`;
+          ? `Your UPI payment for Resolve MUN 2.0 (26, 27 December 2026 at Northfield International School, Hyderabad) has been verified and your delegate seat is officially confirmed.\n\nYour committee and country allocation will be out soon. Below is your official Digital QR Entry Pass (${shortIdForMail}) — keep it handy for check-in at the registration desk.`
+          : `We could not verify the UPI payment / UTR submitted with your Resolve MUN 2.0 registration (${shortIdForMail}). Your payment status has been marked as FAILED and your Digital Gate Pass is currently on hold.\n\nPlease reply to this email or message us on WhatsApp at +91 92121 07797 with your valid 12-digit UPI UTR and payment screenshot so we can verify your seat immediately.`;
 
         try {
           const htmlBody = buildResolveEmailHtml({
-            eyebrow: isVer ? 'Payment Verified' : 'Action Required',
-            title: isVer ? 'Seat Confirmed — Resolve MUN 2.0' : 'Payment Verification Failed',
+            eyebrow: isVer ? 'Step 2 of 3 · Payment Verified' : 'Action Required · Payment Failed',
+            title: isVer ? 'Payment Verified — Allocation Out Soon' : 'Payment Verification Failed',
             recipientName: resolvedName,
             bodyText: messageBody,
             ctaLabel: isVer ? 'Open Digital Gate Pass' : 'Check Dashboard Status',
             ctaUrl: 'https://resolvemun.in/dashboard',
             highlightBox: {
-              label: 'Registration Reference',
-              value: `${targetId || resolvedEmail} · ${statusVal}`,
+              label: 'Delegate ID & Payment Status',
+              value: `${shortIdForMail} · ${isVer ? 'PAYMENT VERIFIED · ALLOCATION OUT SOON' : 'PAYMENT FAILED'}`,
             },
+            qrCodeUrl: isVer ? verifyQrUrl : null,
+            qrCaption: `Official Digital Gate Pass (${shortIdForMail}) · Show at the registration desk`,
           });
 
           if (process.env.RESEND_API_KEY) {

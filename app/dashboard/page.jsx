@@ -709,8 +709,8 @@ export default function DelegateDashboard() {
     const rec = delegateRecord || {};
     const rawId = rec.regId || rec.delegateId || "RM26-DEL-0000";
     const cleanId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawId)
-      ? `RM26-DEL-${rawId.slice(0, 6).toUpperCase()}`
-      : rawId;
+      ? `RM-${rawId.replace(/-/g, "").slice(0, 4).toUpperCase()}`
+      : String(rawId || "").replace(/^RM26-DEL-/i, "RM-");
     printOfficialReceipt({
       ticketId: cleanId,
       cardHolder: rec.fullName || rec.name || user?.displayName || "Registered Delegate",
@@ -745,8 +745,8 @@ export default function DelegateDashboard() {
     const rec = delegateRecord || {};
     const rawId = rec.regId || rec.delegateId || "RM26-DEL-0000";
     const cleanId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawId)
-      ? `RM26-DEL-${rawId.slice(0, 6).toUpperCase()}`
-      : rawId;
+      ? `RM-${rawId.replace(/-/g, "").slice(0, 4).toUpperCase()}`
+      : String(rawId || "").replace(/^RM26-DEL-/i, "RM-");
     downloadQrPassImage({
       ticketId: cleanId,
       cardHolder: rec.fullName || rec.name || user?.displayName || "Registered Delegate",
@@ -759,8 +759,8 @@ export default function DelegateDashboard() {
     const rec = delegateRecord || {};
     const rawId = rec.regId || rec.delegateId || "RM26-DEL-0000";
     const cleanId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawId)
-      ? `RM26-DEL-${rawId.slice(0, 6).toUpperCase()}`
-      : rawId;
+      ? `RM-${rawId.replace(/-/g, "").slice(0, 4).toUpperCase()}`
+      : String(rawId || "").replace(/^RM26-DEL-/i, "RM-");
     printQrPassPdf({
       ticketId: cleanId,
       cardHolder: rec.fullName || rec.name || user?.displayName || "Registered Delegate",
@@ -879,8 +879,8 @@ export default function DelegateDashboard() {
 
     const rawDelegateId = delegateRecord?.delegateId || delegateRecord?.regId || "";
     const formattedDelegateId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawDelegateId)
-      ? `RM26-DEL-${rawDelegateId.slice(0, 6).toUpperCase()}`
-      : rawDelegateId;
+      ? `RM-${rawDelegateId.replace(/-/g, "").slice(0, 4).toUpperCase()}`
+      : String(rawDelegateId || "").replace(/^RM26-DEL-/i, "RM-");
 
     const crmTabs = [
       { id: "overview", label: "Overview" },

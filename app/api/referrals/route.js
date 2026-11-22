@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { getDelegateReferralCode, RES_POINTS_PER_REFERRAL } from '@/lib/referrals';
+import { enforceRateLimit } from '@/lib/rateLimit';
 
 const BASE_DELEGATE_FEE = 2500;
 const SECRETARIAT_CASH_POOL = 400;
@@ -118,6 +119,8 @@ function isRowVerified(row) {
 }
 
 export async function GET(request) {
+  const rl = enforceRateLimit(request, { keyPrefix: 'referrals_get', limit: 60, windowMs: 60_000 });
+  if (rl) return rl;
   try {
     const { searchParams } = new URL(request.url);
     const rawCode = searchParams.get('code');
@@ -307,6 +310,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const rl = enforceRateLimit(request, { keyPrefix: 'referrals_post', limit: 25, windowMs: 60_000 });
+  if (rl) return rl;
   try {
     const body = await request.json();
     const action = String(body.action || 'UPSERT_SECRETARIAT_CODE').toUpperCase();

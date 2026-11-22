@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { buildResolveEmailHtml } from '@/lib/emailTemplates';
+import { enforceRateLimit } from '@/lib/rateLimit';
 
 const APPS_SCRIPT_URL =
   process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
@@ -9,6 +10,8 @@ const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY || 'ResolveMUNAdmin2026@Secu
 // Unified Transactional Email Endpoint
 // Supports Resend API (if RESEND_API_KEY is set in .env.local) with Google Apps Script fallback.
 export async function POST(request) {
+  const rl = enforceRateLimit(request, { keyPrefix: 'email_post', limit: 20, windowMs: 60_000 });
+  if (rl) return rl;
   try {
     const body = await request.json();
     const to = String(body.to || body.email || '').trim();
