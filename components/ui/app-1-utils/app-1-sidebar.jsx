@@ -16,6 +16,7 @@ import {
   Database,
   Layers,
   QrCode,
+  Ticket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar";
@@ -82,6 +83,12 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
       label: "Broadcast CRM",
       icon: Mail,
       hint: "Direct Email Dispatch",
+    },
+    {
+      id: "referrals",
+      label: "Referrals & RES",
+      icon: Ticket,
+      hint: "Codes, Points & Coupons",
     },
     {
       id: "settings",

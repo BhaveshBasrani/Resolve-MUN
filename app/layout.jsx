@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./sleek-modern.css";
+import "./mobile-flat.css";
 import Script from "next/script";
 import SmoothScroll from "@/components/SmoothScroll";
 import DynamicIslandAlert from "@/components/DynamicIslandAlert";
@@ -18,7 +19,7 @@ export const metadata = {
   metadataBase: new URL(siteUrl),
   title: "Resolve MUN 2.0",
   description:
-    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
+    "Resolve MUN 2.0 convenes on 26, 27 December 2026 at Northfield International School, Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
   keywords: [
     "Best MUN in Hyderabad",
     "best mun in hyderabad",
@@ -54,7 +55,7 @@ export const metadata = {
   openGraph: {
     title: "Resolve MUN 2.0",
     description:
-      "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
+      "Resolve MUN 2.0 convenes on 26, 27 December 2026 at Northfield International School, Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
     url: siteUrl,
     siteName: "Resolve MUN 2.0",
     images: [
@@ -82,7 +83,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Resolve MUN 2.0",
     description:
-      "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
+      "Resolve MUN 2.0 convenes on 26, 27 December 2026 at Northfield International School, Hyderabad. 6 committees: UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel. Register your delegate pass today.",
     images: [`${siteUrl}/images/OG.jpg`],
   },
   alternates: {
@@ -144,22 +145,24 @@ export default function RootLayout({ children }) {
                   "@type": "Event",
                   "@id": `${siteUrl}/#event`,
                   name: "Resolve MUN 2.0",
-                  description:
-                    "Resolve MUN 2.0 convenes on 25, 26, 27 December 2026 in Hyderabad. Venue TBA (To Be Announced). 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel), cash prizes (Total CP: TBA, Delegation CP: ₹25,000), and premier diplomatic simulations.",
-                  startDate: "2026-12-25T08:30:00+05:30",
-                  endDate: "2026-12-27T18:30:00+05:30",
-                  eventStatus: "https://schema.org/EventScheduled",
-                  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-                  location: {
-                    "@type": "Place",
-                    name: "TBA (To Be Announced)",
-                    address: {
-                      "@type": "PostalAddress",
-                      addressLocality: "Hyderabad",
-                      addressRegion: "Telangana",
-                      addressCountry: "IN",
+                    description:
+                      "Resolve MUN 2.0 convenes on 26, 27 December 2026 at Northfield International School, Hyderabad. 6 elite committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, Marvel), cash prizes (Total CP: TBA, Delegation CP: ₹25,000), and premier diplomatic simulations.",
+                    startDate: "2026-12-26T08:30:00+05:30",
+                    endDate: "2026-12-27T18:30:00+05:30",
+                    eventStatus: "https://schema.org/EventScheduled",
+                    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+                    location: {
+                      "@type": "Place",
+                      name: "Northfield International School",
+                      address: {
+                        "@type": "PostalAddress",
+                        streetAddress: "BMR Towers, H.No. 8-95/2, Devarayamjal Road, Kompally",
+                        addressLocality: "Hyderabad",
+                        addressRegion: "Telangana",
+                        postalCode: "500078",
+                        addressCountry: "IN",
+                      },
                     },
-                  },
                   image: [
                     `${siteUrl}/images/OG.jpg`,
                     `${siteUrl}/images/L1.png`,

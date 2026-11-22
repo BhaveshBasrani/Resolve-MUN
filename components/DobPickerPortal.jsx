@@ -84,6 +84,14 @@ function parseYyyyMmDd(str) {
 
 export function Particle({ inputId }) {
   const [date, setDate] = React.useState(undefined);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Sync initial value from hidden/associated input (e.g., restored from localStorage)
   React.useEffect(() => {
@@ -130,6 +138,34 @@ export function Particle({ inputId }) {
   };
 
   const age = date ? calcAge(date) : null;
+
+  // On phones, use a clean 1-line native date input instead of a giant 320px calendar block
+  if (isMobile) {
+    const strVal = date ? formatYyyyMmDd(date) : "";
+    return (
+      <div className="flex flex-col gap-1">
+        <input
+          type="date"
+          value={strVal}
+          max={formatYyyyMmDd(today)}
+          min="1950-01-01"
+          onChange={(e) => {
+            const val = e.target.value;
+            const parsed = parseYyyyMmDd(val);
+            handleSelectDate(parsed);
+          }}
+          className="w-full h-[42px] px-3 rounded-md border border-[#262626] bg-black text-white text-[15px] outline-none"
+          style={{ colorScheme: "dark" }}
+          aria-label="Date of birth"
+        />
+        {age !== null && (
+          <span className="text-[11px] font-mono text-[#737373]">
+            Age: {age} years
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2.5">

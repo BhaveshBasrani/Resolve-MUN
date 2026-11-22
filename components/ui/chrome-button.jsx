@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import LiquidChrome from "@/components/ui/liquid-chrome";
 
 export function ChromeButton({
@@ -11,6 +11,30 @@ export function ChromeButton({
   disabled = false,
   ...props
 }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`mobile-chrome-btn relative py-3 px-4 rounded-lg font-bold tracking-wider text-xs uppercase whitespace-nowrap inline-flex items-center justify-center select-none cursor-pointer ${className}`}
+        style={style}
+        {...props}
+      >
+        <span>{children}</span>
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"

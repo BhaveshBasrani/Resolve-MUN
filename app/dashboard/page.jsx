@@ -13,10 +13,19 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EngravedTicket from "@/components/ui/engraved-ticket";
 import {
+  getDelegateReferralCode,
+  getStallCouponCode,
+  calculateResStats,
+  RES_POINTS_PER_REFERRAL,
+  RES_POINT_RUPEE_VALUE,
+  RUPEES_PER_REFERRAL,
+} from "@/lib/referrals";
+import {
   CheckCircle2, Clock, Lock, ArrowRight,
   RefreshCw, ShieldCheck, ChevronRight,
   Globe, ExternalLink, Trash2, Printer,
-  Pencil, MapPin, Award, X, Save, Bus
+  Pencil, MapPin, Award, X, Save, Bus,
+  Copy, Check, Share2, Ticket, Gift
 } from "lucide-react";
 
 const DRAFT_DEFINITIONS = [
@@ -178,7 +187,7 @@ function ChoosePathwayBlock({ onSelect, settings = {} }) {
           HYDERABAD 2026
         </span>
         <span className="text-[10px] font-mono tracking-[0.15em] text-white/40 uppercase font-semibold truncate">
-          {(settings?.venueShort || settings?.conferenceVenue || "MERIDIAN SCHOOL, KOMPALLY").toUpperCase()}
+          {(settings?.venueShort || settings?.conferenceVenue || "NORTHFIELD INTERNATIONAL SCHOOL").toUpperCase()}
         </span>
       </div>
 
@@ -243,6 +252,22 @@ export default function DelegateDashboard() {
   const [delegateRecord, setDelegateRecord] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [copiedField, setCopiedField] = useState("");
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const handleCopyValue = (val, key) => {
+    if (!val) return;
+    navigator.clipboard?.writeText(val);
+    setCopiedField(key);
+    setTimeout(() => setCopiedField(""), 1800);
+  };
 
   const handleSelfDeleteAccount = async () => {
     if (
@@ -505,9 +530,9 @@ export default function DelegateDashboard() {
             record.institutionName ||
             record["School / Institution"] ||
             "Individual Delegate",
-          checkInDay1: Boolean(record.checkInDay1 || record.check_in_day1),
-          checkInDay2: Boolean(record.checkInDay2 || record.check_in_day2),
-          checkInDay3: Boolean(record.checkInDay3 || record.check_in_day3),
+          checkInDay1: String(record.checkInDay1 || record.check_in_day1 || "").toLowerCase() === "present",
+          checkInDay2: String(record.checkInDay2 || record.check_in_day2 || "").toLowerCase() === "present",
+          checkInDay3: String(record.checkInDay3 || record.check_in_day3 || "").toLowerCase() === "present",
           pref1: record.pref1 || (record.pref1_committee
             ? `${record.pref1_committee} · ${record.pref1_country || "General"}`
             : record.committeePref1 || null),
@@ -790,10 +815,10 @@ export default function DelegateDashboard() {
 
               <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-white/40 font-mono">
                 <div>
-                  Venue: <span className="text-white/70 font-sans">{systemSettings.conferenceVenue || "TBA (To Be Announced)"}</span>
+                  Venue: <span className="text-white/70 font-sans">{systemSettings.conferenceVenue || "Northfield International School"}</span>
                 </div>
                 <div>
-                  Dates: <span className="text-white/70 font-sans">{systemSettings.conferenceDates || "25, 26, 27 December 2026"}</span>
+                  Dates: <span className="text-white/70 font-sans">{systemSettings.conferenceDates || "26, 27 December 2026"}</span>
                 </div>
               </div>
             </section>
@@ -1019,8 +1044,194 @@ export default function DelegateDashboard() {
                   </div>
                 </section>
 
+                {/* RES POINTS & REFERRAL REWARDS HUB */}
+                {(() => {
+                  const refCode =
+                    delegateRecord.referralCode ||
+                    getDelegateReferralCode(delegateRecord.delegateId || delegateRecord.regId, delegateRecord.email || user?.email);
+                  const couponCode =
+                    delegateRecord.couponCode ||
+                    getStallCouponCode(delegateRecord.delegateId || delegateRecord.regId, delegateRecord.email || user?.email);
+                  const stats = delegateRecord.referralStats || {
+                    code: refCode,
+                    couponCode,
+                    ...calculateResStats([]),
+                  };
+                  const origin = typeof window !== "undefined" ? window.location.origin : "https://resolvemun.in";
+                  const shareUrl = `${origin}/?open=delegate&ref=${encodeURIComponent(refCode)}`;
+                  const whatsappText = encodeURIComponent(
+                    `Join me at Resolve MUN 2.0 (26–27 Dec 2026 at Northfield International School, Hyderabad)! Register with my referral link: ${shareUrl} (Code: ${refCode})`
+                  );
+
+                  return (
+                    <section className="rounded-2xl border border-white/15 bg-[#080808] p-5 sm:p-7 space-y-5">
+                      {/* Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+                        <div>
+                          <p className="text-[10px] uppercase font-mono tracking-[0.2em] font-semibold text-white/40">
+                            REFERRAL REWARDS · STALL COUPONS
+                          </p>
+                          <h3 className="text-base sm:text-lg font-bold text-white font-sans mt-0.5 flex items-center gap-2">
+                            <Gift className="w-4 h-4 text-white" />
+                            <span>RES Points &amp; Referrals</span>
+                          </h3>
+                          <p className="text-xs text-white/55 mt-1 font-sans">
+                            Earn <strong className="text-white">{RES_POINTS_PER_REFERRAL} RES Points</strong> per verified referral · <span className="font-mono">1 RES = ₹{RES_POINT_RUPEE_VALUE.toFixed(2)}</span> (<strong className="text-white">₹{RUPEES_PER_REFERRAL} Stall Coupon</strong> per friend).
+                          </p>
+                        </div>
+                        <span className="self-start sm:self-auto px-2.5 py-1 rounded-md border border-white/20 bg-white/[0.05] text-[10px] font-mono uppercase tracking-wider text-white font-bold">
+                          {stats.currentTier?.name || "Delegate"} · {stats.currentTier?.badge || "TIER 0"}
+                        </span>
+                      </div>
+
+                      {/* Wallet KPI Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div className="p-3.5 rounded-xl bg-[#090909] border border-white/15">
+                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-white/45 block">
+                            Active RES Points
+                          </span>
+                          <span className="text-xl sm:text-2xl font-bold font-mono text-white block mt-1">
+                            {stats.activePoints.toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-[10px] font-mono text-white/40 block mt-0.5">
+                            {stats.verifiedCount} verified
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-white text-black border border-white">
+                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-black/60 block font-bold">
+                            Stall Coupon Value
+                          </span>
+                          <span className="text-xl sm:text-2xl font-extrabold font-mono text-black block mt-1">
+                            ₹{stats.rupeeValue.toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-[10px] font-mono text-black/70 block mt-0.5">
+                            Redeemable at stalls
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-[#090909] border border-white/10">
+                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-white/45 block">
+                            Pending Points
+                          </span>
+                          <span className="text-xl sm:text-2xl font-bold font-mono text-white/80 block mt-1">
+                            {stats.pendingPoints.toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-[10px] font-mono text-white/40 block mt-0.5">
+                            {stats.pendingCount} awaiting verify
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-[#090909] border border-white/10">
+                          <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-white/45 block">
+                            Your Stall Coupon
+                          </span>
+                          <span className="text-base sm:text-lg font-bold font-mono text-white block mt-1.5 tracking-wider">
+                            {couponCode}
+                          </span>
+                          <span className="text-[10px] font-mono text-white/40 block mt-0.5">
+                            Show at food/merch stalls
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Tier Milestone Progress */}
+                      <div className="p-4 rounded-xl bg-[#090909] border border-white/10 space-y-2.5">
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="text-white/70 font-semibold">
+                            {stats.nextTier
+                              ? `Next Tier: ${stats.nextTier.name} (${stats.nextTier.min} referrals · ₹${(stats.nextTier.min * RUPEES_PER_REFERRAL).toLocaleString("en-IN")})`
+                              : "Max Tier Unlocked — Grand Plenipotentiary"}
+                          </span>
+                          <span className="text-white font-bold">{stats.progressPct}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                          <div
+                            className="h-full bg-white rounded-full"
+                            style={{ width: `${Math.max(4, stats.progressPct)}%` }}
+                          />
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono text-white/40">
+                          <span>1 ref = 400 RES (₹100)</span>
+                          <span>3 refs = 1,200 RES (₹300)</span>
+                          <span>5 refs = 2,000 RES (₹500)</span>
+                          <span>10 refs = 4,000 RES (₹1,000)</span>
+                        </div>
+                      </div>
+
+                      {/* Personal Referral Code & Shareable Link Box */}
+                      <div className="p-4 rounded-xl bg-[#090909] border border-white/15 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/45 block">
+                              Your Personal Referral Link
+                            </span>
+                            <p className="text-xs sm:text-sm font-mono text-white truncate mt-1">
+                              {shareUrl}
+                            </p>
+                          </div>
+                          <div className="shrink-0 flex items-center gap-2">
+                            <span className="px-2.5 py-1.5 rounded-lg border border-white/20 bg-black font-mono text-xs font-bold text-white tracking-wider">
+                              {refCode}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyValue(shareUrl, "link")}
+                            className="min-h-[42px] px-4 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer hover:bg-zinc-200"
+                          >
+                            {copiedField === "link" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{copiedField === "link" ? "Link Copied!" : "Copy Referral Link"}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCopyValue(refCode, "code")}
+                            className="min-h-[42px] px-4 rounded-lg border border-white/25 bg-black text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer hover:bg-white/10"
+                          >
+                            {copiedField === "code" ? <Check className="w-3.5 h-3.5" /> : <Ticket className="w-3.5 h-3.5" />}
+                            <span>{copiedField === "code" ? "Code Copied!" : `Copy ${refCode}`}</span>
+                          </button>
+
+                          <a
+                            href={`https://wa.me/?text=${whatsappText}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-h-[42px] px-4 rounded-lg border border-white/25 bg-black text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-white/10"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>Share on WhatsApp</span>
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Referred Friends Activity List */}
+                      {stats.referrals && stats.referrals.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/45 block">
+                            Referred Delegates ({stats.referrals.length})
+                          </span>
+                          <div className="divide-y divide-white/10 rounded-xl border border-white/10 bg-[#090909]">
+                            {stats.referrals.map((ref, idx) => (
+                              <div key={idx} className="px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
+                                <span className="font-medium text-white">{ref.name}</span>
+                                <span className={`font-mono text-[11px] font-semibold ${ref.verified ? "text-white" : "text-white/50"}`}>
+                                  {ref.verified ? `+${RES_POINTS_PER_REFERRAL} RES · Verified` : "Pending Verification"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })()}
+
                 {/* DIGITAL ENTRY PASS */}
-                  <section id="digital-pass-card" className="rounded-2xl border border-white/15 bg-[#080808] p-6 sm:p-7 shadow-sm">
+                  <section id="digital-pass-card" className="rounded-2xl border border-white/15 bg-[#080808] p-5 sm:p-7 shadow-sm">
                     <div className="mb-5 border-b border-white/10 pb-4">
                       <p className="text-[10px] uppercase font-mono tracking-wider font-semibold text-white/40">
                         CREDENTIAL
@@ -1029,109 +1240,174 @@ export default function DelegateDashboard() {
                         Official Digital Pass
                       </h3>
                       <p className="text-xs text-white/50 mt-1 font-sans">
-                        Present this QR pass at the entrance desk at {systemSettings.venueShort || systemSettings.conferenceVenue || "TBA (To Be Announced)"}.
+                        Present this QR pass at the entrance desk at {systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}.
                       </p>
                     </div>
 
                     {isPaid ? (
                       <div className="flex flex-col items-center space-y-5">
-                        {/* Variant Switcher & Print Control */}
-                        <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/10 no-print">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
-                                Format:
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setTicketFormat("badge")}
-                                className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "badge"
-                                    ? "bg-white text-black font-bold shadow-sm"
-                                    : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                  }`}
-                              >
-                                VIP Badge
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setTicketFormat("stub")}
-                                className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "stub"
-                                    ? "bg-white text-black font-bold shadow-sm"
-                                    : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                  }`}
-                              >
-                                Ticket Stub
-                              </button>
+                        {/* Desktop Variant Switcher & Print Control */}
+                        {!isMobile && (
+                          <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/10 no-print">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                                  Format:
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTicketFormat("badge")}
+                                  className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "badge"
+                                      ? "bg-white text-black font-bold shadow-sm"
+                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                    }`}
+                                >
+                                  VIP Badge
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setTicketFormat("stub")}
+                                  className={`h-7 px-3 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketFormat === "stub"
+                                      ? "bg-white text-black font-bold shadow-sm"
+                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                    }`}
+                                >
+                                  Ticket Stub
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                                  Theme:
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTicketVariant("paper")}
+                                  className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "paper"
+                                      ? "bg-white text-black font-bold shadow-sm"
+                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                    }`}
+                                >
+                                  Paper
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setTicketVariant("crimson")}
+                                  className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "crimson"
+                                      ? "bg-[#d9241c] text-white font-bold shadow-sm"
+                                      : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
+                                    }`}
+                                >
+                                  Crimson
+                                </button>
+                              </div>
                             </div>
 
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
-                                Theme:
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setTicketVariant("paper")}
-                                className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "paper"
-                                    ? "bg-white text-black font-bold shadow-sm"
-                                    : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                  }`}
-                              >
-                                Paper
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setTicketVariant("crimson")}
-                                className={`h-7 px-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${ticketVariant === "crimson"
-                                    ? "bg-[#d9241c] text-white font-bold shadow-sm"
-                                    : "bg-white/[0.04] text-white/50 hover:text-white border border-white/10"
-                                  }`}
-                              >
-                                Crimson
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={handlePrintPass}
+                              className="h-7 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>Print Pass</span>
+                            </button>
                           </div>
+                        )}
 
-                          <button
-                            type="button"
-                            onClick={handlePrintPass}
-                            className="h-7 px-3 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Print Pass</span>
-                          </button>
-                        </div>
-
-                        {/* Engraved Ticket Component with Unique QR */}
+                        {/* Mobile Flat Gate Pass (Zero Effects) vs Desktop EngravedTicket */}
                         <div className="w-full flex justify-center py-2" id="printable-pass-container">
-                          <EngravedTicket
-                            format={ticketFormat}
-                            variant={ticketVariant}
-                            word="RESOLVE"
-                            code={delegateRecord.delegateId || "RM26-CONFIRMED"}
-                            qrUrl={`https://quickchart.io/qr?size=320&text=${encodeURIComponent(
-                              "RESOLVE_PASS:" +
-                              (delegateRecord.roleType || "DELEGATE") +
-                              ":" +
-                              delegateRecord.delegateId +
-                              ":" +
-                              delegateRecord.email
-                            )}`}
-                            qrLabel={`${delegateRecord.roleType || "DELEGATE"} PASS`}
-                            delegateName={delegateRecord.fullName || user.displayName}
-                            committee={delegateRecord.allocatedCommittee || "Awaiting Allotment"}
-                            portfolio={delegateRecord.allocatedCountry || ""}
-                            tagline={`RESOLVE MUN 2.0\n${(delegateRecord.roleType || "DELEGATE").toUpperCase()} PASS`}
-                            quote={`“${(systemSettings.conferenceDates || "25, 26, 27 DEC 2026").toUpperCase()}”`}
-                            venue={systemSettings.venueShort || systemSettings.conferenceVenue || "TBA (To Be Announced)"}
-                            dates={systemSettings.conferenceDates || "25, 26, 27 December 2026"}
-                            body={`Official delegate admission credential for Resolve MUN 2026. Convenes at ${systemSettings.conferenceVenue || "TBA (To Be Announced), Hyderabad"}. Present this unique scannable pass at the entrance registration desk upon arrival.`}
-                            notes={`ADMIT ONE\n${delegateRecord.delegateId}\n${(systemSettings.venueShort || "TBA").toUpperCase()}\nACTIVE PASS`}
-                            width="100%"
-                            className="max-w-2xl"
-                          />
+                          {isMobile ? (
+                            <div className="w-full rounded-xl border border-white bg-black p-5 text-white space-y-4">
+                              <div className="flex items-center justify-between border-b border-[#262626] pb-3">
+                                <div>
+                                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#a3a3a3] block">
+                                    RESOLVE MUN 2.0
+                                  </span>
+                                  <span className="text-lg font-bold tracking-tight text-white block mt-0.5">
+                                    {delegateRecord.fullName || user.displayName}
+                                  </span>
+                                </div>
+                                <span className="px-2.5 py-1 rounded bg-white text-black font-mono text-[10px] font-bold uppercase">
+                                  {(delegateRecord.roleType || "DELEGATE").toUpperCase()}
+                                </span>
+                              </div>
+
+                              <div className="flex justify-center py-2">
+                                <div className="p-3 bg-white rounded-lg">
+                                  <img
+                                    src={`https://quickchart.io/qr?size=240&text=${encodeURIComponent(
+                                      "RESOLVE_PASS:" +
+                                      (delegateRecord.roleType || "DELEGATE") +
+                                      ":" +
+                                      delegateRecord.delegateId +
+                                      ":" +
+                                      delegateRecord.email
+                                    )}`}
+                                    alt="Delegate Gate Pass QR"
+                                    className="w-44 h-44 object-contain block"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3 border-t border-[#262626] pt-3 text-xs">
+                                <div>
+                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Delegate ID</span>
+                                  <span className="font-mono font-bold text-white">{delegateRecord.delegateId || "RM26-CONFIRMED"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Committee</span>
+                                  <span className="font-semibold text-white">{delegateRecord.allocatedCommittee || "Awaiting Allotment"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Venue</span>
+                                  <span className="font-medium text-white">{systemSettings.venueShort || "Northfield International School"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-mono uppercase text-[#a3a3a3] block">Dates</span>
+                                  <span className="font-medium text-white">{systemSettings.conferenceDates || "26, 27 Dec 2026"}</span>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={handlePrintPass}
+                                className="w-full min-h-[44px] rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer no-print"
+                              >
+                                <Printer className="w-4 h-4" />
+                                <span>Print / Save Pass</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <EngravedTicket
+                              format={ticketFormat}
+                              variant={ticketVariant}
+                              word="RESOLVE"
+                              code={delegateRecord.delegateId || "RM26-CONFIRMED"}
+                              qrUrl={`https://quickchart.io/qr?size=320&text=${encodeURIComponent(
+                                "RESOLVE_PASS:" +
+                                (delegateRecord.roleType || "DELEGATE") +
+                                ":" +
+                                delegateRecord.delegateId +
+                                ":" +
+                                delegateRecord.email
+                              )}`}
+                              qrLabel={`${delegateRecord.roleType || "DELEGATE"} PASS`}
+                              delegateName={delegateRecord.fullName || user.displayName}
+                              committee={delegateRecord.allocatedCommittee || "Awaiting Allotment"}
+                              portfolio={delegateRecord.allocatedCountry || ""}
+                              tagline={`RESOLVE MUN 2.0\n${(delegateRecord.roleType || "DELEGATE").toUpperCase()} PASS`}
+                              quote={`“${(systemSettings.conferenceDates || "26, 27 DEC 2026").toUpperCase()}”`}
+                              venue={systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}
+                              dates={systemSettings.conferenceDates || "26, 27 December 2026"}
+                              body={`Official delegate admission credential for Resolve MUN 2026. Convenes at ${systemSettings.conferenceVenue || "Northfield International School, Hyderabad"}. Present this unique scannable pass at the entrance registration desk upon arrival.`}
+                              notes={`ADMIT ONE\n${delegateRecord.delegateId}\n${(systemSettings.venueShort || "NORTHFIELD").toUpperCase()}\nACTIVE PASS`}
+                              width="100%"
+                              className="max-w-2xl"
+                            />
+                          )}
                         </div>
 
-                        {/* 3-Day Attendance Tracker */}
+                        {/* 2-Day Attendance Tracker */}
                         <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#090909] p-4 space-y-3 no-print">
                           <div className="flex items-center justify-between text-xs font-mono text-white/50">
                             <span className="uppercase tracking-wider font-semibold text-[10px]">
@@ -1142,11 +1418,10 @@ export default function DelegateDashboard() {
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-2 gap-2.5">
                             {[
-                              { day: "Day 1", date: "Day 1", checked: delegateRecord.checkInDay1 },
-                              { day: "Day 2", date: "Day 2", checked: delegateRecord.checkInDay2 },
-                              { day: "Day 3", date: "Day 3", checked: delegateRecord.checkInDay3 },
+                              { day: "Day 1", date: "26 Dec 2026", checked: delegateRecord.checkInDay1 },
+                              { day: "Day 2", date: "27 Dec 2026", checked: delegateRecord.checkInDay2 },
                             ].map((d) => (
                               <div
                                 key={d.day}
@@ -1164,7 +1439,7 @@ export default function DelegateDashboard() {
                           </div>
 
                           <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs font-mono text-white/40">
-                            <span>{systemSettings.venueShort || systemSettings.conferenceVenue || "TBA (To Be Announced)"}</span>
+                            <span>{systemSettings.venueShort || systemSettings.conferenceVenue || "Northfield International School"}</span>
                             <span className="text-white/80 font-semibold flex items-center gap-1.5">
                               <ShieldCheck className="w-3.5 h-3.5 text-white" />
                               Verified Digital Credential
@@ -1636,7 +1911,7 @@ export default function DelegateDashboard() {
                   Conference Dates
                 </span>
                 <p className="font-bold text-zinc-900 mt-0.5">
-                  {systemSettings.conferenceDates || "25, 26, 27 DEC 2026"}
+                  {systemSettings.conferenceDates || "26, 27 DEC 2026"}
                 </p>
               </div>
               <div className="border-r border-zinc-200">
@@ -1644,7 +1919,7 @@ export default function DelegateDashboard() {
                   Conference Venue
                 </span>
                 <p className="font-bold text-zinc-900 mt-0.5 truncate px-1">
-                  {systemSettings.venueShort || "Hyderabad, Telangana"}
+                  {systemSettings.venueShort || "Northfield International School"}
                 </p>
               </div>
               <div>

@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import {
+  getDelegateReferralCode,
+  getStallCouponCode,
+  isReferralVerified,
+  RES_POINTS_PER_REFERRAL,
+  RES_POINT_RUPEE_VALUE,
+} from "@/lib/referrals";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   BarChart3,
@@ -1009,6 +1016,11 @@ export default function SuperAdminPage() {
         }),
       });
       if (res.ok) {
+        try {
+          sessionStorage.removeItem("resolve_settings_cache_v2");
+          sessionStorage.removeItem("resolve_settings_cache_v3");
+          window.dispatchEvent(new CustomEvent("siteSettingsUpdated", { detail: siteSettings }));
+        } catch (_) {}
         notify("Conference settings saved & published live.");
       }
     } catch (err) {
@@ -3036,11 +3048,94 @@ export default function SuperAdminPage() {
 
                 {/* Registration Switches */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                    Registration Pathway Toggles
-                  </h4>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                      Registration Pathway Toggles
+                    </h4>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const closing = siteSettings.registrationsOpen !== false;
+                          const res = await fetch("/api/admin/", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              adminKey: "abhilashisgoat",
+                              action: "ADMIN_BULK_ACTION",
+                              bulkType: closing ? "CLOSE_ALL_REGISTRATIONS" : "OPEN_ALL_REGISTRATIONS",
+                            }),
+                          });
+                          if (res.ok) {
+                            const nextOpen = !closing;
+                            setSiteSettings((prev) => ({
+                              ...prev,
+                              registrationsOpen: nextOpen,
+                              delegateOpen: nextOpen,
+                              delegationOpen: nextOpen,
+                              ocOpen: nextOpen,
+                              secretariatOpen: nextOpen,
+                            }));
+                            try {
+                              sessionStorage.removeItem("resolve_settings_cache_v2");
+                              sessionStorage.removeItem("resolve_settings_cache_v3");
+                            } catch (_) {}
+                            notify(nextOpen ? "All registrations OPENED live." : "All registrations CLOSED live.");
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-white/20 bg-white text-black text-[11px] font-bold uppercase tracking-wider cursor-pointer"
+                      >
+                        {siteSettings.registrationsOpen !== false ? "Close All Registrations" : "Open All Registrations"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm("Mark all pending delegate payments as VERIFIED?")) return;
+                          const res = await fetch("/api/admin/", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              adminKey: "abhilashisgoat",
+                              action: "ADMIN_BULK_ACTION",
+                              bulkType: "VERIFY_ALL_PENDING_PAYMENTS",
+                            }),
+                          });
+                          if (res.ok) {
+                            notify("All pending payments verified.");
+                            fetchAdminData(true);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-white/20 bg-zinc-900 text-white text-[11px] font-semibold uppercase tracking-wider cursor-pointer"
+                      >
+                        Verify All Pending
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const res = await fetch("/api/admin/", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              adminKey: "abhilashisgoat",
+                              action: "ADMIN_HEALTH_CHECK",
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data?.health) {
+                            const okCount = Object.values(data.health.tables || {}).filter((t) => t.ok).length;
+                            const total = Object.keys(data.health.tables || {}).length;
+                            notify(`Backend Health: ${okCount}/${total} Supabase tables online · Settings synced: ${data.health.settingsSynced ? "YES" : "NO"}`);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-white/20 bg-zinc-900 text-white text-[11px] font-semibold uppercase tracking-wider cursor-pointer"
+                      >
+                        Check Backend Health
+                      </button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
+                      { key: "registrationsOpen", label: "Master Registrations Switch (All)" },
                       { key: "delegateOpen", label: "Delegate Registration" },
                       { key: "delegationOpen", label: "Delegation Registration" },
                       { key: "ocOpen", label: "Organizing Committee (OC)" },
@@ -3170,46 +3265,192 @@ export default function SuperAdminPage() {
                   </div>
                 </div>
 
-                {/* Referral Codes & Custom Pricing Manager */}
-                <div className="space-y-3 pt-3 border-t border-white/10">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                        Referral Codes &amp; Custom Dynamic Pricing
-                      </h4>
-                      <p className="text-[11px] text-zinc-400 mt-0.5">
-                        Define custom delegate registration fees per ambassador or school delegation. The checkout QR updates automatically.
-                      </p>
-                    </div>
+                {/* Shortcut to Dedicated Referrals & RES Points Tab */}
+                <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                      Referral Codes &amp; RES Points Engine
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Manage official ambassador codes, custom fees, delegate referral links, and stall coupon payouts in the dedicated tab.
+                    </p>
                   </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setActiveTab("referrals")}
+                    className="h-8 bg-white hover:bg-zinc-200 text-black text-xs font-bold uppercase tracking-wider cursor-pointer shrink-0"
+                  >
+                    Open Referrals &amp; RES →
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                  {/* Add New Referral Code Form */}
-                  <div className="p-3 rounded-lg border border-white/10 bg-zinc-900/40 space-y-2.5">
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 block font-semibold">
-                      Add New Referral Code
+          {/* ===============================================================
+              TAB: DEDICATED REFERRAL CODES & RES POINTS ENGINE
+              =============================================================== */}
+          {activeTab === "referrals" && (() => {
+            const officialCodes = Array.isArray(siteSettings.referralCodes) ? siteSettings.referralCodes : [];
+
+            // Count live usage per referral code across all registrations
+            const usageByCode = {};
+            (registrations || []).forEach((r) => {
+              const code = String(r.referralCode || r.referral_code || "").trim().toUpperCase();
+              if (!code) return;
+              if (!usageByCode[code]) usageByCode[code] = { total: 0, verified: 0, pending: 0, delegates: [] };
+              usageByCode[code].total += 1;
+              const ver = isReferralVerified(r);
+              if (ver) usageByCode[code].verified += 1;
+              else usageByCode[code].pending += 1;
+              usageByCode[code].delegates.push(r);
+            });
+
+            // Build Delegate Personal Referral & RES Points Leaderboard
+            const delegateLeaderboard = (registrations || [])
+              .map((d) => {
+                const regId = d.regId || d.delegateId || d.id || "";
+                const personalCode = getDelegateReferralCode(regId, d.email);
+                const couponCode = getStallCouponCode(regId, d.email);
+                const stats = usageByCode[personalCode] || { total: 0, verified: 0, pending: 0 };
+                // Exclude self-referrals from verified/total if same email used own code
+                const nonSelf = (stats.delegates || []).filter(
+                  (refDel) => String(refDel.email || "").toLowerCase() !== String(d.email || "").toLowerCase()
+                );
+                const verifiedCount = nonSelf.filter((refDel) => isReferralVerified(refDel)).length;
+                const pendingCount = nonSelf.length - verifiedCount;
+                const activePoints = verifiedCount * RES_POINTS_PER_REFERRAL;
+                const couponValue = activePoints * RES_POINT_RUPEE_VALUE;
+                return {
+                  id: regId,
+                  name: d.fullName || d.name || "Delegate",
+                  email: d.email || "",
+                  personalCode,
+                  couponCode,
+                  total: nonSelf.length,
+                  verifiedCount,
+                  pendingCount,
+                  activePoints,
+                  couponValue,
+                };
+              })
+              .sort((a, b) => b.activePoints - a.activePoints || b.total - a.total);
+
+            const totalReferredSignups = Object.values(usageByCode).reduce((sum, u) => sum + u.total, 0);
+            const totalActiveResPoints = delegateLeaderboard.reduce((sum, d) => sum + d.activePoints, 0);
+            const totalCouponLiability = totalActiveResPoints * RES_POINT_RUPEE_VALUE;
+
+            const persistReferralCodes = async (updatedCodes, toastMsg) => {
+              setSiteSettings((prev) => ({ ...prev, referralCodes: updatedCodes }));
+              try {
+                const res = await fetch("/api/admin/", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    adminKey: "abhilashisgoat",
+                    action: "UPDATE_REFERRAL_CODES",
+                    referralCodes: updatedCodes,
+                  }),
+                });
+                if (res.ok) {
+                  try {
+                    sessionStorage.removeItem("resolve_settings_cache_v2");
+                    sessionStorage.removeItem("resolve_settings_cache_v3");
+                  } catch (_) {}
+                  notify(toastMsg || "Referral codes published live.");
+                } else {
+                  notify("Failed to publish referral codes.", "error");
+                }
+              } catch (_) {
+                notify("Network error saving referral codes.", "error");
+              }
+            };
+
+            return (
+              <div className="space-y-6">
+                {/* Top KPI Strip */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <Card className="p-4 bg-zinc-950 border-white/10">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                      Official Codes
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <span className="text-2xl font-bold font-mono text-white mt-1 block">
+                      {officialCodes.filter((c) => c.active !== false).length}
+                      <span className="text-xs text-zinc-500 font-normal ml-1">/ {officialCodes.length}</span>
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-zinc-950 border-white/10">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                      Referred Signups
+                    </span>
+                    <span className="text-2xl font-bold font-mono text-white mt-1 block">
+                      {totalReferredSignups}
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-zinc-950 border-white/10">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                      Active RES Points
+                    </span>
+                    <span className="text-2xl font-bold font-mono text-white mt-1 block">
+                      {totalActiveResPoints.toLocaleString("en-IN")}
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-zinc-950 border-white/10">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                      Stall Coupons (₹)
+                    </span>
+                    <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">
+                      ₹{totalCouponLiability.toLocaleString("en-IN")}
+                    </span>
+                  </Card>
+                </div>
+
+                {/* Official Referral Code Builder */}
+                <Card className="bg-zinc-950 border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-white">
+                      Create Official Referral Code
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400">
+                      Create ambassador or partner referral codes with custom checkout pricing. Changes publish live immediately.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
                       <input
                         type="text"
-                        placeholder="CODE (e.g. BHAFN01)"
+                        placeholder="CODE (e.g. RESOLVE500)"
                         value={newRefCode.code}
                         onChange={(e) => setNewRefCode((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-950 text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none"
+                        className="h-9 px-3 rounded-lg border border-white/15 bg-black text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/40"
                       />
                       <input
                         type="text"
-                        placeholder="Ambassador / Partner"
+                        placeholder="Ambassador / Partner Name"
                         value={newRefCode.ambassador}
                         onChange={(e) => setNewRefCode((prev) => ({ ...prev, ambassador: e.target.value }))}
-                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-950 text-xs text-white placeholder:text-zinc-600 focus:outline-none"
+                        className="h-9 px-3 rounded-lg border border-white/15 bg-black text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/40"
                       />
                       <input
                         type="number"
-                        placeholder="Custom Fee (₹)"
+                        placeholder="Final Fee (₹)"
                         value={newRefCode.finalFee}
                         onChange={(e) => setNewRefCode((prev) => ({ ...prev, finalFee: Number(e.target.value) }))}
-                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-950 text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none"
+                        className="h-9 px-3 rounded-lg border border-white/15 bg-black text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/40"
                       />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+                          setNewRefCode((prev) => ({ ...prev, code: `RM26-${rand}` }));
+                        }}
+                        className="h-9 border-white/15 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-mono cursor-pointer"
+                      >
+                        Auto-Generate
+                      </Button>
                       <Button
                         type="button"
                         size="sm"
@@ -3219,7 +3460,7 @@ export default function SuperAdminPage() {
                             return;
                           }
                           const cleanCode = newRefCode.code.trim().toUpperCase();
-                          const currentCodes = Array.isArray(siteSettings.referralCodes) ? [...siteSettings.referralCodes] : [];
+                          const currentCodes = [...officialCodes];
                           const idx = currentCodes.findIndex((c) => (c.code || "").toUpperCase() === cleanCode);
                           const entry = {
                             code: cleanCode,
@@ -3227,97 +3468,173 @@ export default function SuperAdminPage() {
                             finalFee: Number(newRefCode.finalFee || 2500),
                             active: true,
                           };
-                          if (idx >= 0) {
-                            currentCodes[idx] = entry;
-                          } else {
-                            currentCodes.unshift(entry);
-                          }
-                          setSiteSettings((prev) => ({ ...prev, referralCodes: currentCodes }));
+                          if (idx >= 0) currentCodes[idx] = entry;
+                          else currentCodes.unshift(entry);
                           setNewRefCode({ code: "", ambassador: "", finalFee: 2350, active: true });
-                          notify(`Added referral code ${cleanCode} (₹${entry.finalFee}). Click "Save Settings" to publish.`);
+                          persistReferralCodes(currentCodes, `Published code ${cleanCode} (₹${entry.finalFee}) live.`);
                         }}
-                        className="h-8 bg-white hover:bg-zinc-200 text-black text-xs font-bold uppercase tracking-wider cursor-pointer"
+                        className="h-9 bg-white hover:bg-zinc-200 text-black text-xs font-bold uppercase tracking-wider cursor-pointer"
                       >
-                        + Add Code
+                        + Create &amp; Publish
                       </Button>
                     </div>
-                  </div>
 
-                  {/* Active Referral Codes Table */}
-                  <div className="rounded-lg border border-white/10 overflow-hidden bg-zinc-950">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-zinc-900 border-b border-white/10 text-zinc-400 font-mono text-[10px] uppercase">
-                          <th className="px-3 py-2">Code</th>
-                          <th className="px-3 py-2">Ambassador / Partner</th>
-                          <th className="px-3 py-2">Fee (INR)</th>
-                          <th className="px-3 py-2">Status</th>
-                          <th className="px-3 py-2 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        {(!siteSettings.referralCodes || siteSettings.referralCodes.length === 0) ? (
-                          <tr>
-                            <td colSpan={5} className="py-4 text-center text-zinc-500 text-xs">
-                              No custom referral codes configured. Default fee applies.
-                            </td>
+                    {/* Official Referral Codes Table */}
+                    <div className="rounded-lg border border-white/10 overflow-x-auto bg-black">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="bg-zinc-900 border-b border-white/10 text-zinc-400 font-mono text-[10px] uppercase">
+                            <th className="px-3 py-2.5">Code</th>
+                            <th className="px-3 py-2.5">Ambassador / Partner</th>
+                            <th className="px-3 py-2.5">Fee (INR)</th>
+                            <th className="px-3 py-2.5">Uses</th>
+                            <th className="px-3 py-2.5">Status</th>
+                            <th className="px-3 py-2.5 text-right">Actions</th>
                           </tr>
-                        ) : (
-                          siteSettings.referralCodes.map((rc, idx) => (
-                            <tr key={rc.code || idx} className="hover:bg-zinc-900/30">
-                              <td className="px-3 py-2 font-mono font-bold text-white">
-                                {rc.code}
-                              </td>
-                              <td className="px-3 py-2 text-zinc-300">
-                                {rc.ambassador || "Ambassador"}
-                              </td>
-                              <td className="px-3 py-2 font-mono text-emerald-400 font-semibold">
-                                ₹{Number(rc.finalFee || 2500).toLocaleString("en-IN")}
-                              </td>
-                              <td className="px-3 py-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updated = siteSettings.referralCodes.map((c, i) =>
-                                      i === idx ? { ...c, active: c.active === false ? true : false } : c
-                                    );
-                                    setSiteSettings((prev) => ({ ...prev, referralCodes: updated }));
-                                  }}
-                                  className={cn(
-                                    "px-2 py-0.5 rounded text-[10px] font-mono cursor-pointer border transition-colors",
-                                    rc.active !== false
-                                      ? "bg-emerald-950/30 text-emerald-400 border-emerald-500/30"
-                                      : "bg-zinc-800 text-zinc-500 border-white/10"
-                                  )}
-                                >
-                                  {rc.active !== false ? "Active" : "Disabled"}
-                                </button>
-                              </td>
-                              <td className="px-3 py-2 text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const updated = siteSettings.referralCodes.filter((_, i) => i !== idx);
-                                    setSiteSettings((prev) => ({ ...prev, referralCodes: updated }));
-                                    notify(`Removed referral code ${rc.code}`);
-                                  }}
-                                  className="h-6 w-6 text-zinc-500 hover:text-red-400 cursor-pointer"
-                                  title="Delete code"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {officialCodes.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="py-6 text-center text-zinc-500 text-xs">
+                                No official referral codes configured yet.
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                          ) : (
+                            officialCodes.map((rc, idx) => {
+                              const codeKey = String(rc.code || "").toUpperCase();
+                              const uses = usageByCode[codeKey]?.total || 0;
+                              return (
+                                <tr key={codeKey || idx} className="hover:bg-zinc-900/40">
+                                  <td className="px-3 py-2.5 font-mono font-bold text-white">
+                                    {codeKey}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-zinc-300">
+                                    {rc.ambassador || "Ambassador"}
+                                  </td>
+                                  <td className="px-3 py-2.5 font-mono text-emerald-400 font-semibold">
+                                    ₹{Number(rc.finalFee || 2500).toLocaleString("en-IN")}
+                                  </td>
+                                  <td className="px-3 py-2.5 font-mono text-white">
+                                    {uses}
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = officialCodes.map((c, i) =>
+                                          i === idx ? { ...c, active: c.active === false ? true : false } : c
+                                        );
+                                        persistReferralCodes(updated, `Updated status for ${codeKey}.`);
+                                      }}
+                                      className={cn(
+                                        "px-2 py-0.5 rounded text-[10px] font-mono cursor-pointer border transition-colors",
+                                        rc.active !== false
+                                          ? "bg-emerald-950/30 text-emerald-400 border-emerald-500/30"
+                                          : "bg-zinc-800 text-zinc-500 border-white/10"
+                                      )}
+                                    >
+                                      {rc.active !== false ? "Active" : "Disabled"}
+                                    </button>
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const url = `${window.location.origin}/?open=delegate&ref=${encodeURIComponent(codeKey)}`;
+                                        navigator.clipboard?.writeText(url);
+                                        notify(`Copied invite link for ${codeKey}`);
+                                      }}
+                                      className="px-2 py-1 rounded border border-white/15 bg-zinc-900 hover:bg-zinc-800 text-[10px] font-mono text-zinc-200 cursor-pointer"
+                                    >
+                                      Copy Link
+                                    </button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        const updated = officialCodes.filter((_, i) => i !== idx);
+                                        persistReferralCodes(updated, `Deleted referral code ${codeKey}.`);
+                                      }}
+                                      className="h-7 w-7 text-zinc-500 hover:text-red-400 cursor-pointer"
+                                      title="Delete code"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Delegate Personal Referral & RES Points Leaderboard */}
+                <Card className="bg-zinc-950 border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-white">
+                      Delegate Referrals &amp; RES Points Stall Coupons
+                    </CardTitle>
+                    <CardDescription className="text-xs text-zinc-400">
+                      Every registered delegate automatically gets a personal RES-XXXX referral link. 400 RES Points per verified referral · 1 RES = ₹0.25 (₹100 Stall Coupon).
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-lg border border-white/10 overflow-x-auto bg-black">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="bg-zinc-900 border-b border-white/10 text-zinc-400 font-mono text-[10px] uppercase">
+                            <th className="px-3 py-2.5">Delegate</th>
+                            <th className="px-3 py-2.5">Personal Code</th>
+                            <th className="px-3 py-2.5">Stall Coupon</th>
+                            <th className="px-3 py-2.5">Referrals (Ver / Pend)</th>
+                            <th className="px-3 py-2.5">RES Points</th>
+                            <th className="px-3 py-2.5 text-right">Coupon Value</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {delegateLeaderboard.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="py-6 text-center text-zinc-500 text-xs">
+                                No delegates registered yet.
+                              </td>
+                            </tr>
+                          ) : (
+                            delegateLeaderboard.slice(0, 50).map((row) => (
+                              <tr key={row.id || row.email} className="hover:bg-zinc-900/40">
+                                <td className="px-3 py-2.5">
+                                  <div className="font-semibold text-white">{row.name}</div>
+                                  <div className="text-[10px] font-mono text-zinc-500">{row.email}</div>
+                                </td>
+                                <td className="px-3 py-2.5 font-mono text-white font-bold">
+                                  {row.personalCode}
+                                </td>
+                                <td className="px-3 py-2.5 font-mono text-zinc-300">
+                                  {row.couponCode}
+                                </td>
+                                <td className="px-3 py-2.5 font-mono text-zinc-300">
+                                  <span className="text-white font-bold">{row.verifiedCount}</span>
+                                  <span className="text-zinc-500"> / {row.pendingCount}</span>
+                                </td>
+                                <td className="px-3 py-2.5 font-mono font-bold text-white">
+                                  {row.activePoints.toLocaleString("en-IN")} RES
+                                </td>
+                                <td className="px-3 py-2.5 text-right font-mono font-bold text-emerald-400">
+                                  ₹{row.couponValue.toLocaleString("en-IN")}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
 
           {/* ===============================================================
               TAB: ALLOCATIONS MATRIX & SEAT CAPACITIES

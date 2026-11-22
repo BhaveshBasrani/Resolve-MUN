@@ -135,6 +135,14 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
   const [success, setSuccess] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [shaderMounted, setShaderMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // 6-Digit Email Verification Code State
   const [code, setCode] = useState(["", "", "", "", "", ""]);
@@ -530,7 +538,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl overflow-hidden overscroll-none select-none font-sans"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl overflow-y-auto md:overflow-hidden overscroll-none select-none font-sans"
       role="dialog"
       aria-modal="true"
     >
@@ -538,7 +546,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       {/* Main Two-Column Container */}
-      <div className="relative z-10 w-full max-w-[780px] h-auto max-h-[92vh] rounded-2xl border border-white/25 bg-[#050505] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.08)] overflow-hidden grid md:grid-cols-[1.14fr_0.86fr] transition-all duration-300 ease-out">
+      <div className="relative z-10 w-full max-w-[780px] h-auto max-h-[92vh] rounded-2xl border border-white/25 bg-[#050505] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.08)] overflow-y-auto md:overflow-hidden grid md:grid-cols-[1.14fr_0.86fr] transition-all duration-300 ease-out">
         
         {/* Rounded-Edge Square High-Visibility Close Button */}
         <button
@@ -551,9 +559,9 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
         </button>
 
         {/* ── LEFT COLUMN ── */}
-        <div className="relative flex flex-col justify-center overflow-hidden px-5 py-4 sm:px-6 sm:py-5 border-b md:border-b-0 md:border-r border-white/15 max-h-[92vh]">
-          {/* Ambient Dot Matrix Canvas during Code & Success modes */}
-          {(mode === "code" || mode === "success") && (
+        <div className="relative flex flex-col justify-center overflow-y-auto md:overflow-hidden px-5 py-5 sm:px-6 sm:py-5 border-b md:border-b-0 md:border-r border-white/15 max-h-[92vh]">
+          {/* Ambient Dot Matrix Canvas during Code & Success modes (Desktop only) */}
+          {!isMobile && (mode === "code" || mode === "success") && (
             <CanvasDotMatrix
               dotSize={1.8}
               spacing={22}
@@ -1174,8 +1182,8 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }) {
 
         {/* ── RIGHT COLUMN: SHADER & BRAND VISUAL ── */}
         <div className="relative hidden md:flex min-h-[450px] overflow-hidden rounded-xl bg-black p-6 xl:p-7 text-white flex-col justify-between m-2 border border-white/15 select-none">
-          {/* GrainGradient Background */}
-          {shaderMounted ? (
+          {/* GrainGradient Background (Desktop only) */}
+          {!isMobile && shaderMounted ? (
             <GrainGradient
               speed={0.9}
               scale={1}

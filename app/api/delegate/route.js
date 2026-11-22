@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getDelegateReferralCode, getStallCouponCode, calculateResStats } from '@/lib/referrals';
 
 const APPS_SCRIPT_URL =
   process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
@@ -33,12 +34,47 @@ export async function GET(request) {
         }
 
         if (delRow) {
+          const resolvedRegId = delRow.delegate_id || delRow.reg_id || delRow.regId || delRow.id;
+          const personalRefCode = getDelegateReferralCode(resolvedRegId, delRow.email || email);
+          const personalCouponCode = getStallCouponCode(resolvedRegId, delRow.email || email);
+
+          // Query referrals attributed to this delegate's personal RES-XXXX code
+          let referredRows = [];
+          try {
+            const [ref1, ref2] = await Promise.allSettled([
+              supabase.from('delegates').select('full_name, email, payment_status, status, created_at').ilike('referral_code', personalRefCode),
+              supabase.from('delegate_applications').select('name, full_name, email, payment_status, status, created_at').ilike('referral_code', personalRefCode),
+            ]);
+            const seen = new Set();
+            const combined = [
+              ...(ref1.status === 'fulfilled' ? ref1.value.data || [] : []),
+              ...(ref2.status === 'fulfilled' ? ref2.value.data || [] : []),
+            ];
+            for (const row of combined) {
+              const em = String(row.email || '').trim().toLowerCase();
+              // Exclude self-referrals and duplicates
+              if (em && em !== (delRow.email || email).toLowerCase() && !seen.has(em)) {
+                seen.add(em);
+                referredRows.push(row);
+              }
+            }
+          } catch (_) {}
+
+          const referralStats = {
+            code: personalRefCode,
+            couponCode: personalCouponCode,
+            ...calculateResStats(referredRows),
+          };
+
           const delegate = {
             ...delRow,
             id: delRow.id,
             _id: delRow.id,
-            regId: delRow.delegate_id || delRow.reg_id || delRow.regId || delRow.id,
-            delegateId: delRow.delegate_id || delRow.reg_id || delRow.regId || delRow.id,
+            regId: resolvedRegId,
+            delegateId: resolvedRegId,
+            referralCode: personalRefCode,
+            couponCode: personalCouponCode,
+            referralStats,
             fullName: delRow.full_name || delRow.name || '',
             name: delRow.full_name || delRow.name || '',
             email: delRow.email || '',
@@ -77,7 +113,7 @@ export async function GET(request) {
             roleType: 'DELEGATE',
             created_at: delRow.created_at || '',
           };
-          return NextResponse.json({ found: true, delegate });
+          return NextResponse.json({ found: true, delegate, referralStats });
         }
 
         // 1B. OC Applications
@@ -266,72 +302,111 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: 'Email or registration ID required' }, { status: 400 });
     }
 
-    const updatePayload = {
-      updated_at: new Date().toISOString(),
-    };
+    // Build schema-exact payloads so Postgres never rejects unknown columns
+    const delegatesPayload = {};
+    const legacyPayload = { updated_at: new Date().toISOString() };
 
     if (body.fullName || body.name) {
       const nm = (body.fullName || body.name).trim();
-      updatePayload.name = nm;
-      updatePayload.full_name = nm;
+      delegatesPayload.full_name = nm;
+      legacyPayload.name = nm;
+      legacyPayload.full_name = nm;
     }
-    if (body.phone) updatePayload.phone = String(body.phone).trim();
+    if (body.phone) {
+      const ph = String(body.phone).trim();
+      delegatesPayload.phone = ph;
+      legacyPayload.phone = ph;
+    }
     if (body.institution || body.school || body.institute) {
       const inst = (body.institution || body.school || body.institute).trim();
-      updatePayload.school = inst;
-      updatePayload.institute = inst;
-      updatePayload.institution = inst;
+      delegatesPayload.school = inst;
+      legacyPayload.school = inst;
+      legacyPayload.institute = inst;
+      legacyPayload.institution = inst;
     }
-    if (body.grade) updatePayload.grade = body.grade;
-    if (body.dob) updatePayload.dob = body.dob;
+    if (body.grade) {
+      delegatesPayload.grade = body.grade;
+      legacyPayload.grade = body.grade;
+    }
+    if (body.dob) {
+      delegatesPayload.dob = body.dob;
+      legacyPayload.dob = body.dob;
+    }
     if (body.address) {
       const addr = body.address.trim();
-      updatePayload.address = addr;
-      updatePayload.residential_address = addr;
+      delegatesPayload.address = addr;
+      legacyPayload.address = addr;
+      legacyPayload.residential_address = addr;
     }
     if (body.transport) {
-      updatePayload.transport = body.transport;
-      updatePayload.transport_needed = body.transport;
+      delegatesPayload.transport = body.transport;
+      legacyPayload.transport = body.transport;
+      legacyPayload.transport_needed = body.transport;
     }
     if (body.experience || body.munExperience) {
       const exp = (body.experience || body.munExperience).trim();
-      updatePayload.experience = exp;
-      updatePayload.mun_experience = exp;
+      delegatesPayload.experience = exp;
+      legacyPayload.experience = exp;
+      legacyPayload.mun_experience = exp;
     }
 
     // Committee preferences
-    if (body.pref1_committee) updatePayload.pref1_committee = body.pref1_committee;
+    if (body.pref1_committee) {
+      delegatesPayload.pref1_committee = body.pref1_committee;
+      legacyPayload.pref1_committee = body.pref1_committee;
+    }
     if (body.pref1_country) {
-      updatePayload.pref1_country = body.pref1_country;
-      updatePayload.pref1_portfolio1 = body.pref1_country;
+      delegatesPayload.pref1_portfolio1 = body.pref1_country;
+      legacyPayload.pref1_country = body.pref1_country;
+      legacyPayload.pref1_portfolio1 = body.pref1_country;
     }
-    if (body.pref2_committee) updatePayload.pref2_committee = body.pref2_committee;
+    if (body.pref2_committee) {
+      delegatesPayload.pref2_committee = body.pref2_committee;
+      legacyPayload.pref2_committee = body.pref2_committee;
+    }
     if (body.pref2_country) {
-      updatePayload.pref2_country = body.pref2_country;
-      updatePayload.pref2_portfolio1 = body.pref2_country;
+      delegatesPayload.pref2_portfolio1 = body.pref2_country;
+      legacyPayload.pref2_country = body.pref2_country;
+      legacyPayload.pref2_portfolio1 = body.pref2_country;
     }
-    if (body.pref3_committee) updatePayload.pref3_committee = body.pref3_committee;
+    if (body.pref3_committee) {
+      delegatesPayload.pref3_committee = body.pref3_committee;
+      legacyPayload.pref3_committee = body.pref3_committee;
+    }
     if (body.pref3_country) {
-      updatePayload.pref3_country = body.pref3_country;
-      updatePayload.pref3_portfolio1 = body.pref3_country;
+      delegatesPayload.pref3_portfolio1 = body.pref3_country;
+      legacyPayload.pref3_country = body.pref3_country;
+      legacyPayload.pref3_portfolio1 = body.pref3_country;
     }
 
-    // 1. Update in Supabase
+    // 1. Update in Supabase (schema-safe for both delegates & delegate_applications)
     if (supabase) {
       try {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(regId);
-        let filterStr = '';
-        if (isUuid) filterStr = `id.eq.${regId}`;
-        else if (regId && email) filterStr = `delegate_id.eq.${regId},reg_id.eq.${regId},email.ilike.${email}`;
-        else if (regId) filterStr = `delegate_id.eq.${regId},reg_id.eq.${regId},id.eq.${regId}`;
-        else if (email) filterStr = `email.ilike.${email}`;
-
-        if (filterStr) {
-          await Promise.allSettled([
-            supabase.from('delegate_applications').update(updatePayload).or(filterStr),
-            supabase.from('delegates').update(updatePayload).or(filterStr),
-          ]);
+        let delFilter = '';
+        let legFilter = '';
+        if (isUuid) {
+          delFilter = `id.eq.${regId}`;
+          legFilter = `id.eq.${regId}`;
+        } else if (regId && email) {
+          delFilter = `delegate_id.eq.${regId},email.ilike.${email}`;
+          legFilter = `reg_id.eq.${regId},email.ilike.${email}`;
+        } else if (regId) {
+          delFilter = `delegate_id.eq.${regId}`;
+          legFilter = `reg_id.eq.${regId}`;
+        } else if (email) {
+          delFilter = `email.ilike.${email}`;
+          legFilter = `email.ilike.${email}`;
         }
+
+        const ops = [];
+        if (delFilter && Object.keys(delegatesPayload).length > 0) {
+          ops.push(supabase.from('delegates').update(delegatesPayload).or(delFilter));
+        }
+        if (legFilter && Object.keys(legacyPayload).length > 1) {
+          ops.push(supabase.from('delegate_applications').update(legacyPayload).or(legFilter));
+        }
+        if (ops.length > 0) await Promise.allSettled(ops);
       } catch (sbErr) {
         console.warn('[API /api/delegate POST] Supabase update notice:', sbErr.message);
       }
@@ -353,7 +428,7 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       message: 'Delegate details updated successfully',
-      updated: updatePayload,
+      updated: delegatesPayload,
     });
   } catch (err) {
     return NextResponse.json({ success: false, message: err.message }, { status: 500 });

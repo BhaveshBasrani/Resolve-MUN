@@ -44,12 +44,12 @@ export async function GET(request) {
       let settings = { ...DEFAULT_SITE_SETTINGS };
       if (supabase) {
         try {
-          const { data } = await supabase
-            .from('system_settings')
-            .select('*')
-            .eq('id', 'global')
-            .maybeSingle();
-          if (data) settings = normalizeSettings(data);
+          const [siteRes, sysRes] = await Promise.all([
+            supabase.from('site_settings').select('*').eq('id', 'global').maybeSingle(),
+            supabase.from('system_settings').select('*').eq('id', 'global').maybeSingle(),
+          ]);
+          const merged = { ...(sysRes?.data || {}), ...(siteRes?.data || {}) };
+          if (Object.keys(merged).length > 0) settings = normalizeSettings(merged);
         } catch (_) { }
       }
       return NextResponse.json({ status: 'success', settings });
@@ -65,17 +65,17 @@ export async function GET(request) {
       return NextResponse.json(adminDataCache);
     }
 
-    // 0. Fetch System Settings from Supabase
+    // 0. Fetch System Settings from Supabase (merge site_settings + system_settings)
     let liveSettings = { ...DEFAULT_SITE_SETTINGS };
     if (supabase) {
       try {
-        const { data } = await supabase
-          .from('system_settings')
-          .select('*')
-          .eq('id', 'global')
-          .maybeSingle();
-        if (data) {
-          liveSettings = normalizeSettings(data);
+        const [siteRes, sysRes] = await Promise.all([
+          supabase.from('site_settings').select('*').eq('id', 'global').maybeSingle(),
+          supabase.from('system_settings').select('*').eq('id', 'global').maybeSingle(),
+        ]);
+        const merged = { ...(sysRes?.data || {}), ...(siteRes?.data || {}) };
+        if (Object.keys(merged).length > 0) {
+          liveSettings = normalizeSettings(merged);
         }
       } catch (_) { }
     }
@@ -90,9 +90,10 @@ export async function GET(request) {
 
     if (supabase) {
       try {
-        const [realDelRes, appDelRes, delegRes, ocRes, ebRes, secRes, profRes] = await Promise.all([
+        const [realDelRes, appDelRes, realDelegRes, delegRes, ocRes, ebRes, secRes, profRes] = await Promise.all([
           supabase.from('delegates').select('*').order('created_at', { ascending: false }),
           supabase.from('delegate_applications').select('*').order('created_at', { ascending: false }),
+          supabase.from('delegations').select('*').order('created_at', { ascending: false }),
           supabase.from('delegation_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('oc_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('eb_applications').select('*').order('created_at', { ascending: false }),
@@ -146,21 +147,25 @@ export async function GET(request) {
             timestamp: d.created_at,
           }));
         }
-        if (delegRes.data) {
-          sbDelegations = delegRes.data.map(d => ({
+        const rawAllDelegations = [...(realDelegRes?.data || []), ...(delegRes?.data || [])];
+        if (rawAllDelegations.length > 0) {
+          sbDelegations = rawAllDelegations.map(d => ({
             ...d,
-            id: d.id,
-            _id: d.id,
-            delegationId: d.id,
-            instName: d.institution_name,
-            adviserName: d.advisor_name,
-            adviserEmail: d.advisor_email,
-            adviserPhone: d.advisor_phone,
-            delegateCount: d.delegate_count || 6,
-            paymentUTR: d.payment_utr,
-            paymentScreenshotURL: d.payment_screenshot_url,
+            id: d.delegation_id || d.id,
+            _id: d.delegation_id || d.id,
+            delegationId: d.delegation_id || d.id,
+            instName: d.inst_name || d.institution_name || d.delegation_name || 'Delegation',
+            institutionName: d.inst_name || d.institution_name || d.delegation_name || 'Delegation',
+            adviserName: d.adviser_name || d.advisor_name || d.head_delegate_name || '',
+            adviserEmail: d.adviser_email || d.advisor_email || '',
+            adviserPhone: d.adviser_phone || d.advisor_phone || '',
+            size: d.size || d.delegate_count || 6,
+            delegateCount: d.size || d.delegate_count || 6,
+            totalAmount: d.total_amount || 0,
+            paymentUTR: d.payment_utr || '',
+            paymentScreenshotURL: d.payment_screenshot_url || '',
             paymentStatus: (d.payment_status || 'PENDING_VERIFICATION').toUpperCase() === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
-            status: d.status || 'Confirmed',
+            status: d.status || 'Pending',
             timestamp: d.created_at,
           }));
         }
@@ -739,6 +744,23 @@ export async function POST(request) {
 
     // 0c. PUBLIC REGISTRATION SUBMISSION: SUBMIT_DELEGATE
     if (action === 'SUBMIT_DELEGATE' || action === 'DELEGATE_REGISTRATION') {
+      // Server-side registration gate: block submissions if registrations or delegate track are closed
+      if (supabase && !body.adminOverride) {
+        try {
+          const { data: liveCfg } = await supabase
+            .from('site_settings')
+            .select('registrations_open, delegate_open')
+            .eq('id', 'global')
+            .maybeSingle();
+          if (liveCfg && (liveCfg.registrations_open === false || liveCfg.delegate_open === false)) {
+            return NextResponse.json(
+              { status: 'error', message: 'Delegate registrations are currently closed.' },
+              { status: 403 }
+            );
+          }
+        } catch (_) {}
+      }
+
       const generatedId = body.regId || body.delegateId || body.id || `RM26-DEL-${Math.floor(1000 + Math.random() * 9000)}`;
       const cleanEmail = (body.email || '').trim().toLowerCase();
       const delegateName = (body.fullName || body.name || 'Delegate').trim();
@@ -1088,6 +1110,33 @@ export async function POST(request) {
         ? body.settings.referralCodes
         : normalized.referralCodes || [];
       if (supabase) {
+        // Save all pathway toggles & pricing to public.site_settings (primary schema table)
+        try {
+          await supabase.from('site_settings').upsert({
+            id: 'global',
+            registrations_open: normalized.registrationsOpen,
+            delegate_open: normalized.delegateOpen,
+            delegation_open: normalized.delegationOpen,
+            oc_open: normalized.ocOpen,
+            eb_open: normalized.ebOpen,
+            socials_open: normalized.socialsOpen,
+            secretariat_open: normalized.secretariatOpen,
+            round_name: normalized.roundName,
+            delegate_fee: normalized.delegateFee,
+            delegation_fee: normalized.delegationFee,
+            oc_fee_full: normalized.ocFeeFull,
+            oc_fee_no_transport: normalized.ocFeeNoTransport,
+            oc_fee_basic: normalized.ocFeeBasic,
+            socials_fee: normalized.socialsFee,
+            upi_id: normalized.upiId,
+            upi_payee: normalized.upiPayee,
+            updated_at: new Date().toISOString(),
+          });
+        } catch (sbErr) {
+          console.warn("Supabase site_settings update notice:", sbErr.message);
+        }
+
+        // Also sync extended conference metadata to system_settings if present
         try {
           await supabase.from('system_settings').upsert({
             id: 'global',
@@ -1107,7 +1156,7 @@ export async function POST(request) {
             updated_at: new Date().toISOString(),
           });
         } catch (sbErr) {
-          console.warn("Supabase settings update notice:", sbErr.message);
+          console.warn("Supabase system_settings update notice:", sbErr.message);
         }
       }
 
@@ -1308,51 +1357,60 @@ export async function POST(request) {
         });
       }
 
-      // Update Supabase
+      // Update Supabase with schema-exact payloads for both delegates & delegate_applications
       if (supabase) {
         try {
-          const patch = { updated_at: new Date().toISOString() };
-          if (body.fullName !== undefined) { patch.name = body.fullName; patch.full_name = body.fullName; }
-          if (body.name !== undefined) { patch.name = body.name; patch.full_name = body.name; }
-          if (body.phone !== undefined) patch.phone = body.phone;
-          if (body.institution !== undefined) { patch.institute = body.institution; patch.school = body.institution; }
-          if (body.school !== undefined) { patch.institute = body.school; patch.school = body.school; }
-          if (body.grade !== undefined) patch.grade = body.grade;
-          if (body.dob !== undefined) patch.dob = body.dob;
-          if (body.address !== undefined) { patch.address = body.address; patch.residential_address = body.address; }
-          if (body.transport !== undefined) { patch.transport = body.transport; patch.transport_needed = body.transport; }
-          if (body.experience !== undefined) { patch.experience = body.experience; patch.mun_experience = body.experience; }
-          if (body.pref1_committee !== undefined) patch.pref1_committee = body.pref1_committee;
-          if (body.pref1_country !== undefined) { patch.pref1_country = body.pref1_country; patch.pref1_portfolio1 = body.pref1_country; }
-          if (body.pref2_committee !== undefined) patch.pref2_committee = body.pref2_committee;
-          if (body.pref2_country !== undefined) { patch.pref2_country = body.pref2_country; patch.pref2_portfolio1 = body.pref2_country; }
-          if (body.pref3_committee !== undefined) patch.pref3_committee = body.pref3_committee;
-          if (body.pref3_country !== undefined) { patch.pref3_country = body.pref3_country; patch.pref3_portfolio1 = body.pref3_country; }
-          if (body.allocatedCommittee !== undefined) patch.allocated_committee = body.allocatedCommittee;
-          if (body.allocatedCountry !== undefined) patch.allocated_country = body.allocatedCountry;
-          if (body.paymentUTR !== undefined) patch.payment_utr = body.paymentUTR;
+          const delPatch = {};
+          const legPatch = { updated_at: new Date().toISOString() };
+
+          const nameVal = body.fullName !== undefined ? body.fullName : body.name;
+          if (nameVal !== undefined) { delPatch.full_name = nameVal; legPatch.name = nameVal; legPatch.full_name = nameVal; }
+          if (body.phone !== undefined) { delPatch.phone = body.phone; legPatch.phone = body.phone; }
+          const instVal = body.institution !== undefined ? body.institution : body.school;
+          if (instVal !== undefined) { delPatch.school = instVal; legPatch.institute = instVal; legPatch.school = instVal; }
+          if (body.grade !== undefined) { delPatch.grade = body.grade; legPatch.grade = body.grade; }
+          if (body.dob !== undefined) { delPatch.dob = body.dob; legPatch.dob = body.dob; }
+          if (body.address !== undefined) { delPatch.address = body.address; legPatch.address = body.address; legPatch.residential_address = body.address; }
+          if (body.transport !== undefined) { delPatch.transport = body.transport; legPatch.transport = body.transport; legPatch.transport_needed = body.transport; }
+          if (body.experience !== undefined) { delPatch.experience = body.experience; legPatch.experience = body.experience; legPatch.mun_experience = body.experience; }
+          if (body.pref1_committee !== undefined) { delPatch.pref1_committee = body.pref1_committee; legPatch.pref1_committee = body.pref1_committee; }
+          if (body.pref1_country !== undefined) { delPatch.pref1_portfolio1 = body.pref1_country; legPatch.pref1_country = body.pref1_country; legPatch.pref1_portfolio1 = body.pref1_country; }
+          if (body.pref2_committee !== undefined) { delPatch.pref2_committee = body.pref2_committee; legPatch.pref2_committee = body.pref2_committee; }
+          if (body.pref2_country !== undefined) { delPatch.pref2_portfolio1 = body.pref2_country; legPatch.pref2_country = body.pref2_country; legPatch.pref2_portfolio1 = body.pref2_country; }
+          if (body.pref3_committee !== undefined) { delPatch.pref3_committee = body.pref3_committee; legPatch.pref3_committee = body.pref3_committee; }
+          if (body.pref3_country !== undefined) { delPatch.pref3_portfolio1 = body.pref3_country; legPatch.pref3_country = body.pref3_country; legPatch.pref3_portfolio1 = body.pref3_country; }
+          if (body.allocatedCommittee !== undefined) { delPatch.allocated_committee = body.allocatedCommittee; legPatch.allocated_committee = body.allocatedCommittee; }
+          if (body.allocatedCountry !== undefined) { delPatch.allocated_country = body.allocatedCountry; legPatch.allocated_country = body.allocatedCountry; }
+          if (body.paymentUTR !== undefined) { delPatch.payment_utr = body.paymentUTR; legPatch.payment_utr = body.paymentUTR; }
           if (body.paymentStatus !== undefined) {
-            patch.payment_status = body.paymentStatus.toUpperCase() === 'VERIFIED' ? 'VERIFIED' : 'PENDING_VERIFICATION';
+            const ps = body.paymentStatus.toUpperCase() === 'VERIFIED' ? 'VERIFIED' : 'PENDING_VERIFICATION';
+            delPatch.payment_status = ps;
+            legPatch.payment_status = ps;
           }
-          if (body.allocatedCommittee && !patch.status) patch.status = 'ALLOTTED';
+          if (body.allocatedCommittee && !delPatch.status) {
+            delPatch.status = 'ALLOTTED';
+            legPatch.status = 'ALLOTTED';
+          }
 
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q1 = supabase.from('delegates').update(patch);
-          let q2 = supabase.from('delegate_applications').update(patch);
-          if (isUuid) {
-            q1 = q1.eq('id', targetId);
-            q2 = q2.eq('id', targetId);
-          } else {
-            if (targetId) {
-              q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
-              q2 = q2.or(`name.ilike.${targetId},email.ilike.${targetId}`);
-            }
-            if (targetEmail) {
-              q1 = q1.ilike('email', targetEmail);
-              q2 = q2.ilike('email', targetEmail);
-            }
+          const ops = [];
+          if (Object.keys(delPatch).length > 0) {
+            let q1 = supabase.from('delegates').update(delPatch);
+            if (isUuid) q1 = q1.eq('id', targetId);
+            else if (targetId && targetEmail) q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetEmail}`);
+            else if (targetId) q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
+            else if (targetEmail) q1 = q1.ilike('email', targetEmail);
+            ops.push(q1);
           }
-          await Promise.all([q1, q2]);
+          if (Object.keys(legPatch).length > 1) {
+            let q2 = supabase.from('delegate_applications').update(legPatch);
+            if (isUuid) q2 = q2.eq('id', targetId);
+            else if (targetId && targetEmail) q2 = q2.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+            else if (targetId) q2 = q2.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
+            else if (targetEmail) q2 = q2.ilike('email', targetEmail);
+            ops.push(q2);
+          }
+          await Promise.allSettled(ops);
           adminDataCache = null;
         } catch (e) {
           console.warn("[Supabase] Update delegate notice:", e.message);
@@ -1393,15 +1451,18 @@ export async function POST(request) {
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          const updateData = {
+          const delegatesUpdate = {
             allocated_committee: body.committee,
             allocated_country: body.country,
             status: 'ALLOTTED',
+          };
+          const legacyUpdate = {
+            ...delegatesUpdate,
             updated_at: new Date().toISOString(),
           };
 
-          let q1 = supabase.from('delegates').update(updateData);
-          let q2 = supabase.from('delegate_applications').update(updateData);
+          let q1 = supabase.from('delegates').update(delegatesUpdate);
+          let q2 = supabase.from('delegate_applications').update(legacyUpdate);
 
           if (isUuid) {
             q1 = q1.eq('id', targetId);
@@ -1414,27 +1475,40 @@ export async function POST(request) {
             q2 = q2.ilike('email', targetEmail);
           }
           await Promise.allSettled([q1, q2]);
+          adminDataCache = null;
         } catch (e) {
           console.warn("[Supabase] Allotment notice:", e.message);
         }
       }
 
-      // Fetch delegate metadata for email dispatch if missing
+      // Fetch delegate metadata for email dispatch if missing (check delegates first, then delegate_applications)
       let delEmail = targetEmail;
       let delName = body.fullName || body.name || '';
       let delRegId = targetId;
       if (supabase && (!delEmail || !delName)) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let dq = supabase.from('delegate_applications').select('name, email, reg_id');
-          if (isUuid) dq = dq.eq('id', targetId);
-          else if (targetId.startsWith('RM26-DEL-')) dq = dq.eq('reg_id', targetId);
-          else if (targetEmail) dq = dq.ilike('email', targetEmail);
-          const { data: dData } = await dq.maybeSingle();
-          if (dData) {
-            delEmail = delEmail || dData.email;
-            delName = delName || dData.name;
-            delRegId = delRegId || dData.reg_id;
+          let q1 = supabase.from('delegates').select('full_name, email, delegate_id');
+          if (isUuid) q1 = q1.eq('id', targetId);
+          else if (targetId.startsWith('RM26-DEL-')) q1 = q1.eq('delegate_id', targetId);
+          else if (targetEmail) q1 = q1.ilike('email', targetEmail);
+          const { data: realData } = await q1.maybeSingle();
+          if (realData) {
+            delEmail = delEmail || realData.email;
+            delName = delName || realData.full_name;
+            delRegId = delRegId || realData.delegate_id;
+          }
+          if (!delEmail || !delName) {
+            let dq = supabase.from('delegate_applications').select('name, email, reg_id');
+            if (isUuid) dq = dq.eq('id', targetId);
+            else if (targetId.startsWith('RM26-DEL-')) dq = dq.eq('reg_id', targetId);
+            else if (targetEmail) dq = dq.ilike('email', targetEmail);
+            const { data: dData } = await dq.maybeSingle();
+            if (dData) {
+              delEmail = delEmail || dData.email;
+              delName = delName || dData.name;
+              delRegId = delRegId || dData.reg_id;
+            }
           }
         } catch (_) {}
       }
@@ -1492,15 +1566,18 @@ export async function POST(request) {
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          const updateData = {
+          const delegatesClear = {
             allocated_committee: null,
             allocated_country: null,
             status: 'PENDING',
+          };
+          const legacyClear = {
+            ...delegatesClear,
             updated_at: new Date().toISOString(),
           };
 
-          let q1 = supabase.from('delegates').update(updateData);
-          let q2 = supabase.from('delegate_applications').update(updateData);
+          let q1 = supabase.from('delegates').update(delegatesClear);
+          let q2 = supabase.from('delegate_applications').update(legacyClear);
 
           if (isUuid) {
             q1 = q1.eq('id', targetId);
@@ -1560,24 +1637,35 @@ export async function POST(request) {
 
       if (supabase) {
         try {
-          const updatePayload = {
+          const delPayload = {
+            payment_status: isVer ? 'VERIFIED' : 'PENDING_VERIFICATION',
+          };
+          const legPayload = {
             payment_status: isVer ? 'VERIFIED' : 'PENDING_VERIFICATION',
             updated_at: new Date().toISOString(),
           };
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
 
-          let filterStr = '';
-          if (isUuid) filterStr = `id.eq.${targetId}`;
-          else if (targetId && targetEmail) filterStr = `delegate_id.eq.${targetId},email.ilike.${targetEmail}`;
-          else if (targetId) filterStr = `delegate_id.eq.${targetId},id.eq.${targetId}`;
-          else if (targetEmail) filterStr = `email.ilike.${targetEmail}`;
-
-          if (filterStr) {
-            await Promise.allSettled([
-              supabase.from('delegate_applications').update(updatePayload).or(filterStr),
-              supabase.from('delegates').update(updatePayload).or(filterStr),
-            ]);
+          let delFilter = '';
+          let legFilter = '';
+          if (isUuid) {
+            delFilter = `id.eq.${targetId}`;
+            legFilter = `id.eq.${targetId}`;
+          } else if (targetId && targetEmail) {
+            delFilter = `delegate_id.eq.${targetId},email.ilike.${targetEmail}`;
+            legFilter = `reg_id.eq.${targetId},email.ilike.${targetEmail}`;
+          } else if (targetId) {
+            delFilter = `delegate_id.eq.${targetId}`;
+            legFilter = `reg_id.eq.${targetId}`;
+          } else if (targetEmail) {
+            delFilter = `email.ilike.${targetEmail}`;
+            legFilter = `email.ilike.${targetEmail}`;
           }
+
+          const ops = [];
+          if (delFilter) ops.push(supabase.from('delegates').update(delPayload).or(delFilter));
+          if (legFilter) ops.push(supabase.from('delegate_applications').update(legPayload).or(legFilter));
+          if (ops.length > 0) await Promise.allSettled(ops);
         } catch (e) {
           console.warn("[Supabase] Payment verify notice:", e.message);
         }
@@ -1608,19 +1696,24 @@ export async function POST(request) {
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q = supabase.from('delegate_applications').delete();
+          let qDel = supabase.from('delegates').delete();
+          let qLeg = supabase.from('delegate_applications').delete();
           if (isUuid) {
-            q = q.eq('id', targetId);
+            qDel = qDel.eq('id', targetId);
+            qLeg = qLeg.eq('id', targetId);
           } else {
             if (targetId && targetEmail) {
-              q = q.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+              qDel = qDel.or(`delegate_id.eq.${targetId},email.ilike.${targetEmail}`);
+              qLeg = qLeg.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
             } else if (targetId) {
-              q = q.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
+              qDel = qDel.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
+              qLeg = qLeg.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
             } else if (targetEmail) {
-              q = q.ilike('email', targetEmail);
+              qDel = qDel.ilike('email', targetEmail);
+              qLeg = qLeg.ilike('email', targetEmail);
             }
           }
-          await q;
+          await Promise.allSettled([qDel, qLeg]);
         } catch (e) {
           console.warn("[Supabase] Delete delegate notice:", e.message);
         }
@@ -1659,6 +1752,8 @@ export async function POST(request) {
           const deletes = [];
           if (targetEmail) {
             deletes.push(supabase.from('profiles').delete().ilike('email', targetEmail));
+            deletes.push(supabase.from('delegates').delete().ilike('email', targetEmail));
+            deletes.push(supabase.from('delegations').delete().ilike('adviser_email', targetEmail));
             deletes.push(supabase.from('delegate_applications').delete().ilike('email', targetEmail));
             deletes.push(supabase.from('eb_applications').delete().ilike('email', targetEmail));
             deletes.push(supabase.from('oc_applications').delete().ilike('email', targetEmail));
@@ -1669,6 +1764,7 @@ export async function POST(request) {
             const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
             if (isUuid) {
               deletes.push(supabase.from('profiles').delete().eq('id', targetId));
+              deletes.push(supabase.from('delegates').delete().eq('user_id', targetId));
               deletes.push(supabase.from('delegate_applications').delete().eq('user_id', targetId));
             }
           }
@@ -1779,13 +1875,47 @@ export async function POST(request) {
       if (supabase && targetId) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let q = supabase.from('delegate_applications').update({
-            [dayCol]: statusValue,
-            updated_at: new Date().toISOString(),
-          });
-          if (isUuid) q = q.eq('id', targetId);
-          else q = q.ilike('email', targetId);
-          await q;
+          const nowIso = new Date().toISOString();
+          const ops = [];
+
+          // 1. Update delegates table (uses delegate_id + last_check_in)
+          let qDel = supabase.from('delegates').update({ [dayCol]: statusValue, last_check_in: nowIso });
+          if (isUuid) qDel = qDel.eq('id', targetId);
+          else qDel = qDel.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
+          ops.push(qDel);
+
+          // 2. Update legacy delegate_applications table
+          let qLeg = supabase.from('delegate_applications').update({ [dayCol]: statusValue, updated_at: nowIso });
+          if (isUuid) qLeg = qLeg.eq('id', targetId);
+          else qLeg = qLeg.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
+          ops.push(qLeg);
+
+          // 3. Update OC / Secretariat / EB tables if scanning a staff or EB badge
+          if (targetId.startsWith('RM26-OC-') || targetId.includes('@')) {
+            ops.push(supabase.from('oc_applications').update({ [dayCol]: statusValue }).or(`app_id.eq.${targetId},email.ilike.${targetId}`));
+          }
+          if (targetId.startsWith('RM26-SEC-') || targetId.includes('@')) {
+            ops.push(supabase.from('secretariat_applications').update({ [dayCol]: statusValue }).or(`app_id.eq.${targetId},email.ilike.${targetId}`));
+          }
+          if (targetId.startsWith('RM26-EB-') || targetId.includes('@')) {
+            ops.push(supabase.from('eb_applications').update({ [dayCol]: statusValue }).or(`app_id.eq.${targetId},email.ilike.${targetId}`));
+          }
+
+          // 4. Write audit log entry to check_in_logs
+          ops.push(
+            supabase.from('check_in_logs').insert({
+              delegate_id: targetId,
+              full_name: body.fullName || body.name || '',
+              email: body.email || '',
+              role: body.role || 'DELEGATE',
+              day: dayStr,
+              action_type: isEntry ? 'ENTRY' : 'EXIT',
+              verified_by: body.verifiedBy || 'Secretariat Desk',
+            })
+          );
+
+          await Promise.allSettled(ops);
+          adminDataCache = null;
         } catch (_) { }
       }
 
@@ -1836,36 +1966,51 @@ export async function POST(request) {
         recipients.push({ email: emailTo, name: body.name || 'Delegate' });
       } else if (recipientMode === 'ALL_DELEGATES') {
         if (supabase) {
-          const { data } = await supabase
-            .from('delegate_applications')
-            .select('name, email')
-            .eq('payment_status', 'VERIFIED');
-          if (data && data.length > 0) {
-            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Delegate' })).filter(r => r.email && r.email.includes('@'));
-          }
+          const [r1, r2] = await Promise.allSettled([
+            supabase.from('delegates').select('full_name, email'),
+            supabase.from('delegate_applications').select('name, email'),
+          ]);
+          const rows = [
+            ...(r1.status === 'fulfilled' ? r1.value.data || [] : []),
+            ...(r2.status === 'fulfilled' ? r2.value.data || [] : []),
+          ];
+          recipients = rows
+            .map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.full_name || d.name || 'Delegate' }))
+            .filter(r => r.email && r.email.includes('@'));
         }
       } else if (recipientMode === 'UNASSIGNED_DELEGATES') {
         if (supabase) {
-          const { data } = await supabase
-            .from('delegate_applications')
-            .select('name, email')
-            .is('allocated_committee', null);
-          if (data && data.length > 0) {
-            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Delegate' })).filter(r => r.email && r.email.includes('@'));
-          }
+          const [r1, r2] = await Promise.allSettled([
+            supabase.from('delegates').select('full_name, email').is('allocated_committee', null),
+            supabase.from('delegate_applications').select('name, email').is('allocated_committee', null),
+          ]);
+          const rows = [
+            ...(r1.status === 'fulfilled' ? r1.value.data || [] : []),
+            ...(r2.status === 'fulfilled' ? r2.value.data || [] : []),
+          ];
+          recipients = rows
+            .map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.full_name || d.name || 'Delegate' }))
+            .filter(r => r.email && r.email.includes('@'));
         }
       } else if (recipientMode === 'OC_APPLICANTS') {
         if (supabase) {
-          const { data } = await supabase.from('oc_applications').select('name, email');
+          const { data } = await supabase.from('oc_applications').select('full_name, email');
           if (data && data.length > 0) {
-            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Applicant' })).filter(r => r.email && r.email.includes('@'));
+            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.full_name || 'Applicant' })).filter(r => r.email && r.email.includes('@'));
           }
         }
       } else if (recipientMode === 'SEC_APPLICANTS') {
         if (supabase) {
-          const { data } = await supabase.from('secretariat_applications').select('name, email');
+          const { data } = await supabase.from('secretariat_applications').select('full_name, email');
           if (data && data.length > 0) {
-            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.name || 'Applicant' })).filter(r => r.email && r.email.includes('@'));
+            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.full_name || 'Applicant' })).filter(r => r.email && r.email.includes('@'));
+          }
+        }
+      } else if (recipientMode === 'EB_APPLICANTS') {
+        if (supabase) {
+          const { data } = await supabase.from('eb_applications').select('full_name, email');
+          if (data && data.length > 0) {
+            recipients = data.map(d => ({ email: (d.email || '').trim().toLowerCase(), name: d.full_name || 'Applicant' })).filter(r => r.email && r.email.includes('@'));
           }
         }
       }
@@ -1935,6 +2080,74 @@ export async function POST(request) {
           message: `Email dispatch delivery failed: ${dispatchErr.message}`,
         }, { status: 500 });
       }
+    }
+
+    // 9. ADMIN_HEALTH_CHECK — Live Supabase & Backend Diagnostics
+    if (action === 'ADMIN_HEALTH_CHECK') {
+      const report = { supabaseConnected: Boolean(supabase), tables: {}, settingsSynced: false };
+      if (supabase) {
+        const tableNames = ['site_settings', 'delegates', 'delegations', 'oc_applications', 'secretariat_applications', 'eb_applications', 'check_in_logs'];
+        await Promise.all(
+          tableNames.map(async (tbl) => {
+            try {
+              const { count, error } = await supabase.from(tbl).select('*', { count: 'exact', head: true });
+              report.tables[tbl] = error ? { ok: false, error: error.message } : { ok: true, count: count ?? 0 };
+            } catch (e) {
+              report.tables[tbl] = { ok: false, error: e.message };
+            }
+          })
+        );
+        report.settingsSynced = Boolean(report.tables.site_settings?.ok);
+      }
+      return NextResponse.json({ status: 'success', health: report });
+    }
+
+    // 10. ADMIN_BULK_ACTION — Instant Master Control Operations
+    if (action === 'ADMIN_BULK_ACTION') {
+      const bulkType = body.bulkType || '';
+      if (!supabase) {
+        return NextResponse.json({ status: 'error', message: 'Supabase not configured' }, { status: 500 });
+      }
+
+      if (bulkType === 'CLOSE_ALL_REGISTRATIONS' || bulkType === 'OPEN_ALL_REGISTRATIONS') {
+        const isOpen = bulkType === 'OPEN_ALL_REGISTRATIONS';
+        await Promise.allSettled([
+          supabase.from('site_settings').upsert({
+            id: 'global',
+            registrations_open: isOpen,
+            delegate_open: isOpen,
+            delegation_open: isOpen,
+            oc_open: isOpen,
+            secretariat_open: isOpen,
+            updated_at: new Date().toISOString(),
+          }),
+          supabase.from('system_settings').upsert({
+            id: 'global',
+            registrations_open: isOpen,
+            updated_at: new Date().toISOString(),
+          }),
+        ]);
+        adminDataCache = null;
+        return NextResponse.json({
+          status: 'success',
+          registrationsOpen: isOpen,
+          message: isOpen ? 'All registrations are now OPEN.' : 'All registrations are now CLOSED.',
+        });
+      }
+
+      if (bulkType === 'VERIFY_ALL_PENDING_PAYMENTS') {
+        await Promise.allSettled([
+          supabase.from('delegates').update({ payment_status: 'VERIFIED' }).neq('payment_status', 'VERIFIED'),
+          supabase.from('delegate_applications').update({ payment_status: 'VERIFIED', updated_at: new Date().toISOString() }).neq('payment_status', 'VERIFIED'),
+        ]);
+        adminDataCache = null;
+        return NextResponse.json({
+          status: 'success',
+          message: 'All pending delegate payments have been marked VERIFIED.',
+        });
+      }
+
+      return NextResponse.json({ status: 'error', message: `Unknown bulkType: ${bulkType}` }, { status: 400 });
     }
 
     // Generic forward to Apps Script

@@ -306,6 +306,51 @@ const MEMBERS = [
 ];
 
 export default function SecretariatSection() {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <section
+        id="secretariat"
+        className="relative bg-black text-white py-10 px-5 border-t border-[#262626]"
+        style={{ backgroundColor: "#000000" }}
+      >
+        <div className="max-w-xl mx-auto">
+          <div className="text-left mb-5">
+            <div className="section-label" style={{ justifyContent: "flex-start", margin: "0 0 8px 0" }}>
+              Secretariat
+            </div>
+            <h2
+              className="text-3xl font-extrabold uppercase tracking-tight text-white"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              MEET THE TEAM
+            </h2>
+          </div>
+
+          <div className="w-full rounded-lg border border-[#262626] bg-black py-12 px-5 text-center">
+            <h3
+              className="text-2xl font-extrabold uppercase text-white tracking-[0.18em]"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              TEAM REVEAL SOON
+            </h3>
+            <p className="text-xs font-mono uppercase tracking-wider text-[#a3a3a3] mt-2">
+              Resolve MUN 2.0 Secretariat Directorate
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       id="secretariat"

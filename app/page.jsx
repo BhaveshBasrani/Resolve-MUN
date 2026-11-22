@@ -52,8 +52,7 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const checkMobile = () =>
-        setIsMobile(window.innerWidth <= 768 || window.matchMedia("(pointer: coarse)").matches);
+      const checkMobile = () => setIsMobile(window.innerWidth <= 768);
       checkMobile();
       window.addEventListener("resize", checkMobile);
       return () => window.removeEventListener("resize", checkMobile);
@@ -71,15 +70,44 @@ export default function Home() {
         localStorage.removeItem('resolve_theme');
         document.documentElement.classList.remove('theme-light');
         document.body.classList.remove('theme-light');
-      } catch (_) {}
+      } catch (_) { }
 
       const params = new URLSearchParams(window.location.search);
+      const refParam = (params.get('ref') || params.get('referral') || '').trim().toUpperCase();
+      if (refParam) {
+        try {
+          localStorage.setItem('resolve_pending_ref', refParam);
+        } catch (_) {}
+      }
+
+      // Auto-fill referral code input if visitor arrived via a referral link
+      const applyPendingReferral = () => {
+        try {
+          const savedRef = refParam || localStorage.getItem('resolve_pending_ref') || '';
+          if (!savedRef) return;
+          ['regReferral', 'ocReferral', 'socialsReferral'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el && !el.value) {
+              el.value = savedRef;
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          });
+          const fb = document.getElementById('referralFeedback');
+          if (fb && !fb.textContent) {
+            fb.textContent = `✓ Referral code ${savedRef} applied`;
+          }
+        } catch (_) {}
+      };
+      setTimeout(applyPendingReferral, 500);
+      setTimeout(applyPendingReferral, 1400);
+
       const del = params.get('del');
       if (del) {
         setDelegationInviteCode(del.trim());
         try {
           localStorage.setItem('resolve_perm_del', del.trim());
-        } catch (_) {}
+        } catch (_) { }
         setTimeout(() => {
           const banner = document.getElementById('delegationBanner');
           if (banner) banner.style.display = 'block';
@@ -203,7 +231,7 @@ export default function Home() {
               }
             }
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     });
 
@@ -214,7 +242,7 @@ export default function Home() {
             localStorage.setItem("resolve_user_verified", "true");
             localStorage.setItem("resolve_user_email", formData.email.trim().toLowerCase());
           }
-        } catch (_) {}
+        } catch (_) { }
         return await submitDelegateApplication(formData, currentUserRef.current);
       };
       window.submitDelegationToFirebase = async (data) => {
@@ -557,7 +585,7 @@ export default function Home() {
             try {
               const uploaded = await uploadFileToSupabase(file, "eb-cvs", "EB");
               if (uploaded) ebCvInput.dataset.uploadedUrl = uploaded;
-            } catch (_) {}
+            } catch (_) { }
           }
         });
       }
@@ -686,8 +714,8 @@ export default function Home() {
     // Instant Countdown Initialization (Zero-reflow cached DOM references & diff-only updates)
     let cdInterval = null;
     try {
-      const startDateMs = new Date("2026-11-27T08:00:00").getTime();
-      const endDateMs = new Date("2026-11-29T20:00:00").getTime();
+      const startDateMs = new Date("2026-12-26T08:30:00").getTime();
+      const endDateMs = new Date("2026-12-27T18:30:00").getTime();
 
       let cdLabel = null;
       let cdDays = null;
@@ -810,7 +838,7 @@ export default function Home() {
               u.searchParams.delete("apply");
               window.history.replaceState(null, "", u.pathname + (u.search ? u.search : ""));
             }
-          } catch (_) {}
+          } catch (_) { }
         }
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("modalStateChange"));
@@ -916,9 +944,9 @@ export default function Home() {
                 formType: type === 'delegation' ? 'Delegation Registration' : 'Delegate Registration',
                 step: step || 'Step 1: Personal Details'
               })
-            }).catch(() => {});
+            }).catch(() => { });
           }
-        } catch(e) {}
+        } catch (e) { }
       }
 
       window.applyPermanentDelegationLock = applyPermanentDelegationLock;
@@ -960,7 +988,7 @@ export default function Home() {
           if (fullName && !data.regName) data.regName = fullName;
           if (email) data.regEmail = email;
           localStorage.setItem('resolveMunRegForm', JSON.stringify(data));
-        } catch(e) {}
+        } catch (e) { }
 
         // 2. Delegation Registration Form (#delModal)
         if (fullName) {
@@ -984,7 +1012,7 @@ export default function Home() {
             data.del_email_1 = email;
           }
           localStorage.setItem('resolveMunDelForm', JSON.stringify(data));
-        } catch(e) {}
+        } catch (e) { }
 
         // 3. Organizing Committee Form (#ocModal)
         if (fullName) setVal('ocName', fullName);
@@ -1037,9 +1065,12 @@ export default function Home() {
         }
         const vIframe = document.getElementById("venueMapIframe");
         if (vIframe && (settings.venueMapUrl || settings.conferenceVenue)) {
+          const queryTarget = settings.conferenceVenue && settings.venueAddress
+            ? `${settings.conferenceVenue}, ${settings.venueAddress}`
+            : (settings.conferenceVenue || settings.venueAddress || "Northfield International School Kompally Hyderabad 500078");
           const mapUrl = (settings.venueMapUrl && settings.venueMapUrl.includes("output=embed"))
             ? settings.venueMapUrl
-            : `https://maps.google.com/maps?q=${encodeURIComponent(settings.conferenceVenue || settings.venueAddress || "Hyderabad Telangana")}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
+            : `https://maps.google.com/maps?q=${encodeURIComponent(queryTarget)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
           vIframe.src = mapUrl;
         }
         const vLink = document.getElementById("venueMapLink");
@@ -1069,7 +1100,7 @@ export default function Home() {
         });
 
         window.copyVenueAddress = () => {
-          const addr = window.__siteSettings?.venueAddress || "TBA (To Be Announced)";
+          const addr = window.__siteSettings?.venueAddress || "BMR Towers, H.No. 8-95/2, Devarayamjal Road, Kompally, Hyderabad, Telangana 500078";
           navigator.clipboard?.writeText(addr);
           if (window.showCustomAlert) window.showCustomAlert("Venue address copied to clipboard!", "success");
           else alert("Venue address copied to clipboard!");
@@ -1134,9 +1165,9 @@ export default function Home() {
         }
       };
 
-      fetchSystemSettingsCached(false)
+      fetchSystemSettingsCached(true)
         .then((s) => applyLiveSettingsToDOM(s))
-        .catch(() => {});
+        .catch(() => { });
 
       window.addEventListener("siteSettingsUpdated", (ev) => {
         if (ev?.detail) applyLiveSettingsToDOM(ev.detail);
@@ -1215,7 +1246,7 @@ export default function Home() {
           const u = new URL(window.location.href);
           u.searchParams.set("open", type);
           window.history.replaceState(null, "", u.pathname + u.search);
-        } catch (_) {}
+        } catch (_) { }
 
         if (type === "delegate") {
           window.openRegistration();
@@ -1872,7 +1903,7 @@ export default function Home() {
               try {
                 const uploaded = await uploadFileToSupabase(f, "secretariat-portfolios", "SEC_PORT");
                 if (uploaded) portInput.dataset.uploadedUrl = uploaded;
-              } catch (_) {}
+              } catch (_) { }
             }
           });
         }
@@ -1891,7 +1922,7 @@ export default function Home() {
               try {
                 const uploaded = await uploadFileToSupabase(f, "secretariat-resumes", "SEC_RES");
                 if (uploaded) resInput.dataset.uploadedUrl = uploaded;
-              } catch (_) {}
+              } catch (_) { }
             }
           });
         }
@@ -2154,9 +2185,9 @@ export default function Home() {
                   formType: formTypeMap[modalId] || "Delegate Registration",
                   draftData: saved,
                 }),
-              }).catch(() => {});
+              }).catch(() => { });
             }
-          } catch (_) {}
+          } catch (_) { }
         }, 1200);
       };
 
@@ -2183,7 +2214,7 @@ export default function Home() {
           }
           localStorage.setItem(cfg.key, JSON.stringify(saved));
           scheduleLiveDraftBeacon(modalId, saved);
-        } catch (_) {}
+        } catch (_) { }
       };
 
       const restoreModalDraft = (modalId) => {
@@ -2226,7 +2257,7 @@ export default function Home() {
               }
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       };
 
       window.saveAllModalDrafts = saveModalDraft;
@@ -2313,10 +2344,10 @@ export default function Home() {
       window.addEventListener("keydown", handleEscape);
     }
 
-    
-    // GSAP Silky Smooth & Minimal Hero Loading Animation
+
+    // GSAP Silky Smooth & Minimal Hero Loading Animation (Desktop only — zero effects on phones)
     try {
-      const hero = document.querySelector(".hero-title");
+      const hero = typeof window !== "undefined" && window.innerWidth > 768 ? document.querySelector(".hero-title") : null;
       if (hero) {
         const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
         const eyebrow = document.querySelector(".hero-eyebrow");
@@ -2485,7 +2516,7 @@ export default function Home() {
           overflow: "hidden",
         }}
       >
-        {/* Immersive Shader Background (Adaptive: Sleek CSS radial mesh on mobile, full WebGL on desktop) */}
+        {/* Immersive Shader Background (Flat black on mobile, full WebGL on desktop) */}
         <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
           {isMobile ? (
             <div
@@ -2493,33 +2524,34 @@ export default function Home() {
                 position: "absolute",
                 inset: 0,
                 zIndex: 0,
-                background:
-                  "radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.08) 0%, rgba(10, 10, 15, 0.95) 60%, #050508 100%)",
+                background: "#000000",
               }}
             />
           ) : (
-            <GradientBackground
-              colors={["#ffffff", "#000000", "#ffffff"]}
-              colorBack="#000000"
-              intensity={0.45}
-              softness={0.9}
-              noise={0}
-              speed={0.4}
-              style={{ position: "absolute", inset: 0, zIndex: 0 }}
-            />
+            <>
+              <GradientBackground
+                colors={["#ffffff", "#000000", "#ffffff"]}
+                colorBack="#000000"
+                intensity={0.45}
+                softness={0.9}
+                noise={0}
+                speed={0.4}
+                style={{ position: "absolute", inset: 0, zIndex: 0 }}
+              />
+              {/* Luminous atmospheric depth & vignette */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 1,
+                  background:
+                    "linear-gradient(to bottom, transparent 65%, rgba(5, 5, 8, 0.75) 84%, #050508 100%)",
+                }}
+              />
+              {/* Subtle grid overlay */}
+              <div className="hero-grid" style={{ zIndex: 2 }} />
+            </>
           )}
-          {/* Luminous atmospheric depth & vignette */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 1,
-              background:
-                "linear-gradient(to bottom, transparent 65%, rgba(5, 5, 8, 0.75) 84%, #050508 100%)",
-            }}
-          />
-          {/* Subtle grid overlay */}
-          <div className="hero-grid" style={{ zIndex: 2 }} />
         </div>
 
         {/* Particles (Desktop only to prevent mobile thermal GPU lag) */}
@@ -2535,7 +2567,7 @@ export default function Home() {
         <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "900px", margin: "0 auto" }}>
           {/* Eyebrow */}
           <div className="hero-eyebrow">
-            {(siteSettings.conferenceDates || "25, 26, 27 DECEMBER 2026").toUpperCase()}
+            {(siteSettings.conferenceDates || "26, 27 DECEMBER 2026").toUpperCase()}
           </div>
 
           {/* Adaptive Hero Title — NEVER overlaps navbar */}
@@ -2571,7 +2603,7 @@ export default function Home() {
             <div className="hero-meta-divider" />
             <div className="hero-meta-item">
               <span className="label">Days</span>
-              <span className="value" data-target="3">3</span>
+              <span className="value" data-target="2">2</span>
             </div>
           </div>
 
@@ -2605,11 +2637,11 @@ export default function Home() {
           <div className="marquee-group">
             <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">{(siteSettings.conferenceDates || "25, 26, 27 DECEMBER 2026").toUpperCase()}</span>
+            <span className="ticker-item">{(siteSettings.conferenceDates || "26, 27 DECEMBER 2026").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">{(siteSettings.venueShort || siteSettings.conferenceVenue || "MERIDIAN SCHOOL, KOMPALLY").toUpperCase()}</span>
+            <span className="ticker-item">{(siteSettings.venueShort || siteSettings.conferenceVenue || "NORTHFIELD INTERNATIONAL SCHOOL").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
             <span className="ticker-sep">✦</span>
@@ -2630,11 +2662,11 @@ export default function Home() {
           <div className="marquee-group" aria-hidden="true">
             <span className="ticker-item ticker-highlight">RESOLVE MUN 2.0</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">{(siteSettings.conferenceDates || "25, 26, 27 DECEMBER 2026").toUpperCase()}</span>
+            <span className="ticker-item">{(siteSettings.conferenceDates || "26, 27 DECEMBER 2026").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-highlight">HYDERABAD&apos;S BOLDEST MUN</span>
             <span className="ticker-sep">✦</span>
-            <span className="ticker-item">{(siteSettings.venueShort || siteSettings.conferenceVenue || "MERIDIAN SCHOOL, KOMPALLY").toUpperCase()}</span>
+            <span className="ticker-item">{(siteSettings.venueShort || siteSettings.conferenceVenue || "NORTHFIELD INTERNATIONAL SCHOOL").toUpperCase()}</span>
             <span className="ticker-sep">/</span>
             <span className="ticker-item ticker-motto">RESOLVE · REFORM · RECONCILE</span>
             <span className="ticker-sep">✦</span>
@@ -2662,7 +2694,7 @@ export default function Home() {
         <SecretariatSection />
         {HOME_PART3_HTML && <div dangerouslySetInnerHTML={HOME_PART3_HTML} suppressHydrationWarning />}
       </div>
-      
+
       {/* Best MUN in Hyderabad FAQ Section */}
       <BestMunFaqSection />
 
@@ -2671,7 +2703,7 @@ export default function Home() {
 
       {/* Universal Footer with Theme Toggler */}
       <Footer />
-      
+
       {/* POST-AUTH WELCOME DIALOG (Diplomatic Luxury Identity) */}
       {showWelcomeBox && currentUser && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
@@ -2734,7 +2766,7 @@ export default function Home() {
                 Signed In
               </span>
               <span className="text-white/20">|</span>
-              <span className="text-white/70">{siteSettings.conferenceDates || "25, 26, 27 December 2026"}</span>
+              <span className="text-white/70">{siteSettings.conferenceDates || "26, 27 December 2026"}</span>
             </div>
 
             {/* Action Buttons */}

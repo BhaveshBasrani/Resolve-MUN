@@ -277,24 +277,24 @@ export default function Footer() {
   const revealAt = React.useRef(null);
   const [inView, setInView] = React.useState(false);
   const [footerInfo, setFooterInfo] = React.useState({
-    dates: "25, 26, 27 December 2026",
-    venue: "TBA (To Be Announced)",
+    dates: "26, 27 December 2026",
+    venue: "Northfield International School",
   });
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       if (window.__siteSettings) {
         setFooterInfo({
-          dates: window.__siteSettings.conferenceDates || "25, 26, 27 December 2026",
-          venue: window.__siteSettings.venueShort || window.__siteSettings.conferenceVenue || "TBA (To Be Announced)",
+          dates: window.__siteSettings.conferenceDates || "26, 27 December 2026",
+          venue: window.__siteSettings.venueShort || window.__siteSettings.conferenceVenue || "Northfield International School",
         });
       }
       const handleUpdate = (e) => {
         const s = e?.detail || window.__siteSettings;
         if (s) {
           setFooterInfo({
-            dates: s.conferenceDates || "25, 26, 27 December 2026",
-            venue: s.venueShort || s.conferenceVenue || "TBA (To Be Announced)",
+            dates: s.conferenceDates || "26, 27 December 2026",
+            venue: s.venueShort || s.conferenceVenue || "Northfield International School",
           });
         }
       };
@@ -385,8 +385,9 @@ export default function Footer() {
     return () => io.disconnect();
   }, []);
 
-  // Ridgeline dither canvas rendering loop
+  // Ridgeline dither canvas rendering loop (Desktop only — zero canvas CPU loop on phones)
   React.useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth <= 768) return;
     const root = rootRef.current;
     const scene = sceneRef.current;
     const canvas = canvasRef.current;

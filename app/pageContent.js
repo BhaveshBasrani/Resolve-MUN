@@ -1301,7 +1301,7 @@ export const homeHtml = `
         <span class="desc">Total Cash Prize</span>
       </div>
       <div class="about-stat">
-        <span class="num">3</span>
+        <span class="num">2</span>
         <div class="stat-divider"></div>
         <span class="desc">Days of Diplomacy</span>
       </div>
@@ -1345,8 +1345,8 @@ export const homeHtml = `
         </div>
         <div class="letterhead-meta">
           <span class="lh-meta-row"><em>Ref.</em> RMUN/2026/FO-01</span>
-          <span class="lh-meta-row"><em>Edition</em> 2.0 · 25–27 Dec 2026</span>
-          <span class="lh-meta-row"><em>Venue</em> Hyderabad, India</span>
+          <span class="lh-meta-row"><em>Edition</em> 2.0 · 26–27 Dec 2026</span>
+          <span class="lh-meta-row"><em>Venue</em> Northfield International School, Hyderabad</span>
         </div>
       </header>
 
@@ -1398,8 +1398,6 @@ export const homeHtml = `
 
       <div class="letter-signature-block">
         <p class="letter-signoff">With regards,</p>
-        <div class="letter-sig-script" aria-hidden="true">Niveditt Basrani</div>
-        <div class="letter-sig-rule" aria-hidden="true"></div>
         <div class="letter-founder-info">
           <div class="founder-sig-name">Niveditt Basrani</div>
           <div class="founder-sig-role">Founder, Resolve Model United Nations</div>
@@ -1425,41 +1423,34 @@ export const homeHtml = `
   <div class="venue-inner">
     <div class="venue-header text-center reveal">
       <div class="section-label" style="justify-content: center; margin: 0 auto 12px auto;">Official Venue</div>
-      <h2 class="section-title" id="venueSectionTitle" style="text-align: center; margin-bottom: 12px;">MERIDIAN SCHOOL, KOMPALLY</h2>
+      <h2 class="section-title" id="venueSectionTitle" style="text-align: center; margin-bottom: 12px;">NORTHFIELD INTERNATIONAL SCHOOL</h2>
       <p class="section-body" style="max-width: 720px; margin: 0 auto 36px auto;">
-        Hyderabad's premier institutional campus — purpose-built with world-class facilities, state-of-the-art committee chambers, and an expansive plenary hall.
+        Hyderabad's premier institutional campus on Devarayamjal Road, Kompally — purpose-built with world-class facilities, state-of-the-art committee chambers, and an expansive plenary hall.
       </p>
     </div>
 
-    <!-- Pic | Exact Location on Maps Split Grid -->
-    <div class="venue-split-grid">
-      <!-- LEFT: PIC SHOWCASE (FULL FIT, NO PILLS, NO BOXES) -->
-      <div class="venue-pic-card reveal">
-        <div class="venue-pic-frame">
-          <img src="/images/venue-meridian.jpg" alt="Official Venue for Resolve MUN 2.0" class="venue-showcase-img" />
-        </div>
-      </div>
-
-      <!-- RIGHT: EXACT LOCATION ON MAPS (EXTENDED) -->
+    <!-- Exact Location on Maps (Single Centered Card until Campus Photo is Provided) -->
+    <div class="venue-split-grid" style="grid-template-columns: 1fr; max-width: 760px; margin: 0 auto;">
+      <!-- EXACT LOCATION ON MAPS -->
       <div class="venue-map-card reveal reveal-delay-2">
         <div class="venue-map-header">
           <div class="venue-map-meta">
             
-            <span class="venue-landmark-text" id="venueLandmarkText">Behind Cine Planet &bull; Kompally</span>
+            <span class="venue-landmark-text" id="venueLandmarkText">Devarayamjal Road &bull; Kompally</span>
           </div>
-          <span class="venue-city-code">HYD · 500014</span>
+          <span class="venue-city-code">HYD · 500078</span>
         </div>
 
         <!-- Extended Interactive Dark Google Maps Embed -->
         <div class="venue-map-frame">
           <iframe
             id="venueMapIframe"
-            src="https://maps.google.com/maps?q=Hyderabad+Telangana&t=&z=12&ie=UTF8&iwloc=&output=embed"
+            src="https://maps.google.com/maps?q=Northfield+International+School+Kompally+Hyderabad+500078&t=&z=15&ie=UTF8&iwloc=&output=embed"
             class="venue-map-iframe"
             allowfullscreen=""
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
-            title="Resolve MUN Official Venue Google Map Location"
+            title="Northfield International School Google Map Location"
           ></iframe>
         </div>
 
@@ -1473,8 +1464,8 @@ export const homeHtml = `
               </svg>
             </div>
             <div class="venue-address-text">
-              <strong id="venueAddressText">TBA (To Be Announced), Hyderabad</strong>
-              <span class="venue-landmark-sub">Venue details and official location guide will be announced shortly.</span>
+              <strong id="venueAddressText">BMR Towers, H.No. 8-95/2, Devarayamjal Road, Kompally, Hyderabad, Telangana 500078</strong>
+              <span class="venue-landmark-sub">Northfield International School · Devarayamjal, near Kompally / Shamirpet.</span>
             </div>
           </div>
 
@@ -1482,7 +1473,7 @@ export const homeHtml = `
           <div class="venue-actions-row">
             <a
               id="venueMapLink"
-              href="https://www.google.com/maps/search/?api=1&query=Hyderabad+Telangana"
+              href="https://www.google.com/maps/search/?api=1&query=Northfield+International+School+Devarayamjal+Road+Kompally+Hyderabad+500078"
               target="_blank"
               rel="noopener noreferrer"
               class="venue-nav-btn venue-nav-btn--primary"
@@ -1497,9 +1488,6 @@ export const homeHtml = `
               type="button"
               class="venue-nav-btn venue-nav-btn--secondary"
               onclick="window.copyVenueAddress && window.copyVenueAddress()"
-            >
-                }
-              })()"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>

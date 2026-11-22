@@ -899,6 +899,48 @@ body.modal-locked {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
+  margin-top: 28px !important;
+  padding: 0 !important;
+  gap: 4px !important;
+}
+
+#letter .letter-signoff,
+.letter-signoff {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.85rem !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  margin: 0 0 6px 0 !important;
+  letter-spacing: 0 !important;
+}
+
+#letter .letter-sig-script,
+#letter .letter-sig-rule {
+  display: none !important;
+}
+
+#letter .founder-sig-name,
+.founder-sig-name {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  color: #ffffff !important;
+  line-height: 1.35 !important;
+}
+
+#letter .founder-sig-role,
+.founder-sig-role {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  color: rgba(255, 255, 255, 0.48) !important;
+  line-height: 1.4 !important;
+  margin-top: 2px !important;
 }
 
 /* --- COMPREHENSIVE MOBILE SLEEK REFINEMENT (320px - 768px) --- */

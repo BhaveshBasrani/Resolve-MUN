@@ -93,13 +93,14 @@ const COMMITTEES = [
 export default function CommitteesSection() {
   const [activeFolder, setActiveFolder] = useState(null);
   const [folderWidth, setFolderWidth] = useState(310);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const check = () => {
         const w = window.innerWidth;
+        setIsMobile(w <= 768);
         if (w < 640) {
-          // 2-column sleek grid on mobile: fits 2 folders side-by-side with 12px gap and 28px horizontal padding
           const colW = Math.floor((w - 40) / 2);
           setFolderWidth(Math.max(142, Math.min(176, colW)));
         } else {
@@ -120,6 +121,90 @@ export default function CommitteesSection() {
       );
     }
   };
+
+  if (isMobile) {
+    return (
+      <section id="committees" className="relative py-10 px-5 bg-black text-white scroll-mt-16">
+        <div className="max-w-xl mx-auto">
+          <div className="mb-6 text-left">
+            <div className="section-label" style={{ justifyContent: "flex-start", margin: "0 0 8px 0" }}>
+              Official Committees
+            </div>
+            <h2 className="font-['Bebas_Neue'] text-3xl tracking-wider text-white uppercase leading-none mb-2">
+              Where the Debate Happens
+            </h2>
+            <p className="text-sm text-[#a3a3a3] leading-relaxed">
+              Six committees. Tap any committee to inspect its dossier files.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {COMMITTEES.map((comm) => {
+              const isOpen = activeFolder === comm.id;
+              return (
+                <div
+                  key={comm.id}
+                  className={`rounded-lg border bg-black ${isOpen ? "border-white" : "border-[#262626]"}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActiveFolder(isOpen ? null : comm.id)}
+                    aria-expanded={isOpen}
+                    className="w-full min-h-[56px] px-4 py-3.5 flex items-center justify-between gap-3 text-left bg-black text-white cursor-pointer"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-['Oswald'] text-lg font-bold tracking-wide uppercase text-white leading-tight">
+                        {comm.label}
+                      </div>
+                      <div className="text-xs text-[#a3a3a3] mt-0.5">
+                        {comm.meta}
+                      </div>
+                    </div>
+                    <span className="shrink-0 w-7 h-7 rounded border border-[#404040] flex items-center justify-center text-sm font-mono text-white">
+                      {isOpen ? "−" : "+"}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-3 border-t border-[#262626] space-y-2.5 bg-black">
+                      <div className="space-y-2">
+                        {comm.files.map((file, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleFileSelect(file, comm.label)}
+                            className="w-full p-3 rounded border border-[#262626] bg-black text-left flex flex-col gap-0.5 cursor-pointer"
+                          >
+                            <span className="text-sm font-semibold text-white leading-snug">
+                              {file.name}
+                            </span>
+                            <span className="text-xs text-[#a3a3a3]">
+                              {file.meta}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof window !== "undefined" && window.selectPathway) {
+                            window.selectPathway("delegate");
+                          }
+                        }}
+                        className="w-full min-h-[44px] rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider cursor-pointer"
+                      >
+                        Register as Delegate
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="committees" className="reveal relative py-10 sm:py-20 px-3.5 sm:px-6 lg:px-8 bg-black overflow-hidden scroll-mt-20">

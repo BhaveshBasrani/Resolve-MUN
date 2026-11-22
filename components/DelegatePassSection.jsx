@@ -177,6 +177,7 @@ export default function DelegatePassSection() {
   const [ticketWidth, setTicketWidth] = useState(328);
   const [delegateName, setDelegateName] = useState("YOUR NAME");
   const [siteSettings, setSiteSettings] = useState(DEFAULT_SITE_SETTINGS);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Sync live ticket availability & dynamic pricing from Supabase / Admin Settings
   useEffect(() => {
@@ -191,7 +192,7 @@ export default function DelegatePassSection() {
         // Keep defaults
       }
     };
-    loadSettings(false);
+    loadSettings(true);
 
     const onSettingsUpdated = (e) => {
       if (e?.detail) {
@@ -276,6 +277,7 @@ export default function DelegatePassSection() {
   useEffect(() => {
     const updateSize = () => {
       const w = window.innerWidth;
+      setIsMobile(w <= 768);
       if (w < 640) {
         setTicketWidth(Math.min(295, Math.max(250, w - 36)));
       } else {
@@ -286,6 +288,94 @@ export default function DelegatePassSection() {
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, []);
+
+  if (isMobile) {
+    return (
+      <section
+        id="delegate-pass"
+        className="relative bg-black text-white py-10 px-5 border-t border-[#262626] scroll-mt-16"
+        style={{ backgroundColor: "#000000" }}
+      >
+        <div className="max-w-xl mx-auto">
+          <div className="text-left mb-6">
+            <div className="section-label" style={{ justifyContent: "flex-start", margin: "0 0 8px 0" }}>
+              Resolve MUN 2.0
+            </div>
+            <h2
+              className="text-3xl font-extrabold uppercase tracking-tight text-white mb-1.5"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              Official Passes
+            </h2>
+            <p className="text-sm text-[#a3a3a3] leading-relaxed">
+              Select your pass below to register.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {PASSES.map((pass) => {
+              const open = isPassOpen(pass.id);
+              const priceTag = getPassPriceTag(pass.id);
+              const handlePassClick = () => {
+                if (!open) {
+                  if (typeof window !== "undefined" && window.showCustomAlert) {
+                    window.showCustomAlert(
+                      `${pass.label} registrations are currently unavailable / closed.`,
+                      "info"
+                    );
+                  }
+                  return;
+                }
+                pass.action();
+              };
+
+              return (
+                <button
+                  key={pass.id}
+                  type="button"
+                  aria-disabled={!open}
+                  onClick={handlePassClick}
+                  className={`w-full text-left p-4 rounded-lg border bg-black flex flex-col gap-3 ${
+                    open
+                      ? "border-white cursor-pointer"
+                      : "border-[#262626] opacity-50 cursor-not-allowed"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-['Oswald'] text-lg font-bold uppercase tracking-wide text-white">
+                      {pass.label}
+                    </span>
+                    <span
+                      className={`px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                        open
+                          ? "bg-white text-black"
+                          : "bg-black text-[#a3a3a3] border border-[#404040]"
+                      }`}
+                    >
+                      {open ? "OPEN" : "CLOSED"}
+                    </span>
+                  </div>
+
+                  <div className="text-xs font-mono text-[#d4d4d4] uppercase tracking-wide">
+                    {open ? priceTag || "DIPLOMACY · REFORM · RECONCILE" : "REGISTRATIONS CLOSED"}
+                  </div>
+
+                  <div className="pt-2.5 border-t border-[#262626] flex items-center justify-between gap-2 text-[11px] font-mono text-[#a3a3a3]">
+                    <span className="truncate">
+                      {(siteSettings.conferenceDates || "26, 27 DEC 2026").toUpperCase()}
+                    </span>
+                    <span className="shrink-0 font-bold text-white">
+                      {open ? "CLAIM PASS →" : "UNAVAILABLE"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -377,8 +467,8 @@ export default function DelegatePassSection() {
                     name={delegateName}
                     presenter="RESOLVE MODEL UNITED NATIONS 2.0"
                     event={open ? priceTag || "DIPLOMACY · REFORM · RECONCILE" : "REGISTRATIONS CLOSED"}
-                    venue={siteSettings.venueShort || siteSettings.conferenceVenue || "MERIDIAN SCHOOL, KOMPALLY"}
-                    dates={(siteSettings.conferenceDates || "25, 26, 27 DECEMBER 2026").toUpperCase()}
+                    venue={siteSettings.venueShort || siteSettings.conferenceVenue || "NORTHFIELD INTERNATIONAL SCHOOL"}
+                    dates={(siteSettings.conferenceDates || "26, 27 DECEMBER 2026").toUpperCase()}
                     stubText={open ? pass.stub : "UNAVAILABLE"}
                     watermark="2026"
                     width={ticketWidth}
