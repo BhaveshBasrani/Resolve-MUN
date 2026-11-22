@@ -883,13 +883,27 @@ export default function SuperAdminPage() {
     } catch (_) { }
   };
 
-  // Delete Delegate (Optimistic & Zero Lag)
-  const handleDeleteDelegate = async (regId, fullName) => {
-    if (!window.confirm(`Are you sure you want to permanently delete ${fullName || regId}?`)) return;
+  // Delete Delegate (Complete Reset + Drive & Storage Wipe)
+  const handleDeleteDelegate = async (regId, fullName, email = "", screenshotUrl = "") => {
+    if (!window.confirm(`Permanently delete ${fullName || regId}? This will reset their registration state completely and wipe their uploaded payment proof from Drive/Storage.`)) return;
 
-    // 1. Optimistic filter
-    setRegistrations((prev) => prev.filter((d) => d.regId !== regId && d.id !== regId));
-    notify(`Deleted ${fullName || regId}`);
+    const cleanEmail = (email || "").trim().toLowerCase();
+
+    // 1. Optimistic filter across registrations & leads
+    setRegistrations((prev) =>
+      prev.filter(
+        (d) =>
+          d.regId !== regId &&
+          d.id !== regId &&
+          (cleanEmail ? (d.email || "").trim().toLowerCase() !== cleanEmail : true)
+      )
+    );
+    if (cleanEmail) {
+      setAbandonedLeads((prev) =>
+        prev.filter((l) => (l.email || "").trim().toLowerCase() !== cleanEmail)
+      );
+    }
+    notify(`Deleted ${fullName || regId} & wiped uploaded files`);
 
     // 2. Background sync
     try {
@@ -900,6 +914,9 @@ export default function SuperAdminPage() {
           action: "ADMIN_DELETE_RECORD",
           adminKey: "abhilashisgoat",
           recordId: regId,
+          regId,
+          email: cleanEmail,
+          fileUrl: screenshotUrl,
           sheetName: "Registrations",
         }),
       });
@@ -1551,10 +1568,10 @@ export default function SuperAdminPage() {
 
       <SidebarInset className="min-w-0">
         {/* Sticky Minimal Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-black/90 px-4 sm:px-6 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center gap-2.5 border-b border-white/10 bg-black/95 px-3 sm:px-6 backdrop-blur-md">
           <SidebarTrigger aria-label="Toggle navigation" />
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="truncate text-sm sm:text-base font-semibold text-white">
+            <h1 className="truncate text-xs sm:text-base font-semibold text-white">
               Resolve Secretariat Console
             </h1>
             <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-white/10">
@@ -1562,7 +1579,7 @@ export default function SuperAdminPage() {
             </span>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
             {lastSyncTime && (
               <span className="hidden lg:inline-block text-[11px] font-mono text-zinc-400">
                 Synced at {lastSyncTime}
@@ -1571,14 +1588,14 @@ export default function SuperAdminPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchAdminData}
+              onClick={() => fetchAdminData(true)}
               disabled={isLoading}
-              className="h-8 gap-1.5 text-xs text-zinc-300 hover:text-white border-white/15 bg-zinc-950 cursor-pointer"
+              className="h-8 px-2.5 sm:px-3 gap-1.5 text-xs text-zinc-300 hover:text-white border-white/15 bg-zinc-950 cursor-pointer"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
               <span className="hidden sm:inline">Sync Data</span>
             </Button>
-            <Avatar className="ml-1 size-8">
+            <Avatar className="ml-0.5 size-7 sm:size-8">
               <AvatarImage
                 src={app1User.avatar}
                 alt="Admin"
@@ -1588,6 +1605,38 @@ export default function SuperAdminPage() {
             </Avatar>
           </div>
         </header>
+
+        {/* Mobile Quick-Switch Tab Strip (Thumb-friendly navigation on phones <= 768px) */}
+        <div className="md:hidden sticky top-14 z-20 flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b border-white/10 bg-black/95 backdrop-blur-sm">
+          {[
+            { id: "overview", label: "Overview" },
+            { id: "delegates", label: `Delegates (${navCounts.delegates || 0})` },
+            { id: "allocations", label: "Allocations" },
+            { id: "scanner", label: "Scanner" },
+            { id: "secretariat", label: `Secretariat (${navCounts.secretariatRoster || 0})` },
+            { id: "leads", label: `Leads (${navCounts.leads || 0})` },
+            { id: "applications", label: `Team Apps (${navCounts.applications || 0})` },
+            { id: "delegations", label: `Delegations (${navCounts.delegations || 0})` },
+            { id: "referrals", label: "Referrals" },
+            { id: "users", label: `Firebase (${navCounts.users || 0})` },
+            { id: "crm", label: "CRM" },
+            { id: "settings", label: "Settings" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                "shrink-0 h-8 px-3 rounded-md text-[11px] font-medium whitespace-nowrap cursor-pointer transition-colors",
+                activeTab === t.id
+                  ? "bg-white text-black font-semibold"
+                  : "bg-zinc-950 text-zinc-400 border border-white/10"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
         {/* Global Banner Notification */}
         {bannerNotice && (
@@ -2332,7 +2381,7 @@ export default function SuperAdminPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDeleteDelegate(d.regId, d.fullName)}
+                                  onClick={() => handleDeleteDelegate(d.regId, d.fullName, d.email, d.paymentScreenshotURL)}
                                   className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-950/30 cursor-pointer"
                                   title="Delete Delegate"
                                 >
@@ -4359,10 +4408,10 @@ export default function SuperAdminPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <CardTitle className="text-base font-semibold">
-                        Site User Accounts &amp; Access Roles ({validUsers.length})
+                        Firebase Auth Accounts ({validUsers.length})
                       </CardTitle>
                       <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                        Verified accounts authenticated via Google Auth with real-time role elevation &amp; pass linkage
+                        Strictly accounts authenticated in Firebase Auth (Google &amp; Email Sign-In)
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">

@@ -91,17 +91,19 @@ export async function GET(request) {
     let sbEb = [];
     let sbSec = [];
     let sbProfiles = [];
+    let sbDraftLeads = [];
 
     if (supabase) {
       try {
-        const [appDelRes, realDelegRes, delegRes, ocRes, ebRes, secRes, profRes] = await Promise.all([
+        const [appDelRes, realDelegRes, delegRes, ocRes, ebRes, secRes, profRes, draftLeadsRes] = await Promise.all([
           supabase.from('delegate_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('delegations').select('*').order('created_at', { ascending: false }),
           supabase.from('delegation_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('oc_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('eb_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('secretariat_applications').select('*').order('created_at', { ascending: false }),
-          supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+          supabase.from('profiles').select('*').order('updated_at', { ascending: false }),
+          supabase.from('draft_leads').select('*').order('timestamp', { ascending: false }),
         ]);
 
         const rawAllDelegates = appDelRes.data || [];
@@ -279,39 +281,29 @@ export async function GET(request) {
           }));
         }
         if (profRes.data) {
-          sbProfiles = profRes.data.map(p => ({
-            id: p.id,
-            uid: p.id,
-            name: p.full_name || 'User',
-            fullName: p.full_name || 'User',
-            email: p.email || '',
-            role: (p.role || 'DELEGATE').toUpperCase(),
-            avatarUrl: p.avatar_url || '',
-            avatar: p.avatar_url || '',
-            phone: p.phone || '',
-            lastActive: p.updated_at || p.created_at || new Date().toISOString(),
-          }));
+          // Only include real Firebase Auth synced accounts
+          sbProfiles = profRes.data
+            .filter(p => p && p.email && String(p.email).includes('@'))
+            .map(p => ({
+              id: p.firebase_uid || p.id,
+              uid: p.firebase_uid || p.id,
+              firebaseUid: p.firebase_uid || '',
+              name: p.full_name || p.email.split('@')[0] || 'User',
+              fullName: p.full_name || p.email.split('@')[0] || 'User',
+              email: p.email.trim().toLowerCase(),
+              role: (p.role || (ADMIN_EMAILS.includes(p.email.trim().toLowerCase()) ? 'ADMIN' : 'DELEGATE')).toUpperCase(),
+              avatarUrl: p.avatar_url || '',
+              avatar: p.avatar_url || '',
+              phone: p.phone || '',
+              lastActive: p.updated_at || p.created_at || new Date().toISOString(),
+            }));
+        }
+        if (draftLeadsRes?.data) {
+          sbDraftLeads = draftLeadsRes.data;
         }
       } catch (sbErr) {
         console.warn("Supabase fetch notice:", sbErr.message);
       }
-    }
-
-    // Always ensure Bhavesh Basrani is present as ADMIN
-    const bhaveshEmail = "bhaveshkumarbasrani@gmail.com";
-    if (!sbProfiles.some(p => (p.email || '').toLowerCase() === bhaveshEmail)) {
-      sbProfiles.unshift({
-        id: "usr_bhavesh_master",
-        uid: "usr_bhavesh_master",
-        name: "Bhavesh Basrani",
-        fullName: "Bhavesh Basrani",
-        email: bhaveshEmail,
-        role: "ADMIN",
-        avatarUrl: "",
-        avatar: "",
-        phone: "+91 92121 07797",
-        lastActive: new Date().toISOString(),
-      });
     }
 
     // 2. Fetch from Google Apps Script
@@ -392,16 +384,53 @@ export async function GET(request) {
       timestamp: d.Timestamp || d.timestamp || new Date().toISOString(),
     }));
 
-    // Filter and normalize Abandoned Draft Leads
+    // Filter and normalize Abandoned Draft Leads (Supabase `draft_leads` primary + in-memory + Google Sheets)
     const rawLeads = asData.abandonedLeads || asData.Abandoned_Leads || [];
     const normalizedLeadsMap = new Map();
 
-    // 1. Populate from live in-memory telemetry draft beacons
-    inMemoryDraftLeads.forEach((lead, key) => {
-      normalizedLeadsMap.set(key.toLowerCase(), lead);
+    // 1. Populate from live Supabase `draft_leads` table
+    (sbDraftLeads || []).forEach((l, i) => {
+      const email = (l.email || "").trim().toLowerCase();
+      const phone = (l.phone ? String(l.phone) : "").trim();
+      const name = (l.full_name || "").trim();
+      if (!email && !phone && !name) return;
+
+      const parsedDraft = typeof l.draft_data === "object" && l.draft_data ? l.draft_data : {};
+      const key = email || phone || String(l.id || `sb_lead_${i}`);
+      if (normalizedLeadsMap.has(key)) return;
+
+      normalizedLeadsMap.set(key, {
+        id: l.id,
+        leadId: l.id,
+        fullName: name || "Prospective Candidate",
+        name: name || "Prospective Candidate",
+        email,
+        phone,
+        formType: l.form_type || "Delegate Registration",
+        lastStep: l.last_step || "Step 1: Personal Details",
+        status: "Draft In Progress",
+        institution: l.institution || parsedDraft.regInstitute || parsedDraft.delInstName || "Individual",
+        preferences:
+          l.preferences ||
+          [parsedDraft.pref1_committee, parsedDraft.pref2_committee, parsedDraft.pref3_committee]
+            .filter(Boolean)
+            .join(" · ") ||
+          "Awaiting Selection",
+        grade: l.grade || parsedDraft.regGrade || "",
+        timestamp: l.timestamp || l.created_at || new Date().toISOString(),
+        draftData: parsedDraft,
+      });
     });
 
-    // 2. Merge from Google Sheets
+    // 2. Populate from live in-memory telemetry draft beacons
+    inMemoryDraftLeads.forEach((lead, key) => {
+      const k = key.toLowerCase();
+      if (!normalizedLeadsMap.has(k)) {
+        normalizedLeadsMap.set(k, lead);
+      }
+    });
+
+    // 3. Merge from Google Sheets
     rawLeads.forEach((l, i) => {
       const email = (l.Email || l.email || "").trim().toLowerCase();
       const phone = (l.Phone && l.Phone !== "#ERROR!" ? String(l.Phone) : "").trim();
@@ -595,48 +624,29 @@ export async function GET(request) {
       .filter(a => !memoryDeletedIds.has(a.id) && !memoryDeletedIds.has(a.appId) && !memoryDeletedIds.has((a.email || '').toLowerCase().trim()));
     const mergedSec = dedupeByEmailOrId([sbSec, asSecApplicants], 'email')
       .filter(a => !memoryDeletedIds.has(a.id) && !memoryDeletedIds.has(a.appId) && !memoryDeletedIds.has((a.email || '').toLowerCase().trim()));
-    const mergedUsers = dedupeByEmailOrId([sbProfiles, siteUsers], 'email')
-      .filter(u => u && u.email && typeof u.email === 'string' && u.email.trim().includes('@'));
 
-    // Also synthesize site user profiles from confirmed delegate registrations so all registered accounts show up
-    mergedRegistrations.forEach((r, idx) => {
-      const email = (r.email || '').toLowerCase().trim();
-      if (!email || !email.includes('@')) return;
-      const exists = mergedUsers.some(u => (u.email || '').toLowerCase() === email);
-      if (!exists) {
-        mergedUsers.push({
-          id: `usr_del_${r.regId || idx}`,
-          uid: `usr_del_${r.regId || idx}`,
-          name: r.fullName || r.name || 'Delegate',
-          fullName: r.fullName || r.name || 'Delegate',
-          email: email,
-          phone: r.phone || '',
-          role: ADMIN_EMAILS.includes(email) ? 'ADMIN' : 'DELEGATE',
-          avatarUrl: '',
-          lastActive: r.timestamp || new Date().toISOString(),
-          delegateId: r.regId,
-        });
-      }
+    // Exclude any draft leads whose email/phone has already completed registration
+    const completedEmails = new Set(
+      [
+        ...mergedRegistrations.map((r) => r.email),
+        ...mergedDelegations.map((d) => d.adviserEmail),
+        ...mergedOc.map((o) => o.email),
+        ...mergedEb.map((e) => e.email),
+        ...mergedSec.map((s) => s.email),
+      ]
+        .map((em) => String(em || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const activeAbandonedLeads = normalizedLeads.filter((l) => {
+      const em = String(l.email || '').trim().toLowerCase();
+      if (em && completedEmails.has(em)) return false;
+      if (em && memoryDeletedIds.has(em)) return false;
+      return true;
     });
 
-    // Seed Bhavesh Basrani as default elevated Administrator if not present
-    const hasBhavesh = mergedUsers.some(
-      u => (u.email || '').toLowerCase() === 'bhaveshkumarbasrani@gmail.com'
-    );
-    if (!hasBhavesh) {
-      mergedUsers.unshift({
-        id: '00000000-0000-0000-0000-000000000001',
-        uid: '00000000-0000-0000-0000-000000000001',
-        name: 'Bhavesh Basrani',
-        fullName: 'Bhavesh Basrani',
-        email: 'bhaveshkumarbasrani@gmail.com',
-        role: 'ADMIN',
-        avatarUrl: 'https://lh3.googleusercontent.com/a/default-user',
-        avatar: 'https://lh3.googleusercontent.com/a/default-user',
-        phone: '9212107797',
-        lastActive: new Date().toISOString(),
-      });
-    }
+    // Site Accounts: strictly Firebase Auth accounts synced to Supabase `profiles`
+    const mergedUsers = dedupeByEmailOrId([sbProfiles], 'email')
+      .filter(u => u && u.email && typeof u.email === 'string' && u.email.trim().includes('@') && !memoryDeletedIds.has(u.email.toLowerCase()));
 
     let sbRoster = [];
     if (supabase) {
@@ -669,7 +679,7 @@ export async function GET(request) {
       siteSettings: liveSettings,
       registrations: mergedRegistrations,
       delegations: mergedDelegations,
-      abandonedLeads: normalizedLeads,
+      abandonedLeads: activeAbandonedLeads,
       ebApplicants: mergedEb,
       ocApplicants: mergedOc,
       secretariatApplicants: mergedSec,
@@ -731,40 +741,79 @@ export async function POST(request) {
         inMemoryDraftLeads.set(key, leadObj);
       }
 
-      adminDataCache = null;
+      // Persist live draft lead to Supabase `draft_leads` table
+      if (supabase && (targetEmail || targetPhone || targetName)) {
+        try {
+          let existingId = null;
+          if (targetEmail) {
+            const { data: ex } = await supabase
+              .from('draft_leads')
+              .select('id')
+              .ilike('email', targetEmail)
+              .limit(1)
+              .maybeSingle();
+            existingId = ex?.id || null;
+          }
+          if (!existingId && targetPhone) {
+            const { data: ex } = await supabase
+              .from('draft_leads')
+              .select('id')
+              .eq('phone', targetPhone)
+              .limit(1)
+              .maybeSingle();
+            existingId = ex?.id || null;
+          }
 
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'SAVE_DRAFT_LEAD',
-          ...body,
-        }),
-      }).catch(() => { });
+          const dbRow = {
+            full_name: targetName || 'Prospective Candidate',
+            email: targetEmail || null,
+            phone: targetPhone || null,
+            institution: institution || 'Individual',
+            grade: grade || null,
+            form_type: formType,
+            last_step: lastStep,
+            preferences: preferences || null,
+            draft_data: draftData || {},
+            timestamp: new Date().toISOString(),
+          };
+
+          if (existingId) {
+            await supabase.from('draft_leads').update(dbRow).eq('id', existingId);
+            leadObj.id = existingId;
+            leadObj.leadId = existingId;
+          } else {
+            const { data: ins } = await supabase.from('draft_leads').insert([dbRow]).select('id').maybeSingle();
+            if (ins?.id) {
+              leadObj.id = ins.id;
+              leadObj.leadId = ins.id;
+            }
+          }
+        } catch (ldErr) {
+          console.warn('[Supabase] draft_leads save notice:', ldErr.message);
+        }
+      }
+
+      adminDataCache = null;
 
       return NextResponse.json({ status: 'success', lead: leadObj });
     }
 
-    // 0b. AUTH SYNC: SYNC_USER (Firebase Auth -> Supabase profiles)
+    // 0b. AUTH SYNC: SYNC_USER (Strictly Real Firebase Auth -> Supabase profiles)
     if (action === 'SYNC_USER') {
       const user = body.user || body;
-      const uid = user.uid || user.id || `usr_${Date.now()}`;
+      const uid = String(user.uid || user.id || '').trim();
       const email = (user.email || '').toLowerCase().trim();
       const name = user.displayName || user.fullName || user.name || (email ? email.split('@')[0] : 'User');
       const avatarUrl = user.photoURL || user.avatarUrl || user.avatar || '';
 
-      if (email && supabase) {
+      // Only sync real Firebase Auth accounts (must have a Firebase uid and valid email)
+      if (email && uid && !uid.startsWith('usr_del_') && supabase) {
         try {
-          const isAdmin = [
-            'bhaveshkumarbasrani@gmail.com',
-            'adityabejugam@gmail.com',
-            'support@resolvemun.in',
-            'admin@resolvemun.in'
-          ].includes(email);
+          const isAdmin = ADMIN_EMAILS.includes(email);
 
           await supabase.from('profiles').upsert(
             {
-              id: uid.length === 36 ? uid : undefined,
+              firebase_uid: uid,
               email: email,
               full_name: name,
               avatar_url: avatarUrl,
@@ -778,20 +827,7 @@ export async function POST(request) {
         }
       }
 
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'AUTH_SYNC',
-          adminKey: ADMIN_KEY,
-          uid,
-          email,
-          name,
-          avatarUrl,
-        }),
-      }).catch(() => { });
-
-      return NextResponse.json({ status: 'success', message: 'User synced successfully' });
+      return NextResponse.json({ status: 'success', message: 'Firebase account synced successfully' });
     }
 
     // 0c. PUBLIC REGISTRATION SUBMISSION: SUBMIT_DELEGATE
@@ -939,14 +975,22 @@ export async function POST(request) {
               .insert([appRecord]);
           }
 
-          // Ensure site user profile is present
-          await supabase.from('profiles').upsert({
-            full_name: delegateName,
-            email: cleanEmail,
-            phone: phone,
-            role: 'DELEGATE',
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'email' });
+          // Automatically remove completed registration from `draft_leads` so Abandoned Leads stays 100% accurate
+          await supabase.from('draft_leads').delete().ilike('email', cleanEmail);
+          if (phone) await supabase.from('draft_leads').delete().eq('phone', phone);
+
+          // Only update `profiles` if a real Firebase Auth UID was provided
+          const fbUid = String(body.uid || body.user_id || '').trim();
+          if (fbUid && !fbUid.startsWith('usr_del_')) {
+            await supabase.from('profiles').upsert({
+              firebase_uid: fbUid,
+              full_name: delegateName,
+              email: cleanEmail,
+              phone: phone,
+              role: ADMIN_EMAILS.includes(cleanEmail) ? 'ADMIN' : 'DELEGATE',
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'email' });
+          }
         } catch (sbErr) {
           console.warn("[Supabase] Delegate application save notice:", sbErr.message);
         }
@@ -1949,34 +1993,69 @@ export async function POST(request) {
     // 6. GOD-MODE: ADMIN_DELETE_RECORD / ADMIN_DELETE_DELEGATE
     if (action === 'ADMIN_DELETE_RECORD' || action === 'ADMIN_DELETE_DELEGATE') {
       const targetId = (body.regId || body.recordId || body.id || '').trim();
-      const targetEmail = (body.email || '').trim().toLowerCase();
+      let targetEmail = (body.email || '').trim().toLowerCase();
+      let targetFileUrl = (body.fileUrl || body.paymentScreenshotURL || '').trim();
 
-      if (targetId) memoryDeletedIds.add(targetId);
-      if (targetEmail) memoryDeletedIds.add(targetEmail);
-      memoryAddedDelegates.delete(targetId);
-      memoryUpdatedDelegates.delete(targetId);
+      if (targetId) {
+        memoryDeletedIds.add(targetId);
+        memoryAddedDelegates.delete(targetId);
+        memoryUpdatedDelegates.delete(targetId);
+        inMemoryDraftLeads.delete(targetId);
+      }
 
       if (supabase) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-          let qDel = supabase.from('delegates').delete();
-          let qLeg = supabase.from('delegate_applications').delete();
-          if (isUuid) {
-            qDel = qDel.eq('id', targetId);
-            qLeg = qLeg.eq('id', targetId);
-          } else {
-            if (targetId && targetEmail) {
-              qDel = qDel.or(`delegate_id.eq.${targetId},email.ilike.${targetEmail}`);
-              qLeg = qLeg.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
-            } else if (targetId) {
-              qDel = qDel.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
-              qLeg = qLeg.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
-            } else if (targetEmail) {
-              qDel = qDel.ilike('email', targetEmail);
-              qLeg = qLeg.ilike('email', targetEmail);
+
+          // 1. Look up existing record first so we capture email, reg_id, and file URLs before deleting
+          let findQ = supabase.from('delegate_applications').select('id, reg_id, email, phone, payment_screenshot_url');
+          if (isUuid) findQ = findQ.eq('id', targetId);
+          else if (targetId && targetEmail) findQ = findQ.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+          else if (targetId) findQ = findQ.eq('reg_id', targetId);
+          else if (targetEmail) findQ = findQ.ilike('email', targetEmail);
+
+          const { data: foundRow } = await findQ.limit(1).maybeSingle();
+          if (foundRow) {
+            if (foundRow.email && !targetEmail) targetEmail = foundRow.email.trim().toLowerCase();
+            if (foundRow.payment_screenshot_url && !targetFileUrl) targetFileUrl = foundRow.payment_screenshot_url;
+            if (foundRow.reg_id) {
+              memoryDeletedIds.add(foundRow.reg_id);
+              memoryAddedDelegates.delete(foundRow.reg_id);
+              memoryUpdatedDelegates.delete(foundRow.reg_id);
             }
+            if (foundRow.phone) inMemoryDraftLeads.delete(String(foundRow.phone).trim());
           }
-          await Promise.allSettled([qDel, qLeg]);
+
+          if (targetEmail) {
+            memoryDeletedIds.add(targetEmail);
+            memoryUpdatedDelegates.delete(targetEmail);
+            inMemoryDraftLeads.delete(targetEmail);
+          }
+
+          // 2. Wipe uploaded payment screenshot from Supabase Storage bucket (`resolve-uploads`)
+          if (targetFileUrl && targetFileUrl.includes('/resolve-uploads/')) {
+            try {
+              const storagePath = decodeURIComponent(targetFileUrl.split('/resolve-uploads/')[1].split('?')[0]);
+              if (storagePath) {
+                await supabase.storage.from('resolve-uploads').remove([storagePath]);
+              }
+            } catch (_) {}
+          }
+
+          // 3. Delete delegate rows completely from Supabase so it's as if they never filled the form
+          const delOps = [];
+          if (foundRow?.id) {
+            delOps.push(supabase.from('delegate_applications').delete().eq('id', foundRow.id));
+          } else if (isUuid) {
+            delOps.push(supabase.from('delegate_applications').delete().eq('id', targetId));
+          } else if (targetId) {
+            delOps.push(supabase.from('delegate_applications').delete().eq('reg_id', targetId));
+          }
+          if (targetEmail) {
+            delOps.push(supabase.from('delegate_applications').delete().ilike('email', targetEmail));
+            delOps.push(supabase.from('draft_leads').delete().ilike('email', targetEmail));
+          }
+          await Promise.allSettled(delOps);
         } catch (e) {
           console.warn("[Supabase] Delete delegate notice:", e.message);
         }
@@ -1984,6 +2063,7 @@ export async function POST(request) {
 
       adminDataCache = null;
 
+      // 4. Wipe from Google Sheets (Registrations + Abandoned_Leads) AND trash file in Google Drive
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
@@ -1992,10 +2072,16 @@ export async function POST(request) {
           adminKey: ADMIN_KEY,
           sheetName: body.sheetName || 'Registrations',
           recordId: targetId || targetEmail,
+          email: targetEmail,
+          fileUrl: targetFileUrl,
+          wipeDrive: true,
         }),
       }).catch(() => { });
 
-      return NextResponse.json({ status: 'success', message: 'Record deleted successfully' });
+      return NextResponse.json({
+        status: 'success',
+        message: 'Delegate registration, form drafts, and Drive/Storage files completely wiped.',
+      });
     }
 
     // 6a2. USER & DATA PURGE: ADMIN_DELETE_USER / USER_DELETE_SELF
@@ -2067,6 +2153,18 @@ export async function POST(request) {
       if (targetPhone) inMemoryDraftLeads.delete(targetPhone);
       if (targetId) inMemoryDraftLeads.delete(targetId);
 
+      if (supabase) {
+        try {
+          const ops = [];
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+          if (isUuid) ops.push(supabase.from('draft_leads').delete().eq('id', targetId));
+          if (targetEmail) ops.push(supabase.from('draft_leads').delete().ilike('email', targetEmail));
+          if (targetPhone) ops.push(supabase.from('draft_leads').delete().eq('phone', targetPhone));
+          if (ops.length > 0) await Promise.allSettled(ops);
+        } catch (_) {}
+      }
+      adminDataCache = null;
+
       // Replicate deletion to Google Apps Script Abandoned_Leads
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
@@ -2099,10 +2197,10 @@ export async function POST(request) {
       if (supabase) {
         try {
           await Promise.all([
-            supabase.from('delegates').delete().ilike('email', '%test%'),
-            supabase.from('delegates').delete().ilike('email', '%example.com%'),
             supabase.from('delegate_applications').delete().ilike('email', '%test%'),
             supabase.from('delegate_applications').delete().ilike('email', '%example.com%'),
+            supabase.from('draft_leads').delete().ilike('email', '%test%'),
+            supabase.from('draft_leads').delete().ilike('email', '%example.com%'),
           ]);
         } catch (_) { }
       }

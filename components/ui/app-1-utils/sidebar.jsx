@@ -79,7 +79,7 @@ export function SidebarProvider({
           ...style,
         }}
         className={cn(
-          "group/sidebar-wrapper flex min-h-screen w-full bg-black text-white",
+          "group/sidebar-wrapper flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-black text-white",
           className
         )}
         {...props}
@@ -95,7 +95,7 @@ export const SidebarInset = React.forwardRef(({ className, ...props }, ref) => {
     <div
       ref={ref}
       className={cn(
-        "relative flex min-h-screen flex-1 flex-col bg-black text-white overflow-y-auto",
+        "relative flex min-h-screen min-w-0 flex-1 flex-col bg-black text-white overflow-x-hidden overflow-y-auto",
         className
       )}
       {...props}

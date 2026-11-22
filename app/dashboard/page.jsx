@@ -662,31 +662,27 @@ export default function DelegateDashboard() {
             : record.committeePref3 || null),
         });
       } else {
-        const isLocallyRegistered =
-          typeof window !== "undefined" &&
-          localStorage.getItem("resolve_user_registered") === "true";
-        if (isLocallyRegistered) {
-          const storedEmail =
-            localStorage.getItem("resolve_user_email") || email;
-          const storedName =
-            localStorage.getItem("resolve_user_name") ||
-            user?.displayName ||
-            "Delegate";
-          const storedId =
-            localStorage.getItem("resolve_delegate_id") || "RM26-DEL-CONFIRMED";
-          setDelegateRecord({
-            regId: storedId,
-            delegateId: storedId,
-            fullName: storedName,
-            email: storedEmail,
-            status: "Confirmed",
-            paymentStatus: "VERIFIED",
-            institution: "Individual Delegate",
-            roleType: "DELEGATE",
-          });
-        } else {
-          setDelegateRecord(null);
+        // Server confirmed no registration exists (e.g. never registered or deleted by Admin).
+        // Wipe all local registration flags, caches, and saved form drafts so it resets cleanly.
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("resolve_user_registered");
+            localStorage.removeItem("resolve_delegate_id");
+            localStorage.removeItem("resolve_user_email");
+            localStorage.removeItem("resolve_user_name");
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && (k.startsWith("resolve_draft_") || k.startsWith("resolve_form_") || k.startsWith("resolve_delegate_"))) {
+                keysToRemove.push(k);
+              }
+            }
+            keysToRemove.forEach((k) => localStorage.removeItem(k));
+            sessionStorage.clear();
+          } catch (_) {}
         }
+        setDelegateRecord(null);
+        setDrafts([]);
       }
 
       if (settings) {

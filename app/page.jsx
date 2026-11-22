@@ -228,6 +228,8 @@ export default function Home() {
     const unsubscribe = onAuthStateChanged(auth, (rawUser) => {
       syncUser(rawUser || null);
       if (rawUser && rawUser.email) {
+        // Sync real Firebase Auth account to Supabase profiles
+        syncUserToBackend(rawUser);
         // Fast background check: If already registered, set local storage flag
         fetch(`/api/delegate/?email=${encodeURIComponent(rawUser.email)}`)
           .then((res) => res.json())
@@ -235,7 +237,26 @@ export default function Home() {
             if (data && data.found) {
               if (typeof window !== "undefined") {
                 localStorage.setItem("resolve_user_registered", "true");
-                if (data.regId) localStorage.setItem("resolve_delegate_id", data.regId);
+                if (data.regId || data.delegate?.regId) {
+                  localStorage.setItem("resolve_delegate_id", data.regId || data.delegate.regId);
+                }
+              }
+            } else if (typeof window !== "undefined") {
+              // If user was deleted by Admin, wipe local registration flags & saved form drafts completely
+              const wasRegistered = localStorage.getItem("resolve_user_registered") === "true";
+              localStorage.removeItem("resolve_user_registered");
+              localStorage.removeItem("resolve_delegate_id");
+              sessionStorage.clear();
+              if (wasRegistered) {
+                [
+                  "resolveMunRegForm",
+                  "resolveMunDelRegForm",
+                  "resolveMunOcRegForm",
+                  "resolveMunSecRegForm",
+                  "resolveMunEbRegForm",
+                ].forEach((k) => localStorage.removeItem(k));
+                const regFormEl = document.getElementById("delegateRegForm");
+                if (regFormEl && typeof regFormEl.reset === "function") regFormEl.reset();
               }
             }
           })
@@ -936,14 +957,50 @@ export default function Home() {
       // Helper: Send abandoned draft lead on Step transition
       function sendStep1DraftLead(type, step) {
         try {
-          const name = (document.getElementById("regName") || document.getElementById("delHeadName") || document.getElementById("delAdviserName"))?.value || "";
-          const email = (document.getElementById("regEmail") || document.getElementById("delHeadEmail") || document.getElementById("delAdviserEmail"))?.value || "";
-          const phone = (document.getElementById("regPhone") || document.getElementById("delHeadPhone") || document.getElementById("delAdviserPhone"))?.value || "";
-          const institute = (document.getElementById("regInstitute") || document.getElementById("delInstName"))?.value || "";
+          const name = (
+            document.getElementById("regName") ||
+            document.getElementById("delAdviserName") ||
+            document.getElementById("ocName") ||
+            document.getElementById("secName") ||
+            document.getElementById("ebName")
+          )?.value || "";
+          const email = (
+            document.getElementById("regEmail") ||
+            document.getElementById("delAdviserEmail") ||
+            document.getElementById("ocEmail") ||
+            document.getElementById("secEmail") ||
+            document.getElementById("ebEmail")
+          )?.value || "";
+          const phone = (
+            document.getElementById("regPhone") ||
+            document.getElementById("delAdviserPhone") ||
+            document.getElementById("ocPhone") ||
+            document.getElementById("secPhone") ||
+            document.getElementById("ebPhone")
+          )?.value || "";
+          const institute = (
+            document.getElementById("regInstitute") ||
+            document.getElementById("delInstName") ||
+            document.getElementById("ocInst") ||
+            document.getElementById("secSchool") ||
+            document.getElementById("ebInst")
+          )?.value || "";
+          const grade = (
+            document.getElementById("regGrade") ||
+            document.getElementById("ocGrade") ||
+            document.getElementById("secGrade")
+          )?.value || "";
           const p1 = document.getElementById("pref1_committee")?.value || "";
+          const p1c = [document.getElementById("pref1_port1")?.value, document.getElementById("pref1_port2")?.value, document.getElementById("pref1_role")?.value].filter(Boolean).join("/");
           const p2 = document.getElementById("pref2_committee")?.value || "";
+          const p2c = [document.getElementById("pref2_port1")?.value, document.getElementById("pref2_port2")?.value, document.getElementById("pref2_role")?.value].filter(Boolean).join("/");
           const p3 = document.getElementById("pref3_committee")?.value || "";
-          const prefs = [p1, p2, p3].filter(Boolean).join(" · ");
+          const p3c = [document.getElementById("pref3_port1")?.value, document.getElementById("pref3_port2")?.value, document.getElementById("pref3_role")?.value].filter(Boolean).join("/");
+          const prefs = [
+            p1 ? `${p1}${p1c ? ` (${p1c})` : ""}` : "",
+            p2 ? `${p2}${p2c ? ` (${p2c})` : ""}` : "",
+            p3 ? `${p3}${p3c ? ` (${p3c})` : ""}` : "",
+          ].filter(Boolean).join(" · ");
 
           if (name || (email && email.includes('@')) || phone) {
             fetch('/api/admin/', {
@@ -954,9 +1011,10 @@ export default function Home() {
                 fullName: name || 'Prospective Candidate',
                 email: email,
                 phone: phone,
-                institution: institute,
-                preferences: prefs,
-                formType: type === 'delegation' ? 'Delegation Registration' : 'Delegate Registration',
+                institution: institute || 'Individual',
+                grade: grade,
+                preferences: prefs || 'Step 1 In Progress',
+                formType: type === 'delegation' ? 'Delegation Registration' : 'Individual Delegate',
                 step: step || 'Step 1: Personal Details'
               })
             }).catch(() => { });
@@ -2242,14 +2300,60 @@ export default function Home() {
               ocModal: "Organizing Committee",
               ebModal: "Executive Board",
               secModal: "Secretariat Application",
+              socialsModal: "Socials Pass",
             };
-            const fullName = saved.regName || saved.delHeadName || saved.ocFullName || saved.ebFullName || saved.secFullName || "";
-            const email = saved.regEmail || saved.delHeadEmail || saved.ocEmail || saved.ebEmail || saved.secEmail || "";
-            const phone = saved.regPhone || saved.delHeadPhone || saved.ocPhone || saved.ebPhone || saved.secPhone || "";
-            const institution = saved.regInstitute || saved.delInstName || saved.ocInstitute || saved.ebInstitute || saved.secInstitute || "";
-            const grade = saved.regGrade || saved.ocGrade || saved.ebGrade || "";
-            const prefList = [saved.pref1_committee, saved.pref2_committee, saved.pref3_committee].filter(Boolean);
-            const preferences = prefList.length > 0 ? prefList.join(" · ") : (saved.ebRolePref || saved.secRolePref || "");
+            const fullName =
+              saved.regName ||
+              saved.delAdviserName ||
+              saved.ocName ||
+              saved.ebName ||
+              saved.secName ||
+              saved.socialsName ||
+              "";
+            const email =
+              saved.regEmail ||
+              saved.delAdviserEmail ||
+              saved.ocEmail ||
+              saved.ebEmail ||
+              saved.secEmail ||
+              saved.socialsEmail ||
+              "";
+            const phone =
+              saved.regPhone ||
+              saved.delAdviserPhone ||
+              saved.ocPhone ||
+              saved.ebPhone ||
+              saved.secPhone ||
+              saved.socialsPhone ||
+              "";
+            const institution =
+              saved.regInstitute ||
+              saved.delInstName ||
+              saved.ocInst ||
+              saved.ebInst ||
+              saved.secSchool ||
+              saved.socialsInst ||
+              "";
+            const grade =
+              saved.regGrade ||
+              saved.ocGrade ||
+              saved.secGrade ||
+              saved.socialsGrade ||
+              "";
+            const p1c = [saved.pref1_port1, saved.pref1_port2, saved.pref1_role].filter(Boolean).join("/");
+            const p2c = [saved.pref2_port1, saved.pref2_port2, saved.pref2_role].filter(Boolean).join("/");
+            const p3c = [saved.pref3_port1, saved.pref3_port2, saved.pref3_role].filter(Boolean).join("/");
+            const prefList = [
+              saved.pref1_committee ? `${saved.pref1_committee}${p1c ? ` (${p1c})` : ""}` : "",
+              saved.pref2_committee ? `${saved.pref2_committee}${p2c ? ` (${p2c})` : ""}` : "",
+              saved.pref3_committee ? `${saved.pref3_committee}${p3c ? ` (${p3c})` : ""}` : "",
+            ].filter(Boolean);
+            const preferences =
+              prefList.length > 0
+                ? prefList.join(" · ")
+                : [saved.ebRole, saved.ebPref1, saved.ebPref2, saved.secPosition, saved.ocFeeTier]
+                    .filter(Boolean)
+                    .join(" · ");
 
             if (fullName || (email && email.includes("@")) || phone) {
               fetch("/api/admin/", {
@@ -2264,13 +2368,13 @@ export default function Home() {
                   grade: grade || "",
                   preferences: preferences || "Awaiting Selection",
                   step: `Step ${saved._activeStep || 1}`,
-                  formType: formTypeMap[modalId] || "Delegate Registration",
+                  formType: formTypeMap[modalId] || "Individual Delegate",
                   draftData: saved,
                 }),
               }).catch(() => { });
             }
           } catch (_) { }
-        }, 1200);
+        }, 900);
       };
 
       const saveModalDraft = (modalId) => {
@@ -2304,41 +2408,44 @@ export default function Home() {
         if (!cfg || typeof window === "undefined") return;
         try {
           const raw = localStorage.getItem(cfg.key);
-          if (!raw) return;
-          const saved = JSON.parse(raw);
-          cfg.fields.forEach((id) => {
-            const el = document.getElementById(id);
-            if (el && saved[id]) {
-              el.value = saved[id];
-              if (id.toLowerCase().endsWith("dob")) {
-                el.dispatchEvent(new Event("change", { bubbles: true }));
+          if (raw) {
+            const saved = JSON.parse(raw);
+            cfg.fields.forEach((id) => {
+              const el = document.getElementById(id);
+              if (el && saved[id]) {
+                el.value = saved[id];
+                if (id.toLowerCase().endsWith("dob")) {
+                  el.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                if (id === "ocFeeTier" && typeof window.updateOcFeeTierUI === "function") {
+                  window.updateOcFeeTierUI(saved[id]);
+                }
               }
-              if (id === "ocFeeTier" && typeof window.updateOcFeeTierUI === "function") {
-                window.updateOcFeeTierUI(saved[id]);
-              }
-            }
-          });
-          if (saved._activeStep && saved._activeStep >= 1) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-              const target = document.getElementById(`${cfg.stepPrefix}${saved._activeStep}`);
-              if (target) {
-                modal.querySelectorAll(".form-step").forEach((s) => s.classList.remove("active"));
-                target.classList.add("active");
-                const subtitle = modal.querySelector(".modal-subtitle");
-                if (subtitle) {
-                  const stepMap = {
-                    1: "Step 1 of 3 · Personal Details",
-                    2: "Step 2 of 3 · Committee Preferences",
-                    3: "Step 3 of 3 · Payment & Submission",
-                  };
-                  if (stepMap[saved._activeStep]) {
-                    subtitle.textContent = stepMap[saved._activeStep];
+            });
+            if (saved._activeStep && saved._activeStep >= 1) {
+              const modal = document.getElementById(modalId);
+              if (modal) {
+                const target = document.getElementById(`${cfg.stepPrefix}${saved._activeStep}`);
+                if (target) {
+                  modal.querySelectorAll(".form-step").forEach((s) => s.classList.remove("active"));
+                  target.classList.add("active");
+                  const subtitle = modal.querySelector(".modal-subtitle");
+                  if (subtitle) {
+                    const stepMap = {
+                      1: "Step 1 of 3 · Personal Details",
+                      2: "Step 2 of 3 · Committee Preferences",
+                      3: "Step 3 of 3 · Payment & Submission",
+                    };
+                    if (stepMap[saved._activeStep]) {
+                      subtitle.textContent = stepMap[saved._activeStep];
+                    }
                   }
                 }
               }
             }
           }
+          // Immediately capture draft telemetry on modal open (including autofilled Firebase name/email)
+          setTimeout(() => saveModalDraft(modalId), 300);
         } catch (_) { }
       };
 

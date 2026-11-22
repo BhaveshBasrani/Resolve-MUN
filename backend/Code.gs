@@ -1033,36 +1033,81 @@ function sheetToObjects(sheet, limit = 0) {
   return out;
 }
 
+function trashDriveFileFromUrl(urlStr) {
+  if (!urlStr) return false;
+  const s = String(urlStr);
+  if (s.indexOf("drive.google.com") === -1 && s.indexOf("docs.google.com") === -1) return false;
+  const m = s.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || s.match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+  if (!m || !m[1]) return false;
+  try {
+    DriveApp.getFileById(m[1]).setTrashed(true);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function trashAllDriveFilesInRow(row, extraUrl) {
+  let trashed = 0;
+  if (Array.isArray(row)) {
+    row.forEach(function(cell) {
+      if (trashDriveFileFromUrl(cell)) trashed++;
+    });
+  }
+  if (extraUrl && trashDriveFileFromUrl(extraUrl)) trashed++;
+  return trashed;
+}
+
 function adminDeleteRecord(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetName = data.sheetName || "Registrations";
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return { status: "error", message: "Sheet not found: " + sheetName };
-
+  const primarySheet = data.sheetName || "Registrations";
   const targetId = String(data.recordId || data.id || data.regId || data.leadId || "").trim();
-  if (!targetId) return { status: "error", message: "No record ID provided for deletion" };
+  const targetEmail = String(data.email || (targetId.indexOf("@") !== -1 ? targetId : "") || "").trim().toLowerCase();
+  const extraFileUrl = String(data.fileUrl || "").trim();
 
-  const rows = sheet.getDataRange().getValues();
-
-  for (let i = 1; i < rows.length; i++) {
-    const col0 = String(rows[i][0] || "").trim();
-    const col1 = String(rows[i][1] || "").trim(); // RegID, DelID, AppID, LeadID, UID
-    const col2 = String(rows[i][2] || "").trim();
-    const col3 = String(rows[i][3] || "").trim();
-    const col4 = String(rows[i][4] || "").trim(); // Email
-
-    if (
-      col1 === targetId ||
-      col0 === targetId ||
-      col2 === targetId ||
-      col3 === targetId ||
-      (targetId.includes("@") && col4.toLowerCase() === targetId.toLowerCase())
-    ) {
-      sheet.deleteRow(i + 1);
-      return { status: "success", recordId: targetId, deletedRow: i + 1, sheet: sheetName };
-    }
+  if (!targetId && !targetEmail) {
+    return { status: "error", message: "No record ID or email provided for deletion" };
   }
-  return { status: "error", message: "Record " + targetId + " not found in " + sheetName };
+
+  // If deleting a Registration, also wipe any matching Abandoned_Leads so it looks like they never touched the form
+  const sheetsToClean = primarySheet === "Registrations"
+    ? ["Registrations", "Abandoned_Leads"]
+    : [primarySheet];
+
+  let deletedRows = 0;
+  let trashedFiles = 0;
+
+  if (extraFileUrl && trashDriveFileFromUrl(extraFileUrl)) {
+    trashedFiles++;
+  }
+
+  sheetsToClean.forEach(function(sName) {
+    const sheet = ss.getSheetByName(sName);
+    if (!sheet) return;
+    const rows = sheet.getDataRange().getValues();
+    for (let i = rows.length - 1; i >= 1; i--) {
+      const row = rows[i];
+      const matchesId = targetId && row.some(function(c) {
+        const val = String(c || "").trim();
+        return val === targetId || val.replace(/^RM26-DEL-/i, "RM-") === targetId.replace(/^RM26-DEL-/i, "RM-");
+      });
+      const matchesEmail = targetEmail && row.some(function(c) {
+        return String(c || "").trim().toLowerCase() === targetEmail;
+      });
+      if (matchesId || matchesEmail) {
+        trashedFiles += trashAllDriveFilesInRow(row);
+        sheet.deleteRow(i + 1);
+        deletedRows++;
+      }
+    }
+  });
+
+  return {
+    status: "success",
+    recordId: targetId || targetEmail,
+    deletedRows: deletedRows,
+    trashedDriveFiles: trashedFiles
+  };
 }
 
 function purgeTestData(data) {
@@ -1933,6 +1978,7 @@ function adminDeleteApplication(data) {
           }
         }
         if (match) {
+          trashAllDriveFilesInRow(row, data.fileUrl);
           sheet.deleteRow(i + 1);
           deletedCount++;
         }

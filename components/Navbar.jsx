@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  auth, signOutUser, onAuthStateChanged
+  auth, signOutUser, onAuthStateChanged, syncUserToBackend
 } from "@/lib/firebase";
 import {
   NotchNav,
@@ -99,6 +99,7 @@ export function Navbar() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
+        syncUserToBackend(firebaseUser);
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,

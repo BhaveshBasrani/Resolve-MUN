@@ -117,9 +117,9 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/10 bg-zinc-950 transition-all duration-200 ease-in-out md:static",
-          open ? "w-64" : "w-0 md:w-16",
-          !open && isMobile && "-translate-x-full"
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/10 bg-zinc-950 transition-all duration-200 ease-in-out md:static shrink-0",
+          open ? "w-64 max-w-[82vw]" : "w-0 md:w-16",
+          !open && isMobile && "-translate-x-full overflow-hidden pointer-events-none border-r-0"
         )}
       >
         {/* Brand Header */}
