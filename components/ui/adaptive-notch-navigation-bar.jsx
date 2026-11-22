@@ -239,14 +239,15 @@ function NotchDropdownItem({ item, isSelected, onSelect }) {
     <button
       type="button"
       role="option"
+      data-mobile-menu-item="true"
       aria-selected={isSelected}
       disabled={item.disabled}
       onClick={handleClick}
       className={cn(
-        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 py-2 text-left text-xs uppercase tracking-wider font-semibold outline-none transition-all duration-150 select-none",
+        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3.5 py-2.5 text-left text-xs uppercase tracking-wider font-semibold outline-none transition-colors duration-150 select-none",
         "focus-visible:ring-2 focus-visible:ring-white",
         isSelected
-          ? "bg-white text-black font-bold shadow-sm"
+          ? "bg-white text-black font-bold"
           : "text-zinc-300 hover:bg-white/10 hover:text-white active:bg-white/15",
         item.disabled && "cursor-not-allowed pointer-events-none opacity-40"
       )}
@@ -472,15 +473,22 @@ export function NotchNav({
           </div>
         </div>
 
-        {/* Dropdown Menu */}
-        <AnimatePresence>
-          {isDropdownOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -6, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.98 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="mt-2 w-full flex flex-col gap-1 border-t border-white/10 pt-2 pb-1"
+        {/* Smooth Mobile Dropdown Drawer (CSS grid-rows glide — zero mount/unmount glitch) */}
+        <div
+          data-mobile-menu-drawer="true"
+          data-open={isDropdownOpen ? "true" : "false"}
+          aria-hidden={!isDropdownOpen}
+          className={cn(
+            "grid w-full transition-[grid-template-rows,opacity] duration-200 ease-out",
+            isDropdownOpen
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0 pointer-events-none"
+          )}
+        >
+          <div data-mobile-menu-drawer-inner="true" className="overflow-hidden">
+            <div
+              role="listbox"
+              className="mt-2 w-full flex flex-col gap-1 border-t border-white/10 pt-2.5 pb-1.5"
             >
               {items.map((item) => (
                 <NotchDropdownItem
@@ -490,9 +498,9 @@ export function NotchNav({
                   onSelect={(id, e) => handleSelect(id, e)}
                 />
               ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

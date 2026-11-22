@@ -2495,6 +2495,121 @@ export default function Home() {
     };
   }, []);
 
+  // Reactive Form Step Validation: Keep Next / Submit disabled until all required fields in the active step are filled
+  useEffect(() => {
+    const MODAL_IDS = ["regModal", "delModal", "ocModal", "secModal", "ebModal", "socialsModal"];
+
+    const isElementHidden = (el) => {
+      let cur = el;
+      while (cur && cur !== document.body) {
+        if (cur.classList && cur.classList.contains("hidden")) return true;
+        const st = window.getComputedStyle(cur);
+        if (st.display === "none" || st.visibility === "hidden") return true;
+        if (cur.classList && cur.classList.contains("form-step")) break;
+        cur = cur.parentElement;
+      }
+      return false;
+    };
+
+    const isFieldFilled = (el) => {
+      if (el.disabled) return true;
+      const type = (el.getAttribute("type") || "").toLowerCase();
+      if (type === "hidden") {
+        const group = el.closest(".form-group");
+        if (group && isElementHidden(group)) return true;
+        return String(el.value || "").trim().length > 0;
+      }
+      if (isElementHidden(el)) return true;
+      if (type === "file") {
+        return Boolean(el.files && el.files.length > 0);
+      }
+      if (type === "checkbox") {
+        return Boolean(el.checked);
+      }
+      if (type === "radio") {
+        const name = el.getAttribute("name");
+        if (!name) return Boolean(el.checked);
+        const scope = el.closest(".form-step") || el.closest("form") || document;
+        return Boolean(scope.querySelector(`input[type="radio"][name="${name}"]:checked`));
+      }
+      const val = String(el.value || "").trim();
+      if (!val) return false;
+      if (type === "email" && !val.includes("@")) return false;
+      return true;
+    };
+
+    const syncStepButtons = () => {
+      MODAL_IDS.forEach((id) => {
+        const modal = document.getElementById(id);
+        if (!modal || !modal.classList.contains("active")) return;
+
+        const activeSteps = modal.querySelectorAll(".form-step.active");
+        const containers = activeSteps.length > 0 ? Array.from(activeSteps) : Array.from(modal.querySelectorAll("form"));
+
+        containers.forEach((container) => {
+          const requiredFields = Array.from(
+            container.querySelectorAll("input[required], select[required], textarea[required], [data-required='true']")
+          );
+          const allValid = requiredFields.every(isFieldFilled);
+
+          const actionBtns = container.querySelectorAll(
+            ".btn-next, button[type='submit'], .btn-submit"
+          );
+          actionBtns.forEach((btn) => {
+            if (btn.classList.contains("btn-back")) return;
+            const txt = (btn.textContent || "").toLowerCase();
+            if (txt.includes("submitting") || txt.includes("uploading") || txt.includes("processing")) {
+              btn.disabled = true;
+              return;
+            }
+            btn.disabled = !allValid;
+            btn.setAttribute("aria-disabled", String(!allValid));
+          });
+        });
+      });
+    };
+
+    let rafId = 0;
+    const scheduleSync = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(syncStepButtons);
+    };
+
+    document.addEventListener("input", scheduleSync, true);
+    document.addEventListener("change", scheduleSync, true);
+    document.addEventListener("keyup", scheduleSync, true);
+    document.addEventListener("click", () => setTimeout(scheduleSync, 60), true);
+
+    const observer = new MutationObserver(() => {
+      scheduleSync();
+      setTimeout(scheduleSync, 150);
+    });
+
+    MODAL_IDS.forEach((id) => {
+      const modal = document.getElementById(id);
+      if (modal) {
+        observer.observe(modal, {
+          attributes: true,
+          attributeFilter: ["class", "style", "value"],
+          subtree: true,
+          childList: true,
+        });
+      }
+    });
+
+    scheduleSync();
+    const poll = setInterval(syncStepButtons, 600);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      clearInterval(poll);
+      observer.disconnect();
+      document.removeEventListener("input", scheduleSync, true);
+      document.removeEventListener("change", scheduleSync, true);
+      document.removeEventListener("keyup", scheduleSync, true);
+    };
+  }, []);
+
   return (
     <>
       <Navbar />

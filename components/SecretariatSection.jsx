@@ -323,8 +323,8 @@ export default function SecretariatSection() {
         style={{ backgroundColor: "#000000" }}
       >
         <div className="max-w-xl mx-auto">
-          <div className="text-left mb-5">
-            <div className="section-label" style={{ justifyContent: "flex-start", margin: "0 0 8px 0" }}>
+          <div className="text-center mb-5">
+            <div className="section-label" style={{ justifyContent: "center", margin: "0 auto 10px auto" }}>
               Secretariat
             </div>
             <h2
@@ -337,14 +337,11 @@ export default function SecretariatSection() {
 
           <div className="w-full rounded-lg border border-[#262626] bg-black py-12 px-5 text-center">
             <h3
-              className="text-2xl font-extrabold uppercase text-white tracking-[0.18em]"
+              className="text-2xl font-extrabold uppercase text-white tracking-[0.18em] m-0"
               style={{ fontFamily: "'Oswald', sans-serif" }}
             >
               TEAM REVEAL SOON
             </h3>
-            <p className="text-xs font-mono uppercase tracking-wider text-[#a3a3a3] mt-2">
-              Resolve MUN 2.0 Secretariat Directorate
-            </p>
           </div>
         </div>
       </section>

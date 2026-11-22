@@ -2199,3 +2199,13 @@ body.modal-locked {
     transition: none !important;
   }
 }
+
+/* Global disabled state for step Next / Submit buttons until required fields are filled */
+.modal-overlay .btn-next:disabled,
+.modal-overlay .btn-submit:disabled,
+.modal-overlay button[type="submit"]:disabled {
+  opacity: 0.36 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(1) !important;
+}

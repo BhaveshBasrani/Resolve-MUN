@@ -297,8 +297,8 @@ export default function DelegatePassSection() {
         style={{ backgroundColor: "#000000" }}
       >
         <div className="max-w-xl mx-auto">
-          <div className="text-left mb-6">
-            <div className="section-label" style={{ justifyContent: "flex-start", margin: "0 0 8px 0" }}>
+          <div className="text-center mb-6">
+            <div className="section-label" style={{ justifyContent: "center", margin: "0 auto 10px auto" }}>
               Resolve MUN 2.0
             </div>
             <h2

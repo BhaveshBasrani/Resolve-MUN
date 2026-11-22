@@ -150,6 +150,15 @@ const RDF_CSS = `
 .rdf-social a:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
 .rdf-social svg { width: 15px; height: 15px; display: block; }
 
+.rdf-col {
+  position: static !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  z-index: auto !important;
+  min-width: 0;
+}
 .rdf-col h3 {
   margin: 4px 0 18px; font-size: 11px; font-weight: 600; line-height: 1;
   letter-spacing: .18em; text-transform: uppercase; color: #ffffff;

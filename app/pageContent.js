@@ -205,6 +205,9 @@ export const homeHtml = `
               <option value="Yes">Yes</option>
               <option value="No">No</option>
             </select>
+            <p style="margin: 6px 0 0 0; font-size: 11px; line-height: 1.45; color: #737373; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
+              For informational and planning purposes only. Conference transport will operate exclusively from designated pickup points; delegates selecting &ldquo;Yes&rdquo; will be eligible to board from those points.
+            </p>
           </div>
           <div>
             <label for="regReferral">Referral Code (If applicable)</label>
@@ -338,9 +341,9 @@ export const homeHtml = `
             </div>
 
             <!-- Direct UPI Launch Button for Mobile Users -->
-            <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI App">
+            <a id="payUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=2500&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-              <span>Pay via UPI (GPay / PhonePe / Paytm)</span>
+              <span>Pay via UPI</span>
             </a>
 
             <div class="upi-box">
@@ -436,7 +439,7 @@ export const homeHtml = `
       <div class="terms-modal-topline">
         <div class="terms-modal-title-group">
           <h2 class="terms-modal-title">LEGAL POLICIES &amp; TERMS</h2>
-          <span class="terms-modal-subtitle">Resolve Model United Nations 2.0 · 25, 26, 27 December 2026 · TBA (To Be Announced)</span>
+          <span class="terms-modal-subtitle">Resolve MUN 2.0 · 26, 27 December 2026 · Northfield International School</span>
         </div>
         <button class="terms-close-btn" onclick="closeTermsModal()" aria-label="Close modal">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -448,9 +451,9 @@ export const homeHtml = `
 
       <!-- Segmented Pill Control -->
       <div class="terms-segmented-nav">
-        <button type="button" class="terms-tab-pill active" data-tab="delegate" onclick="switchTermsTab('delegate', this)">Delegate Terms &amp; Conditions</button>
-        <button type="button" class="terms-tab-pill" data-tab="oc" onclick="switchTermsTab('oc', this)">OC Terms &amp; Conditions</button>
-        <button type="button" class="terms-tab-pill" data-tab="privacy" onclick="switchTermsTab('privacy', this)">Privacy Policy</button>
+        <button type="button" class="terms-tab-pill active" data-tab="delegate" onclick="switchTermsTab('delegate', this)">Delegate Terms</button>
+        <button type="button" class="terms-tab-pill" data-tab="oc" onclick="switchTermsTab('oc', this)">OC Terms</button>
+        <button type="button" class="terms-tab-pill" data-tab="privacy" onclick="switchTermsTab('privacy', this)">Privacy</button>
       </div>
     </div>
 
@@ -459,7 +462,7 @@ export const homeHtml = `
       <div id="termsDelegateContent" style="display: block;">
         <div class="legal-preamble-card">
           <strong style="color: #ffffff; display: block; margin-bottom: 4px; font-size: 13px;">Delegate Terms &amp; Conditions · Resolve MUN 2.0</strong>
-          These Terms &amp; Conditions govern the participation of every delegate in Resolve MUN 2.0 (the “Conference”), to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced). In these Terms &amp; Conditions, “Secretariat” means the Secretariat of Resolve MUN, and “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder).
+          These Terms &amp; Conditions govern the participation of every delegate in Resolve MUN 2.0 (the “Conference”), to be held on 26 and 27 December 2026 at Northfield International School, Hyderabad. In these Terms &amp; Conditions, “Secretariat” means the Secretariat of Resolve MUN, and “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder).
         </div>
 
         <!-- Section 1 -->
@@ -766,7 +769,7 @@ export const homeHtml = `
       <div id="termsOcContent" style="display: none;">
         <div class="legal-preamble-card">
           <strong style="color: #ffffff; display: block; margin-bottom: 4px; font-size: 13px;">Organizing Committee (OC) Terms &amp; Conditions · Resolve MUN 2.0</strong>
-          These Terms &amp; Conditions govern the engagement of every member of the Organizing Committee (“OC”) of Resolve MUN 2.0 (the “Conference”), to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced). In these Terms &amp; Conditions, “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder), and “OC Head” means the head of the Organizing Committee, to whom all OC members report.
+          These Terms &amp; Conditions govern the engagement of every member of the Organizing Committee (“OC”) of Resolve MUN 2.0 (the “Conference”), to be held on 26 and 27 December 2026 at Northfield International School, Hyderabad. In these Terms &amp; Conditions, “Founders” means Abhilash Vijayakumar, Niveditt Basrani and Poorvika Setti (Co-Founder), and “OC Head” means the head of the Organizing Committee, to whom all OC members report.
         </div>
 
         <!-- Section 1 -->
@@ -1003,7 +1006,7 @@ export const homeHtml = `
             <h4 class="legal-card-title">Applicability, General &amp; Acceptance</h4>
           </div>
           <ul class="legal-clause-list">
-            <li class="legal-clause-item"><span class="legal-num">58.</span><p class="legal-text">These Terms &amp; Conditions, and every term, responsibility, remuneration, position and right set out in them, apply only to Resolve 2.0, to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced). They do not extend to any previous or future edition of Resolve MUN.</p></li>
+            <li class="legal-clause-item"><span class="legal-num">58.</span><p class="legal-text">These Terms &amp; Conditions, and every term, responsibility, remuneration, position and right set out in them, apply only to Resolve 2.0, to be held on 26 and 27 December 2026 at Northfield International School, Hyderabad. They do not extend to any previous or future edition of Resolve MUN.</p></li>
             <li class="legal-clause-item"><span class="legal-num">59.</span><p class="legal-text">These Terms &amp; Conditions record an understanding of voluntary engagement and do not create an employment relationship, partnership or agency. An OC member has no authority to bind Resolve to any contract or financial commitment without the written approval of the Founders.</p></li>
             <li class="legal-clause-item"><span class="legal-num">60.</span><p class="legal-text">These Terms &amp; Conditions are governed by the laws of India. Any dispute shall first be attempted to be resolved amicably, failing which the courts at Hyderabad shall have jurisdiction.</p></li>
             <li class="legal-clause-item"><span class="legal-num">61.</span><p class="legal-text">By accepting an OC position, the member confirms that they have read, understood, and agreed to these Terms &amp; Conditions.</p></li>
@@ -1028,7 +1031,7 @@ export const homeHtml = `
             <h4 class="legal-card-title">Scope &amp; Application</h4>
           </div>
           <ul class="legal-clause-list">
-            <li class="legal-clause-item"><span class="legal-num">1.1.</span><p class="legal-text">This Privacy Policy applies to personal information processed in connection with Resolve MUN 2.0, scheduled to be held on 25, 26 and 27 December 2026 at TBA (To Be Announced), Hyderabad, Telangana, India.</p></li>
+            <li class="legal-clause-item"><span class="legal-num">1.1.</span><p class="legal-text">This Privacy Policy applies to personal information processed in connection with Resolve MUN 2.0, scheduled to be held on 26 and 27 December 2026 at Northfield International School, Hyderabad, Telangana, India.</p></li>
             <li class="legal-clause-item"><span class="legal-num">1.2.</span><p class="legal-text">It applies to delegates, prospective delegates, parents or guardians, Organizing Committee members, applicants, Executive Board members, volunteers, sponsors, guests, website visitors and individuals who communicate with Resolve through its official channels.</p></li>
             <li class="legal-clause-item"><span class="legal-num">1.3.</span><p class="legal-text">This Policy should be read together with the applicable Delegate Terms &amp; Conditions, Organizing Committee Terms &amp; Conditions, registration notices and any specific consent request presented at the point of collection. If a specific notice explains a particular processing activity in greater detail, that notice will apply to that activity to the extent of any inconsistency.</p></li>
             <li class="legal-clause-item"><span class="legal-num">1.4.</span><p class="legal-text">This Policy concerns personal information. It does not govern third-party websites, platforms or services that Resolve does not own or control, even where links to those services appear on the Resolve website.</p></li>
@@ -1330,28 +1333,10 @@ export const homeHtml = `
   </div>
 
   <div class="letter-inner">
-    <div class="section-label reveal letter-section-label">Official Correspondence</div>
+    <div class="section-label reveal letter-section-label">Founder's Letter</div>
     <h2 class="section-title reveal letter-section-title">A Letter from the Founder</h2>
     
     <article class="letter-container reveal reveal-delay-2" aria-label="Letter from the Founder">
-      <!-- Letterhead -->
-      <header class="letterhead-top">
-        <div class="letterhead-seal">
-          <img src="/images/Logo.svg" alt="Resolve MUN" onerror="this.src='https://resolvemun.in/images/Logo.svg'" />
-          <div class="letterhead-seal-text">
-            <span class="lh-org">Resolve Model United Nations</span>
-            <span class="lh-office">Office of the Founder</span>
-          </div>
-        </div>
-        <div class="letterhead-meta">
-          <span class="lh-meta-row"><em>Ref.</em> RMUN/2026/FO-01</span>
-          <span class="lh-meta-row"><em>Edition</em> 2.0 · 26–27 Dec 2026</span>
-          <span class="lh-meta-row"><em>Venue</em> Northfield International School, Hyderabad</span>
-        </div>
-      </header>
-
-      <div class="letter-divider-line" aria-hidden="true"></div>
-
       <div class="letter-content">
         <p class="letter-salutation">Dear Delegates,</p>
 
@@ -1510,7 +1495,7 @@ export const homeHtml = `
 <section id="sponsors">
   <div class="sponsors-inner reveal" style="text-align: center;">
     <div class="section-label" style="justify-content: center; margin-bottom: 20px;">
-      Partner Organizations & Sponsors
+      Partners & Sponsors
     </div>
     
     <h2 class="section-title" style="text-align: center; margin-bottom: 40px;">BECOME A PARTNER</h2>
@@ -1658,9 +1643,9 @@ export const homeHtml = `
             </div>
 
             <!-- Direct UPI Launch Button for Mobile Users -->
-            <a id="ocPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=1500&cu=INR&tn=Resolve%20MUN%202026%20OC%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI App">
+            <a id="ocPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=1500&cu=INR&tn=Resolve%20MUN%202026%20OC%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-              <span>Pay via UPI (GPay / PhonePe / Paytm)</span>
+              <span>Pay via UPI</span>
             </a>
 
             <div class="upi-box">
@@ -2158,9 +2143,9 @@ export const homeHtml = `
             </div>
 
             <!-- Direct UPI Launch Button for Mobile Users -->
-            <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI App">
+            <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-              <span>Pay via UPI (GPay / PhonePe / Paytm)</span>
+              <span>Pay via UPI</span>
             </a>
 
             <div class="upi-box">
@@ -2302,7 +2287,7 @@ export const homeHtml = `
               <div style="margin: 10px 0 12px; display: flex; justify-content: center;">
                 <a id="socialsPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=999&cu=INR&tn=Resolve%20MUN%202026%20Socials%20Pass" class="upi-mobile-pay-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; height: 38px; padding: 0 12px; border-radius: 8px; background: #ffffff; color: #000000; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: all 0.2s;">
                   <svg width="15" height="15" style="flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
+                  <span>Pay via UPI</span>
                 </a>
               </div>
 

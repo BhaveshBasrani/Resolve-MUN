@@ -3,89 +3,101 @@
 import React, { useState, useEffect } from "react";
 import GlassFolder from "./ui/glass-folder";
 
+const MOBILE_COMMITTEE_ITEMS = [
+  "Allocation Matrix",
+  "Background Guide",
+  "Chairs Info",
+];
+
 const COMMITTEES = [
-  {
-    id: "uncsw",
-    label: "UNCSW",
-    meta: "Status of Women · 4 Files",
-    tone: "dark",
-    art: "aurora",
-    seed: 101,
-    files: [
-      { name: "UNCSW Mandate & Policy Framework", meta: "Gender Equality & Empowerment" },
-      { name: "Global Women's Rights Dossier", meta: "Civil Liberties & Socio-Economic Law", art: "aurora" },
-      { name: "Commission Matrix (45 States)", meta: "UN ECOSOC Allocations" },
-      { name: "Background Guide", meta: "PDF · Releasing Soon" },
-    ],
-  },
-  {
-    id: "unhrc",
-    label: "UNHRC",
-    meta: "Human Rights Council · 4 Files",
-    tone: "dark",
-    art: "glacier",
-    seed: 303,
-    files: [
-      { name: "Universal Declaration & Treaties", meta: "Geneva Treaty Body" },
-      { name: "Human Rights Dossier", meta: "Civil Liberties & Conflict Zones", art: "glacier" },
-      { name: "Council Matrix (47 States)", meta: "Regional Allocations" },
-      { name: "Background Guide", meta: "PDF · Releasing Soon" },
-    ],
-  },
   {
     id: "disec",
     label: "DISEC",
-    meta: "Disarmament & Security · 4 Files",
+    fullName: "Disarmament and International Security Committee",
+    meta: "Disarmament and International Security Committee",
     tone: "dark",
     art: "ember",
     seed: 202,
     files: [
       { name: "DISEC Multilateral Framework", meta: "First Committee · Treaties" },
       { name: "Global Security Dossier", meta: "Nuclear & Autonomous Arms", art: "ember" },
-      { name: "Country Allocations (193)", meta: "General Assembly Matrix" },
-      { name: "Background Guide", meta: "PDF · Releasing Soon" },
+      { name: "Allocation Matrix", meta: "General Assembly Matrix" },
+      { name: "Background Guide", meta: "PDF · Coming Soon" },
     ],
   },
   {
-    id: "ip",
-    label: "IP",
-    meta: "International Press · 4 Files",
+    id: "unhrc",
+    label: "UNHRC",
+    fullName: "United Nations Human Rights Council",
+    meta: "United Nations Human Rights Council",
     tone: "dark",
-    art: "dusk",
-    seed: 505,
+    art: "glacier",
+    seed: 303,
     files: [
-      { name: "Press Code of Conduct", meta: "Accreditation & Wire Ethics" },
-      { name: "Investigative Media Dossier", meta: "Press Releases & Live Intel", art: "dusk" },
-      { name: "Media House Roles", meta: "Reporter & Photographer" },
-      { name: "Background Guide", meta: "PDF · Releasing Soon" },
+      { name: "Universal Declaration & Treaties", meta: "Geneva Treaty Body" },
+      { name: "Human Rights Dossier", meta: "Civil Liberties & Conflict Zones", art: "glacier" },
+      { name: "Allocation Matrix", meta: "Regional Allocations" },
+      { name: "Background Guide", meta: "PDF · Coming Soon" },
+    ],
+  },
+  {
+    id: "uncsw",
+    label: "UNCSW",
+    fullName: "United Nations Commission on the Status of Women",
+    meta: "United Nations Commission on the Status of Women",
+    tone: "dark",
+    art: "aurora",
+    seed: 101,
+    files: [
+      { name: "UNCSW Mandate & Policy Framework", meta: "Gender Equality & Empowerment" },
+      { name: "Global Women's Rights Dossier", meta: "Civil Liberties & Socio-Economic Law", art: "aurora" },
+      { name: "Allocation Matrix", meta: "UN ECOSOC Allocations" },
+      { name: "Background Guide", meta: "PDF · Coming Soon" },
     ],
   },
   {
     id: "loksabha",
     label: "Lok Sabha",
-    meta: "Indian Parliament · 4 Files",
+    fullName: "Indian Mock Parliament",
+    meta: "Indian Mock Parliament",
     tone: "dark",
     art: "verdant",
     seed: 404,
     files: [
       { name: "Lok Sabha Rules of Procedure", meta: "Parliamentary Protocol" },
       { name: "Legislative Agenda Dossier", meta: "National Security & Policy", art: "verdant" },
-      { name: "Portfolio Allocations Matrix", meta: "Members of Parliament" },
-      { name: "Background Guide", meta: "PDF · Releasing Soon" },
+      { name: "Allocation Matrix", meta: "Members of Parliament" },
+      { name: "Background Guide", meta: "PDF · Coming Soon" },
     ],
   },
   {
     id: "marvel",
     label: "Marvel",
-    meta: "Crisis Committee · 4 Files",
+    fullName: "Crisis Committee",
+    meta: "Crisis Committee",
     tone: "dark",
     art: "ember",
     seed: 606,
     files: [
       { name: "Marvel Crisis Directives & Rules of Procedure", meta: "Continuous Crisis Protocol" },
       { name: "Crisis Strategy Dossier", meta: "Multiverse & Tactical Simulation", art: "ember" },
-      { name: "Character Portfolios Matrix", meta: "Hero & Villain Character Assignments" },
-      { name: "Background Guide", meta: "PDF · Releasing Soon" },
+      { name: "Allocation Matrix", meta: "Hero & Villain Character Assignments" },
+      { name: "Background Guide", meta: "PDF · Coming Soon" },
+    ],
+  },
+  {
+    id: "ip",
+    label: "IP",
+    fullName: "International Press",
+    meta: "International Press",
+    tone: "dark",
+    art: "dusk",
+    seed: 505,
+    files: [
+      { name: "Press Code of Conduct", meta: "Accreditation & Wire Ethics" },
+      { name: "Investigative Media Dossier", meta: "Press Releases & Live Intel", art: "dusk" },
+      { name: "Allocation Matrix", meta: "Reporter & Photographer" },
+      { name: "Background Guide", meta: "PDF · Coming Soon" },
     ],
   },
 ];
@@ -116,7 +128,7 @@ export default function CommitteesSection() {
   const handleFileSelect = (file, committeeName) => {
     if (typeof window !== "undefined" && window.showCustomAlert) {
       window.showCustomAlert(
-        `${committeeName} — ${file.name} will be released with complete delegate study guides.`,
+        `${committeeName} — ${file.name} Coming Soon!`,
         "info"
       );
     }
@@ -126,15 +138,15 @@ export default function CommitteesSection() {
     return (
       <section id="committees" className="relative py-10 px-5 bg-black text-white scroll-mt-16">
         <div className="max-w-xl mx-auto">
-          <div className="mb-6 text-left">
-            <div className="section-label" style={{ justifyContent: "flex-start", margin: "0 0 8px 0" }}>
+          <div className="mb-6 text-center">
+            <div className="section-label" style={{ justifyContent: "center", margin: "0 auto 10px auto" }}>
               Official Committees
             </div>
             <h2 className="font-['Bebas_Neue'] text-3xl tracking-wider text-white uppercase leading-none mb-2">
               Where the Debate Happens
             </h2>
             <p className="text-sm text-[#a3a3a3] leading-relaxed">
-              Six committees. Tap any committee to inspect its dossier files.
+              Six committees. Tap any committee to view details.
             </p>
           </div>
 
@@ -156,45 +168,33 @@ export default function CommitteesSection() {
                       <div className="font-['Oswald'] text-lg font-bold tracking-wide uppercase text-white leading-tight">
                         {comm.label}
                       </div>
-                      <div className="text-xs text-[#a3a3a3] mt-0.5">
-                        {comm.meta}
+                      <div className="text-xs text-[#a3a3a3] mt-0.5 leading-snug">
+                        {comm.fullName}
                       </div>
                     </div>
-                    <span className="shrink-0 w-7 h-7 rounded border border-[#404040] flex items-center justify-center text-sm font-mono text-white">
+                    <span className="shrink-0 w-7 h-7 rounded border border-[#333333] flex items-center justify-center text-sm font-mono text-white">
                       {isOpen ? "−" : "+"}
                     </span>
                   </button>
 
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-3 border-t border-[#262626] space-y-2.5 bg-black">
-                      <div className="space-y-2">
-                        {comm.files.map((file, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => handleFileSelect(file, comm.label)}
-                            className="w-full p-3 rounded border border-[#262626] bg-black text-left flex flex-col gap-0.5 cursor-pointer"
-                          >
-                            <span className="text-sm font-semibold text-white leading-snug">
-                              {file.name}
-                            </span>
-                            <span className="text-xs text-[#a3a3a3]">
-                              {file.meta}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (typeof window !== "undefined" && window.selectPathway) {
-                            window.selectPathway("delegate");
-                          }
-                        }}
-                        className="w-full min-h-[44px] rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider cursor-pointer"
-                      >
-                        Register as Delegate
-                      </button>
+                    <div className="px-4 pb-4 pt-3 border-t border-[#1f1f1f] space-y-2 bg-black">
+                      {MOBILE_COMMITTEE_ITEMS.map((itemLabel, idx) => (
+                        <button
+                          key={itemLabel}
+                          type="button"
+                          onClick={() => handleFileSelect({ name: itemLabel }, comm.label)}
+                          className="w-full px-3 py-2.5 rounded-md border border-[#262626] bg-black text-left flex items-center justify-between gap-2 cursor-pointer"
+                        >
+                          <span className="text-[13px] font-medium text-white leading-snug">
+                            <span className="text-[#737373] font-mono text-[11px] mr-2">0{idx + 1}</span>
+                            {itemLabel}
+                          </span>
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#737373] shrink-0">
+                            Coming Soon
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

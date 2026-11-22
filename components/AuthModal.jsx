@@ -1310,23 +1310,39 @@ function CheckboxLine({ checked, onChange, children }) {
 
 function GoogleIcon() {
   return (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
-      <path
-        fill="#EA4335"
-        d="M12 5c1.56 0 2.96.54 4.07 1.43l3.05-3.05C17.27 1.7 14.81 1 12 1 7.58 1 3.77 3.52 1.95 7.19l3.66 2.84C6.49 7.37 8.98 5 12 5z"
-      />
-      <path
-        fill="#4285F4"
-        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58l3.71 2.88c2.16-2 3.71-4.95 3.71-8.7z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.61 14.71a7.48 7.48 0 0 1 0-5.42L1.95 6.45A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.35l3.7-2.88.66-.76z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 23c3.24 0 5.95-1.08 7.93-2.91l-3.71-2.88c-1.07.73-2.44 1.16-4.22 1.16-3.02 0-5.51-2.37-6.39-5.03L1.95 16.18C3.77 19.85 7.58 22.37 12 23z"
-      />
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <clipPath id="googleGClip">
+          <path d="M23.52 12.27c0-.85-.08-1.68-.22-2.47H12v4.68h6.46c-.28 1.5-1.12 2.77-2.39 3.62v3.01h3.87c2.26-2.08 3.58-5.15 3.58-8.84zM12 24c3.24 0 5.96-1.07 7.94-2.9l-3.87-3.01c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.1C3.25 21.31 7.31 24 12 24zM5.27 14.28A7.22 7.22 0 0 1 4.9 12c0-.79.14-1.56.37-2.28v-3.1H1.27A11.98 11.98 0 0 0 0 12c0 1.94.46 3.77 1.27 5.38l4-3.1zM12 4.75c1.76 0 3.34.61 4.59 1.79l3.44-3.44C17.95 1.19 15.23 0 12 0 7.31 0 3.25 2.69 1.27 6.62l4 3.1C6.22 6.86 8.87 4.75 12 4.75z" />
+        </clipPath>
+        <radialGradient id="gGradRed" cx="55%" cy="10%" r="60%">
+          <stop offset="0%" stopColor="#EA4335" />
+          <stop offset="65%" stopColor="#EA4335" />
+          <stop offset="100%" stopColor="#EA4335" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="gGradYellow" cx="10%" cy="48%" r="55%">
+          <stop offset="0%" stopColor="#FBBC05" />
+          <stop offset="65%" stopColor="#FBBC05" />
+          <stop offset="100%" stopColor="#FBBC05" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="gGradGreen" cx="45%" cy="92%" r="60%">
+          <stop offset="0%" stopColor="#34A853" />
+          <stop offset="65%" stopColor="#34A853" />
+          <stop offset="100%" stopColor="#34A853" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="gGradBlue" cx="88%" cy="62%" r="62%">
+          <stop offset="0%" stopColor="#4285F4" />
+          <stop offset="68%" stopColor="#4285F4" />
+          <stop offset="100%" stopColor="#4285F4" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <g clipPath="url(#googleGClip)">
+        <rect width="24" height="24" fill="#34A853" />
+        <rect width="24" height="24" fill="url(#gGradRed)" />
+        <rect width="24" height="24" fill="url(#gGradYellow)" />
+        <rect width="24" height="24" fill="url(#gGradGreen)" />
+        <rect width="24" height="24" fill="url(#gGradBlue)" />
+      </g>
     </svg>
   );
 }
