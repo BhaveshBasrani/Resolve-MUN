@@ -527,6 +527,8 @@ export default function SuperAdminPage() {
               pref2_country: d.pref2_country || "",
               pref3_committee: d.pref3_committee || d.CommitteePref3 || "",
               pref3_country: d.pref3_country || "",
+              preferencesUpdatedCount: Number(d.preferencesUpdatedCount ?? d.preferences_updated_count ?? 0),
+              preferencesLocked: Boolean(d.preferencesLocked || Number(d.preferences_updated_count || 0) >= 1),
               allocatedCommittee: d.allocatedCommittee || "",
               allocatedCountry: d.allocatedCountry || "",
               paymentUTR: d.paymentUTR || d.utr || "",
@@ -2150,9 +2152,23 @@ export default function SuperAdminPage() {
                                     Bus: {d.transport}
                                   </span>
                                 )}
-                                {d.pref1_committee && (
-                                  <span className="inline-flex items-center text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
-                                    Pref: {d.pref1_committee}
+                                {[1, 2, 3].map((n) => {
+                                  const cm = d[`pref${n}_committee`];
+                                  const ct = d[`pref${n}_country`];
+                                  if (!cm) return null;
+                                  return (
+                                    <span
+                                      key={n}
+                                      className="inline-flex items-center text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono"
+                                      title={`Choice ${n}: ${cm}${ct ? " · " + ct : ""}`}
+                                    >
+                                      {n}. {cm}{ct ? ` (${ct.length > 14 ? ct.slice(0, 12) + "…" : ct})` : ""}
+                                    </span>
+                                  );
+                                })}
+                                {d.preferencesLocked && (
+                                  <span className="inline-flex items-center text-[9px] text-zinc-300 bg-white/10 border border-white/20 px-1.5 py-0.5 rounded font-mono">
+                                    1/1 Pref Edit Used
                                   </span>
                                 )}
                               </div>

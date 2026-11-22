@@ -98,6 +98,8 @@ export async function GET(request) {
             pref2_country: delRow.pref2_country || delRow.pref2_portfolio1 || '',
             pref3_committee: delRow.pref3_committee || '',
             pref3_country: delRow.pref3_country || delRow.pref3_portfolio1 || '',
+            preferencesUpdatedCount: Number(delRow.preferences_updated_count || 0),
+            preferencesLocked: Number(delRow.preferences_updated_count || 0) >= 1,
             pref1: delRow.pref1_committee
               ? `${delRow.pref1_committee} · ${[delRow.pref1_portfolio1 || delRow.pref1_country, delRow.pref1_portfolio2].filter(Boolean).join(' / ') || 'General'}`
               : null,
@@ -384,27 +386,66 @@ export async function POST(request) {
       updatePayload.experience = String(body.experience ?? body.munExperience ?? '').trim();
     }
 
-    // Committee preferences
-    if (body.pref1_committee !== undefined) updatePayload.pref1_committee = body.pref1_committee;
-    if (body.pref1_country !== undefined) updatePayload.pref1_country = body.pref1_country;
-    if (body.pref2_committee !== undefined) updatePayload.pref2_committee = body.pref2_committee;
-    if (body.pref2_country !== undefined) updatePayload.pref2_country = body.pref2_country;
-    if (body.pref3_committee !== undefined) updatePayload.pref3_committee = body.pref3_committee;
-    if (body.pref3_country !== undefined) updatePayload.pref3_country = body.pref3_country;
+    // Committee preferences (Enforce strict one-time preference change limit for delegates)
+    let currentRow = null;
+    if (supabase) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(regId);
+        let findQ = supabase.from('delegate_applications').select('*');
+        if (email) findQ = findQ.ilike('email', email);
+        else if (isUuid) findQ = findQ.eq('id', regId);
+        else if (regId) findQ = findQ.eq('reg_id', regId);
+        const { data: existing } = await findQ.limit(1).maybeSingle();
+        currentRow = existing || null;
+      } catch (_) {}
+    }
+
+    const currentPrefCount = Number(currentRow?.preferences_updated_count || 0);
+    const isChangingPrefs =
+      currentRow &&
+      ((body.pref1_committee !== undefined && String(body.pref1_committee || '') !== String(currentRow.pref1_committee || '')) ||
+        (body.pref1_country !== undefined && String(body.pref1_country || '').trim() !== String(currentRow.pref1_country || '').trim()) ||
+        (body.pref2_committee !== undefined && String(body.pref2_committee || '') !== String(currentRow.pref2_committee || '')) ||
+        (body.pref2_country !== undefined && String(body.pref2_country || '').trim() !== String(currentRow.pref2_country || '').trim()) ||
+        (body.pref3_committee !== undefined && String(body.pref3_committee || '') !== String(currentRow.pref3_committee || '')) ||
+        (body.pref3_country !== undefined && String(body.pref3_country || '').trim() !== String(currentRow.pref3_country || '').trim()));
+
+    if (isChangingPrefs && currentPrefCount >= 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          preferencesLocked: true,
+          message: 'Committee and country preferences can only be changed once. Your one-time preference update has already been used.',
+        },
+        { status: 403 }
+      );
+    }
+
+    if (currentPrefCount < 1) {
+      if (body.pref1_committee !== undefined) updatePayload.pref1_committee = body.pref1_committee;
+      if (body.pref1_country !== undefined) updatePayload.pref1_country = String(body.pref1_country || '').trim();
+      if (body.pref2_committee !== undefined) updatePayload.pref2_committee = body.pref2_committee;
+      if (body.pref2_country !== undefined) updatePayload.pref2_country = String(body.pref2_country || '').trim();
+      if (body.pref3_committee !== undefined) updatePayload.pref3_committee = body.pref3_committee;
+      if (body.pref3_country !== undefined) updatePayload.pref3_country = String(body.pref3_country || '').trim();
+      if (isChangingPrefs) {
+        updatePayload.preferences_updated_count = 1;
+      }
+    }
 
     // 1. Update underlying `delegate_applications` table directly (which backs the `delegates` view)
     if (supabase && Object.keys(updatePayload).length > 1) {
       try {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(regId);
         let q = supabase.from('delegate_applications').update(updatePayload);
-        if (isUuid) {
-          q = q.eq('id', regId);
-        } else if (regId && email) {
-          q = q.or(`reg_id.eq.${regId},email.ilike.${email}`);
-        } else if (regId) {
-          q = q.eq('reg_id', regId);
+        if (currentRow?.id) {
+          q = q.eq('id', currentRow.id);
         } else if (email) {
           q = q.ilike('email', email);
+        } else if (isUuid) {
+          q = q.eq('id', regId);
+        } else if (regId) {
+          q = q.eq('reg_id', regId);
         }
         const { error: sbErr } = await q;
         if (sbErr) console.warn('[API /api/delegate POST] Supabase update error:', sbErr.message);
@@ -413,22 +454,13 @@ export async function POST(request) {
       }
     }
 
-    // 2. Dispatch to Google Apps Script via UPDATE_DELEGATE
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'UPDATE_DELEGATE',
-        adminKey: 'ResolveMUNAdmin2026@Secure',
-        regId,
-        email,
-        ...body,
-      }),
-    }).catch(() => {});
-
     return NextResponse.json({
       success: true,
-      message: 'Delegate details updated successfully',
+      preferencesUpdatedCount: isChangingPrefs ? 1 : currentPrefCount,
+      preferencesLocked: isChangingPrefs || currentPrefCount >= 1,
+      message: isChangingPrefs
+        ? 'Preferences updated and locked (1/1 one-time change used).'
+        : 'Delegate details updated successfully.',
       updated: updatePayload,
     });
   } catch (err) {

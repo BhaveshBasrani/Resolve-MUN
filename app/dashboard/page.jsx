@@ -479,6 +479,9 @@ export default function DelegateDashboard() {
           pref1: updatedPref1,
           pref2: updatedPref2,
           pref3: updatedPref3,
+          preferencesUpdatedCount: Number(data.preferencesUpdatedCount ?? delegateRecord.preferencesUpdatedCount ?? 0),
+          preferences_updated_count: Number(data.preferencesUpdatedCount ?? delegateRecord.preferences_updated_count ?? 0),
+          preferencesLocked: Boolean(data.preferencesLocked || delegateRecord.preferencesLocked),
         };
 
         setDelegateRecord(updated);
@@ -489,7 +492,7 @@ export default function DelegateDashboard() {
           sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: updated }));
         } catch (_) { }
 
-        setEditSuccessMsg("Your details have been updated successfully!");
+        setEditSuccessMsg(data.message || "Your details have been updated successfully!");
         setTimeout(() => {
           setIsEditingProfile(false);
           setEditSuccessMsg("");
@@ -1353,35 +1356,71 @@ export default function DelegateDashboard() {
                 </div>
 
                 {/* Committee Preferences */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-mono text-white/40 uppercase tracking-wider font-semibold">
-                      Submitted Committee Choices
-                    </p>
-                    <button
-                      type="button"
-                      onClick={openEditProfileModal}
-                      className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <Pencil className="w-3 h-3" /> Change Choices
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {[1, 2, 3].map((n) => {
-                      const comm = delegateRecord[`pref${n}_committee`];
-                      const ctry = delegateRecord[`pref${n}_country`];
-                      const displayVal = delegateRecord[`pref${n}`] || (comm ? `${comm}${ctry ? ' · ' + ctry : ''}` : "Not specified");
-                      return (
-                        <div key={n} className="p-3.5 rounded-xl bg-[#090909] border border-white/10 space-y-1">
-                          <span className="text-[10px] font-mono text-white/40 block font-semibold uppercase">Choice {n}</span>
-                          <span className="text-xs sm:text-sm font-semibold text-white mt-1 block leading-snug truncate">
-                            {displayVal}
+                {(() => {
+                  const isPrefsLocked = Boolean(
+                    delegateRecord.preferencesLocked ||
+                    Number(delegateRecord.preferencesUpdatedCount ?? delegateRecord.preferences_updated_count ?? 0) >= 1
+                  );
+                  return (
+                    <div className="space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <p className="m-0 text-xs font-mono text-white/40 uppercase tracking-wider font-semibold">
+                            Submitted Committee Choices
+                          </p>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider ${
+                              isPrefsLocked
+                                ? "border border-[#333333] bg-[#141414] text-zinc-400"
+                                : "bg-white text-black"
+                            }`}
+                          >
+                            {isPrefsLocked ? "Locked · 1/1 Change Used" : "1 One-Time Change Available"}
                           </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                        {!isPrefsLocked && (
+                          <button
+                            type="button"
+                            onClick={openEditProfileModal}
+                            className="text-[11px] font-mono text-white hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <Pencil className="w-3 h-3" /> Change Choices (Once Only)
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="px-3.5 py-2.5 rounded-md border border-[#262626] bg-[#070707] text-[11.5px] text-zinc-400">
+                        {isPrefsLocked ? (
+                          <span>
+                            <strong className="text-white">Preferences Locked:</strong> You have already used your one-time committee preference update. Contact the Secretariat if you require an administrative override.
+                          </span>
+                        ) : (
+                          <span>
+                            <strong className="text-white">Note:</strong> You can update your committee and country preferences <strong className="text-white">only once</strong> after registration. Once saved, your choices will be permanently locked.
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        {[1, 2, 3].map((n) => {
+                          const comm = delegateRecord[`pref${n}_committee`];
+                          const ctry = delegateRecord[`pref${n}_country`];
+                          const displayVal = comm
+                            ? `${comm}${ctry ? " · " + ctry : ""}`
+                            : delegateRecord[`pref${n}`] || "Not specified";
+                          return (
+                            <div key={n} className="p-3.5 rounded-xl bg-[#090909] border border-white/10 space-y-1">
+                              <span className="text-[10px] font-mono text-white/40 block font-semibold uppercase">Choice {n}</span>
+                              <span className="text-xs sm:text-sm font-semibold text-white mt-1 block leading-snug truncate">
+                                {displayVal}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Core Data Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -2332,11 +2371,41 @@ export default function DelegateDashboard() {
                   </div>
 
                   {/* 4. Committee & Portfolio Preferences */}
+                  {(() => {
+                    const isPrefsLocked = Boolean(
+                      delegateRecord?.preferencesLocked ||
+                      Number(delegateRecord?.preferencesUpdatedCount ?? delegateRecord?.preferences_updated_count ?? 0) >= 1
+                    );
+                    return (
                   <div className="pt-2 border-t border-white/10">
-                    <h4 className="text-xs font-mono uppercase tracking-wider text-white/50 mb-3 font-semibold">
-                      4. Committee &amp; Country Preferences
-                    </h4>
-                    <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <h4 className="m-0 text-xs font-mono uppercase tracking-wider text-white/50 font-semibold">
+                        4. Committee &amp; Country Preferences
+                      </h4>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                          isPrefsLocked
+                            ? "border border-[#333333] bg-[#141414] text-zinc-400"
+                            : "bg-white text-black"
+                        }`}
+                      >
+                        {isPrefsLocked ? "Locked (1/1 Change Used)" : "One-Time Change Only"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 mb-3 rounded-lg border border-white/15 bg-black text-xs text-zinc-300 leading-relaxed">
+                      {isPrefsLocked ? (
+                        <span>
+                          <strong className="text-white">Preferences Locked:</strong> You have already used your one-time committee preference update. Your committee choices below cannot be modified again.
+                        </span>
+                      ) : (
+                        <span>
+                          <strong className="text-white">Important — One-Time Change Limit:</strong> You may modify your committee and country preferences <strong className="text-white">only once</strong>. As soon as you save any change to your choices below, they will be permanently locked.
+                        </span>
+                      )}
+                    </div>
+
+                    <div className={`space-y-3 ${isPrefsLocked ? "opacity-55 pointer-events-none select-none" : ""}`}>
 
                       {/* Choice 1 */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#121212] p-3 rounded-xl border border-white/10">
@@ -2345,9 +2414,10 @@ export default function DelegateDashboard() {
                             Committee Choice 1
                           </label>
                           <select
+                            disabled={isPrefsLocked}
                             value={editForm.pref1_committee || ""}
                             onChange={(e) => setEditForm({ ...editForm, pref1_committee: e.target.value })}
-                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40 disabled:cursor-not-allowed"
                           >
                             <option value="">Select Committee 1</option>
                             <option value="UNCSW">UNCSW</option>
@@ -2364,10 +2434,11 @@ export default function DelegateDashboard() {
                           </label>
                           <input
                             type="text"
+                            disabled={isPrefsLocked}
                             value={editForm.pref1_country || ""}
                             onChange={(e) => setEditForm({ ...editForm, pref1_country: e.target.value })}
                             placeholder="e.g. USA / India / Journalist"
-                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40 disabled:cursor-not-allowed"
                           />
                         </div>
                       </div>
@@ -2379,9 +2450,10 @@ export default function DelegateDashboard() {
                             Committee Choice 2
                           </label>
                           <select
+                            disabled={isPrefsLocked}
                             value={editForm.pref2_committee || ""}
                             onChange={(e) => setEditForm({ ...editForm, pref2_committee: e.target.value })}
-                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40 disabled:cursor-not-allowed"
                           >
                             <option value="">Select Committee 2</option>
                             <option value="UNCSW">UNCSW</option>
@@ -2398,10 +2470,11 @@ export default function DelegateDashboard() {
                           </label>
                           <input
                             type="text"
+                            disabled={isPrefsLocked}
                             value={editForm.pref2_country || ""}
                             onChange={(e) => setEditForm({ ...editForm, pref2_country: e.target.value })}
                             placeholder="e.g. France / UK / Photographer"
-                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40 disabled:cursor-not-allowed"
                           />
                         </div>
                       </div>
@@ -2413,9 +2486,10 @@ export default function DelegateDashboard() {
                             Committee Choice 3
                           </label>
                           <select
+                            disabled={isPrefsLocked}
                             value={editForm.pref3_committee || ""}
                             onChange={(e) => setEditForm({ ...editForm, pref3_committee: e.target.value })}
-                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40 disabled:cursor-not-allowed"
                           >
                             <option value="">Select Committee 3</option>
                             <option value="UNCSW">UNCSW</option>
@@ -2432,16 +2506,19 @@ export default function DelegateDashboard() {
                           </label>
                           <input
                             type="text"
+                            disabled={isPrefsLocked}
                             value={editForm.pref3_country || ""}
                             onChange={(e) => setEditForm({ ...editForm, pref3_country: e.target.value })}
                             placeholder="e.g. Germany / Russia"
-                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40"
+                            className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white focus:outline-none focus:border-white/40 disabled:cursor-not-allowed"
                           />
                         </div>
                       </div>
 
                     </div>
                   </div>
+                    );
+                  })()}
 
                   {/* Form Footer */}
                   <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">

@@ -94,8 +94,7 @@ export async function GET(request) {
 
     if (supabase) {
       try {
-        const [realDelRes, appDelRes, realDelegRes, delegRes, ocRes, ebRes, secRes, profRes] = await Promise.all([
-          supabase.from('delegates').select('*').order('created_at', { ascending: false }),
+        const [appDelRes, realDelegRes, delegRes, ocRes, ebRes, secRes, profRes] = await Promise.all([
           supabase.from('delegate_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('delegations').select('*').order('created_at', { ascending: false }),
           supabase.from('delegation_applications').select('*').order('created_at', { ascending: false }),
@@ -105,7 +104,7 @@ export async function GET(request) {
           supabase.from('profiles').select('*').order('created_at', { ascending: false }),
         ]);
 
-        const rawAllDelegates = [...(realDelRes.data || []), ...(appDelRes.data || [])];
+        const rawAllDelegates = appDelRes.data || [];
         if (rawAllDelegates.length > 0) {
           sbDelegates = rawAllDelegates.map(d => {
             const rawCode = d.reg_id || d.delegate_id || d.id;
@@ -135,6 +134,8 @@ export async function GET(request) {
             pref2_country: d.pref2_country || d.pref2_portfolio1 || '',
             pref3_committee: d.pref3_committee || '',
             pref3_country: d.pref3_country || d.pref3_portfolio1 || '',
+            preferencesUpdatedCount: Number(d.preferences_updated_count || 0),
+            preferencesLocked: Number(d.preferences_updated_count || 0) >= 1,
             allocatedCommittee: d.allocated_committee || '',
             allocatedCountry: d.allocated_country || '',
             paymentUTR: d.payment_utr || '',
@@ -566,10 +567,12 @@ export async function GET(request) {
       );
     }
 
-    // Apply memory updates
-    mergedRegistrations = mergedRegistrations.map(d => {
-      const key = (d.regId || d.id || d.delegateId || '').trim();
+    // Note: Do NOT overwrite Supabase rows with stale memoryUpdatedDelegates so delegate dashboard updates (DOB, preferences) always reflect live in Admin Panel
+    const sbEmails = new Set(sbDelegates.map((d) => String(d.email || '').trim().toLowerCase()).filter(Boolean));
+    mergedRegistrations = mergedRegistrations.map((d) => {
       const emailKey = (d.email || '').trim().toLowerCase();
+      if (sbEmails.has(emailKey)) return d;
+      const key = (d.regId || d.id || d.delegateId || '').trim();
       const updated = memoryUpdatedDelegates.get(key) || memoryUpdatedDelegates.get(emailKey);
       return updated ? { ...d, ...updated } : d;
     });
@@ -1540,6 +1543,8 @@ export async function POST(request) {
           if (body.pref2_country !== undefined) patch.pref2_country = body.pref2_country;
           if (body.pref3_committee !== undefined) patch.pref3_committee = body.pref3_committee;
           if (body.pref3_country !== undefined) patch.pref3_country = body.pref3_country;
+          if (body.preferences_updated_count !== undefined) patch.preferences_updated_count = Number(body.preferences_updated_count || 0);
+          else if (body.preferencesUpdatedCount !== undefined) patch.preferences_updated_count = Number(body.preferencesUpdatedCount || 0);
           if (body.allocatedCommittee !== undefined) patch.allocated_committee = body.allocatedCommittee;
           if (body.allocatedCountry !== undefined) patch.allocated_country = body.allocatedCountry;
           if (body.paymentUTR !== undefined) patch.payment_utr = body.paymentUTR;
