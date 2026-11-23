@@ -157,8 +157,8 @@
   }
 
   function getDelegateFeeFromReferral() {
-    if (typeof window !== 'undefined' && typeof window.getDelegateFeeFromReferral === 'function' && window.getDelegateFeeFromReferral !== getDelegateFeeFromReferral) {
-      return window.getDelegateFeeFromReferral();
+    if (typeof window !== 'undefined' && typeof window.__resolveGetDelegateFee === 'function') {
+      return window.__resolveGetDelegateFee();
     }
     const referralInput = document.getElementById('regReferral');
     const normalizedCode = normalizeReferralCode(referralInput ? referralInput.value : '');
@@ -166,8 +166,8 @@
   }
 
   function updateDelegatePaymentUI() {
-    if (typeof window !== 'undefined' && typeof window.updateDelegatePaymentUI === 'function' && window.updateDelegatePaymentUI !== updateDelegatePaymentUI) {
-      return window.updateDelegatePaymentUI();
+    if (typeof window !== 'undefined' && typeof window.__resolveUpdateDelegatePaymentUI === 'function') {
+      return window.__resolveUpdateDelegatePaymentUI();
     }
     const fee = getDelegateFeeFromReferral();
     const feeDisplay = document.getElementById('regFeeDisplay');
@@ -1238,6 +1238,16 @@
 
   function openRegistration() {
     restoreFormData();
+    try {
+      const urlRef = (new URLSearchParams(window.location.search).get('ref') || new URLSearchParams(window.location.search).get('referral') || '').trim().toUpperCase();
+      const pendingRef = urlRef || (localStorage.getItem('resolve_pending_ref') || '').trim().toUpperCase();
+      const refEl = document.getElementById('regReferral');
+      if (refEl && pendingRef && (urlRef || !refEl.value)) {
+        refEl.value = pendingRef;
+      }
+      if (typeof window.__applyPendingReferral === 'function') window.__applyPendingReferral();
+      updateDelegatePaymentUI();
+    } catch (_) { }
     const subtitle = regModal.querySelector('.modal-subtitle');
     if (subtitle) subtitle.textContent = 'Step 1 of 3 · Personal Details';
     regModal.classList.add('active');

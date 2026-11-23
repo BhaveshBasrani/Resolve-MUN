@@ -84,24 +84,29 @@ export default function Home() {
       // Auto-fill referral code input if visitor arrived via a referral link
       const applyPendingReferral = () => {
         try {
-          const savedRef = refParam || localStorage.getItem('resolve_pending_ref') || '';
+          const urlRef = (new URLSearchParams(window.location.search).get('ref') || new URLSearchParams(window.location.search).get('referral') || '').trim().toUpperCase();
+          if (urlRef) localStorage.setItem('resolve_pending_ref', urlRef);
+          const savedRef = urlRef || refParam || localStorage.getItem('resolve_pending_ref') || '';
           if (!savedRef) return;
           ['regReferral', 'ocReferral', 'socialsReferral'].forEach((id) => {
             const el = document.getElementById(id);
-            if (el && !el.value) {
+            if (!el) return;
+            // Always apply explicit URL ?ref= even over an old draft; otherwise fill if empty
+            if (urlRef || !el.value) {
               el.value = savedRef;
-              el.dispatchEvent(new Event('input', { bubbles: true }));
-              el.dispatchEvent(new Event('change', { bubbles: true }));
             }
           });
-          const fb = document.getElementById('referralFeedback');
-          if (fb && !fb.textContent) {
-            fb.textContent = `✓ Referral code ${savedRef} applied`;
+          if (typeof window.__resolveUpdateDelegatePaymentUI === 'function') {
+            window.__resolveUpdateDelegatePaymentUI();
+          } else if (typeof window.updateDelegatePaymentUI === 'function') {
+            window.updateDelegatePaymentUI();
           }
         } catch (_) { }
       };
-      setTimeout(applyPendingReferral, 500);
-      setTimeout(applyPendingReferral, 1400);
+      window.__applyPendingReferral = applyPendingReferral;
+      setTimeout(applyPendingReferral, 300);
+      setTimeout(applyPendingReferral, 1000);
+      setTimeout(applyPendingReferral, 2000);
 
       const del = params.get('del');
       if (del) {
@@ -1181,9 +1186,13 @@ export default function Home() {
         };
 
         const regFeeEl = document.getElementById("regFeeDisplay");
-        if (regFeeEl) regFeeEl.innerText = `Registration Fee: ₹${delFee.toLocaleString("en-IN")}`;
+        if (regFeeEl && !document.getElementById("regReferral")?.value?.trim()) {
+          regFeeEl.innerText = `Registration Fee: ₹${delFee.toLocaleString("en-IN")}`;
+        }
         const scanLbl = document.getElementById("paymentQRScanLabel");
-        if (scanLbl) scanLbl.innerText = `SCAN & PAY ₹${delFee.toLocaleString("en-IN")}`;
+        if (scanLbl && !document.getElementById("regReferral")?.value?.trim()) {
+          scanLbl.innerText = `SCAN & PAY ₹${delFee.toLocaleString("en-IN")}`;
+        }
         const badgeDel = document.getElementById("pathwayBadgeDelegate");
         if (badgeDel) {
           badgeDel.innerText =
@@ -1233,7 +1242,11 @@ export default function Home() {
         });
 
         if (window.generateDynamicQR) {
-          window.generateDynamicQR(String(delFee), "paymentQRImage", "upiID");
+          if (document.getElementById("regReferral")?.value?.trim() && typeof window.__resolveUpdateDelegatePaymentUI === "function") {
+            window.__resolveUpdateDelegatePaymentUI();
+          } else {
+            window.generateDynamicQR(String(delFee), "paymentQRImage", "upiID");
+          }
           const size = parseInt(document.getElementById("delSize")?.value || "6", 10) || 6;
           window.generateDynamicQR(String(size * delgFee), "delPaymentQRImage", "delUpiID");
         }
@@ -1459,6 +1472,8 @@ export default function Home() {
         const regModal = document.getElementById("regModal");
         if (regModal) {
           if (window.restoreAllModalDrafts) window.restoreAllModalDrafts("regModal");
+          if (typeof window.__applyPendingReferral === "function") window.__applyPendingReferral();
+          if (typeof window.__resolveUpdateDelegatePaymentUI === "function") window.__resolveUpdateDelegatePaymentUI();
           // Auto-prefill authenticated user info
           if (auth.currentUser) {
             const nameEl = document.getElementById("regName");
@@ -1853,12 +1868,12 @@ export default function Home() {
       window.__verifiedReferralCache = window.__verifiedReferralCache || {};
       let referralLookupTimer = null;
 
-      window.getDelegateFeeFromReferral = function () {
+      window.__resolveGetDelegateFee = function () {
         const val = normalizeReferral(document.getElementById("regReferral")?.value);
         const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
         if (!val) return baseFee;
 
-        // 1. Live verified cache from /api/referrals (covers Delegate RES-XXXX + Secretariat Cash codes)
+        // 1. Live verified cache from /api/referrals (covers Secretariat Cash codes, Admin Promo codes, Delegate RES-XXXX)
         const cached = window.__verifiedReferralCache[val];
         if (cached && cached.valid && typeof cached.finalFee === "number") {
           return cached.finalFee;
@@ -1870,52 +1885,69 @@ export default function Home() {
           (c) => normalizeReferral(c.code) === val && c.active !== false
         );
         if (dynamicMatch) {
+          if (dynamicMatch.discountAmount !== undefined && dynamicMatch.discountAmount !== null && dynamicMatch.discountAmount !== "") {
+            return Math.max(0, baseFee - Number(dynamicMatch.discountAmount));
+          }
           if (dynamicMatch.finalFee !== undefined && dynamicMatch.finalFee !== null && dynamicMatch.finalFee !== "") {
             return Number(dynamicMatch.finalFee);
-          }
-          if (dynamicMatch.discountAmount) {
-            return Math.max(0, baseFee - Number(dynamicMatch.discountAmount));
           }
         }
 
         return REFERRAL_CODE_PRICING[val] || baseFee;
       };
+      window.getDelegateFeeFromReferral = window.__resolveGetDelegateFee;
 
-      const applyFeeToPaymentControls = (fee) => {
+      const applyFeeToPaymentControls = (fee, discountNote = "") => {
+        const numericFee = Math.max(0, Number(fee) || 2500);
         const feeDisplay = document.getElementById("regFeeDisplay");
         if (feeDisplay) {
-          feeDisplay.innerText = `Registration Fee: ₹${Number(fee).toLocaleString("en-IN")}`;
+          feeDisplay.innerText = discountNote
+            ? `Registration Fee: ₹${numericFee.toLocaleString("en-IN")} (${discountNote})`
+            : `Registration Fee: ₹${numericFee.toLocaleString("en-IN")}`;
         }
-        window.generateDynamicQR(String(fee), "paymentQRImage", "upiID");
+        const scanLbl = document.getElementById("paymentQRScanLabel");
+        if (scanLbl) {
+          scanLbl.innerText = `SCAN & PAY ₹${numericFee.toLocaleString("en-IN")}`;
+        }
+        window.generateDynamicQR(String(numericFee), "paymentQRImage", "upiID");
+        const upiId = window.__siteSettings?.upiId || "6301550628@nyes";
+        const upiPayee = window.__siteSettings?.upiPayee || "Bejugam Aditya";
         const upiLink = document.getElementById("payUpiMobileLink");
         if (upiLink) {
-          upiLink.href = `upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=${encodeURIComponent(String(fee))}&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee`;
+          upiLink.href = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiPayee)}&am=${encodeURIComponent(String(numericFee))}&cu=INR&tn=Resolve%20MUN%202026%20Delegate%20Fee`;
         }
       };
 
-      window.updateDelegatePaymentUI = function () {
-        const fee = window.getDelegateFeeFromReferral();
+      window.__resolveUpdateDelegatePaymentUI = function () {
         const baseFee = Number(window.__siteSettings?.delegateFee || 2500);
-        applyFeeToPaymentControls(fee);
-
         const referralVal = normalizeReferral(document.getElementById("regReferral")?.value);
         const feedbackEl = document.getElementById("referralFeedback");
-        if (!feedbackEl) return;
 
         if (!referralVal) {
-          feedbackEl.innerText = "";
-          feedbackEl.style.color = "";
+          applyFeeToPaymentControls(baseFee);
+          if (feedbackEl) {
+            feedbackEl.innerText = "";
+            feedbackEl.style.color = "";
+          }
           return;
         }
 
         const cached = window.__verifiedReferralCache[referralVal];
         if (cached) {
           if (cached.valid) {
-            feedbackEl.innerText = cached.message || `✓ Valid referral code applied — Pay ₹${Number(cached.finalFee ?? baseFee).toLocaleString("en-IN")}`;
-            feedbackEl.style.color = "#22c55e";
+            const finalFee = Number(cached.finalFee ?? baseFee);
+            const savings = Math.max(0, baseFee - finalFee);
+            applyFeeToPaymentControls(finalFee, savings > 0 ? `₹${savings} OFF` : "");
+            if (feedbackEl) {
+              feedbackEl.innerText = cached.message || `✓ Valid referral code applied — Pay ₹${finalFee.toLocaleString("en-IN")}`;
+              feedbackEl.style.color = "#22c55e";
+            }
           } else {
-            feedbackEl.innerText = "Referral code not recognized";
-            feedbackEl.style.color = "#ef4444";
+            applyFeeToPaymentControls(baseFee);
+            if (feedbackEl) {
+              feedbackEl.innerText = "Referral code not recognized";
+              feedbackEl.style.color = "#ef4444";
+            }
           }
           return;
         }
@@ -1925,53 +1957,87 @@ export default function Home() {
           (c) => normalizeReferral(c.code) === referralVal && c.active !== false
         );
         if (dynamicMatch) {
-          const applied = Number(dynamicMatch.finalFee ?? (baseFee - Number(dynamicMatch.discountAmount || 0)));
+          const applied =
+            dynamicMatch.discountAmount !== undefined && dynamicMatch.discountAmount !== null && dynamicMatch.discountAmount !== ""
+              ? Math.max(0, baseFee - Number(dynamicMatch.discountAmount))
+              : Number(dynamicMatch.finalFee ?? baseFee);
           const savings = Math.max(0, baseFee - applied);
-          const ambassador = dynamicMatch.ownerName || dynamicMatch.ambassador || dynamicMatch.label || REFERRAL_AMBASSADORS[referralVal] || "";
-          const note = ambassador ? ` (${ambassador})` : "";
-          feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
-          feedbackEl.style.color = "#22c55e";
+          applyFeeToPaymentControls(applied, savings > 0 ? `₹${savings} OFF` : "");
+          if (feedbackEl) {
+            const ambassador = dynamicMatch.ownerName || dynamicMatch.ambassador || dynamicMatch.label || REFERRAL_AMBASSADORS[referralVal] || "";
+            const note = ambassador ? ` (${ambassador})` : "";
+            feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
+            feedbackEl.style.color = "#22c55e";
+          }
           return;
         }
 
         if (REFERRAL_CODE_PRICING[referralVal]) {
           const applied = REFERRAL_CODE_PRICING[referralVal];
-          const savings = baseFee - applied;
-          const ambassador = REFERRAL_AMBASSADORS[referralVal];
-          const note = ambassador ? ` (${ambassador})` : "";
-          feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
-          feedbackEl.style.color = "#22c55e";
+          const savings = Math.max(0, baseFee - applied);
+          applyFeeToPaymentControls(applied, savings > 0 ? `₹${savings} OFF` : "");
+          if (feedbackEl) {
+            const ambassador = REFERRAL_AMBASSADORS[referralVal];
+            const note = ambassador ? ` (${ambassador})` : "";
+            feedbackEl.innerText = `✓ Valid referral code${note} applied — Pay ₹${applied.toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${savings.toLocaleString("en-IN")})` : ""}`;
+            feedbackEl.style.color = "#22c55e";
+          }
           return;
         }
 
-        // Live server lookup against /api/referrals (validates Delegate RES-XXXX & Secretariat Cash codes)
+        // Live server lookup against /api/referrals (validates Secretariat Cash, Admin Promo & Delegate RES-XXXX codes)
         if (referralVal.length >= 3) {
-          feedbackEl.innerText = "Checking referral code...";
-          feedbackEl.style.color = "#a3a3a3";
+          if (feedbackEl) {
+            feedbackEl.innerText = "Checking referral code...";
+            feedbackEl.style.color = "#a3a3a3";
+          }
           if (referralLookupTimer) clearTimeout(referralLookupTimer);
           referralLookupTimer = setTimeout(async () => {
             try {
-              const res = await fetch(`/api/referrals/?code=${encodeURIComponent(referralVal)}`);
+              const res = await fetch(`/api/referrals?code=${encodeURIComponent(referralVal)}`, { cache: "no-store" });
               const data = await res.json();
               window.__verifiedReferralCache[referralVal] = data;
               const currentVal = normalizeReferral(document.getElementById("regReferral")?.value);
               if (currentVal !== referralVal) return;
               if (data.valid) {
-                applyFeeToPaymentControls(data.finalFee ?? baseFee);
-                feedbackEl.innerText = data.message || "✓ Valid referral code applied";
-                feedbackEl.style.color = "#22c55e";
+                const finalFee = Number(data.finalFee ?? baseFee);
+                const savings = Math.max(0, baseFee - finalFee);
+                applyFeeToPaymentControls(finalFee, savings > 0 ? `₹${savings} OFF` : "");
+                if (feedbackEl) {
+                  feedbackEl.innerText = data.message || `✓ Valid referral code applied — Pay ₹${finalFee.toLocaleString("en-IN")}`;
+                  feedbackEl.style.color = "#22c55e";
+                }
               } else {
                 applyFeeToPaymentControls(baseFee);
-                feedbackEl.innerText = "Referral code not recognized";
-                feedbackEl.style.color = "#ef4444";
+                if (feedbackEl) {
+                  feedbackEl.innerText = "Referral code not recognized";
+                  feedbackEl.style.color = "#ef4444";
+                }
               }
             } catch (_) {
-              feedbackEl.innerText = "Could not verify code right now";
-              feedbackEl.style.color = "#a3a3a3";
+              if (feedbackEl) {
+                feedbackEl.innerText = "Could not verify code right now";
+                feedbackEl.style.color = "#a3a3a3";
+              }
             }
-          }, 250);
+          }, 200);
+        } else {
+          applyFeeToPaymentControls(baseFee);
         }
       };
+      window.updateDelegatePaymentUI = window.__resolveUpdateDelegatePaymentUI;
+
+      // Bulletproof document-level listener so #regReferral ALWAYS triggers live fee update regardless of script load order
+      if (!window.__resolveReferralDelegated) {
+        window.__resolveReferralDelegated = true;
+        const onRefChange = (ev) => {
+          if (ev.target && ev.target.id === "regReferral") {
+            window.__resolveUpdateDelegatePaymentUI();
+          }
+        };
+        document.addEventListener("input", onRefChange, true);
+        document.addEventListener("change", onRefChange, true);
+      }
 
       const attachReferralListener = () => {
         const refInput = document.getElementById("regReferral");

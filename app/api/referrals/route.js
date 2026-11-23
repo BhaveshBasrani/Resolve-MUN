@@ -8,11 +8,7 @@ const SECRETARIAT_CASH_POOL = 400;
 
 const ADMIN_EMAILS = [
   'bhaveshkumarbasrani@gmail.com',
-  'adityabejugam@gmail.com',
-  'support@resolvemun.in',
-  'admin@resolvemun.in',
   'resolve.mun@gmail.com',
-  'munresolve@gmail.com',
 ];
 
 // In-memory fallback mirror for custom Secretariat codes in case Supabase write is throttled
@@ -20,19 +16,19 @@ const memorySecretariatCodes = new Map();
 
 // Legacy partner & ambassador codes (fallback alongside dynamic Supabase system_settings.referral_codes)
 const LEGACY_PARTNER_CODES = {
-  SBXS2026: 2350, AETHERXR2026: 2350, DIYA: 2350, ICFAI: 2000, NYA200: 2350,
-  SOLARIS: 2350, PROMOTION: 2350, UNT100: 2350, HET100: 2350, YCE200: 2350,
-  AN69: 2350, ATHENAXR2026: 2350, STYLE100: 2350, TTG300: 2300, PARNIKA200: 2350,
-  RAYON67: 2350, IRISXRESOLVE: 2350, ABHINAYA200: 2350, SKA200: 1999,
-  AVETE99: 2350, BHAFN01: 2350, POOCF02: 2350, RAYFM03: 2350, JAYFM04: 2350,
-  NIKSH05: 2350, AARCL06: 2350, SNVPU99: 2350, SWASG07: 2350, KANDG08: 2350,
-  ROHDD09: 2350, DHACS10: 2350, JOTDC11: 2350, RAACA12: 2350, RISCO13: 2350,
-  ABHCA14: 2350, ADYSA15: 2350, GAYFH16: 2350, AARDM17: 2350, ABHCC18: 2350,
-  HIMCI19: 2350, DEVOC20: 2350, DHASP21: 2350, HAVST22: 2350, NIPLG23: 2350,
-  MEGDA24: 2350, RYAMK25: 2350, SHRPL26: 2350, TANHP27: 2350, HEMOR28: 2350,
-  AKAUF29: 2350, ANAUO30: 2350, CHAUO31: 2350, LIKUM32: 2350, VAIUM33: 2350,
-  ISHUD34: 2350, MOKUD35: 2350, PARUD36: 2350, NIYUH37: 2350, SAAUH38: 2350,
-  DEEUC39: 2350, PRAUC40: 2350, VIGUP41: 2350, YUVUT42: 2350,
+  SBXS2026: 2500, AETHERXR2026: 2500, DIYA: 2500, ICFAI: 2000, NYA200: 2500,
+  SOLARIS: 2500, PROMOTION: 2500, UNT100: 2500, HET100: 2500, YCE200: 2500,
+  AN69: 2500, ATHENAXR2026: 2500, STYLE100: 2500, TTG300: 2300, PARNIKA200: 2500,
+  RAYON67: 2500, IRISXRESOLVE: 2500, ABHINAYA200: 2500, SKA200: 1999,
+  AVETE99: 2500, BHAFN01: 2500, POOCF02: 2500, RAYFM03: 2500, JAYFM04: 2500,
+  NIKSH05: 2500, AARCL06: 2500, SNVPU99: 2500, SWASG07: 2500, KANDG08: 2500,
+  ROHDD09: 2500, DHACS10: 2500, JOTDC11: 2500, RAACA12: 2500, RISCO13: 2500,
+  ABHCA14: 2500, ADYSA15: 2500, GAYFH16: 2500, AARDM17: 2500, ABHCC18: 2500,
+  HIMCI19: 2500, DEVOC20: 2500, DHASP21: 2500, HAVST22: 2500, NIPLG23: 2500,
+  MEGDA24: 2500, RYAMK25: 2500, SHRPL26: 2500, TANHP27: 2500, HEMOR28: 2500,
+  AKAUF29: 2500, ANAUO30: 2500, CHAUO31: 2500, LIKUM32: 2500, VAIUM33: 2500,
+  ISHUD34: 2500, MOKUD35: 2500, PARUD36: 2500, NIYUH37: 2500, SAAUH38: 2500,
+  DEEUC39: 2500, PRAUC40: 2500, VIGUP41: 2500, YUVUT42: 2500,
 };
 
 function normalizeCode(c) {
@@ -48,7 +44,7 @@ function parseCodesArray(raw) {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) return parsed;
-    } catch (_) {}
+    } catch (_) { }
   }
   return [];
 }
@@ -65,9 +61,9 @@ async function loadSiteSettingsRow() {
     const baseFee =
       Number(
         siteData?.delegate_fee ||
-          sysData?.delegate_base_fee ||
-          siteData?.delegateFee ||
-          BASE_DELEGATE_FEE
+        sysData?.delegate_base_fee ||
+        siteData?.delegateFee ||
+        BASE_DELEGATE_FEE
       ) || BASE_DELEGATE_FEE;
 
     // Merge codes from system_settings (primary) and site_settings (fallback)
@@ -119,7 +115,7 @@ async function uploadBase64ProofToStorage(base64Str, folder, prefix) {
       const { data: pub } = supabase.storage.from('resolve-uploads').getPublicUrl(fileName);
       return pub?.publicUrl || '';
     }
-  } catch (_) {}
+  } catch (_) { }
   return '';
 }
 
@@ -235,7 +231,7 @@ export async function GET(request) {
               createdAt: row.created_at,
             };
           }
-        } catch (_) {}
+        } catch (_) { }
       }
       return NextResponse.json({
         success: true,
@@ -278,7 +274,7 @@ export async function GET(request) {
               createdAt: row.created_at,
             };
           }
-        } catch (_) {}
+        } catch (_) { }
       }
       return NextResponse.json({
         success: true,
@@ -308,8 +304,8 @@ export async function GET(request) {
               customMatch.discountAmount !== undefined
                 ? customMatch.discountAmount
                 : customMatch.finalFee !== undefined && customMatch.finalFee !== ''
-                ? baseFee - Number(customMatch.finalFee)
-                : 0
+                  ? baseFee - Number(customMatch.finalFee)
+                  : 0
             ) || 0
           )
         );
@@ -332,7 +328,7 @@ export async function GET(request) {
             discount > 0
               ? `✓ Valid referral code (${customMatch.ownerName || 'Secretariat'}) — ₹${discount.toLocaleString('en-IN')} OFF · Pay ₹${finalFee.toLocaleString('en-IN')}`
               : `✓ Valid referral code (${customMatch.ownerName || 'Secretariat'}) applied — Pay ₹${finalFee.toLocaleString('en-IN')}`,
-        });
+        }, { headers: { 'Cache-Control': 'no-store' } });
       }
 
       // 1B. Check all registered delegates' personal RES-XXXX codes
@@ -351,7 +347,7 @@ export async function GET(request) {
           resPointsForReferrer: RES_POINTS_PER_REFERRAL,
           finalFee: baseFee,
           message: `✓ Valid Delegate Referral (${matchedDelegate.name}) — +${RES_POINTS_PER_REFERRAL} RES Points to referrer · Pay ₹${baseFee.toLocaleString('en-IN')}`,
-        });
+        }, { headers: { 'Cache-Control': 'no-store' } });
       }
 
       // 1C. Check legacy partner / ambassador codes
@@ -370,7 +366,7 @@ export async function GET(request) {
             discount > 0
               ? `✓ Valid referral code applied — ₹${discount.toLocaleString('en-IN')} OFF · Pay ₹${finalFee.toLocaleString('en-IN')}`
               : `✓ Valid referral code applied — Pay ₹${finalFee.toLocaleString('en-IN')}`,
-        });
+        }, { headers: { 'Cache-Control': 'no-store' } });
       }
 
       return NextResponse.json({
@@ -379,7 +375,7 @@ export async function GET(request) {
         baseFee,
         finalFee: baseFee,
         message: 'Referral code not recognized',
-      });
+      }, { headers: { 'Cache-Control': 'no-store' } });
     }
 
     // MODE 2: Secretariat Cash Dashboard Stats (?email=...)
@@ -625,7 +621,7 @@ export async function POST(request) {
             .limit(1)
             .maybeSingle();
           if (exRoster?.onboarded) isAlreadyApproved = true;
-        } catch (_) {}
+        } catch (_) { }
 
         const { error } = await supabase
           .from('secretariat_roster')
@@ -679,7 +675,7 @@ export async function POST(request) {
               },
             ]);
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Mirror to Google Apps Script Sheet
@@ -700,7 +696,7 @@ export async function POST(request) {
             upiId,
             status: isAlreadyApproved ? 'Accepted' : 'Pending Approval',
           }),
-        }).catch(() => {});
+        }).catch(() => { });
       }
 
       return NextResponse.json({
@@ -842,7 +838,7 @@ export async function POST(request) {
             paymentScreenshotBase64,
             screenshotName: body.screenshotName || `OC_Payment_${savedAppId}.png`,
           }),
-        }).catch(() => {});
+        }).catch(() => { });
       }
 
       return NextResponse.json({
@@ -1016,7 +1012,7 @@ export async function POST(request) {
                 paymentScreenshotBase64,
                 screenshotName: body.screenshotName || `Lumen_Payment_${savedRegId}.png`,
               }),
-            }).catch(() => {});
+            }).catch(() => { });
           }
         } catch (err) {
           return NextResponse.json({ success: false, message: err.message }, { status: 500 });

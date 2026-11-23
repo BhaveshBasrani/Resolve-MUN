@@ -152,8 +152,13 @@ export async function GET(request) {
               fullName: ocRow.full_name || 'OC Applicant',
               email: ocRow.email || email,
               institution: ocRow.school || 'Organizing Committee',
-              status: ocRow.status || 'Confirmed',
-              paymentStatus: ocRow.payment_utr ? 'VERIFIED' : 'PENDING_VERIFICATION',
+              status: ocRow.status || 'Pending Approval',
+              paymentStatus:
+                String(ocRow.payment_status || '').toUpperCase() === 'VERIFIED' ||
+                ocRow.status === 'Approved' ||
+                ocRow.status === 'Accepted'
+                  ? 'VERIFIED'
+                  : 'PENDING_VERIFICATION',
               paymentUTR: ocRow.payment_utr || 'OC-TRACK',
               allocatedCommittee: ocRow.allocated_department || 'Organizing Committee',
               allocatedCountry: `OC Member (${ocRow.payment_tier || 'Salaried Track'})`,
@@ -246,7 +251,10 @@ export async function GET(request) {
               email: teamRow.adviser_email || teamRow.advisor_email || email,
               institution: teamRow.inst_name || teamRow.institution_name || 'Delegation',
               status: teamRow.status || 'Pending',
-              paymentStatus: teamRow.payment_utr ? 'VERIFIED' : 'PENDING_VERIFICATION',
+              paymentStatus:
+                String(teamRow.payment_status || '').toUpperCase() === 'VERIFIED'
+                  ? 'VERIFIED'
+                  : 'PENDING_VERIFICATION',
               paymentUTR: teamRow.payment_utr || '',
               allocatedCommittee: 'School Delegation',
               allocatedCountry: `${teamRow.size || teamRow.delegate_count || 6} Delegates`,
@@ -344,6 +352,9 @@ export async function POST(request) {
           supabase.from('delegations').delete().ilike('adviser_email', email),
           supabase.from('delegations').delete().ilike('email', email),
           supabase.from('registered_users').delete().ilike('email', email),
+          supabase.from('profiles').delete().ilike('email', email),
+          supabase.from('secretariat_roster').delete().ilike('email', email),
+          supabase.from('draft_leads').delete().ilike('email', email),
           supabase.from('referral_coupons').delete().ilike('delegate_email', email),
         ];
         await Promise.allSettled(purges);
@@ -386,6 +397,22 @@ export async function POST(request) {
     }
     if (body.experience !== undefined || body.munExperience !== undefined) {
       updatePayload.experience = String(body.experience ?? body.munExperience ?? '').trim();
+    }
+    if (body.emergencyName !== undefined || body.emergency_name !== undefined) {
+      updatePayload.emergency_name = String(body.emergencyName ?? body.emergency_name ?? '').trim();
+    }
+    if (body.emergencyPhone !== undefined || body.emergency_phone !== undefined) {
+      const emgPh = String(body.emergencyPhone ?? body.emergency_phone ?? '').trim();
+      const delPh = String(body.phone ?? '').trim();
+      const cleanEmg = emgPh.replace(/\D/g, '').slice(-10);
+      const cleanDel = delPh.replace(/\D/g, '').slice(-10);
+      if (cleanEmg && cleanDel && cleanEmg === cleanDel) {
+        return NextResponse.json(
+          { success: false, message: "Parent / Emergency number cannot be the same as the delegate's phone number." },
+          { status: 400 }
+        );
+      }
+      updatePayload.emergency_phone = emgPh;
     }
 
     // Committee preferences (Enforce strict one-time preference change limit for delegates)

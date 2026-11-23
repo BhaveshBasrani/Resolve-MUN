@@ -65,6 +65,7 @@ export async function POST(request) {
         email: to,
         subject,
         messageBody: text,
+        htmlBody: html,
         recipients: [{ email: to, name: body.name || 'Delegate' }],
       }),
     });

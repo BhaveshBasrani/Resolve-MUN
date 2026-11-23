@@ -1687,6 +1687,16 @@ export async function POST(request) {
           if (body.address !== undefined) patch.address = body.address;
           if (body.transport !== undefined) patch.transport = body.transport;
           if (body.experience !== undefined) patch.experience = body.experience;
+          const emgName = body.emergencyName !== undefined ? body.emergencyName : body.emergency_name;
+          if (emgName !== undefined) patch.emergency_name = String(emgName || '').trim();
+          const emgPhone = body.emergencyPhone !== undefined ? body.emergencyPhone : body.emergency_phone;
+          if (emgPhone !== undefined) patch.emergency_phone = String(emgPhone || '').trim();
+          const proofUrlVal =
+            body.paymentScreenshotURL ??
+            body.payment_screenshot_url ??
+            body.updates?.payment_screenshot_url ??
+            body.updates?.PaymentScreenshotURL;
+          if (proofUrlVal !== undefined) patch.payment_screenshot_url = String(proofUrlVal || '').trim();
           if (body.pref1_committee !== undefined) patch.pref1_committee = body.pref1_committee;
           if (body.pref1_country !== undefined) patch.pref1_country = body.pref1_country;
           if (body.pref2_committee !== undefined) patch.pref2_committee = body.pref2_committee;
@@ -1915,7 +1925,10 @@ export async function POST(request) {
           if (isUuid) {
             q1 = q1.eq('id', targetId);
             q2 = q2.eq('id', targetId);
-          } else if (targetId.startsWith('RM26-DEL-')) {
+          } else if (targetId && targetEmail) {
+            q1 = q1.or(`delegate_id.eq.${targetId},email.ilike.${targetEmail}`);
+            q2 = q2.or(`reg_id.eq.${targetId},email.ilike.${targetEmail}`);
+          } else if (targetId) {
             q1 = q1.eq('delegate_id', targetId);
             q2 = q2.eq('reg_id', targetId);
           } else if (targetEmail) {
@@ -1923,6 +1936,7 @@ export async function POST(request) {
             q2 = q2.ilike('email', targetEmail);
           }
           await Promise.allSettled([q1, q2]);
+          adminDataCache = null;
         } catch (e) {
           console.warn("[Supabase] Deallocation notice:", e.message);
         }

@@ -282,6 +282,26 @@ export default function RootLayout({ children }) {
         <SmoothScroll />
         {children}
         <Script src="/archive-script.js" strategy="afterInteractive" />
+        <Script id="resolve-console-banner" strategy="afterInteractive">
+          {`(function(){
+            if (window.__resolveConsoleGreeted) return;
+            window.__resolveConsoleGreeted = true;
+            try {
+              console.log(
+                "%c RESOLVE MUN 2.0 %c  Resolve · Reform · Reconcile",
+                "background:#e8c56b;color:#080808;font-weight:900;font-size:15px;padding:6px 12px;border-radius:6px 0 0 6px;letter-spacing:0.12em;font-family:Inter,system-ui,sans-serif;",
+                "background:#111111;color:#f5f5f5;font-weight:600;font-size:13px;padding:6px 14px;border-radius:0 6px 6px 0;border:1px solid #2b2b2b;font-family:Inter,system-ui,sans-serif;"
+              );
+              console.log(
+                "%cPoint of Order, Delegate!%c\\nPeeking under the hood of resolvemun.in? Respect.\\nIf you are here looking for hidden referral codes or free seats — nice try, the Secretariat is watching.\\nIf you love building cool things, come say hi at Northfield International School on 26-27 Dec 2026.\\n\\n%cSecurity Note:%c Never paste unknown code into this console — it could compromise your delegate account.",
+                "color:#e8c56b;font-weight:800;font-size:13px;font-family:Inter,system-ui,sans-serif;",
+                "color:#d4d4d8;font-size:12px;line-height:1.6;font-family:Inter,system-ui,sans-serif;",
+                "color:#f87171;font-weight:700;font-size:11px;font-family:Inter,system-ui,sans-serif;",
+                "color:#a1a1aa;font-size:11px;font-family:Inter,system-ui,sans-serif;"
+              );
+            } catch (_) {}
+          })();`}
+        </Script>
       </body>
     </html>
   );
