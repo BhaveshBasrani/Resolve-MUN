@@ -130,6 +130,8 @@ export async function GET(request) {
             address: d.address || d.residential_address || '',
             transport: d.transport || d.transport_needed || '',
             experience: d.experience || d.mun_experience || '',
+            emergencyName: d.emergency_name || d.parent_name || '',
+            emergencyPhone: d.emergency_phone ? String(d.emergency_phone) : (d.parent_phone ? String(d.parent_phone) : ''),
             pref1_committee: d.pref1_committee || '',
             pref1_country: d.pref1_country || d.pref1_portfolio1 || '',
             pref2_committee: d.pref2_committee || '',
@@ -853,6 +855,16 @@ export async function POST(request) {
       const cleanEmail = (body.email || '').trim().toLowerCase();
       const delegateName = (body.fullName || body.name || 'Delegate').trim();
       const phone = (body.phone ? String(body.phone) : '').trim();
+      const emergencyName = (body.emergency_name || body.emergencyName || body.parent_name || body.parentName || '').trim();
+      const emergencyPhone = (body.emergency_phone || body.emergencyPhone || body.parent_phone || body.parentPhone || '').trim();
+      const cleanDelPhoneDigits = phone.replace(/\D/g, '').slice(-10);
+      const cleanEmgPhoneDigits = emergencyPhone.replace(/\D/g, '').slice(-10);
+      if (cleanDelPhoneDigits && cleanEmgPhoneDigits && cleanDelPhoneDigits === cleanEmgPhoneDigits && !body.adminOverride) {
+        return NextResponse.json(
+          { status: 'error', message: "Parent / Emergency number cannot be the same as the delegate's contact number." },
+          { status: 400 }
+        );
+      }
       const institute = body.institute || body.institution || body.school || 'Individual';
       const grade = body.grade || '11';
       const utr = (body.payment_utr || body.paymentUTR || body.txnID || 'PENDING').trim();
@@ -905,6 +917,8 @@ export async function POST(request) {
         address: body.address || '',
         transport: body.transport || 'No',
         experience: body.experience || '',
+        emergencyName: emergencyName,
+        emergencyPhone: emergencyPhone,
         pref1_committee: body.pref1_committee || '',
         pref1_country: body.pref1_country || '',
         pref2_committee: body.pref2_committee || '',
@@ -1149,6 +1163,38 @@ export async function POST(request) {
       return NextResponse.json({ status: 'success', message: 'Secretariat member removed.' });
     }
 
+    // 0a2. DELEGATION CUSTOM QUOTE UPDATE (Secretariat sets custom price for 15+ delegation)
+    if (action === 'ADMIN_UPDATE_DELEGATION_QUOTE') {
+      const delegationId = String(body.delegationId || body.id || '').trim();
+      const quotedFee = String(body.quotedFee || body.totalAmount || '').trim();
+      const paymentStatus = String(body.paymentStatus || '').trim().toUpperCase();
+      if (!delegationId) {
+        return NextResponse.json({ status: 'error', message: 'Delegation ID is required.' }, { status: 400 });
+      }
+      if (supabase) {
+        try {
+          const patch = {};
+          if (quotedFee) patch.total_amount = quotedFee;
+          if (paymentStatus) patch.payment_status = paymentStatus;
+          if (Object.keys(patch).length > 0) {
+            await Promise.allSettled([
+              supabase.from('delegations').update(patch).or(`delegation_id.eq.${delegationId},id.eq.${delegationId}`),
+              supabase.from('delegation_applications').update(patch).or(`delegation_id.eq.${delegationId},id.eq.${delegationId}`),
+            ]);
+          }
+          adminDataCache = null;
+        } catch (e) {
+          console.warn('[Supabase] Delegation quote update notice:', e.message);
+        }
+      }
+      return NextResponse.json({
+        status: 'success',
+        delegationId,
+        quotedFee,
+        message: `Delegation ${delegationId} quote updated to ${quotedFee || 'Custom Quote'}.`,
+      });
+    }
+
     // 0b. COMMITTEE CAPACITIES: UPDATE_COMMITTEE_CAPACITIES
     if (action === 'UPDATE_COMMITTEE_CAPACITIES') {
       const capacities = body.capacities || {};
@@ -1361,7 +1407,10 @@ export async function POST(request) {
             prize_pool: normalized.totalPrizePool || normalized.prizePool,
             referral_codes: referralCodes,
             committee_capacities: normalized.committeeCapacities,
-            committee_documents: normalized.committeeDocuments,
+            committee_documents: {
+              ...(normalized.committeeDocuments || {}),
+              __liabilityFormUrl: normalized.liabilityFormUrl || "/liability-waiver.pdf",
+            },
             updated_at: new Date().toISOString(),
           });
         } catch (sbErr) {
@@ -2218,66 +2267,85 @@ export async function POST(request) {
       return NextResponse.json({ status: 'success', message: 'Test leads and sample records purged successfully' });
     }
 
-    // 7. GOD-MODE: RECORD_CHECK_IN (Ultra-fast Gatekeeper Scanner)
+    // 7. GOD-MODE: RECORD_CHECK_IN (Ultra-fast Gatekeeper & Bus Scanner)
     if (action === 'RECORD_CHECK_IN') {
       const targetId = (body.delegateId || body.regId || '').trim();
+      const targetEmail = (body.email || '').trim().toLowerCase();
       const dayStr = body.day || 'Day 1';
+      const scanMode = String(body.scanMode || 'GATE').toUpperCase();
       const isEntry = (body.actionType || 'ENTRY') === 'ENTRY';
       const statusValue = isEntry ? 'Present' : 'Absent';
 
       const dayCol = dayStr === 'Day 2' ? 'check_in_day2' : dayStr === 'Day 3' ? 'check_in_day3' : 'check_in_day1';
-      const dayKey = dayStr === 'Day 2' ? 'checkInDay2' : dayStr === 'Day 3' ? 'checkInDay3' : 'checkInDay1';
+      const dayKey =
+        scanMode === 'BUS'
+          ? dayStr === 'Day 2'
+            ? 'busDay2'
+            : 'busDay1'
+          : dayStr === 'Day 2'
+          ? 'checkInDay2'
+          : dayStr === 'Day 3'
+          ? 'checkInDay3'
+          : 'checkInDay1';
 
       if (targetId) {
         const existing = memoryUpdatedDelegates.get(targetId) || {};
         memoryUpdatedDelegates.set(targetId, { ...existing, [dayKey]: statusValue });
       }
 
-      if (supabase && targetId) {
+      if (supabase && (targetId || targetEmail)) {
         try {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
           const nowIso = new Date().toISOString();
           const ops = [];
 
-          // 1. Update delegates table (uses delegate_id + last_check_in)
-          let qDel = supabase.from('delegates').update({ [dayCol]: statusValue, last_check_in: nowIso });
-          if (isUuid) qDel = qDel.eq('id', targetId);
-          else qDel = qDel.or(`delegate_id.eq.${targetId},email.ilike.${targetId}`);
-          ops.push(qDel);
+          if (scanMode !== 'BUS') {
+            // 1. Update underlying delegate_applications table directly for Gate check-in
+            let qLeg = supabase.from('delegate_applications').update({ [dayCol]: statusValue, last_check_in: nowIso, updated_at: nowIso });
+            if (isUuid) qLeg = qLeg.eq('id', targetId);
+            else if (targetEmail) qLeg = qLeg.ilike('email', targetEmail);
+            else qLeg = qLeg.or(`reg_id.eq.${targetId},reg_id.eq.${targetId.replace(/^RM26-DEL-/i, 'RM-')},email.ilike.${targetId}`);
+            ops.push(qLeg);
 
-          // 2. Update legacy delegate_applications table
-          let qLeg = supabase.from('delegate_applications').update({ [dayCol]: statusValue, updated_at: nowIso });
-          if (isUuid) qLeg = qLeg.eq('id', targetId);
-          else qLeg = qLeg.or(`reg_id.eq.${targetId},email.ilike.${targetId}`);
-          ops.push(qLeg);
+            // 2. Update OC / Secretariat / EB tables if scanning a team pass
+            if (targetId.includes('-OC-') || targetEmail) {
+              let qOc = supabase.from('oc_applications').update({ [dayCol]: statusValue, last_check_in: nowIso });
+              if (targetEmail) qOc = qOc.ilike('email', targetEmail);
+              else qOc = qOc.eq('app_id', targetId);
+              ops.push(qOc);
+            }
+            if (targetId.includes('-SEC-') || targetEmail) {
+              let qSec = supabase.from('secretariat_applications').update({ [dayCol]: statusValue, last_check_in: nowIso });
+              if (targetEmail) qSec = qSec.ilike('email', targetEmail);
+              else qSec = qSec.eq('app_id', targetId);
+              ops.push(qSec);
+            }
+            if (targetId.includes('-EB-') || targetEmail) {
+              let qEb = supabase.from('eb_applications').update({ [dayCol]: statusValue, last_check_in: nowIso });
+              if (targetEmail) qEb = qEb.ilike('email', targetEmail);
+              else qEb = qEb.eq('app_id', targetId);
+              ops.push(qEb);
+            }
+          }
 
-          // 3. Update OC / Secretariat / EB tables if scanning a staff or EB badge
-          if (targetId.startsWith('RM26-OC-') || targetId.includes('@')) {
-            ops.push(supabase.from('oc_applications').update({ [dayCol]: statusValue }).or(`app_id.eq.${targetId},email.ilike.${targetId}`));
-          }
-          if (targetId.startsWith('RM26-SEC-') || targetId.includes('@')) {
-            ops.push(supabase.from('secretariat_applications').update({ [dayCol]: statusValue }).or(`app_id.eq.${targetId},email.ilike.${targetId}`));
-          }
-          if (targetId.startsWith('RM26-EB-') || targetId.includes('@')) {
-            ops.push(supabase.from('eb_applications').update({ [dayCol]: statusValue }).or(`app_id.eq.${targetId},email.ilike.${targetId}`));
-          }
-
-          // 4. Write audit log entry to check_in_logs
+          // 3. Write audit log entry to check_in_logs (tracks GATE vs BUS)
           ops.push(
             supabase.from('check_in_logs').insert({
               delegate_id: targetId,
               full_name: body.fullName || body.name || '',
-              email: body.email || '',
-              role: body.role || 'DELEGATE',
-              day: dayStr,
+              email: targetEmail || body.email || '',
+              role: scanMode === 'BUS' ? `BUS_${body.role || 'DELEGATE'}` : body.role || 'DELEGATE',
+              day: scanMode === 'BUS' ? `Bus ${dayStr}` : dayStr,
               action_type: isEntry ? 'ENTRY' : 'EXIT',
-              verified_by: body.verifiedBy || 'Secretariat Desk',
+              verified_by: body.verifiedBy || (scanMode === 'BUS' ? 'Transport Bus Scanner' : 'Secretariat Desk'),
             })
           );
 
           await Promise.allSettled(ops);
           adminDataCache = null;
-        } catch (_) { }
+        } catch (e) {
+          console.warn("[Supabase] Check-in persistence notice:", e.message);
+        }
       }
 
       // Replicate check-in to Google Apps Script asynchronously

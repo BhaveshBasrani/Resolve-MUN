@@ -257,6 +257,7 @@ export default function SuperAdminPage() {
 
   // Ultra-Fast Pass Scanner State (2 scans/sec throughput)
   const [scannerActive, setScannerActive] = useState(false);
+  const [scannerMode, setScannerMode] = useState("GATE"); // "GATE" | "BUS"
   const [scannerDay, setScannerDay] = useState("Day 1");
   const [scannerActionType, setScannerActionType] = useState("ENTRY");
   const [scannerInput, setScannerInput] = useState("");
@@ -521,6 +522,8 @@ export default function SuperAdminPage() {
               address: d.address || d.residential_address || "",
               transport: d.transport || d.transport_needed || "No",
               experience: d.experience || d.mun_experience || "",
+              emergencyName: d.emergencyName || d.emergency_name || d.parent_name || "",
+              emergencyPhone: String(d.emergencyPhone || d.emergency_phone || d.parent_phone || ""),
               pref1_committee: d.pref1_committee || d.CommitteePref1 || "",
               pref1_country: d.pref1_country || "",
               pref2_committee: d.pref2_committee || d.CommitteePref2 || "",
@@ -1027,11 +1030,11 @@ export default function SuperAdminPage() {
           )
         );
         if (data.emailDispatched) {
-          showBanner("success", data.message || `Payment marked ${statusVal} & email sent.`);
+          notify(data.message || `Payment marked ${statusVal} & email sent.`);
         } else {
-          showBanner(
-            "info",
-            `Payment saved as ${statusVal} in database. Email not sent yet — redeploy Apps Script as "Anyone" or add RESEND_API_KEY in .env.local.`
+          notify(
+            `Payment saved as ${statusVal} in database.`,
+            "info"
           );
         }
       }
@@ -1177,28 +1180,54 @@ export default function SuperAdminPage() {
     }
   };
 
-  // Ultra-Fast QR / Barcode Scanner Check-In (Target: 2 scans/sec)
+  // Ultra-Fast QR / Barcode Scanner Check-In (Supports RESOLVE26:..., RESOLVE26|..., RESOLVE_PASS:..., RM-XXXX, Email, Phone)
   const handleExecuteScanCheckIn = async (scannedRaw) => {
     if (!scannedRaw || !scannedRaw.trim()) return;
     const clean = scannedRaw.trim();
 
-    // Parse potential RESOLVE_PASS:DELEGATE:RM26-DEL-1001:email format
-    let targetId = clean;
-    if (clean.includes("RESOLVE_PASS:")) {
-      const parts = clean.split(":");
-      targetId = parts[2] || parts[1] || clean;
-    } else if (clean.includes(":")) {
-      targetId = clean.split(":")[0];
+    const tokens = clean.split(/[:|]/).map((t) => t.trim()).filter(Boolean);
+    let candidateId = "";
+    let candidateEmail = "";
+    for (const tok of tokens) {
+      if (tok.includes("@") && !candidateEmail) candidateEmail = tok.toLowerCase();
+      else if (/^RM(?:26)?-[A-Z0-9-]+$/i.test(tok) && !candidateId) {
+        candidateId = tok.toUpperCase().replace(/^RM26-DEL-/i, "RM-").replace(/^RM26-/i, "RM-");
+      }
     }
+    const targetId = candidateId || clean.replace(/^RM26-DEL-/i, "RM-");
+    const qLower = targetId.toLowerCase();
 
-    const matched = registrations.find(
-      (r) =>
-        r.regId?.toLowerCase() === targetId.toLowerCase() ||
-        r.id?.toLowerCase() === targetId.toLowerCase() ||
-        r.email?.toLowerCase() === targetId.toLowerCase()
-    );
+    const matched = registrations.find((r) => {
+      const rId = String(r.regId || r.id || "").toLowerCase().replace(/^rm26-del-/, "rm-");
+      const rEm = String(r.email || "").toLowerCase();
+      return (
+        rId === qLower ||
+        (candidateEmail && rEm === candidateEmail) ||
+        rEm === clean.toLowerCase() ||
+        String(r.fullName || "").toLowerCase() === clean.toLowerCase()
+      );
+    });
 
     const nowStr = new Date().toLocaleTimeString();
+    const isLumen =
+      matched &&
+      (String(matched.regId || "").toUpperCase().startsWith("RM-LMN-") ||
+        String(matched.paymentUTR || "").toUpperCase() === "LUMEN-ACQUIRED" ||
+        String(matched.referral || "").toUpperCase() === "LUMEN-MUN" ||
+        String(matched.transport || "").toLowerCase().includes("lumen"));
+    const hasBusPass =
+      matched &&
+      !isLumen &&
+      String(matched.transport || "").toLowerCase().startsWith("yes");
+
+    const resolvedStatus = !matched
+      ? "UNREGISTERED"
+      : scannerMode === "BUS"
+      ? hasBusPass
+        ? "BUS_VALID"
+        : "NO_TRANSPORT"
+      : "VALID";
+
     playSuccessChime();
 
     const scanEntry = {
@@ -1206,9 +1235,10 @@ export default function SuperAdminPage() {
       time: nowStr,
       code: targetId,
       delegate: matched || null,
+      mode: scannerMode,
       day: scannerDay,
       action: scannerActionType,
-      status: matched ? "VALID" : "UNREGISTERED",
+      status: resolvedStatus,
     };
 
     setScanResult(scanEntry);
@@ -1216,25 +1246,39 @@ export default function SuperAdminPage() {
     setScannerInput("");
 
     // Optimistically update attendance in state
-    if (matched) {
-      const dayKey = scannerDay === "Day 2" ? "checkInDay2" : scannerDay === "Day 3" ? "checkInDay3" : "checkInDay1";
+    if (matched && (scannerMode === "GATE" || hasBusPass)) {
+      const dayKey =
+        scannerMode === "BUS"
+          ? scannerDay === "Day 2"
+            ? "busDay2"
+            : "busDay1"
+          : scannerDay === "Day 2"
+          ? "checkInDay2"
+          : scannerDay === "Day 3"
+          ? "checkInDay3"
+          : "checkInDay1";
       setRegistrations((prev) =>
         prev.map((d) => (d.regId === matched.regId ? { ...d, [dayKey]: "Present" } : d))
       );
     }
 
     // Async cloud dispatch (non-blocking)
-    fetch("/api/admin/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "RECORD_CHECK_IN",
-        adminKey: "abhilashisgoat",
-        delegateId: targetId,
-        day: scannerDay,
-        actionType: scannerActionType,
-      }),
-    }).catch(() => { });
+    if (!matched || scannerMode === "GATE" || hasBusPass) {
+      fetch("/api/admin/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "RECORD_CHECK_IN",
+          adminKey: "abhilashisgoat",
+          scanMode: scannerMode,
+          delegateId: matched?.regId || targetId,
+          fullName: matched?.fullName || "",
+          email: matched?.email || candidateEmail || "",
+          day: scannerDay,
+          actionType: scannerActionType,
+        }),
+      }).catch(() => {});
+    }
   };
 
   // Send CRM Broadcast
@@ -1367,15 +1411,21 @@ export default function SuperAdminPage() {
     ];
   }, [registrations, delegations]);
 
+  // Deferred search queries for zero-lag 120fps typing
+  const deferredSearchQuery = React.useDeferredValue(searchQuery);
+  const deferredUserSearchQuery = React.useDeferredValue(userSearchQuery);
+
   // Filtered & Sorted Delegates
   const filteredDelegates = useMemo(() => {
+    const q = deferredSearchQuery.toLowerCase().trim();
     const list = registrations.filter((d) => {
-      const q = searchQuery.toLowerCase().trim();
       const matchSearch =
         !q ||
         (d.fullName || "").toLowerCase().includes(q) ||
         (d.email || "").toLowerCase().includes(q) ||
         (d.phone || "").toLowerCase().includes(q) ||
+        (d.emergencyName || "").toLowerCase().includes(q) ||
+        (d.emergencyPhone || "").toLowerCase().includes(q) ||
         (d.regId || "").toLowerCase().includes(q) ||
         (d.institution || "").toLowerCase().includes(q);
 
@@ -1386,7 +1436,15 @@ export default function SuperAdminPage() {
       const matchPay =
         paymentFilter === "ALL" ||
         (paymentFilter === "VERIFIED" && d.paymentStatus === "VERIFIED") ||
-        (paymentFilter === "PENDING" && d.paymentStatus !== "VERIFIED");
+        (paymentFilter === "PENDING" && d.paymentStatus !== "VERIFIED") ||
+        (paymentFilter === "LUMEN" &&
+          (String(d.regId || "").toUpperCase().startsWith("RM-LMN-") ||
+            String(d.paymentUTR || "").toUpperCase() === "LUMEN-ACQUIRED" ||
+            String(d.referral || "").toUpperCase() === "LUMEN-MUN")) ||
+        (paymentFilter === "BUS" &&
+          !String(d.regId || "").toUpperCase().startsWith("RM-LMN-") &&
+          String(d.paymentUTR || "").toUpperCase() !== "LUMEN-ACQUIRED" &&
+          String(d.transport || "").toLowerCase().startsWith("yes"));
 
       return matchSearch && matchComm && matchPay;
     });
@@ -1436,7 +1494,7 @@ export default function SuperAdminPage() {
           return 0;
       }
     });
-  }, [registrations, searchQuery, committeeFilter, paymentFilter, delegateSortBy]);
+  }, [registrations, deferredSearchQuery, committeeFilter, paymentFilter, delegateSortBy]);
 
   // =========================================================================
   // LOGIN / LOCKED STATE
@@ -1567,76 +1625,131 @@ export default function SuperAdminPage() {
       />
 
       <SidebarInset className="min-w-0">
-        {/* Sticky Minimal Header */}
-        <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center gap-2.5 border-b border-white/10 bg-black/95 px-3 sm:px-6 backdrop-blur-md">
-          <SidebarTrigger aria-label="Toggle navigation" />
-          <div className="flex items-center gap-2 min-w-0">
-            <h1 className="truncate text-xs sm:text-base font-semibold text-white">
-              Resolve Secretariat Console
-            </h1>
-            <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-white/10">
-              v2.0 Live
-            </span>
-          </div>
+        <style>{`
+          @keyframes adminTabFade {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 6px, 0);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
+          }
+          @keyframes adminDrawerSlideIn {
+            from {
+              opacity: 0;
+              transform: translate3d(28px, 0, 0);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
+          }
+          .admin-tab-transition {
+            animation: adminTabFade 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+            will-change: transform, opacity;
+          }
+          .admin-drawer-transition {
+            animation: adminDrawerSlideIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+            will-change: transform, opacity;
+          }
+          .admin-fast-row {
+            content-visibility: auto;
+            contain-intrinsic-size: 0 58px;
+          }
+        `}</style>
 
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {lastSyncTime && (
-              <span className="hidden lg:inline-block text-[11px] font-mono text-zinc-400">
-                Synced at {lastSyncTime}
+        {/* Sticky Minimal Header + Integrated Navigation Bar */}
+        <header className="sticky top-0 z-30 border-b border-[#1a1a1a] bg-black">
+          <div className="flex h-13 sm:h-14 items-center gap-3 px-3 sm:px-6">
+            <SidebarTrigger aria-label="Toggle navigation" />
+            <div className="flex items-center gap-2.5 min-w-0">
+              <h1 className="truncate text-xs sm:text-sm font-semibold tracking-tight text-white">
+                Resolve MUN 2.0 Console
+              </h1>
+              <span className="hidden md:inline-block text-[10px] font-mono text-zinc-500">
+                26–27 Dec 2026 · Northfield International School
               </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchAdminData(true)}
-              disabled={isLoading}
-              className="h-8 px-2.5 sm:px-3 gap-1.5 text-xs text-zinc-300 hover:text-white border-white/15 bg-zinc-950 cursor-pointer"
-            >
-              <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
-              <span className="hidden sm:inline">Sync Data</span>
-            </Button>
-            <Avatar className="ml-0.5 size-7 sm:size-8">
-              <AvatarImage
-                src={app1User.avatar}
-                alt="Admin"
-                className="object-[50%_15%]"
-              />
-              <AvatarFallback>RM</AvatarFallback>
-            </Avatar>
-          </div>
-        </header>
+            </div>
 
-        {/* Mobile Quick-Switch Tab Strip (Thumb-friendly navigation on phones <= 768px) */}
-        <div className="md:hidden sticky top-14 z-20 flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b border-white/10 bg-black/95 backdrop-blur-sm">
-          {[
-            { id: "overview", label: "Overview" },
-            { id: "delegates", label: `Delegates (${navCounts.delegates || 0})` },
-            { id: "allocations", label: "Allocations" },
-            { id: "scanner", label: "Scanner" },
-            { id: "secretariat", label: `Secretariat (${navCounts.secretariatRoster || 0})` },
-            { id: "leads", label: `Leads (${navCounts.leads || 0})` },
-            { id: "applications", label: `Team Apps (${navCounts.applications || 0})` },
-            { id: "delegations", label: `Delegations (${navCounts.delegations || 0})` },
-            { id: "referrals", label: "Referrals" },
-            { id: "users", label: `Firebase (${navCounts.users || 0})` },
-            { id: "crm", label: "CRM" },
-            { id: "settings", label: "Settings" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setActiveTab(t.id)}
-              className={cn(
-                "shrink-0 h-8 px-3 rounded-md text-[11px] font-medium whitespace-nowrap cursor-pointer transition-colors",
-                activeTab === t.id
-                  ? "bg-white text-black font-semibold"
-                  : "bg-zinc-950 text-zinc-400 border border-white/10"
+            {/* Integrated Quick Portal Links (Seamless 1-click access across the platform) */}
+            <div className="hidden xl:flex items-center gap-4 ml-6 pl-6 border-l border-[#1f1f1f] text-[11px] font-mono text-zinc-400">
+              <Link href="/" className="hover:text-white transition-colors !no-underline">Site</Link>
+              <Link href="/secretariat" className="hover:text-white transition-colors !no-underline">Secretariat</Link>
+              <Link href="/oc" className="hover:text-white transition-colors !no-underline">OC Portal</Link>
+              <Link href="/lumen" className="hover:text-white transition-colors !no-underline">Lumen</Link>
+              <Link href="/scan" className="hover:text-white transition-colors !no-underline">Scanner</Link>
+              <Link href="/liability" className="hover:text-white transition-colors !no-underline">Liability</Link>
+            </div>
+
+            <div className="ml-auto flex items-center gap-2 shrink-0">
+              {lastSyncTime && (
+                <span className="hidden lg:inline-block text-[11px] font-mono text-zinc-500">
+                  Synced {lastSyncTime}
+                </span>
               )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAdminData(true)}
+                disabled={isLoading}
+                className="h-7 px-2.5 gap-1.5 text-[11px] text-zinc-300 hover:text-white border-[#262626] bg-black cursor-pointer"
+              >
+                <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
+                <span className="hidden sm:inline">Sync</span>
+              </Button>
+              <Avatar className="size-7">
+                <AvatarImage
+                  src={app1User.avatar}
+                  alt="Admin"
+                  className="object-[50%_15%]"
+                />
+                <AvatarFallback>RM</AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+
+          {/* Unified Always-Visible Horizontal Workspace Bar (Zero pills — clean bottom underline active indicator) */}
+          <nav className="flex items-center gap-5 overflow-x-auto px-3 sm:px-6 border-t border-[#141414] bg-[#030303] no-scrollbar">
+            {[
+              { id: "overview", label: "Overview" },
+              { id: "delegates", label: "Delegates", count: navCounts.delegates },
+              { id: "allocations", label: "Allocations" },
+              { id: "scanner", label: "Scanner" },
+              { id: "secretariat", label: "Secretariat & OCs", count: navCounts.secretariatRoster },
+              { id: "delegations", label: "Delegations", count: navCounts.delegations },
+              { id: "leads", label: "Leads", count: navCounts.leads },
+              { id: "applications", label: "Team Apps", count: navCounts.applications },
+              { id: "referrals", label: "Referrals" },
+              { id: "users", label: "Accounts", count: navCounts.users },
+              { id: "crm", label: "CRM" },
+              { id: "settings", label: "Settings" },
+            ].map((t) => {
+              const isAct = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveTab(t.id)}
+                  className={cn(
+                    "shrink-0 py-2.5 text-xs whitespace-nowrap cursor-pointer transition-colors border-b-2 flex items-center gap-1.5",
+                    isAct
+                      ? "border-white text-white font-semibold"
+                      : "border-transparent text-zinc-500 hover:text-zinc-200 font-normal"
+                  )}
+                >
+                  <span>{t.label}</span>
+                  {typeof t.count === "number" && t.count > 0 && (
+                    <span className={cn("font-mono text-[10px]", isAct ? "text-zinc-300" : "text-zinc-600")}>
+                      {t.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </header>
 
         {/* Global Banner Notification */}
         {bannerNotice && (
@@ -1665,8 +1778,8 @@ export default function SuperAdminPage() {
           </div>
         )}
 
-        {/* Dynamic Main Workspace Content */}
-        <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+        {/* Dynamic Main Workspace Content with Smooth Hardware-Accelerated Transitions */}
+        <main key={activeTab} className="admin-tab-transition flex flex-1 flex-col gap-6 p-4 sm:p-6 max-w-7xl w-full mx-auto">
           {/* ===============================================================
               TAB: OVERVIEW
               =============================================================== */}
@@ -1880,74 +1993,71 @@ export default function SuperAdminPage() {
                   </CardContent>
                 </Card>
 
-                {/* DIRECT REGISTRATION & APPLICATION OUTREACH LINKS */}
-                <Card className="col-span-full border border-purple-500/20 bg-gradient-to-r from-purple-950/20 via-zinc-950 to-blue-950/20">
+                {/* DIRECT REGISTRATION & SPECIAL ONBOARDING LINKS */}
+                <Card className="col-span-full">
                   <CardHeader className="pb-3">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div>
                         <CardTitle className="text-sm font-semibold flex items-center gap-2 text-white">
-                          <Link2 className="size-4 text-purple-400" />
-                          Direct Registration & Application Links
+                          <Link2 className="size-4 text-zinc-400" />
+                          Shareable Onboarding &amp; Registration Links
                         </CardTitle>
-                        <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                          Shareable one-click direct links. Anyone opening these URLs lands directly inside that specific registration pathway.
-                        </CardDescription>
                       </div>
-                      <Badge variant="outline" className="w-fit text-[10px] font-mono border-purple-500/30 text-purple-300">
-                        Universal Direct Gateways Active
+                      <Badge variant="outline" className="w-fit text-[10px] font-mono border-[#262626] text-zinc-300">
+                        Direct Gateways Active
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                       {[
+                        {
+                          title: "1. Secretariat Members Portal",
+                          badge: "Secretariat",
+                          path: "/secretariat",
+                          badgeColor: "bg-white text-black border-white font-bold",
+                          desc: "Secretariat members sign in, enter allotted role & UPI, and create their ₹400 referral code",
+                          whatsappText: "Resolve MUN 2.0 Secretariat Portal — Sign in here to enter your allotted role and set up your personal referral code (₹400 cash pool): https://resolvemun.in/secretariat",
+                        },
+                        {
+                          title: "2. Google Forms OC Onboarding",
+                          badge: "Existing OCs",
+                          path: "/oc",
+                          badgeColor: "bg-white text-black border-white font-bold",
+                          desc: "OCs who registered via Google Forms sign in to enter their details & department into the database",
+                          whatsappText: "Resolve MUN 2.0 Organizing Committee — If you registered via Google Forms, please sign in here to enter your OC details and department into the official database: https://resolvemun.in/oc",
+                        },
+                        {
+                          title: "3. Acquired Lumen Delegates",
+                          badge: "Lumen MUN",
+                          path: "/lumen",
+                          badgeColor: "bg-white text-black border-white font-bold",
+                          desc: "Acquired Lumen MUN delegates claim their pass & choose 3 committees (No transport included)",
+                          whatsappText: "Welcome to Resolve MUN 2.0 (Lumen MUN Transfer)! Sign in at the official Lumen Delegate Portal below to enter your details, choose your 3 committee preferences, and activate your QR Gate Pass: https://resolvemun.in/lumen",
+                        },
                         {
                           title: "Individual Delegate",
                           badge: "Delegate",
                           path: "/register/delegate",
-                          badgeColor: "bg-purple-500/15 text-purple-300 border-purple-500/30",
-                          desc: "Direct individual registration modal with committee preferences & study guides",
-                          whatsappText: `Hi! Register as an official Delegate for Resolve MUN 2.0 (${siteSettings.conferenceDates || "25, 26, 27 December 2026"} at ${siteSettings.venueShort || "TBA (To Be Announced)"}) here: https://resolvemun.in/register/delegate`,
+                          badgeColor: "bg-zinc-900 text-zinc-300 border-[#262626]",
+                          desc: "Direct individual registration modal with committee preferences",
+                          whatsappText: `Register as an official Delegate for Resolve MUN 2.0 (26, 27 December 2026 at Northfield International School) here: https://resolvemun.in/register/delegate`,
                         },
                         {
-                          title: "School / Delegation",
-                          badge: "Contingent",
+                          title: "School Delegation (15+)",
+                          badge: "Min 15 · Quote",
                           path: "/register/delegation",
-                          badgeColor: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-                          desc: "Institutional delegation roster registration (min 6 delegates, institutional perks)",
-                          whatsappText: "Register your school / institutional contingent for Resolve MUN 2.0 with institutional perks here: https://resolvemun.in/register/delegation",
+                          badgeColor: "bg-zinc-900 text-zinc-300 border-[#262626]",
+                          desc: "Institutional delegation roster (Min 15 delegates, custom Secretariat quote)",
+                          whatsappText: "Register your school / institutional contingent (15+ delegates) and request a custom price quote from the Resolve MUN 2.0 Secretariat here: https://resolvemun.in/register/delegation",
                         },
                         {
-                          title: "Organizing Committee",
-                          badge: "OC Role",
-                          path: "/register/oc",
-                          badgeColor: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
-                          desc: "Direct application for logistics, hospitality, PR, and delegate affairs",
-                          whatsappText: "Apply for the Organizing Committee (OC) at Resolve MUN 2.0 here: https://resolvemun.in/register/oc",
-                        },
-                        {
-                          title: "Secretariat",
-                          badge: "Secretariat",
-                          path: "/register/secretariat",
-                          badgeColor: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-                          desc: "Application for Secretariat roles",
-                          whatsappText: "Apply for Secretariat at Resolve MUN 2.0 here: https://resolvemun.in/register/secretariat",
-                        },
-                        {
-                          title: "Socials Night Pass",
-                          badge: "Socials Pass",
-                          path: "/register/socials",
-                          badgeColor: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-                          desc: "Direct pass ticket for music, networking & socials night banquet",
-                          whatsappText: "Grab your official Resolve MUN 2026 Socials Night entry pass here: https://resolvemun.in/register/socials",
-                        },
-                        {
-                          title: "Universal Pathway Chooser",
-                          badge: "All Tracks",
-                          path: "/register",
-                          badgeColor: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
-                          desc: "Main pathway selection screen letting applicants browse and pick any track",
-                          whatsappText: "Choose your registration pathway for Resolve MUN 2.0: https://resolvemun.in/register",
+                          title: "Gate & Bus QR Scanner",
+                          badge: "Desk & Bus",
+                          path: "/scan",
+                          badgeColor: "bg-zinc-900 text-zinc-300 border-[#262626]",
+                          desc: "Live QR camera scanner for Venue Gate Check-In and Bus Transport Boarding",
+                          whatsappText: "Resolve MUN 2.0 Gate & Bus QR Scanner: https://resolvemun.in/scan",
                         },
                       ].map((linkItem) => {
                         const fullUrl = `https://resolvemun.in${linkItem.path}`;
@@ -2079,11 +2189,13 @@ export default function SuperAdminPage() {
                   <select
                     value={paymentFilter}
                     onChange={(e) => setPaymentFilter(e.target.value)}
-                    className="h-8 px-2.5 rounded-lg border border-white/10 bg-zinc-900/60 text-xs text-white focus:outline-none"
+                    className="h-8 px-2.5 rounded-md border border-[#262626] bg-black text-xs text-white focus:outline-none"
                   >
-                    <option value="ALL">All Payment Statuses</option>
+                    <option value="ALL">All Delegates</option>
                     <option value="VERIFIED">Verified Only</option>
                     <option value="PENDING">Pending Only</option>
+                    <option value="LUMEN">Lumen Delegates Only</option>
+                    <option value="BUS">Bus Transport Opted Only</option>
                   </select>
 
                   <select
@@ -2108,7 +2220,7 @@ export default function SuperAdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase select-none">
+                      <tr className="border-y border-[#1a1a1a] bg-[#050505] text-zinc-500 font-mono text-[10px] uppercase select-none">
                         <th
                           className="px-4 py-3 cursor-pointer hover:text-white transition-colors"
                           onClick={() => setDelegateSortBy((prev) => (prev === "DATE_DESC" ? "DATE_ASC" : "DATE_DESC"))}
@@ -2118,7 +2230,7 @@ export default function SuperAdminPage() {
                             <span>ID / Date</span>
                             {delegateSortBy === "DATE_DESC" && <ChevronDown className="h-3 w-3 text-white" />}
                             {delegateSortBy === "DATE_ASC" && <ChevronUp className="h-3 w-3 text-white" />}
-                            {!delegateSortBy.startsWith("DATE") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                            {!delegateSortBy.startsWith("DATE") && <ArrowUpDown className="h-3 w-3 text-zinc-700" />}
                           </div>
                         </th>
                         <th
@@ -2127,23 +2239,24 @@ export default function SuperAdminPage() {
                           title="Click to toggle name sort"
                         >
                           <div className="flex items-center gap-1.5">
-                            <span>Delegate Name & School</span>
+                            <span>Delegate &amp; School</span>
                             {delegateSortBy === "NAME_ASC" && <ChevronUp className="h-3 w-3 text-white" />}
                             {delegateSortBy === "NAME_DESC" && <ChevronDown className="h-3 w-3 text-white" />}
-                            {!delegateSortBy.startsWith("NAME") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                            {!delegateSortBy.startsWith("NAME") && <ArrowUpDown className="h-3 w-3 text-zinc-700" />}
                           </div>
                         </th>
-                        <th className="px-4 py-3">Contact</th>
+                        <th className="px-4 py-3">Preferences (1 · 2 · 3)</th>
+                        <th className="px-4 py-3">Contact &amp; Parent</th>
                         <th
                           className="px-4 py-3 cursor-pointer hover:text-white transition-colors"
                           onClick={() => setDelegateSortBy((prev) => (prev === "STATUS_UNALLOTTED" ? "STATUS_ALLOTTED" : "STATUS_UNALLOTTED"))}
                           title="Click to toggle allocation sort"
                         >
                           <div className="flex items-center gap-1.5">
-                            <span>Assigned Committee & Portfolio</span>
+                            <span>Allocation</span>
                             {delegateSortBy === "STATUS_UNALLOTTED" && <ChevronUp className="h-3 w-3 text-white" />}
                             {delegateSortBy === "STATUS_ALLOTTED" && <ChevronDown className="h-3 w-3 text-white" />}
-                            {!delegateSortBy.startsWith("STATUS") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                            {!delegateSortBy.startsWith("STATUS") && <ArrowUpDown className="h-3 w-3 text-zinc-700" />}
                           </div>
                         </th>
                         <th
@@ -2155,242 +2268,280 @@ export default function SuperAdminPage() {
                             <span>Payment UTR</span>
                             {delegateSortBy === "PAYMENT_PENDING" && <ChevronUp className="h-3 w-3 text-white" />}
                             {delegateSortBy === "PAYMENT_VERIFIED" && <ChevronDown className="h-3 w-3 text-white" />}
-                            {!delegateSortBy.startsWith("PAYMENT") && <ArrowUpDown className="h-3 w-3 text-zinc-600" />}
+                            {!delegateSortBy.startsWith("PAYMENT") && <ArrowUpDown className="h-3 w-3 text-zinc-700" />}
                           </div>
                         </th>
                         <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5 font-sans">
+                    <tbody className="divide-y divide-[#141414] font-sans">
                       {filteredDelegates.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-zinc-500 text-xs">
+                          <td colSpan={7} className="py-10 text-center text-zinc-500 text-xs">
                             No delegates matching the filter criteria.
                           </td>
                         </tr>
                       ) : (
-                        filteredDelegates.map((d) => (
-                          <tr key={d.regId} className="hover:bg-zinc-900/40 transition-colors">
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="font-mono text-xs font-semibold text-white block">
-                                {d.regId}
-                              </span>
-                              <span className="text-[10px] text-zinc-500 font-mono">
-                                {formatDisplayDate(d.timestamp)}
-                              </span>
-                            </td>
+                        filteredDelegates.map((d) => {
+                          const isLumen =
+                            String(d.regId || "").toUpperCase().startsWith("RM-LMN-") ||
+                            String(d.paymentUTR || "").toUpperCase() === "LUMEN-ACQUIRED" ||
+                            String(d.referral || "").toUpperCase() === "LUMEN-MUN";
+                          const busLabel = isLumen
+                            ? "No Bus (Lumen)"
+                            : d.transport && d.transport !== "No"
+                            ? "Bus Opted"
+                            : "Self Commute";
 
-                            <td className="px-4 py-3">
-                              <button
-                                type="button"
-                                onClick={() => setViewingDossier(d)}
-                                className="font-semibold text-white hover:text-indigo-400 hover:underline block text-left transition-colors cursor-pointer"
-                                title="Click to view full application details & preferences"
-                              >
-                                {d.fullName}
-                              </button>
-                              <span className="text-[11px] text-zinc-400 block truncate max-w-xs">
-                                {d.institution || "Independent"} · Grade {d.grade || "N/A"}
-                              </span>
-                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span className="inline-flex items-center text-[9px] text-zinc-400 bg-white/[0.04] border border-white/10 px-1.5 py-0.5 rounded font-mono truncate max-w-[140px]" title={d.experience || "First-timer"}>
-                                  Exp: {d.experience ? (d.experience.length > 18 ? d.experience.slice(0, 16) + '...' : d.experience) : "None"}
+                          return (
+                            <tr
+                              key={d.regId}
+                              onClick={() => setViewingDossier(d)}
+                              className="admin-fast-row hover:bg-white/[0.025] transition-colors cursor-pointer group"
+                            >
+                              {/* 1. ID / Date */}
+                              <td className="px-4 py-3.5 whitespace-nowrap align-top">
+                                <span className="font-mono text-xs font-semibold text-white block">
+                                  {d.regId}
                                 </span>
-                                {d.transport && d.transport !== "No" && (
-                                  <span className="inline-flex items-center text-[9px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded font-mono">
-                                    Bus: {d.transport}
-                                  </span>
-                                )}
-                                {[1, 2, 3].map((n) => {
-                                  const cm = d[`pref${n}_committee`];
-                                  const ct = d[`pref${n}_country`];
-                                  if (!cm) return null;
-                                  return (
-                                    <span
-                                      key={n}
-                                      className="inline-flex items-center text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono"
-                                      title={`Choice ${n}: ${cm}${ct ? " · " + ct : ""}`}
-                                    >
-                                      {n}. {cm}{ct ? ` (${ct.length > 14 ? ct.slice(0, 12) + "…" : ct})` : ""}
-                                    </span>
-                                  );
-                                })}
-                                {d.preferencesLocked && (
-                                  <span className="inline-flex items-center text-[9px] text-zinc-300 bg-white/10 border border-white/20 px-1.5 py-0.5 rounded font-mono">
-                                    1/1 Pref Edit Used
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="text-zinc-300 block font-mono text-[11px]">
-                                {d.email}
-                              </span>
-                              <a
-                                href={`https://wa.me/91${d.phone.replace(/[^0-9]/g, "")}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-zinc-500 hover:text-emerald-400 transition-colors text-[11px] font-mono"
-                              >
-                                +91 {d.phone}
-                              </a>
-                            </td>
-
-                            <td className="px-4 py-3">
-                              {d.allocatedCommittee ? (
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <Badge variant="outline" className="text-[10px] font-mono border-white/20 text-white bg-white/[0.04]">
-                                      {d.allocatedCommittee}
-                                    </Badge>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleClearAllocation(d.regId || d.id, d.fullName || d.name, d.email);
-                                      }}
-                                      title="Delete / Remove Allocation"
-                                      className="text-zinc-500 hover:text-red-400 p-0.5 rounded cursor-pointer transition-colors"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </button>
-                                  </div>
-                                  <span className="block text-xs font-semibold text-zinc-200 truncate max-w-[180px]">
-                                    {d.allocatedCountry || "General Delegate"}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-[11px] text-zinc-500 italic">Unassigned</span>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-mono text-xs text-zinc-300">
-                                  {d.paymentUTR || "OFFLINE / MANUAL"}
+                                <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">
+                                  {formatDisplayDate(d.timestamp)}
                                 </span>
-                                {d.paymentUTR && (
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(d.paymentUTR);
-                                      notify(`Copied UTR: ${d.paymentUTR}`);
-                                    }}
-                                    title="Copy UTR"
-                                    className="text-zinc-500 hover:text-white cursor-pointer"
-                                  >
-                                    <Copy className="h-3 w-3" />
-                                  </button>
+                                {isLumen && (
+                                  <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">
+                                    Lumen Transfer
+                                  </span>
                                 )}
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <Badge
-                                  variant={d.paymentStatus === "VERIFIED" ? "default" : "secondary"}
-                                  className={cn(
-                                    "text-[9px] py-0 uppercase font-mono",
-                                    d.paymentStatus === "VERIFIED" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                              </td>
+
+                              {/* 2. Delegate Name & School (Pure Typography — Zero Pills) */}
+                              <td className="px-4 py-3.5 align-top">
+                                <span className="font-semibold text-white group-hover:underline block">
+                                  {d.fullName}
+                                </span>
+                                <span className="text-[11px] text-zinc-400 block truncate max-w-[230px] mt-0.5">
+                                  {d.institution || "Independent"} · Grade {d.grade || "—"}
+                                </span>
+                                <span className="text-[10px] font-mono text-zinc-500 block mt-0.5">
+                                  {busLabel}
+                                  {d.experience ? ` · Exp: ${d.experience.length > 22 ? d.experience.slice(0, 20) + "…" : d.experience}` : ""}
+                                </span>
+                              </td>
+
+                              {/* 3. Preferences (1 · 2 · 3) — Clean Typographic Lines, Zero Colored Pills */}
+                              <td className="px-4 py-3.5 align-top">
+                                <div className="space-y-0.5 text-[11px] font-mono leading-snug">
+                                  {[1, 2, 3].map((n) => {
+                                    const cm = d[`pref${n}_committee`];
+                                    const ct = d[`pref${n}_country`];
+                                    if (!cm) return null;
+                                    return (
+                                      <div
+                                        key={n}
+                                        className="truncate max-w-[220px] text-zinc-300"
+                                        title={`Choice ${n}: ${cm}${ct ? " — " + ct : ""}`}
+                                      >
+                                        <span className="text-zinc-600">{n}.</span>{" "}
+                                        <span className="text-zinc-100 font-medium">{cm}</span>
+                                        {ct ? <span className="text-zinc-500"> · {ct}</span> : ""}
+                                      </div>
+                                    );
+                                  })}
+                                  {!d.pref1_committee && !d.pref2_committee && !d.pref3_committee && (
+                                    <span className="text-zinc-600">—</span>
                                   )}
+                                </div>
+                              </td>
+
+                              {/* 4. Contact & Parent Emergency Info */}
+                              <td className="px-4 py-3.5 whitespace-nowrap align-top" onClick={(e) => e.stopPropagation()}>
+                                <span className="text-zinc-200 block font-mono text-[11px] truncate max-w-[190px]" title={d.email}>
+                                  {d.email}
+                                </span>
+                                <a
+                                  href={`https://wa.me/91${String(d.phone || "").replace(/[^0-9]/g, "")}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-zinc-400 hover:text-white transition-colors text-[11px] font-mono block mt-0.5"
                                 >
-                                  {d.paymentStatus || "PENDING"}
-                                </Badge>
-                                {d.paymentScreenshotURL ? (
-                                  <button
-                                    onClick={() => openScreenshotLightbox(d.paymentScreenshotURL, d)}
-                                    className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium underline inline-flex items-center gap-0.5 cursor-pointer ml-1"
-                                    title="View Payment Proof"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                    Proof
-                                  </button>
+                                  +91 {d.phone || "—"}
+                                </a>
+                                {(d.emergencyName || d.emergencyPhone) && (
+                                  <span className="text-[10px] font-mono text-zinc-500 block mt-0.5 truncate max-w-[190px]" title={`Parent: ${d.emergencyName || "—"} (${d.emergencyPhone || "—"})`}>
+                                    Parent: {d.emergencyName || "—"}{d.emergencyPhone ? ` · ${d.emergencyPhone}` : ""}
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* 5. Assigned Committee & Portfolio (Pure Typography — No Pill) */}
+                              <td className="px-4 py-3.5 align-top" onClick={(e) => e.stopPropagation()}>
+                                {d.allocatedCommittee ? (
+                                  <div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-mono text-xs font-bold text-white">
+                                        {d.allocatedCommittee}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleClearAllocation(d.regId || d.id, d.fullName || d.name, d.email)}
+                                        title="Clear Allocation"
+                                        className="text-zinc-600 hover:text-red-400 p-0.5 rounded cursor-pointer transition-colors"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                    <span className="block text-[11px] text-zinc-400 truncate max-w-[160px] mt-0.5">
+                                      {d.allocatedCountry || "General Delegate"}
+                                    </span>
+                                  </div>
                                 ) : (
                                   <button
+                                    type="button"
                                     onClick={() => {
-                                      const url = window.prompt(`Paste Payment Screenshot / Drive URL for ${d.name || d.fullName} (${d.regId}):`);
-                                      if (url && url.trim()) {
-                                        handleUpdateProofUrl(d.regId, url.trim());
-                                      }
+                                      setAllottingDelegate(d);
+                                      setAllotForm({
+                                        committee: d.pref1_committee || "DISEC",
+                                        country: (d.pref1_country || "").split("/")[0]?.trim() || "",
+                                        sendEmail: false,
+                                      });
                                     }}
-                                    className="text-[9px] text-zinc-500 hover:text-zinc-300 italic inline-flex items-center gap-0.5 cursor-pointer ml-1"
-                                    title="Attach receipt link manually"
+                                    className="text-[11px] font-mono text-zinc-500 hover:text-white underline decoration-zinc-700 underline-offset-2 cursor-pointer"
                                   >
-                                    <Plus className="h-2.5 w-2.5" /> Proof
+                                    + Assign
                                   </button>
                                 )}
-                              </div>
-                            </td>
+                              </td>
 
-                            <td className="px-4 py-3 text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setViewingDossier(d)}
-                                  className="h-7 w-7 text-zinc-400 hover:text-indigo-400 hover:bg-white/10 cursor-pointer"
-                                  title="View Full Application Dossier (Preferences, Address, Experience)"
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setEditingDelegate(d)}
-                                  className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer"
-                                  title="Edit Delegate Details"
-                                >
-                                  <Edit3 className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setAllottingDelegate(d);
-                                    setAllotForm({
-                                      committee: d.allocatedCommittee || "DISEC",
-                                      country: d.allocatedCountry || "",
-                                      sendEmail: false,
-                                    });
-                                  }}
-                                  className="h-7 w-7 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-950/30 cursor-pointer"
-                                  title="Allot Committee & Portfolio"
-                                >
-                                  <Layers className="h-3.5 w-3.5" />
-                                </Button>
-                                {d.paymentStatus !== "VERIFIED" && (
+                              {/* 6. Payment UTR & Typographic Status Dot (Zero Colored Pill Boxes) */}
+                              <td className="px-4 py-3.5 whitespace-nowrap align-top" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono text-xs text-zinc-200">
+                                    {d.paymentUTR || "OFFLINE"}
+                                  </span>
+                                  {d.paymentUTR && (
+                                    <button
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(d.paymentUTR);
+                                        notify(`Copied UTR: ${d.paymentUTR}`);
+                                      }}
+                                      title="Copy UTR"
+                                      className="text-zinc-600 hover:text-white cursor-pointer"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2.5 mt-1 text-[11px] font-mono">
+                                  {d.paymentStatus === "VERIFIED" ? (
+                                    <span className="inline-flex items-center gap-1.5 text-emerald-400">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                      Verified
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 text-amber-400">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                      Pending
+                                    </span>
+                                  )}
+                                  {d.paymentScreenshotURL ? (
+                                    <button
+                                      onClick={() => openScreenshotLightbox(d.paymentScreenshotURL, d)}
+                                      className="text-zinc-400 hover:text-white underline underline-offset-2 cursor-pointer"
+                                      title="View Payment Proof"
+                                    >
+                                      Proof
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        const url = window.prompt(`Paste Payment Screenshot / Drive URL for ${d.name || d.fullName} (${d.regId}):`);
+                                        if (url && url.trim()) {
+                                          handleUpdateProofUrl(d.regId, url.trim());
+                                        }
+                                      }}
+                                      className="text-zinc-600 hover:text-zinc-400 cursor-pointer"
+                                      title="Attach receipt link manually"
+                                    >
+                                      +Proof
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* 7. Actions */}
+                              <td className="px-4 py-3.5 text-right whitespace-nowrap align-top" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1">
+                                  {d.paymentStatus !== "VERIFIED" && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleVerifyPayment(d.regId, d.email, "VERIFIED")}
+                                      className="h-7 px-2 text-[10px] font-mono text-white border-[#262626] hover:bg-white hover:text-black cursor-pointer mr-1"
+                                    >
+                                      Verify
+                                    </Button>
+                                  )}
                                   <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleVerifyPayment(d.regId, d.email, "VERIFIED")}
-                                    className="h-7 px-2 text-[10px] uppercase font-semibold text-emerald-400 border-emerald-500/30 hover:bg-emerald-950/40 cursor-pointer"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setViewingDossier(d)}
+                                    className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/5 cursor-pointer"
+                                    title="Open Delegate Drawer"
                                   >
-                                    Verify
+                                    <Eye className="h-3.5 w-3.5" />
                                   </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCrmEmailTo(d.email);
-                                    setCrmRecipientMode("SINGLE");
-                                    setActiveTab("crm");
-                                  }}
-                                  className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer"
-                                  title="Send Email"
-                                >
-                                  <Mail className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteDelegate(d.regId, d.fullName, d.email, d.paymentScreenshotURL)}
-                                  className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-950/30 cursor-pointer"
-                                  title="Delete Delegate"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setEditingDelegate(d)}
+                                    className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/5 cursor-pointer"
+                                    title="Edit Delegate"
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setAllottingDelegate(d);
+                                      setAllotForm({
+                                        committee: d.allocatedCommittee || d.pref1_committee || "DISEC",
+                                        country: d.allocatedCountry || (d.pref1_country || "").split("/")[0]?.trim() || "",
+                                        sendEmail: false,
+                                      });
+                                    }}
+                                    className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/5 cursor-pointer"
+                                    title="Allot Committee & Portfolio"
+                                  >
+                                    <Layers className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setCrmEmailTo(d.email);
+                                      setCrmRecipientMode("SINGLE");
+                                      setActiveTab("crm");
+                                    }}
+                                    className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/5 cursor-pointer"
+                                    title="Send Email"
+                                  >
+                                    <Mail className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteDelegate(d.regId, d.fullName, d.email, d.paymentScreenshotURL)}
+                                    className="h-7 w-7 text-zinc-500 hover:text-red-400 hover:bg-red-950/20 cursor-pointer"
+                                    title="Delete Delegate"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -2400,7 +2551,7 @@ export default function SuperAdminPage() {
           )}
 
           {/* ===============================================================
-              TAB: DELEGATIONS (SCHOOL CONTINGENTS)
+              TAB: DELEGATIONS (SCHOOL CONTINGENTS · MIN 15 · CUSTOM QUOTE)
               =============================================================== */}
           {activeTab === "delegations" && (
             <Card>
@@ -2411,14 +2562,14 @@ export default function SuperAdminPage() {
                       School Delegation Contingents ({delegations.length})
                     </CardTitle>
                     <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                      Institutional rosters, faculty adviser details, and settlement
+                      Minimum 15 delegates per delegation · Custom pricing quoted by Secretariat
                     </CardDescription>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => exportCsv(delegations, "delegations")}
-                    className="h-8 gap-1.5 text-xs border-white/15"
+                    className="h-8 gap-1.5 text-xs border-[#262626] cursor-pointer"
                   >
                     <Download className="h-3.5 w-3.5" />
                     Export CSV
@@ -2429,16 +2580,16 @@ export default function SuperAdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-y border-white/10 bg-zinc-950 text-zinc-400 font-mono text-[10px] uppercase">
+                      <tr className="border-y border-[#1f1f1f] bg-black text-zinc-400 font-mono text-[10px] uppercase">
                         <th className="px-4 py-3">ID / Institution</th>
                         <th className="px-4 py-3">Adviser / Head</th>
-                        <th className="px-4 py-3">Delegates</th>
-                        <th className="px-4 py-3">Total Amount</th>
-                        <th className="px-4 py-3">Payment UTR</th>
-                        <th className="px-4 py-3 text-right">Action</th>
+                        <th className="px-4 py-3">Size (Min 15)</th>
+                        <th className="px-4 py-3">Custom Quote / Fee</th>
+                        <th className="px-4 py-3">Status / UTR</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-[#1f1f1f]">
                       {delegations.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-zinc-500 text-xs">
@@ -2447,7 +2598,7 @@ export default function SuperAdminPage() {
                         </tr>
                       ) : (
                         delegations.map((d) => (
-                          <tr key={d.delegationId} className="hover:bg-zinc-900/40 transition-colors">
+                          <tr key={d.delegationId} className="hover:bg-white/[0.02] transition-colors">
                             <td className="px-4 py-3">
                               <span className="font-semibold text-white block">
                                 {d.instName}
@@ -2459,15 +2610,18 @@ export default function SuperAdminPage() {
                             <td className="px-4 py-3">
                               <span className="text-zinc-200 block">{d.adviserName || "Adviser"}</span>
                               <span className="text-zinc-500 font-mono text-[11px] block">{d.adviserEmail}</span>
+                              {d.adviserPhone && (
+                                <span className="text-zinc-500 font-mono text-[11px] block">+91 {d.adviserPhone}</span>
+                              )}
                             </td>
                             <td className="px-4 py-3 font-mono font-bold text-white">
-                              {d.delegateCount} Delegates
+                              {d.delegateCount || 15} Delegates
                             </td>
-                            <td className="px-4 py-3 font-mono text-emerald-400 font-semibold">
-                              {d.totalAmount}
+                            <td className="px-4 py-3 font-mono text-white font-semibold">
+                              {d.totalAmount || "Quote Requested"}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="font-mono text-xs text-zinc-300 block">{d.paymentUTR || "Pending"}</span>
+                              <span className="font-mono text-xs text-zinc-300 block">{d.paymentUTR || "QUOTE-REQUESTED"}</span>
                               <Badge
                                 variant={d.paymentStatus === "VERIFIED" ? "success" : "secondary"}
                                 className="text-[9px] py-0 uppercase font-mono mt-1"
@@ -2475,20 +2629,65 @@ export default function SuperAdminPage() {
                                 {d.paymentStatus}
                               </Badge>
                             </td>
-                            <td className="px-4 py-3 text-right">
-                              {d.paymentScreenshotURL ? (
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => openScreenshotLightbox(d.paymentScreenshotURL, d)}
-                                  className="h-7 text-xs border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/30 cursor-pointer"
+                                  onClick={async () => {
+                                    const quote = window.prompt(
+                                      `Set Custom Quoted Fee for ${d.instName} (${d.delegateCount || 15} Delegates):`,
+                                      String(d.totalAmount || "₹30,000")
+                                    );
+                                    if (!quote || !quote.trim()) return;
+                                    const cleanQuote = quote.trim();
+                                    setDelegations((prev) =>
+                                      prev.map((row) =>
+                                        row.delegationId === d.delegationId
+                                          ? { ...row, totalAmount: cleanQuote }
+                                          : row
+                                      )
+                                    );
+                                    notify(`Updated quote for ${d.instName} to ${cleanQuote}`);
+                                    await fetch("/api/admin/", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        adminKey: "abhilashisgoat",
+                                        action: "ADMIN_UPDATE_DELEGATION_QUOTE",
+                                        delegationId: d.delegationId,
+                                        quotedFee: cleanQuote,
+                                      }),
+                                    }).catch(() => {});
+                                  }}
+                                  className="h-7 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
                                 >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  Proof
+                                  Set Quote
                                 </Button>
-                              ) : (
-                                <span className="text-[10px] text-zinc-600 italic">No file</span>
-                              )}
+                                {d.adviserPhone && (
+                                  <a
+                                    href={`https://wa.me/91${String(d.adviserPhone).replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                                      `Greetings from the Resolve MUN 2.0 Secretariat!\n\nWe have reviewed the institutional delegation roster for ${d.instName} (${d.delegateCount || 15} delegates, ID: ${d.delegationId}).\n\nOfficial Quoted Delegation Fee: ${d.totalAmount || "Custom Quote"}\nUPI ID: ${siteSettings.upiId || "6301550628@nyes"} (${siteSettings.upiPayee || "Bejugam Aditya"})\n\nPlease share the UPI UTR once settled so we can activate all delegate passes.`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center h-7 px-2.5 rounded-md border border-[#262626] bg-black text-zinc-200 hover:text-white text-[11px] font-mono"
+                                  >
+                                    WhatsApp Quote
+                                  </a>
+                                )}
+                                {d.paymentScreenshotURL && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openScreenshotLightbox(d.paymentScreenshotURL, d)}
+                                    className="h-7 text-xs border-[#262626] text-zinc-300 cursor-pointer"
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Proof
+                                  </Button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -2852,19 +3051,28 @@ export default function SuperAdminPage() {
           )}
 
           {/* ===============================================================
-              TAB: SECRETARIAT ROSTER & GROUP ONBOARDING
+              TAB: SECRETARIAT & OC ROSTER + 3 DEDICATED ONBOARDING LINKS
               =============================================================== */}
           {activeTab === "secretariat" && (() => {
             const origin = typeof window !== "undefined" ? window.location.origin : "https://resolvemun.in";
             const onboardingLink = `${origin}/secretariat`;
+            const ocOnboardingLink = `${origin}/oc`;
+            const lumenOnboardingLink = `${origin}/lumen`;
 
-            const handleCopyOnboardingLink = async () => {
+            const lumenDelegatesList = (registrations || []).filter(
+              (d) =>
+                String(d.regId || "").toUpperCase().startsWith("RM-LMN-") ||
+                String(d.paymentUTR || "").toUpperCase() === "LUMEN-ACQUIRED" ||
+                String(d.referral || "").toUpperCase() === "LUMEN-MUN"
+            );
+
+            const copyToClipboardSafe = async (val, label) => {
               try {
                 if (navigator.clipboard && window.isSecureContext) {
-                  await navigator.clipboard.writeText(onboardingLink);
+                  await navigator.clipboard.writeText(val);
                 } else {
                   const ta = document.createElement("textarea");
-                  ta.value = onboardingLink;
+                  ta.value = val;
                   ta.style.position = "fixed";
                   ta.style.opacity = "0";
                   document.body.appendChild(ta);
@@ -2872,10 +3080,9 @@ export default function SuperAdminPage() {
                   document.execCommand("copy");
                   document.body.removeChild(ta);
                 }
-                setSecLinkCopied(true);
-                setTimeout(() => setSecLinkCopied(false), 2000);
+                notify(`Copied ${label}: ${val}`);
               } catch (_) {
-                window.prompt("Copy Secretariat Onboarding Link:", onboardingLink);
+                window.prompt(`Copy ${label}:`, val);
               }
             };
 
@@ -2883,7 +3090,7 @@ export default function SuperAdminPage() {
               e.preventDefault();
               const cleanEmail = secRosterForm.email.trim().toLowerCase();
               if (!cleanEmail || !cleanEmail.includes("@")) {
-                showBanner("error", "Enter a valid email address for the Secretariat member.");
+                notify("Enter a valid email address for the Secretariat member.", "error");
                 return;
               }
               setSecRosterSaving(true);
@@ -2893,7 +3100,7 @@ export default function SuperAdminPage() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     action: "ADMIN_ADD_SECRETARIAT_MEMBER",
-                    adminKey: adminKey || "ResolveMUNAdmin2026@Secure",
+                    adminKey: "abhilashisgoat",
                     fullName: secRosterForm.fullName.trim(),
                     email: cleanEmail,
                     allottedRole: secRosterForm.allottedRole.trim() || "Secretariat Member",
@@ -2902,17 +3109,17 @@ export default function SuperAdminPage() {
                 });
                 const json = await res.json();
                 if (!res.ok || json.status !== "success") {
-                  showBanner("error", json.message || "Could not add Secretariat member.");
+                  notify(json.message || "Could not add Secretariat member.", "error");
                 } else {
                   setSecretariatRoster((prev) => {
                     const filtered = prev.filter((m) => (m.email || "").toLowerCase() !== cleanEmail);
                     return [json.member, ...filtered];
                   });
                   setSecRosterForm({ fullName: "", email: "", allottedRole: "USG Delegate Affairs", department: "" });
-                  showBanner("success", json.message);
+                  notify(json.message);
                 }
               } catch (_) {
-                showBanner("error", "Network error adding Secretariat member.");
+                notify("Network error adding Secretariat member.", "error");
               } finally {
                 setSecRosterSaving(false);
               }
@@ -2926,7 +3133,7 @@ export default function SuperAdminPage() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     action: "ADMIN_DELETE_SECRETARIAT_MEMBER",
-                    adminKey: adminKey || "ResolveMUNAdmin2026@Secure",
+                    adminKey: "abhilashisgoat",
                     id: member.id,
                     email: member.email,
                   }),
@@ -2934,113 +3141,193 @@ export default function SuperAdminPage() {
                 const json = await res.json();
                 if (res.ok && json.status === "success") {
                   setSecretariatRoster((prev) => prev.filter((m) => m.id !== member.id));
-                  showBanner("success", "Removed from Secretariat Roster.");
+                  notify("Removed from Secretariat Roster.");
                 }
               } catch (_) {}
             };
 
+            const officialCodes = Array.isArray(siteSettings.referralCodes) ? siteSettings.referralCodes : [];
             const onboardedCount = secretariatRoster.filter((m) => m.onboarded).length;
 
             return (
               <div className="space-y-5">
-                {/* Shareable Group Onboarding Link Banner */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <CardTitle className="text-base font-semibold">
-                          Secretariat Group Onboarding Link
-                        </CardTitle>
-                        <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                          Add your allotted Secretariat members below, then drop this link in the Sec WhatsApp group. They sign in, see their allotted role, fill their details, and immediately set up their referral codes.
-                        </CardDescription>
+                {/* 1. ALL 3 DEDICATED ONBOARDING LINKS (SECRETARIAT + GOOGLE FORMS OC + LUMEN DELEGATES) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+                  {/* Link 1: Secretariat Members */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold">
+                        1. Secretariat Members Link
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400">
+                        Secretariat members sign in, enter their allotted role &amp; UPI ID, and set up their custom referral code (₹400 cash pool).
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-black border border-[#262626] font-mono text-xs text-zinc-200">
+                        <span className="truncate">{onboardingLink}</span>
+                        <span className="text-[10px] text-zinc-500 shrink-0">
+                          {onboardedCount}/{secretariatRoster.length}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2">
                         <Button
                           type="button"
-                          onClick={handleCopyOnboardingLink}
-                          className="h-9 px-3.5 text-xs bg-white text-black hover:bg-zinc-200 cursor-pointer"
+                          onClick={() => copyToClipboardSafe(onboardingLink, "Secretariat Link")}
+                          className="flex-1 h-8 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
                         >
-                          {secLinkCopied ? "Copied Link!" : "Copy Sec Portal Link"}
+                          Copy Link
                         </Button>
                         <a
                           href={`https://wa.me/?text=${encodeURIComponent(
-                            `Welcome to Resolve MUN 2.0 Secretariat!\n\nLog in here with your email to complete your Secretariat onboarding, view your allotted role, and set up your personal referral code (₹400 cash pool per verified delegate):\n${onboardingLink}`
+                            `Welcome to Resolve MUN 2.0 Secretariat!\n\nSign in here to complete your Secretariat profile, enter your allotted role, and set up your personal referral code (₹400 cash pool per verified delegate):\n${onboardingLink}`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center h-9 px-3.5 rounded-md border border-white/15 bg-zinc-900 hover:bg-zinc-800 text-xs font-medium text-white"
+                          className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-[#262626] bg-black hover:bg-white/[0.04] text-xs font-medium text-white"
                         >
-                          Share in Group
+                          WhatsApp
                         </a>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-black border border-white/10 font-mono text-xs text-zinc-300">
-                      <span className="truncate">{onboardingLink}</span>
-                      <span className="text-[11px] text-zinc-500 shrink-0">
-                        {onboardedCount}/{secretariatRoster.length} Onboarded
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                {/* Manual Add Secretariat Member Form */}
+                  {/* Link 2: OCs Registered via Google Forms */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold">
+                        2. Google Forms OC Onboarding Link
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400">
+                        OCs who registered through Google Forms sign in to enter their department, school, DOB &amp; transport into the database.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-black border border-[#262626] font-mono text-xs text-zinc-200">
+                        <span className="truncate">{ocOnboardingLink}</span>
+                        <span className="text-[10px] text-zinc-500 shrink-0">
+                          {ocApplications.length} OCs
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          onClick={() => copyToClipboardSafe(ocOnboardingLink, "OC Onboarding Link")}
+                          className="flex-1 h-8 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                        >
+                          Copy Link
+                        </Button>
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(
+                            `Resolve MUN 2.0 Organizing Committee — Google Forms Database Onboarding:\n\nPlease sign in at the link below and fill out your OC department, contact details, DOB, and transport preference so your official OC pass is registered in the database:\n${ocOnboardingLink}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-[#262626] bg-black hover:bg-white/[0.04] text-xs font-medium text-white"
+                        >
+                          WhatsApp
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Link 3: Acquired Lumen Delegates */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold">
+                        3. Acquired Lumen Delegates Link
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400">
+                        Acquired Lumen MUN delegates sign in, fill out their details &amp; 3 committee preferences (No transport included, fee waived).
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-black border border-[#262626] font-mono text-xs text-zinc-200">
+                        <span className="truncate">{lumenOnboardingLink}</span>
+                        <span className="text-[10px] text-zinc-500 shrink-0">
+                          {lumenDelegatesList.length} Lumen
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          onClick={() => copyToClipboardSafe(lumenOnboardingLink, "Lumen Delegates Link")}
+                          className="flex-1 h-8 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                        >
+                          Copy Link
+                        </Button>
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(
+                            `Welcome to Resolve MUN 2.0 (Official Lumen MUN Transfer)!\n\nPlease sign in at the Lumen Delegate Portal below to enter your personal details, select your 3 committee & portfolio preferences, and activate your official Resolve MUN 2.0 QR Gate Pass (Note: Transport is self-arranged for Lumen transfers):\n${lumenOnboardingLink}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-[#262626] bg-black hover:bg-white/[0.04] text-xs font-medium text-white"
+                        >
+                          WhatsApp
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* 2. MANUAL ADD SECRETARIAT MEMBER FORM */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base font-semibold">
-                      Add Secretariat Member &amp; Allot Role
+                      Pre-Allot or Add Secretariat Member
                     </CardTitle>
                     <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                      Enter members who are confirmed in the Secretariat. They will automatically unlock onboarding &amp; referral code setup when they sign in with this email.
+                      Members can self-onboard via the link above, or you can pre-enter their email &amp; allotted role here.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleAddRosterMember} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="space-y-1">
                         <label className="text-[11px] text-zinc-400">Member Name</label>
-                        <Input
+                        <input
+                          type="text"
                           value={secRosterForm.fullName}
                           onChange={(e) => setSecRosterForm((p) => ({ ...p, fullName: e.target.value }))}
-                          placeholder="e.g. Aarav Sharma"
-                          className="h-9 bg-black border-white/15 text-xs text-white"
+                          placeholder="e.g. Vibhav Reddy"
+                          className="w-full h-9 px-3 rounded-md bg-black border border-[#262626] text-xs text-white focus:border-white focus:outline-none"
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] text-zinc-400">Login Email *</label>
-                        <Input
+                        <input
                           type="email"
                           required
                           value={secRosterForm.email}
                           onChange={(e) => setSecRosterForm((p) => ({ ...p, email: e.target.value }))}
                           placeholder="member@gmail.com"
-                          className="h-9 bg-black border-white/15 text-xs text-white"
+                          className="w-full h-9 px-3 rounded-md bg-black border border-[#262626] text-xs text-white font-mono focus:border-white focus:outline-none"
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] text-zinc-400">Allotted Role *</label>
-                        <Input
+                        <input
+                          type="text"
                           required
                           list="sec-role-presets"
                           value={secRosterForm.allottedRole}
                           onChange={(e) => setSecRosterForm((p) => ({ ...p, allottedRole: e.target.value }))}
                           placeholder="e.g. USG Delegate Affairs"
-                          className="h-9 bg-black border-white/15 text-xs text-white"
+                          className="w-full h-9 px-3 rounded-md bg-black border border-[#262626] text-xs text-white focus:border-white focus:outline-none"
                         />
                         <datalist id="sec-role-presets">
-                          <option value="Secretary General" />
-                          <option value="Deputy Secretary General" />
-                          <option value="Director General" />
+                          <option value="Secretary-General" />
+                          <option value="Deputy Secretary-General" />
+                          <option value="Director-General" />
                           <option value="Chief of Staff" />
                           <option value="USG Delegate Affairs" />
                           <option value="USG Finance" />
-                          <option value="USG Logistics" />
+                          <option value="USG Logistics & Operations" />
                           <option value="USG Marketing & PR" />
                           <option value="USG Design & Media" />
                           <option value="USG Tech & IT" />
                           <option value="USG Hospitality" />
-                          <option value="Head of Operations" />
+                          <option value="USG Sponsorship" />
                           <option value="Secretariat Member" />
                         </datalist>
                       </div>
@@ -3057,11 +3344,11 @@ export default function SuperAdminPage() {
                   </CardContent>
                 </Card>
 
-                {/* Live Secretariat Roster Table */}
+                {/* 3. LIVE SECRETARIAT ROSTER TABLE (WITH REFERRAL CODES & CASH EARNED) */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base font-semibold">
-                      Confirmed Secretariat Roster ({secretariatRoster.length})
+                      Secretariat Roster &amp; Referral Performance ({secretariatRoster.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -3073,6 +3360,7 @@ export default function SuperAdminPage() {
                             <th className="py-2.5 px-4">Allotted Role</th>
                             <th className="py-2.5 px-4">Status</th>
                             <th className="py-2.5 px-4">Contact &amp; School</th>
+                            <th className="py-2.5 px-4">Referral Code &amp; Cash</th>
                             <th className="py-2.5 px-4">UPI ID (Payouts)</th>
                             <th className="py-2.5 px-4 text-right">Action</th>
                           </tr>
@@ -3080,49 +3368,314 @@ export default function SuperAdminPage() {
                         <tbody className="divide-y divide-white/10 text-xs">
                           {secretariatRoster.length === 0 ? (
                             <tr>
-                              <td colSpan={6} className="py-10 text-center text-zinc-500">
-                                No Secretariat members added yet. Add your team above and share the portal link in the Sec group.
+                              <td colSpan={7} className="py-10 text-center text-zinc-500">
+                                No Secretariat members onboarded yet. Share the Secretariat link above in your WhatsApp group!
                               </td>
                             </tr>
                           ) : (
-                            secretariatRoster.map((m) => (
-                              <tr key={m.id || m.email} className="hover:bg-white/[0.02]">
+                            secretariatRoster.map((m) => {
+                              const em = (m.email || "").trim().toLowerCase();
+                              const memberCodes = officialCodes.filter(
+                                (c) => String(c.ownerEmail || "").trim().toLowerCase() === em && c.active !== false
+                              );
+                              const codeSet = new Set(memberCodes.map((c) => String(c.code || "").toUpperCase()));
+                              const referredDels = (registrations || []).filter(
+                                (r) => codeSet.has(String(r.referral || r.referralCode || "").toUpperCase())
+                              );
+                              const verifiedDels = referredDels.filter((r) => r.paymentStatus === "VERIFIED");
+                              const cashEarned = verifiedDels.reduce((sum, r) => {
+                                const cObj = memberCodes.find(
+                                  (c) => String(c.code || "").toUpperCase() === String(r.referral || r.referralCode || "").toUpperCase()
+                                );
+                                const disc = Number(cObj?.discountAmount || 0);
+                                return sum + Math.max(0, 400 - disc);
+                              }, 0);
+
+                              return (
+                                <tr key={m.id || m.email} className="hover:bg-white/[0.02]">
+                                  <td className="py-3 px-4">
+                                    <div className="font-medium text-white">{m.fullName || "Pending Name"}</div>
+                                    <div className="text-[11px] font-mono text-zinc-400">{m.email}</div>
+                                    {m.instagram && (
+                                      <div className="text-[10px] font-mono text-zinc-500">{m.instagram}</div>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className="inline-flex px-2 py-0.5 rounded border border-white/15 bg-white/[0.04] text-[11px] font-medium text-white">
+                                      {m.allottedRole}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    {m.onboarded ? (
+                                      <span className="inline-flex px-2 py-0.5 rounded bg-white text-black text-[10px] font-bold uppercase tracking-wider">
+                                        Onboarded
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex px-2 py-0.5 rounded border border-white/15 text-zinc-400 text-[10px] font-mono uppercase">
+                                        Pending Login
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-4 text-zinc-300">
+                                    <div>{m.phone || "—"}</div>
+                                    <div className="text-[11px] text-zinc-500">
+                                      {m.school || "—"}{m.grade ? ` · ${m.grade}` : ""}
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    {memberCodes.length > 0 ? (
+                                      <div className="space-y-0.5">
+                                        <div className="font-mono font-bold text-white">
+                                          {memberCodes.map((c) => c.code).join(", ")}
+                                        </div>
+                                        <div className="text-[11px] text-zinc-400 font-mono">
+                                          {verifiedDels.length}/{referredDels.length} verified ·{" "}
+                                          <strong className="text-white">₹{cashEarned.toLocaleString("en-IN")}</strong>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[11px] text-zinc-500">No code yet</span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-4 font-mono text-[11px] text-zinc-300">
+                                    {m.upiId || "—"}
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteRosterMember(m)}
+                                      className="h-7 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 4. ONBOARDED / EXISTING OC ROSTER TABLE */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <CardTitle className="text-base font-semibold">
+                          Organizing Committee (OC) Database Roster ({ocApplications.length})
+                        </CardTitle>
+                        <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                          Includes existing OCs who self-onboarded via {ocOnboardingLink} as well as OC applicants.
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportCsv(ocApplications, "oc_roster")}
+                        className="h-8 text-xs border-white/15 cursor-pointer self-start sm:self-auto"
+                      >
+                        <Download className="h-3.5 w-3.5 mr-1.5" />
+                        Export OC CSV
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-y border-white/10 bg-zinc-950 text-[10px] font-mono uppercase tracking-wider text-zinc-400">
+                            <th className="py-2.5 px-4">OC Member</th>
+                            <th className="py-2.5 px-4">Department</th>
+                            <th className="py-2.5 px-4">School &amp; Grade</th>
+                            <th className="py-2.5 px-4">DOB &amp; Transport</th>
+                            <th className="py-2.5 px-4">Status</th>
+                            <th className="py-2.5 px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10 text-xs">
+                          {ocApplications.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="py-10 text-center text-zinc-500">
+                                No OC members in database yet. Share {ocOnboardingLink} with your existing OCs!
+                              </td>
+                            </tr>
+                          ) : (
+                            ocApplications.map((o, idx) => (
+                              <tr key={o.id || idx} className="hover:bg-white/[0.02]">
                                 <td className="py-3 px-4">
-                                  <div className="font-medium text-white">{m.fullName || "Pending Name"}</div>
-                                  <div className="text-[11px] font-mono text-zinc-400">{m.email}</div>
+                                  <div className="font-medium text-white">{o.fullName || o.name}</div>
+                                  <div className="text-[11px] font-mono text-zinc-400">{o.email}</div>
+                                  <div className="text-[11px] font-mono text-zinc-500">
+                                    {o.phone || "—"}{o.instagram ? ` · ${o.instagram}` : ""}
+                                  </div>
                                 </td>
                                 <td className="py-3 px-4">
                                   <span className="inline-flex px-2 py-0.5 rounded border border-white/15 bg-white/[0.04] text-[11px] font-medium text-white">
-                                    {m.allottedRole}
+                                    {o.allocatedDepartment || o.department1 || "Organizing Committee"}
                                   </span>
                                 </td>
-                                <td className="py-3 px-4">
-                                  {m.onboarded ? (
-                                    <span className="inline-flex px-2 py-0.5 rounded bg-white text-black text-[10px] font-bold uppercase tracking-wider">
-                                      Onboarded
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex px-2 py-0.5 rounded border border-white/15 text-zinc-400 text-[10px] font-mono uppercase">
-                                      Pending Login
-                                    </span>
-                                  )}
+                                <td className="py-3 px-4 text-zinc-300">
+                                  <div>{o.school || o.institution || "—"}</div>
+                                  <div className="text-[11px] text-zinc-500">Grade: {o.grade || "—"}</div>
                                 </td>
                                 <td className="py-3 px-4 text-zinc-300">
-                                  <div>{m.phone || "—"}</div>
-                                  <div className="text-[11px] text-zinc-500">{m.school || "—"}</div>
+                                  <div className="font-mono text-[11px]">DOB: {o.dob || "—"}</div>
+                                  <div className="text-[11px] text-zinc-500">
+                                    Transport: {o.transportNeeded || o.transport || "No"}
+                                  </div>
                                 </td>
-                                <td className="py-3 px-4 font-mono text-[11px] text-zinc-300">
-                                  {m.upiId || "—"}
+                                <td className="py-3 px-4">
+                                  <span className="inline-flex px-2 py-0.5 rounded bg-white text-black text-[10px] font-bold uppercase">
+                                    {o.status || "Confirmed"}
+                                  </span>
                                 </td>
-                                <td className="py-3 px-4 text-right">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeleteRosterMember(m)}
-                                    className="h-7 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
+                                <td className="py-3 px-4 text-right whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => setSelectedTeamApp({ ...o, roleType: "OC" })}
+                                      className="h-7 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                    >
+                                      Inspect
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteApplicant({ ...o, roleType: "OC" })}
+                                      className="h-7 text-xs border-red-500/30 text-red-400 hover:bg-red-500/10 cursor-pointer"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 5. ACQUIRED LUMEN DELEGATES ROSTER TABLE */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <CardTitle className="text-base font-semibold">
+                          Acquired Lumen MUN Delegates Roster ({lumenDelegatesList.length})
+                        </CardTitle>
+                        <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                          Delegates onboarded via {lumenOnboardingLink} · Registration fee covered · Transport excluded (Self-Commute).
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportCsv(lumenDelegatesList, "lumen_delegates_roster")}
+                        className="h-8 text-xs border-[#262626] cursor-pointer self-start sm:self-auto"
+                      >
+                        <Download className="h-3.5 w-3.5 mr-1.5" />
+                        Export Lumen CSV
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-y border-[#1f1f1f] bg-black text-[10px] font-mono uppercase tracking-wider text-zinc-400">
+                            <th className="py-2.5 px-4">ID &amp; Delegate</th>
+                            <th className="py-2.5 px-4">School &amp; Grade</th>
+                            <th className="py-2.5 px-4">3 Committee Preferences</th>
+                            <th className="py-2.5 px-4">Allotted Committee</th>
+                            <th className="py-2.5 px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#1f1f1f] text-xs">
+                          {lumenDelegatesList.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-10 text-center text-zinc-500">
+                                No Lumen delegates onboarded yet. Share {lumenOnboardingLink} with your acquired Lumen MUN delegates!
+                              </td>
+                            </tr>
+                          ) : (
+                            lumenDelegatesList.map((d) => (
+                              <tr key={d.regId || d.email} className="hover:bg-white/[0.02]">
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-mono font-bold text-white">{d.regId}</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-white text-black text-[9px] font-bold uppercase font-mono">
+                                      LUMEN · NO BUS
+                                    </span>
+                                  </div>
+                                  <div className="font-medium text-white mt-0.5">{d.fullName}</div>
+                                  <div className="text-[11px] font-mono text-zinc-400">
+                                    {d.email} · {d.phone}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-zinc-300">
+                                  <div>{d.institution || "—"}</div>
+                                  <div className="text-[11px] text-zinc-500">
+                                    Grade: {d.grade || "—"} · DOB: {d.dob || "—"}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex flex-wrap gap-1">
+                                    {[1, 2, 3].map((n) => {
+                                      const cm = d[`pref${n}_committee`];
+                                      const ct = d[`pref${n}_country`];
+                                      if (!cm) return null;
+                                      return (
+                                        <span
+                                          key={n}
+                                          className="inline-flex px-1.5 py-0.5 rounded border border-[#262626] bg-[#0a0a0a] text-[10px] font-mono text-zinc-200"
+                                        >
+                                          {n}. {cm}{ct ? ` (${ct})` : ""}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  {d.allocatedCommittee ? (
+                                    <div>
+                                      <span className="font-mono font-bold text-white">{d.allocatedCommittee}</span>
+                                      <span className="block text-[11px] text-zinc-400">{d.allocatedCountry}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-[11px] text-zinc-500 italic">Unassigned</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 text-right whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        setAllottingDelegate(d);
+                                        setAllotForm({
+                                          committee: d.allocatedCommittee || d.pref1_committee || "DISEC",
+                                          country: d.allocatedCountry || "",
+                                          sendEmail: false,
+                                        });
+                                      }}
+                                      className="h-7 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                    >
+                                      Allot
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setViewingDossier(d)}
+                                      className="h-7 text-xs border-[#262626] text-zinc-300 cursor-pointer"
+                                    >
+                                      Inspect
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))
@@ -3412,6 +3965,27 @@ export default function SuperAdminPage() {
                         placeholder="Google Maps link or search query"
                         className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-mono text-white focus:outline-none focus:border-white/40"
                       />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase font-semibold">
+                        Official Liability &amp; Waiver Form URL (PDF / Google Drive Link)
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.liabilityFormUrl || "/liability-waiver.pdf"}
+                        onChange={(e) =>
+                          setSiteSettings((prev) => ({
+                            ...prev,
+                            liabilityFormUrl: e.target.value,
+                          }))
+                        }
+                        placeholder="Paste Google Drive link or /liability-waiver.pdf"
+                        className="w-full h-9 px-3 rounded-lg border border-white/15 bg-zinc-900 text-xs font-mono text-white focus:outline-none focus:border-white/40"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                        Attached automatically on /lumen, /oc, Delegation quote requests, and Delegate dashboard
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -4192,13 +4766,24 @@ export default function SuperAdminPage() {
                       </Link>
 
                       <select
+                        value={scannerMode}
+                        onChange={(e) => {
+                          setScannerMode(e.target.value);
+                          setScanResult(null);
+                        }}
+                        className="h-8 px-2.5 rounded-md border border-[#262626] bg-black text-xs text-white font-mono focus:outline-none"
+                      >
+                        <option value="GATE">GATE ENTRY SCANNER</option>
+                        <option value="BUS">BUS / TRANSPORT SCANNER</option>
+                      </select>
+
+                      <select
                         value={scannerDay}
                         onChange={(e) => setScannerDay(e.target.value)}
-                        className="h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-xs text-white font-mono focus:outline-none"
+                        className="h-8 px-2.5 rounded-md border border-[#262626] bg-black text-xs text-white font-mono focus:outline-none"
                       >
-                        <option value="Day 1">Day 1 · 27 Nov</option>
-                        <option value="Day 2">Day 2 · 28 Nov</option>
-                        <option value="Day 3">Day 3 · 29 Nov</option>
+                        <option value="Day 1">Day 1 · 26 Dec</option>
+                        <option value="Day 2">Day 2 · 27 Dec</option>
                       </select>
                       <select
                         value={scannerActionType}
@@ -4277,13 +4862,23 @@ export default function SuperAdminPage() {
                           <div
                             className={cn(
                               "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase",
-                              scanResult.status === "VALID"
+                              scanResult.status === "VALID" || scanResult.status === "BUS_VALID"
                                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                                 : "bg-red-500/20 text-red-300 border border-red-500/40"
                             )}
                           >
-                            {scanResult.status === "VALID" ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-                            {scanResult.status === "VALID" ? "ADMISSION AUTHORIZED" : "UNRECOGNIZED PASS"}
+                            {scanResult.status === "VALID" || scanResult.status === "BUS_VALID" ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                            {scanResult.status === "BUS_VALID"
+                              ? "BUS BOARDING AUTHORIZED"
+                              : scanResult.status === "NO_TRANSPORT"
+                              ? "NO TRANSPORT PASS (SELF COMMUTE / LUMEN)"
+                              : scanResult.status === "VALID"
+                              ? "ADMISSION AUTHORIZED"
+                              : "UNRECOGNIZED PASS"}
                           </div>
 
                           <h3 className="text-xl font-bold text-white">
@@ -4541,7 +5136,8 @@ export default function SuperAdminPage() {
                                 </td>
 
                                 <td className="px-4 py-3 text-right whitespace-nowrap">
-                                  <div className="flex items-center justify-end gap-1.5">
+                                  <div className="flex items-center justify-end gap-
+                                  1.5">
                                     {!isAdmin ? (
                                       <Button
                                         variant="outline"

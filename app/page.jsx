@@ -11,6 +11,7 @@ import {
   submitWaitlistEntry,
   fetchSystemSettingsCached,
   onAuthStateChanged,
+  syncUserToBackend,
 } from "@/lib/firebase";
 import Link from "next/link";
 import { MetalButton } from "@/components/ui/metal-button";
@@ -77,7 +78,7 @@ export default function Home() {
       if (refParam) {
         try {
           localStorage.setItem('resolve_pending_ref', refParam);
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Auto-fill referral code input if visitor arrived via a referral link
@@ -97,7 +98,7 @@ export default function Home() {
           if (fb && !fb.textContent) {
             fb.textContent = `✓ Referral code ${savedRef} applied`;
           }
-        } catch (_) {}
+        } catch (_) { }
       };
       setTimeout(applyPendingReferral, 500);
       setTimeout(applyPendingReferral, 1400);
@@ -1160,7 +1161,7 @@ export default function Home() {
         const delPrizeDesc = document.getElementById("delegationPrizePoolDesc");
         if (delPrizeDesc) {
           const delCp = settings.delegationPrizePool || "₹25,000";
-          delPrizeDesc.innerText = `Register a contingent of 6+ delegates and compete for the ${delCp} Best Delegation cash prize pool.`;
+          delPrizeDesc.innerText = `Register a contingent of 15+ delegates with custom Secretariat pricing and compete for the ${delCp} Best Delegation cash prize pool.`;
         }
         const aboutCash = document.getElementById("aboutCashpoolNum");
         if (aboutCash) {
@@ -1194,12 +1195,12 @@ export default function Home() {
         if (badgeDelg) {
           badgeDelg.innerText =
             settings.delegationOpen !== false && settings.registrationsOpen !== false
-              ? `₹${delgFee.toLocaleString("en-IN")} / DEL · MIN 6`
+              ? "MIN 15 · CUSTOM QUOTE"
               : "CLOSED";
         }
         const perDelNote = document.getElementById("delPerDelegateNote");
         if (perDelNote) {
-          perDelNote.innerText = `(₹${delgFee.toLocaleString("en-IN")} per enrolled delegate · Minimum 6 delegates)`;
+          perDelNote.innerText = "Delegation pricing is custom-quoted by the Secretariat based on your contingent size (Minimum 15 delegates).";
         }
 
         // Grey out any closed pathway cards in #selectionModal
@@ -1486,12 +1487,28 @@ export default function Home() {
           const nextBtn1 = regModal.querySelector('.btn-next');
           if (nextBtn1 && !nextBtn1.dataset.leadAttached) {
             nextBtn1.dataset.leadAttached = "true";
-            nextBtn1.addEventListener('click', () => {
+            nextBtn1.addEventListener('click', (ev) => {
               const phoneInput = document.getElementById("regPhone");
+              const emgPhoneInput = document.getElementById("regEmergencyPhone");
+              const emgErrSpan = document.getElementById("regEmergencyPhoneError");
               if (phoneInput && phoneInput.value && !checkIndianPhoneValid(phoneInput.value)) {
                 alert("Please enter a valid 10-digit Indian phone number (+91 6xxxxxxxxx to 9xxxxxxxxx).");
                 return;
               }
+              if (emgPhoneInput && emgPhoneInput.value && !checkIndianPhoneValid(emgPhoneInput.value)) {
+                alert("Please enter a valid 10-digit Parent / Emergency contact number.");
+                return;
+              }
+              const p1 = (phoneInput?.value || "").replace(/\D/g, "").slice(-10);
+              const p2 = (emgPhoneInput?.value || "").replace(/\D/g, "").slice(-10);
+              if (p1 && p2 && p1 === p2) {
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
+                if (emgErrSpan) emgErrSpan.style.display = "block";
+                alert("Parent / Emergency number cannot be the same as the delegate's phone number.");
+                return;
+              }
+              if (emgErrSpan) emgErrSpan.style.display = "none";
               sendStep1DraftLead('delegate');
             });
           }
@@ -2352,8 +2369,8 @@ export default function Home() {
               prefList.length > 0
                 ? prefList.join(" · ")
                 : [saved.ebRole, saved.ebPref1, saved.ebPref2, saved.secPosition, saved.ocFeeTier]
-                    .filter(Boolean)
-                    .join(" · ");
+                  .filter(Boolean)
+                  .join(" · ");
 
             if (fullName || (email && email.includes("@")) || phone) {
               fetch("/api/admin/", {
@@ -2724,6 +2741,24 @@ export default function Home() {
       const val = String(el.value || "").trim();
       if (!val) return false;
       if (type === "email" && !val.includes("@")) return false;
+      if (el.id === "regEmergencyPhone") {
+        const emgDigits = val.replace(/\D/g, "").slice(-10);
+        const delDigits = String(document.getElementById("regPhone")?.value || "").replace(/\D/g, "").slice(-10);
+        const errSpan = document.getElementById("regEmergencyPhoneError");
+        if (emgDigits.length === 10 && delDigits.length === 10 && emgDigits === delDigits) {
+          if (errSpan) errSpan.style.display = "block";
+          el.style.borderColor = "#ef4444";
+          return false;
+        } else {
+          if (errSpan) errSpan.style.display = "none";
+          if (el.style.borderColor === "rgb(239, 68, 68)") el.style.borderColor = "";
+        }
+        if (emgDigits.length !== 10) return false;
+      }
+      if (el.id === "regPhone") {
+        const delDigits = val.replace(/\D/g, "").slice(-10);
+        if (delDigits.length !== 10) return false;
+      }
       return true;
     };
 

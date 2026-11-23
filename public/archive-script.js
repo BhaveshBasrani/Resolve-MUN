@@ -1292,11 +1292,18 @@
 
         if (!input.value.trim()) {
           inputLineValid = false;
-        } else if (input.id === 'regPhone') {
-          const phoneRegex = /^[0-9]{10}$/;
-          if (!phoneRegex.test(input.value.trim())) {
+        } else if (input.id === 'regPhone' || input.id === 'regEmergencyPhone') {
+          const digits = input.value.replace(/\D/g, '').slice(-10);
+          const phoneRegex = /^[6-9][0-9]{9}$/;
+          if (!phoneRegex.test(digits)) {
             inputLineValid = false;
-            errMsg = "Phone number must be 10 digits.";
+            errMsg = "Enter a valid 10-digit mobile number.";
+          } else if (input.id === 'regEmergencyPhone') {
+            const delPhoneDigits = (document.getElementById('regPhone')?.value || '').replace(/\D/g, '').slice(-10);
+            if (delPhoneDigits && digits === delPhoneDigits) {
+              inputLineValid = false;
+              errMsg = "Parent / Emergency number cannot be the same as the delegate's phone number.";
+            }
           }
         }
 
@@ -1729,12 +1736,10 @@
   });
 
   function updateDelPrice() {
-    const size = parseInt(document.getElementById('delSize')?.value) || 0;
-    const perDel = Number(window.__siteSettings?.delegationFee || 2200);
-    const totalPrice = size * perDel;
+    const size = parseInt(document.getElementById('delSize')?.value) || 15;
     const display = document.getElementById('delTotalPriceDisplay');
     if (display) {
-      display.innerText = `Total Amount: ₹${totalPrice.toLocaleString('en-IN')}`;
+      display.innerText = `Custom Quote (${size} Delegates)`;
     }
     saveDelFormData();
   }
@@ -1773,7 +1778,7 @@
     const container = document.getElementById('delegateInputsContainer');
     if (!container) return;
     const size = parseInt(document.getElementById('delSize')?.value) || 0;
-    if (size < 6) return;
+    if (size < 15) return;
 
     // Look for values in localStorage first, then in current DOM
     let savedValues = {};
@@ -1994,11 +1999,11 @@
         }
       });
 
-      // Special check for Step 1: Minimum Size (6 delegates per Delegation Registration Google Form)
+      // Special check for Step 1: Minimum Size (15 delegates)
       if (currentStepNum === 1) {
         const size = parseInt(document.getElementById('delSize').value);
-        if (isNaN(size) || size < 6) {
-          showCustomAlert('Minimum delegation size is 6 delegates.', 'warning');
+        if (isNaN(size) || size < 15) {
+          showCustomAlert('Minimum delegation size is 15 delegates.', 'warning');
           document.getElementById('delSize').style.borderBottomColor = '#ff4444';
           isValid = false;
         }
@@ -2022,10 +2027,9 @@
     }
 
     if (stepNum === 3) {
-      const size = parseInt(document.getElementById('delSize').value) || 6;
-      const perDel = Number(window.__siteSettings?.delegationFee || 2200);
-      const delegationPrice = size * perDel;
-      generateDynamicQR(delegationPrice.toString(), 'delPaymentQRImage', 'delUpiID');
+      const size = parseInt(document.getElementById('delSize').value) || 15;
+      const display = document.getElementById('delTotalPriceDisplay');
+      if (display) display.innerText = `Custom Quote (${size} Delegates)`;
     }
 
     // Telemetry & Abandoned Lead Capture with accurate step
@@ -2094,11 +2098,11 @@
         adviserEmail: document.getElementById("delAdviserEmail").value,
         size: size,
         delegates: delegates,
-        txnID: document.getElementById("delTxnID")?.value || "",
-        utr: document.getElementById("delUTR")?.value || "",
+        txnID: document.getElementById("delTxnID")?.value || "QUOTE-REQUESTED",
+        utr: document.getElementById("delUTR")?.value || "QUOTE-REQUESTED",
         referral: document.getElementById("delReferral")?.value || "",
         payment_screenshot_link: fileBase64,
-        totalAmount: size * Number(window.__siteSettings?.delegationFee || 2200)
+        totalAmount: `Custom Quote (${size} Delegates)`
       };
 
       if (typeof window.submitDelegationToFirebase === 'function') {

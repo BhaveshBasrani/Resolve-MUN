@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resolve MUN 2.0 — Official Liability & Participant Waiver</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      background: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      line-height: 1.6;
+    }
+    .sheet {
+      max-width: 720px;
+      margin: 0 auto;
+      border: 1px solid #262626;
+      border-radius: 6px;
+      padding: 36px;
+      background: #050505;
+    }
+    .eyebrow {
+      font-family: monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+    }
+    h1 {
+      margin: 8px 0 4px;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      font-size: 13px;
+      color: #a1a1aa;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1f1f1f;
+    }
+    h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 22px;
+      margin-bottom: 8px;
+    }
+    p, li {
+      font-size: 13px;
+      color: #d4d4d8;
+    }
+    .sig-grid {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #1f1f1f;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      font-size: 12px;
+      font-family: monospace;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 10px 18px;
+      background: #ffffff;
+      color: #000000;
+      font-weight: 700;
+      font-size: 12px;
+      text-decoration: none;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+    }
+    @media print {
+      body { background: #ffffff; color: #000000; padding: 0; }
+      .sheet { border: 1px solid #000000; background: #ffffff; color: #000000; }
+      p, li, .sub, .eyebrow { color: #000000; }
+      .btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="eyebrow">RESOLVE MUN 2.0 · OFFICIAL CONFERENCE DOCUMENT</div>
+    <h1>Delegate &amp; Participant Liability Waiver</h1>
+    <div class="sub">26, 27 December 2026 · Northfield International School, Kompally, Hyderabad</div>
+
+    <h2>1. Code of Conduct &amp; Venue Responsibility</h2>
+    <p>
+      All Delegates, Organizing Committee (OC) members, and Contingent members participating in Resolve MUN 2.0 agree to abide by the Conference Rules of Procedure and institutional safety regulations at Northfield International School, Hyderabad. Any damage to venue property or equipment shall be the sole financial responsibility of the participant responsible.
+    </p>
+
+    <h2>2. Prohibited Substances &amp; Zero-Tolerance Policy</h2>
+    <p>
+      Possession or use of alcohol, tobacco, e-cigarettes/vapes, narcotics, inflammable items, or weapons on campus or inside official conference buses is strictly prohibited and will result in immediate expulsion without refund and notification of parents/guardians and school authorities.
+    </p>
+
+    <h2>3. Transportation &amp; Personal Belongings</h2>
+    <p>
+      Conference bus boarding is restricted strictly to participants with an active Transport Pass verified by the Bus QR Scanner (Lumen MUN transferred delegates and Self-Commute delegates arrange their own transportation). The Secretariat and Founders are not liable for personal belongings or external transit delays.
+    </p>
+
+    <h2>4. Parent / Guardian Consent (For Participants Under 18)</h2>
+    <p>
+      I hereby confirm that I have the consent of my parent or legal guardian to attend Resolve MUN 2.0 on 26 and 27 December 2026 and that the emergency contact details submitted in my registration profile are accurate.
+    </p>
+
+    <div class="sig-grid">
+      <div>
+        Participant Name: _______________________<br /><br />
+        Registration ID: ________________________<br /><br />
+        Participant Signature: __________________
+      </div>
+      <div>
+        Parent / Guardian Name: _________________<br /><br />
+        Emergency Phone: ________________________<br /><br />
+        Guardian Signature: _____________________
+      </div>
+    </div>
+
+    <button class="btn" onclick="window.print()">Print / Save Liability Form as PDF</button>
+  </div>
+</body>
+</html>

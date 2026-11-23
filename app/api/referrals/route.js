@@ -125,6 +125,103 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const rawCode = searchParams.get('code');
     const rawEmail = searchParams.get('email');
+    const rawOcEmail = searchParams.get('ocEmail');
+    const rawLumenEmail = searchParams.get('lumenEmail');
+
+    // MODE 0A: Acquired Lumen MUN Delegate Lookup (?lumenEmail=...)
+    if (rawLumenEmail) {
+      const email = rawLumenEmail.trim().toLowerCase();
+      let lumenDelegate = null;
+      if (supabase && email) {
+        try {
+          const { data: row } = await supabase
+            .from('delegate_applications')
+            .select('*')
+            .ilike('email', email)
+            .limit(1)
+            .maybeSingle();
+          if (row) {
+            const rawId = row.reg_id || row.id || '';
+            const shortId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(rawId))
+              ? `RM-LMN-${String(rawId).replace(/-/g, '').slice(0, 4).toUpperCase()}`
+              : String(rawId).replace(/^RM26-DEL-/i, 'RM-');
+            lumenDelegate = {
+              id: row.id,
+              regId: shortId,
+              fullName: row.name || row.full_name || '',
+              email: row.email || email,
+              phone: row.phone || '',
+              school: row.institute || row.school || '',
+              grade: row.grade || '',
+              dob: row.dob || '',
+              address: row.address || '',
+              emergencyName: row.emergency_name || '',
+              emergencyPhone: row.emergency_phone || '',
+              experience: row.experience || '',
+              transport: 'No — Self Commute (Lumen Transfer)',
+              pref1Committee: row.pref1_committee || '',
+              pref1Country: row.pref1_country || '',
+              pref2Committee: row.pref2_committee || '',
+              pref2Country: row.pref2_country || '',
+              pref3Committee: row.pref3_committee || '',
+              pref3Country: row.pref3_country || '',
+              preferencesUpdatedCount: Number(row.preferences_updated_count || 0),
+              preferencesLocked: Number(row.preferences_updated_count || 0) >= 1,
+              allocatedCommittee: row.allocated_committee || '',
+              allocatedCountry: row.allocated_country || '',
+              status: row.status || 'Confirmed',
+              paymentStatus: 'VERIFIED',
+              createdAt: row.created_at,
+            };
+          }
+        } catch (_) {}
+      }
+      return NextResponse.json({
+        success: true,
+        found: Boolean(lumenDelegate),
+        lumenDelegate,
+      });
+    }
+
+    // MODE 0: Existing OC Member Profile Lookup (?ocEmail=...)
+    if (rawOcEmail) {
+      const email = rawOcEmail.trim().toLowerCase();
+      let ocMember = null;
+      if (supabase && email) {
+        try {
+          const { data: row } = await supabase
+            .from('oc_applications')
+            .select('*')
+            .ilike('email', email)
+            .limit(1)
+            .maybeSingle();
+          if (row) {
+            ocMember = {
+              id: row.id,
+              appId: row.app_id || `RM-OC-${String(row.id).replace(/-/g, '').slice(0, 4).toUpperCase()}`,
+              fullName: row.full_name || '',
+              email: row.email || email,
+              phone: row.phone || '',
+              school: row.school || row.institute || '',
+              grade: row.grade || '',
+              dob: row.dob || '',
+              department: row.allocated_department || row.department1 || 'Organizing Committee',
+              transport: row.transport_needed || row.transport || 'No',
+              address: row.residential_address || row.address || '',
+              instagram: row.instagram || '',
+              paymentUtr: row.payment_utr || '',
+              status: row.status || 'Approved',
+              createdAt: row.created_at,
+            };
+          }
+        } catch (_) {}
+      }
+      return NextResponse.json({
+        success: true,
+        found: Boolean(ocMember),
+        ocMember,
+      });
+    }
 
     const { baseFee, referralCodes: dbCodes } = await loadSiteSettingsRow();
     const allCodes = mergeCodesWithMemory(dbCodes);
@@ -244,10 +341,16 @@ export async function GET(request) {
           isSecretariat = true;
           memberName = secRow.full_name || memberName;
           memberRole = secRow.position || 'Secretariat';
+          needsOnboarding = false;
         } else if (ocRow) {
           isSecretariat = true;
           memberName = ocRow.full_name || memberName;
           memberRole = ocRow.allocated_department || 'Organizing Committee';
+          needsOnboarding = false;
+        } else {
+          // Anyone with the /secretariat group link can self-onboard into the Secretariat Roster
+          isSecretariat = true;
+          needsOnboarding = true;
         }
       }
 
@@ -389,40 +492,29 @@ export async function POST(request) {
         return NextResponse.json({ success: false, message: 'Valid signed-in email is required.' }, { status: 400 });
       }
       const fullName = String(body.fullName || '').trim();
+      const allottedRole = String(body.allottedRole || 'Secretariat Member').trim();
       const phone = String(body.phone || '').trim();
       const school = String(body.school || '').trim();
       const grade = String(body.grade || '').trim();
       const upiId = String(body.upiId || '').trim();
       const instagram = String(body.instagram || '').trim();
 
-      if (!fullName || !phone || !school) {
+      if (!fullName || !phone || !school || !allottedRole) {
         return NextResponse.json(
-          { success: false, message: 'Full Name, Phone, and School/Institution are required.' },
+          { success: false, message: 'Full Name, Allotted Role, Phone, and School/Institution are required.' },
           { status: 400 }
         );
       }
 
       if (supabase) {
-        const { data: existing } = await supabase
-          .from('secretariat_roster')
-          .select('id, allotted_role')
-          .ilike('email', email)
-          .limit(1)
-          .maybeSingle();
-
-        if (!existing && !ADMIN_EMAILS.includes(email)) {
-          return NextResponse.json(
-            { success: false, message: 'Your email is not on the Secretariat Roster yet. Ask the Admin to add you first.' },
-            { status: 403 }
-          );
-        }
-
         const nowIso = new Date().toISOString();
-        if (existing?.id) {
-          const { error } = await supabase
-            .from('secretariat_roster')
-            .update({
+        const { error } = await supabase
+          .from('secretariat_roster')
+          .upsert(
+            {
+              email,
               full_name: fullName,
+              allotted_role: allottedRole,
               phone,
               school,
               grade,
@@ -431,17 +523,269 @@ export async function POST(request) {
               onboarded: true,
               onboarded_at: nowIso,
               updated_at: nowIso,
-            })
-            .eq('id', existing.id);
-          if (error) {
-            return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+            },
+            { onConflict: 'email' }
+          );
+        if (error) {
+          return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        }
+
+        // Also mirror into `secretariat_applications` as Accepted so it shows in Team Applications too
+        try {
+          const { data: exSec } = await supabase
+            .from('secretariat_applications')
+            .select('id')
+            .ilike('email', email)
+            .limit(1)
+            .maybeSingle();
+          const secPayload = {
+            full_name: fullName,
+            email,
+            phone,
+            school_college: school,
+            institute: school,
+            grade,
+            instagram,
+            position: allottedRole,
+            allocated_role: allottedRole,
+            status: 'Accepted',
+          };
+          if (exSec?.id) {
+            await supabase.from('secretariat_applications').update(secPayload).eq('id', exSec.id);
+          } else {
+            await supabase.from('secretariat_applications').insert([
+              {
+                ...secPayload,
+                app_id: `RM-SEC-${Math.floor(1000 + Math.random() * 9000)}`,
+              },
+            ]);
           }
+        } catch (_) {}
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Secretariat profile saved! You can now set up your referral code and track earnings.',
+      });
+    }
+
+    if (action === 'COMPLETE_OC_ONBOARDING') {
+      const email = String(body.email || '').trim().toLowerCase();
+      if (!email || !email.includes('@')) {
+        return NextResponse.json({ success: false, message: 'Valid signed-in email is required.' }, { status: 400 });
+      }
+      const fullName = String(body.fullName || '').trim();
+      const phone = String(body.phone || '').trim();
+      const school = String(body.school || '').trim();
+      const grade = String(body.grade || '').trim();
+      const dob = String(body.dob || '').trim();
+      const department = String(body.department || 'Organizing Committee').trim();
+      const transport = String(body.transport || 'No').trim();
+      const address = String(body.address || '').trim();
+      const instagram = String(body.instagram || '').trim();
+      const paymentUtr = String(body.paymentUtr || 'OC-CONFIRMED').trim();
+
+      if (!fullName || !phone || !school || !department) {
+        return NextResponse.json(
+          { success: false, message: 'Full Name, Phone, School/Institution, and Department are required.' },
+          { status: 400 }
+        );
+      }
+
+      let savedAppId = `RM-OC-${Math.floor(1000 + Math.random() * 9000)}`;
+      if (supabase) {
+        try {
+          const { data: existing } = await supabase
+            .from('oc_applications')
+            .select('id, app_id')
+            .ilike('email', email)
+            .limit(1)
+            .maybeSingle();
+
+          if (existing?.app_id) {
+            savedAppId = String(existing.app_id).replace(/^RM26-OC-/i, 'RM-OC-');
+          }
+
+          const ocPayload = {
+            app_id: savedAppId,
+            full_name: fullName,
+            email,
+            phone,
+            school,
+            institute: school,
+            grade,
+            dob,
+            department1: department,
+            allocated_department: department,
+            transport_needed: transport,
+            transport,
+            residential_address: address,
+            address,
+            instagram,
+            payment_tier: 'CONFIRMED_OC',
+            fee_tier: 'CONFIRMED_OC',
+            payment_utr: paymentUtr || 'OC-CONFIRMED',
+            payment_status: 'VERIFIED',
+            status: 'Approved',
+          };
+
+          if (existing?.id) {
+            const { error: updErr } = await supabase
+              .from('oc_applications')
+              .update(ocPayload)
+              .eq('id', existing.id);
+            if (updErr) return NextResponse.json({ success: false, message: updErr.message }, { status: 500 });
+          } else {
+            const { error: insErr } = await supabase
+              .from('oc_applications')
+              .insert([ocPayload]);
+            if (insErr) return NextResponse.json({ success: false, message: insErr.message }, { status: 500 });
+          }
+        } catch (err) {
+          return NextResponse.json({ success: false, message: err.message }, { status: 500 });
         }
       }
 
       return NextResponse.json({
         success: true,
-        message: 'Onboarding complete! You can now create your referral code and track earnings.',
+        appId: savedAppId,
+        message: 'OC Profile registered in the Resolve MUN 2.0 database!',
+      });
+    }
+
+    if (action === 'COMPLETE_LUMEN_ONBOARDING') {
+      const email = String(body.email || '').trim().toLowerCase();
+      if (!email || !email.includes('@')) {
+        return NextResponse.json({ success: false, message: 'Valid signed-in email is required.' }, { status: 400 });
+      }
+      const fullName = String(body.fullName || '').trim();
+      const phone = String(body.phone || '').trim();
+      const school = String(body.school || '').trim();
+      const grade = String(body.grade || '').trim();
+      const dob = String(body.dob || '').trim();
+      const address = String(body.address || '').trim();
+      const emergencyName = String(body.emergencyName || '').trim();
+      const emergencyPhone = String(body.emergencyPhone || '').trim();
+      const experience = String(body.experience || 'First Timer / N/A').trim();
+      const pref1Committee = String(body.pref1Committee || '').trim();
+      const pref1Country = String(body.pref1Country || '').trim();
+      const pref2Committee = String(body.pref2Committee || '').trim();
+      const pref2Country = String(body.pref2Country || '').trim();
+      const pref3Committee = String(body.pref3Committee || '').trim();
+      const pref3Country = String(body.pref3Country || '').trim();
+
+      if (!fullName || !phone || !school || !grade || !dob || !pref1Committee || !pref2Committee || !pref3Committee) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Please complete your Personal Details, DOB, and all 3 Committee Preferences.',
+          },
+          { status: 400 }
+        );
+      }
+
+      const cleanDelPhone = phone.replace(/\D/g, '').slice(-10);
+      const cleanEmgPhone = emergencyPhone.replace(/\D/g, '').slice(-10);
+      if (cleanDelPhone && cleanEmgPhone && cleanDelPhone === cleanEmgPhone) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Parent / Emergency contact number cannot be the same as the delegate's phone number.",
+          },
+          { status: 400 }
+        );
+      }
+
+      let savedRegId = `RM-LMN-${Math.floor(1000 + Math.random() * 9000)}`;
+      if (supabase) {
+        try {
+          const { data: existing } = await supabase
+            .from('delegate_applications')
+            .select('*')
+            .ilike('email', email)
+            .limit(1)
+            .maybeSingle();
+
+          if (existing?.reg_id) {
+            savedRegId = String(existing.reg_id).startsWith('RM-LMN-')
+              ? existing.reg_id
+              : `RM-LMN-${String(existing.reg_id).replace(/[^0-9A-Z]/gi, '').slice(-4) || Math.floor(1000 + Math.random() * 9000)}`;
+          }
+
+          const currentPrefCount = Number(existing?.preferences_updated_count || 0);
+          const isChangingPrefs =
+            existing &&
+            existing.pref1_committee &&
+            (pref1Committee !== (existing.pref1_committee || '') ||
+              pref1Country !== (existing.pref1_country || '') ||
+              pref2Committee !== (existing.pref2_committee || '') ||
+              pref2Country !== (existing.pref2_country || '') ||
+              pref3Committee !== (existing.pref3_committee || '') ||
+              pref3Country !== (existing.pref3_country || ''));
+
+          if (isChangingPrefs && currentPrefCount >= 1) {
+            return NextResponse.json(
+              {
+                success: false,
+                preferencesLocked: true,
+                message: 'Committee and portfolio preferences can only be changed once. Your one-time preference edit has already been used.',
+              },
+              { status: 403 }
+            );
+          }
+
+          const lumenPayload = {
+            reg_id: savedRegId,
+            name: fullName,
+            email,
+            phone,
+            institute: school,
+            grade,
+            dob,
+            address,
+            emergency_name: emergencyName,
+            emergency_phone: emergencyPhone,
+            experience,
+            transport: 'No (Lumen Transfer)',
+            pref1_committee: isChangingPrefs && currentPrefCount >= 1 ? existing.pref1_committee : pref1Committee,
+            pref1_country: isChangingPrefs && currentPrefCount >= 1 ? existing.pref1_country : pref1Country,
+            pref2_committee: isChangingPrefs && currentPrefCount >= 1 ? existing.pref2_committee : pref2Committee,
+            pref2_country: isChangingPrefs && currentPrefCount >= 1 ? existing.pref2_country : pref2Country,
+            pref3_committee: isChangingPrefs && currentPrefCount >= 1 ? existing.pref3_committee : pref3Committee,
+            pref3_country: isChangingPrefs && currentPrefCount >= 1 ? existing.pref3_country : pref3Country,
+            preferences_updated_count: isChangingPrefs ? 1 : currentPrefCount,
+            registration_fee: 0,
+            payment_utr: 'LUMEN-ACQUIRED',
+            referral: 'LUMEN-MUN',
+            payment_status: 'VERIFIED',
+            status: existing?.allocated_committee ? 'ALLOTTED' : 'Confirmed',
+            additional_info: body.liabilityAccepted ? 'LUMEN_ACQUIRED | LIABILITY_ACCEPTED' : 'LUMEN_ACQUIRED',
+            updated_at: new Date().toISOString(),
+          };
+
+          if (existing?.id) {
+            const { error: updErr } = await supabase
+              .from('delegate_applications')
+              .update(lumenPayload)
+              .eq('id', existing.id);
+            if (updErr) return NextResponse.json({ success: false, message: updErr.message }, { status: 500 });
+          } else {
+            const { error: insErr } = await supabase
+              .from('delegate_applications')
+              .insert([lumenPayload]);
+            if (insErr) return NextResponse.json({ success: false, message: insErr.message }, { status: 500 });
+          }
+
+          await supabase.from('draft_leads').delete().ilike('email', email);
+        } catch (err) {
+          return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        regId: savedRegId,
+        message: 'Lumen Delegate profile registered! Your digital pass is active and ready.',
       });
     }
 

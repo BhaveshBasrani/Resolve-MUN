@@ -71,17 +71,17 @@ export const homeHtml = `
       <!-- 2. Institutional Delegation -->
       <div id="pathwayCardDelegation" class="selection-card selection-card--delegation selection-card--featured" style="border: 1.5px solid rgba(56, 189, 248, 0.45); background: linear-gradient(135deg, rgba(12, 74, 110, 0.4) 0%, rgba(15, 23, 42, 0.92) 100%); cursor: pointer;" onclick="selectPathway('delegation')">
         <div class="selection-card-header">
-          <span id="pathwayBadgeDelegation" class="selection-badge" style="background: #0284c7; color: #ffffff; font-weight: 800; letter-spacing: 0.08em;">₹2,200 / DEL · MIN 6</span>
+          <span id="pathwayBadgeDelegation" class="selection-badge" style="background: #0284c7; color: #ffffff; font-weight: 800; letter-spacing: 0.08em;">MIN 15 · CUSTOM QUOTE</span>
           <span id="delegationPrizePoolBadge" style="font-size: 10px; color: #7dd3fc; font-family: monospace;">₹25,000 PRIZE POOL</span>
         </div>
         <div class="selection-card-body" style="padding: 8px 0;">
           <h3 style="font-size: 1.25rem; color: #ffffff;">DELEGATION</h3>
           <p id="delegationPrizePoolDesc" style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.78); line-height: 1.45;">
-            Register a contingent of 6+ delegates and compete for the ₹25,000 Best Delegation cash prize pool.
+            Register a contingent of 15+ delegates with custom Secretariat pricing and compete for the ₹25,000 Best Delegation cash prize pool.
           </p>
         </div>
         <div class="selection-card-action">
-          <span class="selection-btn-primary" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.76rem;">Register Delegation &rarr;</span>
+          <span class="selection-btn-primary" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.76rem;">Request Delegation Quote &rarr;</span>
         </div>
       </div>
     </div>
@@ -157,12 +157,24 @@ export const homeHtml = `
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
-            <label for="regPhone">Contact Number (WhatsApp) <span style="color:#f87171;">*</span></label>
+            <label for="regPhone">Delegate Contact Number (WhatsApp) <span style="color:#f87171;">*</span></label>
             <input type="tel" id="regPhone" name="phone" placeholder="10-digit mobile number" required data-required="true" minlength="10" maxlength="10" pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number">
           </div>
           <div>
             <label for="regEmail">Email ID <span style="color:#f87171;">*</span></label>
             <input type="email" id="regEmail" name="email" placeholder="you@example.com" required data-required="true" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label for="regEmergencyName">Parent / Guardian Full Name <span style="color:#f87171;">*</span></label>
+            <input type="text" id="regEmergencyName" name="emergencyName" placeholder="Enter parent or guardian name" required data-required="true">
+          </div>
+          <div>
+            <label for="regEmergencyPhone">Parent / Emergency Number <span style="color:#f87171;">*</span></label>
+            <input type="tel" id="regEmergencyPhone" name="emergencyPhone" placeholder="Must differ from delegate number" required data-required="true" minlength="10" maxlength="10" pattern="[0-9]{10}" title="Enter a 10-digit parent/emergency phone number different from your own">
+            <span id="regEmergencyPhoneError" style="display:none; color:#ef4444; font-size:11px; margin-top:4px; line-height:1.35;">Parent / Emergency number cannot be the same as the delegate&apos;s number.</span>
           </div>
         </div>
 
@@ -382,6 +394,8 @@ export const homeHtml = `
         <p class="terms-confirmation">
           By clicking Submit Registration, you agree to the
           <a href="#" onclick="openTermsModal('delegate'); return false;">Delegate Terms &amp; Conditions</a>
+          and
+          <a href="/liability" target="_blank" rel="noopener noreferrer">Participant Liability Waiver &amp; Code of Conduct</a>
           of Resolve MUN 2.0.
         </p>
 
@@ -2060,7 +2074,7 @@ export const homeHtml = `
     
     <div class="modal-header">
       <h2 class="modal-title">DELEGATION REGISTRATION</h2>
-      <span class="modal-subtitle">School Contingent · 6+ Delegates</span>
+      <span class="modal-subtitle">School Contingent · 15+ Delegates · Custom Quote</span>
     </div>
     
     <form id="delRegForm" novalidate>
@@ -2089,8 +2103,8 @@ export const homeHtml = `
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
-            <label for="delSize">Number of Delegates (Min 6) <span style="color:#f87171;">*</span></label>
-            <input type="number" id="delSize" name="size" min="6" max="50" value="6" required data-required="true" oninput="updateDelPrice(); updateDelegateFields();">
+            <label for="delSize">Number of Delegates (Min 15) <span style="color:#f87171;">*</span></label>
+            <input type="number" id="delSize" name="size" min="15" max="100" value="15" required data-required="true" oninput="updateDelPrice(); updateDelegateFields();">
           </div>
           <div>
             <label for="delReferral">Referral Code (Optional)</label>
@@ -2099,7 +2113,7 @@ export const homeHtml = `
         </div>
 
         <button type="button" class="btn-next btn-full-width" onclick="nextDelStep(2)">
-          Next: Delegation Roster
+          Next: Delegation Roster (15+ Delegates)
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
@@ -2116,75 +2130,52 @@ export const homeHtml = `
 
         <div class="form-actions">
           <button type="button" class="btn-back" onclick="nextDelStep(1)">Back</button>
-          <button type="button" class="btn-next" onclick="nextDelStep(3)">Proceed to Payment</button>
+          <button type="button" class="btn-next" onclick="nextDelStep(3)">Review &amp; Request Price Quote</button>
         </div>
       </div>
 
-      <!-- STEP 3: PAYMENT & CONFIRMATION -->
+      <!-- STEP 3: REQUEST CUSTOM SECRETARIAT QUOTE & SUBMIT ROSTER -->
       <div class="form-step" id="delStep3">
-        <div class="payment-banner" style="text-align: center; margin-bottom: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.18); border-radius: 14px; padding: 14px;">
-          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 9999px; margin-bottom: 6px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-            Institutional Delegation · Cash Prize Eligible
+        <div class="payment-banner" style="text-align: center; margin-bottom: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; padding: 16px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #ffffff; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 6px; margin-bottom: 8px;">
+            Institutional Contingent · Min 15 Delegates
           </div>
-          <div id="delTotalPriceDisplay" style="font-size: 1.75rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 4px 0 0 0; font-family: 'Inter', system-ui, sans-serif;">Total Amount: ₹13,200</div>
-          <p id="delPerDelegateNote" style="font-size: 11.5px; color: rgba(255,255,255,0.6); margin-top: 4px;">(₹2,200 per enrolled delegate · Minimum 6 delegates)</p>
+          <div id="delTotalPriceDisplay" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 4px 0 0 0; font-family: 'Inter', system-ui, sans-serif;">Custom Secretariat Quote</div>
+          <p id="delPerDelegateNote" style="font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 6px; line-height: 1.5;">
+            Delegation pricing is not fixed. Submit your 15+ delegate roster below and the Resolve MUN Secretariat will issue a custom institutional quote based on your contingent size.
+          </p>
         </div>
 
-        <div class="payment-card">
-          <div class="payment-qr-block">
-            <span class="payment-step-indicator">1. SCAN QR CODE OR LAUNCH UPI APP</span>
-            <div class="qr-container">
-              <img id="delPaymentQRImage" src="https://quickchart.io/qr?size=300&text=upi%3A%2F%2Fpay%3Fpa%3D6301550628%40nyes%26pn%3DBejugam%2520Aditya%26am%3D13200%26cu%3DINR%26tn%3DResolve%2520MUN%25202026%2520Delegation%2520Fee&ecLevel=M&margin=1" alt="Delegation Payment QR Code">
-            </div>
-
-            <!-- Direct UPI Launch Button for Mobile Users -->
-            <a id="delPayUpiMobileLink" href="upi://pay?pa=6301550628@nyes&pn=Bejugam%20Aditya&am=13200&cu=INR&tn=Resolve%20MUN%202026%20Delegation%20Fee" class="upi-mobile-pay-btn" aria-label="Pay via UPI">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-              <span>Pay via UPI</span>
-            </a>
-
-            <div class="upi-box">
-              <span id="delUpiID">6301550628@nyes</span>
-              <button type="button" class="copy-btn" onclick="copyDelUPI()" title="Copy UPI ID" aria-label="Copy UPI ID">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                <span>COPY</span>
-              </button>
-            </div>
-            <p class="payment-verified-note">
-              <span style="color: #22c55e; font-weight: 700;">✓</span> Payee: <strong>Bejugam Aditya</strong> &bull; Queries: <strong>+91 92121 07797</strong>
-            </p>
-          </div>
-
-          <div class="form-group" style="margin-top: 14px;">
-            <label for="delTxnID">2. Transaction ID / 12-Digit UPI UTR <span style="color:#f87171;">*</span></label>
-            <input type="text" id="delTxnID" name="transactionId" inputmode="numeric" placeholder="Enter 12-digit UPI UTR / Transaction ID" required data-required="true" autocomplete="off">
-          </div>
-
+        <div class="payment-card" style="padding: 16px;">
           <div class="form-group">
-            <label for="delDriveLink">3. Upload Payment Screenshot <span style="color:#f87171;">*</span></label>
-            <label class="file-upload-wrapper" for="delDriveLink">
-              <span class="file-upload-btn">Choose File</span>
-              <span class="file-name">No file chosen</span>
-              <input type="file" id="delDriveLink" name="paymentProof" class="file-upload-input" accept="image/*,.pdf" required data-required="true">
-            </label>
+            <label for="delUTR">1. Institutional Requirements / Transport / Notes for Secretariat (Optional)</label>
+            <input type="text" id="delUTR" name="additionalNotes" placeholder="Mention transport needs, faculty accompaniment, or billing requests" autocomplete="off">
           </div>
 
-          <div class="form-group">
-            <label for="delUTR">4. Additional Notes / Queries (Optional)</label>
-            <input type="text" id="delUTR" name="additionalNotes" placeholder="Any notes or questions for the Secretariat" autocomplete="off">
+          <div class="form-group" style="margin-top: 12px;">
+            <label for="delTxnID">2. Reference / Pre-Approved Quote Code (Optional — leave blank if requesting quote)</label>
+            <input type="text" id="delTxnID" name="transactionId" placeholder="Leave blank to request price quote from Secretariat" autocomplete="off">
+          </div>
+
+          <div class="form-group" style="display: none;">
+            <input type="file" id="delDriveLink" name="paymentProof" class="file-upload-input" accept="image/*,.pdf">
+          </div>
+
+          <div style="margin-top: 12px; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span style="font-size: 11.5px; color: rgba(255,255,255,0.8);">Official Liability &amp; Code of Conduct Waiver</span>
+            <a href="/liability" target="_blank" rel="noopener noreferrer" style="font-size: 11px; font-family: monospace; color: #ffffff; text-decoration: underline;">View &amp; Print Form</a>
           </div>
         </div>
 
         <p class="terms-confirmation">
-          By submitting, you agree to the <a href="#" onclick="openTermsModal('delegate'); return false;">Delegate Terms &amp; Conditions</a>.
+          By submitting, you agree to the <a href="#" onclick="openTermsModal('delegate'); return false;">Delegate Terms &amp; Conditions</a> &amp; <a href="/liability" target="_blank" rel="noopener noreferrer">Liability Waiver</a>.
         </p>
 
         <div style="height: 70px; flex-shrink: 0;" aria-hidden="true"></div>
 
         <div class="form-actions form-sticky-footer">
           <button type="button" class="btn-back" onclick="nextDelStep(2)">Back</button>
-          <button type="submit" class="btn-next" id="delSubmitBtn">Submit Delegation</button>
+          <button type="submit" class="btn-next" id="delSubmitBtn">Request Price Quote &amp; Submit Roster</button>
         </div>
       </div>
     </form>

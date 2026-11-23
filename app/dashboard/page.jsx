@@ -901,7 +901,12 @@ export default function DelegateDashboard() {
             <div className="flex items-center gap-2.5 min-w-0">
               <Link href="/" className="flex items-center gap-2 !no-underline shrink-0">
                 <img src="/images/Logo.svg" alt="Resolve MUN" className="w-5 h-5 object-contain" />
-                <span className="text-sm font-bold tracking-wider text-white">RESOLVE MUN 2.0</span>
+                <span
+                  className="text-base tracking-[0.12em] text-white font-bold pt-0.5"
+                  style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+                >
+                  RESOLVE MUN 2.0
+                </span>
               </Link>
               <span className="text-zinc-700 hidden sm:inline">/</span>
               <span className="text-xs text-zinc-400 hidden sm:inline truncate">Delegate Workspace</span>

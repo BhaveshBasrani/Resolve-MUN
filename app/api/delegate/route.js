@@ -92,6 +92,8 @@ export async function GET(request) {
             address: delRow.address || delRow.residential_address || '',
             transport: delRow.transport || delRow.transport_needed || 'No',
             experience: delRow.experience || delRow.mun_experience || '',
+            emergencyName: delRow.emergency_name || delRow.parent_name || '',
+            emergencyPhone: delRow.emergency_phone || delRow.parent_phone || '',
             pref1_committee: delRow.pref1_committee || '',
             pref1_country: delRow.pref1_country || delRow.pref1_portfolio1 || '',
             pref2_committee: delRow.pref2_committee || '',
