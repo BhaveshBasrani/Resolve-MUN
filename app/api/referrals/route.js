@@ -18,6 +18,23 @@ const ADMIN_EMAILS = [
 // In-memory fallback mirror for custom Secretariat codes in case Supabase write is throttled
 const memorySecretariatCodes = new Map();
 
+// Legacy partner & ambassador codes (fallback alongside dynamic Supabase system_settings.referral_codes)
+const LEGACY_PARTNER_CODES = {
+  SBXS2026: 2350, AETHERXR2026: 2350, DIYA: 2350, ICFAI: 2000, NYA200: 2350,
+  SOLARIS: 2350, PROMOTION: 2350, UNT100: 2350, HET100: 2350, YCE200: 2350,
+  AN69: 2350, ATHENAXR2026: 2350, STYLE100: 2350, TTG300: 2300, PARNIKA200: 2350,
+  RAYON67: 2350, IRISXRESOLVE: 2350, ABHINAYA200: 2350, SKA200: 1999,
+  AVETE99: 2350, BHAFN01: 2350, POOCF02: 2350, RAYFM03: 2350, JAYFM04: 2350,
+  NIKSH05: 2350, AARCL06: 2350, SNVPU99: 2350, SWASG07: 2350, KANDG08: 2350,
+  ROHDD09: 2350, DHACS10: 2350, JOTDC11: 2350, RAACA12: 2350, RISCO13: 2350,
+  ABHCA14: 2350, ADYSA15: 2350, GAYFH16: 2350, AARDM17: 2350, ABHCC18: 2350,
+  HIMCI19: 2350, DEVOC20: 2350, DHASP21: 2350, HAVST22: 2350, NIPLG23: 2350,
+  MEGDA24: 2350, RYAMK25: 2350, SHRPL26: 2350, TANHP27: 2350, HEMOR28: 2350,
+  AKAUF29: 2350, ANAUO30: 2350, CHAUO31: 2350, LIKUM32: 2350, VAIUM33: 2350,
+  ISHUD34: 2350, MOKUD35: 2350, PARUD36: 2350, NIYUH37: 2350, SAAUH38: 2350,
+  DEEUC39: 2350, PRAUC40: 2350, VIGUP41: 2350, YUVUT42: 2350,
+};
+
 function normalizeCode(c) {
   return String(c || '')
     .trim()
@@ -25,47 +42,85 @@ function normalizeCode(c) {
     .replace(/[^A-Z0-9_-]/g, '');
 }
 
+function parseCodesArray(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+  }
+  return [];
+}
+
 async function loadSiteSettingsRow() {
   if (!supabase) return { baseFee: BASE_DELEGATE_FEE, referralCodes: [] };
   try {
-    const { data } = await supabase.from('site_settings').select('*').limit(1).maybeSingle();
-    if (!data) return { baseFee: BASE_DELEGATE_FEE, referralCodes: [] };
-    const baseFee = Number(data.delegate_fee || data.delegateFee || BASE_DELEGATE_FEE) || BASE_DELEGATE_FEE;
-    let codes = [];
-    const raw = data.referral_codes || data.referralCodes;
-    if (Array.isArray(raw)) {
-      codes = raw;
-    } else if (typeof raw === 'string' && raw.trim()) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) codes = parsed;
-      } catch (_) {}
+    const [sysRes, siteRes] = await Promise.allSettled([
+      supabase.from('system_settings').select('*').eq('id', 'global').maybeSingle(),
+      supabase.from('site_settings').select('*').eq('id', 'global').maybeSingle(),
+    ]);
+    const sysData = sysRes.status === 'fulfilled' ? sysRes.value.data : null;
+    const siteData = siteRes.status === 'fulfilled' ? siteRes.value.data : null;
+    const baseFee =
+      Number(
+        siteData?.delegate_fee ||
+          sysData?.delegate_base_fee ||
+          siteData?.delegateFee ||
+          BASE_DELEGATE_FEE
+      ) || BASE_DELEGATE_FEE;
+
+    // Merge codes from system_settings (primary) and site_settings (fallback)
+    const map = new Map();
+    for (const c of [...parseCodesArray(siteData?.referral_codes), ...parseCodesArray(sysData?.referral_codes)]) {
+      const k = normalizeCode(c?.code);
+      if (k) map.set(k, { ...c, code: k });
     }
-    return { row: data, baseFee, referralCodes: codes };
+    return { row: sysData || siteData || { id: 'global' }, baseFee, referralCodes: Array.from(map.values()) };
   } catch (_) {
     return { baseFee: BASE_DELEGATE_FEE, referralCodes: [] };
   }
 }
 
-async function saveReferralCodesToSettings(existingRow, updatedCodes) {
+async function saveReferralCodesToSettings(_existingRow, updatedCodes) {
   if (!supabase) return false;
   try {
-    if (existingRow?.id) {
-      const { error } = await supabase
-        .from('site_settings')
-        .update({ referral_codes: updatedCodes })
-        .eq('id', existingRow.id);
-      if (!error) return true;
-    } else {
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({ id: 1, referral_codes: updatedCodes }, { onConflict: 'id' });
-      if (!error) return true;
-    }
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert(
+        {
+          id: 'global',
+          referral_codes: updatedCodes,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+    if (!error) return true;
+    console.warn('[API /api/referrals] system_settings upsert error:', error.message);
   } catch (err) {
     console.warn('[API /api/referrals] saveReferralCodesToSettings notice:', err.message);
   }
   return false;
+}
+
+async function uploadBase64ProofToStorage(base64Str, folder, prefix) {
+  if (!supabase || !base64Str || !String(base64Str).startsWith('data:')) return '';
+  try {
+    const match = String(base64Str).match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+    if (!match) return '';
+    const mimeType = match[1];
+    const buffer = Buffer.from(match[2], 'base64');
+    const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+    const fileName = `${folder}/${prefix}_${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage
+      .from('resolve-uploads')
+      .upload(fileName, buffer, { contentType: mimeType, upsert: true });
+    if (!error && data) {
+      const { data: pub } = supabase.storage.from('resolve-uploads').getPublicUrl(fileName);
+      return pub?.publicUrl || '';
+    }
+  } catch (_) {}
+  return '';
 }
 
 function mergeCodesWithMemory(dbCodes = []) {
@@ -83,23 +138,27 @@ function mergeCodesWithMemory(dbCodes = []) {
 async function fetchAllDelegateRows() {
   if (!supabase) return [];
   const [r1, r2] = await Promise.allSettled([
-    supabase.from('delegates').select('id, delegate_id, full_name, email, referral, payment_status, status, created_at'),
-    supabase.from('delegate_applications').select('id, reg_id, name, full_name, email, referral_code, payment_status, status, created_at'),
+    supabase.from('delegates').select('*'),
+    supabase.from('delegate_applications').select('*'),
   ]);
   const seen = new Set();
   const list = [];
   const combined = [
-    ...(r1.status === 'fulfilled' ? r1.value.data || [] : []),
     ...(r2.status === 'fulfilled' ? r2.value.data || [] : []),
+    ...(r1.status === 'fulfilled' ? r1.value.data || [] : []),
   ];
   for (const row of combined) {
     const em = String(row.email || '').trim().toLowerCase();
-    const key = em || row.delegate_id || row.reg_id || row.id;
+    const rawId = row.reg_id || row.delegate_id || row.id;
+    const resolvedId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(rawId || ''))
+      ? `RM-${String(rawId).replace(/-/g, '').slice(0, 4).toUpperCase()}`
+      : String(rawId || '').replace(/^RM26-DEL-/i, 'RM-');
+    const key = em || resolvedId;
     if (!key || seen.has(key)) continue;
     seen.add(key);
     list.push({
-      id: row.delegate_id || row.reg_id || row.id,
-      name: row.full_name || row.name || 'Delegate',
+      id: resolvedId,
+      name: row.name || row.full_name || 'Delegate',
       email: em,
       referralCode: normalizeCode(row.referral || row.referral_code),
       paymentStatus: String(row.payment_status || '').toUpperCase(),
@@ -295,6 +354,25 @@ export async function GET(request) {
         });
       }
 
+      // 1C. Check legacy partner / ambassador codes
+      if (LEGACY_PARTNER_CODES[code]) {
+        const finalFee = Number(LEGACY_PARTNER_CODES[code]);
+        const discount = Math.max(0, baseFee - finalFee);
+        return NextResponse.json({
+          valid: true,
+          code,
+          type: 'PARTNER_CODE',
+          ownerName: 'Resolve MUN Ambassador',
+          baseFee,
+          discountAmount: discount,
+          finalFee,
+          message:
+            discount > 0
+              ? `✓ Valid referral code applied — ₹${discount.toLocaleString('en-IN')} OFF · Pay ₹${finalFee.toLocaleString('en-IN')}`
+              : `✓ Valid referral code applied — Pay ₹${finalFee.toLocaleString('en-IN')}`,
+        });
+      }
+
       return NextResponse.json({
         valid: false,
         code,
@@ -441,6 +519,21 @@ export async function POST(request) {
 
       if (!email || !email.includes('@')) {
         return NextResponse.json({ success: false, message: 'Valid signed-in email is required.' }, { status: 400 });
+      }
+      // Enforce Secretariat approval gate server-side
+      if (supabase && !ADMIN_EMAILS.includes(email)) {
+        const { data: rosterCheck } = await supabase
+          .from('secretariat_roster')
+          .select('onboarded')
+          .ilike('email', email)
+          .limit(1)
+          .maybeSingle();
+        if (!rosterCheck?.onboarded) {
+          return NextResponse.json(
+            { success: false, message: 'Your Secretariat profile is pending Admin approval before you can create referral codes.' },
+            { status: 403 }
+          );
+        }
       }
       if (!code || code.length < 3 || code.length > 20) {
         return NextResponse.json(
@@ -674,6 +767,11 @@ export async function POST(request) {
             String(existing?.status || '').toLowerCase() === 'approved' ||
             String(existing?.status || '').toLowerCase() === 'accepted';
 
+          let finalOcProofUrl = paymentScreenshotUrl || existing?.payment_screenshot_url || '';
+          if (!finalOcProofUrl && paymentScreenshotBase64) {
+            finalOcProofUrl = await uploadBase64ProofToStorage(paymentScreenshotBase64, 'oc-payments', savedAppId);
+          }
+
           const ocPayload = {
             app_id: savedAppId,
             full_name: fullName,
@@ -693,7 +791,7 @@ export async function POST(request) {
             payment_tier: feeTier,
             fee_tier: feeTier,
             payment_utr: paymentUtr || (feeTier.toLowerCase().includes('later') ? 'PAY_LATER' : 'PENDING'),
-            payment_screenshot_url: paymentScreenshotUrl || existing?.payment_screenshot_url || '',
+            payment_screenshot_url: finalOcProofUrl,
             payment_status: alreadyApproved ? 'VERIFIED' : 'PENDING_VERIFICATION',
             status: alreadyApproved ? 'Approved' : 'Pending Approval',
             additional_info: emergencyName || emergencyPhone ? `Parent: ${emergencyName} (${emergencyPhone})` : '',
@@ -836,8 +934,11 @@ export async function POST(request) {
           }
 
           const paymentUtr = String(body.paymentUtr || '').trim() || 'LUMEN-ACQUIRED';
-          const paymentScreenshotUrl = String(body.paymentScreenshotUrl || '').trim() || existing?.payment_screenshot_url || '';
+          let paymentScreenshotUrl = String(body.paymentScreenshotUrl || '').trim() || existing?.payment_screenshot_url || '';
           const paymentScreenshotBase64 = String(body.paymentScreenshotBase64 || '').trim();
+          if (!paymentScreenshotUrl && paymentScreenshotBase64) {
+            paymentScreenshotUrl = await uploadBase64ProofToStorage(paymentScreenshotBase64, 'payment-proofs', savedRegId);
+          }
           const alreadyVerified = String(existing?.payment_status || '').toUpperCase() === 'VERIFIED';
 
           const lumenPayload = {

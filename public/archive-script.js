@@ -157,37 +157,24 @@
   }
 
   function getDelegateFeeFromReferral() {
+    if (typeof window !== 'undefined' && typeof window.getDelegateFeeFromReferral === 'function' && window.getDelegateFeeFromReferral !== getDelegateFeeFromReferral) {
+      return window.getDelegateFeeFromReferral();
+    }
     const referralInput = document.getElementById('regReferral');
     const normalizedCode = normalizeReferralCode(referralInput ? referralInput.value : '');
     return REFERRAL_CODE_PRICING[normalizedCode] || DELEGATE_BASE_FEE;
   }
 
   function updateDelegatePaymentUI() {
+    if (typeof window !== 'undefined' && typeof window.updateDelegatePaymentUI === 'function' && window.updateDelegatePaymentUI !== updateDelegatePaymentUI) {
+      return window.updateDelegatePaymentUI();
+    }
     const fee = getDelegateFeeFromReferral();
     const feeDisplay = document.getElementById('regFeeDisplay');
     if (feeDisplay) {
       feeDisplay.innerText = `Registration Fee: ₹${Number(fee).toLocaleString("en-IN")}`;
     }
     generateDynamicQR(String(fee), 'paymentQRImage', 'upiID');
-
-    const referralVal = normalizeReferralCode(document.getElementById('regReferral')?.value || '');
-    const feedbackEl = document.getElementById('referralFeedback');
-    if (feedbackEl) {
-      if (!referralVal) {
-        feedbackEl.innerText = '';
-        feedbackEl.style.color = 'var(--muted)';
-      } else if (REFERRAL_CODE_PRICING[referralVal]) {
-        const applied = REFERRAL_CODE_PRICING[referralVal];
-        const savings = DELEGATE_BASE_FEE - applied;
-        const ambassador = REFERRAL_AMBASSADORS[referralVal];
-        const ambassadorNote = ambassador ? ` (${ambassador})` : '';
-        feedbackEl.innerText = `Valid referral code applied${ambassadorNote} — Pay ₹${Number(applied).toLocaleString("en-IN")}${savings > 0 ? ` (You save ₹${Number(savings).toLocaleString("en-IN")})` : ''}`;
-        feedbackEl.style.color = '#22c55e';
-      } else {
-        feedbackEl.innerText = 'Referral code not recognized';
-        feedbackEl.style.color = '#ff6b6b';
-      }
-    }
   }
 
   function refreshDelegatePaymentQR() {

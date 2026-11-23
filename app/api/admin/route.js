@@ -972,9 +972,9 @@ export async function POST(request) {
             transport: body.transport || 'No',
             experience: body.experience || '',
             dob: body.dob || '',
-            referral: body.referral || '',
-            emergency_name: body.emergency_name || '',
-            emergency_phone: body.emergency_phone || '',
+            referral: String(body.referral || body.referralCode || '').trim().toUpperCase(),
+            emergency_name: emergencyName,
+            emergency_phone: emergencyPhone,
             updated_at: new Date().toISOString(),
           };
 
@@ -1424,8 +1424,32 @@ export async function POST(request) {
           console.warn("Supabase site_settings update notice:", sbErr.message);
         }
 
-        // Also sync extended conference metadata to system_settings if present
+        // Also sync extended conference metadata to system_settings (preserving Secretariat referral codes!)
         try {
+          let mergedReferralCodes = referralCodes;
+          try {
+            const { data: existingSys } = await supabase
+              .from('system_settings')
+              .select('referral_codes')
+              .eq('id', 'global')
+              .maybeSingle();
+            const existingArr = Array.isArray(existingSys?.referral_codes) ? existingSys.referral_codes : [];
+            if (!Array.isArray(body.settings?.referralCodes) || body.settings.referralCodes.length === 0) {
+              mergedReferralCodes = existingArr;
+            } else {
+              const incomingMap = new Map(
+                referralCodes.map((c) => [String(c.code || '').trim().toUpperCase(), c])
+              );
+              for (const ex of existingArr) {
+                const k = String(ex?.code || '').trim().toUpperCase();
+                if (k && ex?.type === 'SECRETARIAT_CASH' && !incomingMap.has(k)) {
+                  incomingMap.set(k, ex);
+                }
+              }
+              mergedReferralCodes = Array.from(incomingMap.values());
+            }
+          } catch (_) {}
+
           await supabase.from('system_settings').upsert({
             id: 'global',
             registrations_open: normalized.registrationsOpen,
@@ -1438,7 +1462,7 @@ export async function POST(request) {
             total_prize_pool: normalized.totalPrizePool || normalized.prizePool,
             delegation_prize_pool: normalized.delegationPrizePool,
             prize_pool: normalized.totalPrizePool || normalized.prizePool,
-            referral_codes: referralCodes,
+            referral_codes: mergedReferralCodes,
             committee_capacities: normalized.committeeCapacities,
             committee_documents: {
               ...(normalized.committeeDocuments || {}),

@@ -49,7 +49,7 @@ export async function GET(request) {
           try {
             const [ref1, ref2] = await Promise.allSettled([
               supabase.from('delegates').select('full_name, email, payment_status, status, created_at').ilike('referral', personalRefCode),
-              supabase.from('delegate_applications').select('name, full_name, email, payment_status, status, created_at').ilike('referral_code', personalRefCode),
+              supabase.from('delegate_applications').select('name, email, payment_status, status, created_at').ilike('referral', personalRefCode),
             ]);
             const seen = new Set();
             const combined = [
