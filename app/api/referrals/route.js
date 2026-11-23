@@ -267,6 +267,8 @@ export async function GET(request) {
               transport: row.transport_needed || row.transport || 'No',
               address: row.residential_address || row.address || '',
               instagram: row.instagram || '',
+              emergencyName: row.emergency_name || '',
+              emergencyPhone: row.emergency_phone || '',
               paymentUtr: row.payment_utr || '',
               paymentScreenshotUrl: row.payment_screenshot_url || '',
               status: row.status || 'Pending Approval',
@@ -276,11 +278,59 @@ export async function GET(request) {
           }
         } catch (_) { }
       }
-      return NextResponse.json({
-        success: true,
-        found: Boolean(ocMember),
-        ocMember,
-      });
+
+      const { baseFee: ocBaseFee, referralCodes: ocDbCodes } = await loadSiteSettingsRow();
+      const ocAllCodes = mergeCodesWithMemory(ocDbCodes);
+      const myCodes = ocAllCodes.filter(
+        (c) => String(c.ownerEmail || '').trim().toLowerCase() === email && c.active !== false
+      );
+      const ocStatusLower = String(ocMember?.status || '').toLowerCase();
+      const isApproved =
+        ADMIN_EMAILS.includes(email) ||
+        ocStatusLower === 'approved' ||
+        ocStatusLower === 'accepted' ||
+        myCodes.length > 0;
+
+      const allDelegates = await fetchAllDelegateRows();
+      const myCodeSet = new Set(myCodes.map((c) => normalizeCode(c.code)));
+      const codeMap = new Map(myCodes.map((c) => [normalizeCode(c.code), c]));
+      const myReferrals = allDelegates
+        .filter((d) => d.referralCode && myCodeSet.has(d.referralCode) && d.email !== email)
+        .map((d) => {
+          const cfg = codeMap.get(d.referralCode) || {};
+          const discount = Math.max(0, Math.min(SECRETARIAT_CASH_POOL, Number(cfg.discountAmount || 0)));
+          const commission = Math.max(0, SECRETARIAT_CASH_POOL - discount);
+          const verified = isRowVerified(d);
+          return {
+            ...d,
+            discountGiven: discount,
+            cashEarned: commission,
+            verified,
+          };
+        });
+      const verifiedRefs = myReferrals.filter((r) => r.verified);
+      const pendingRefs = myReferrals.filter((r) => !r.verified);
+
+      return NextResponse.json(
+        {
+          success: true,
+          found: Boolean(ocMember),
+          isApproved,
+          ocMember,
+          baseFee: ocBaseFee,
+          cashPoolPerReferral: SECRETARIAT_CASH_POOL,
+          myCodes,
+          stats: {
+            totalReferrals: myReferrals.length,
+            verifiedCount: verifiedRefs.length,
+            pendingCount: pendingRefs.length,
+            totalVerifiedCash: verifiedRefs.reduce((s, r) => s + r.cashEarned, 0),
+            totalPendingCash: pendingRefs.reduce((s, r) => s + r.cashEarned, 0),
+          },
+          referrals: myReferrals,
+        },
+        { headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
     const { baseFee, referralCodes: dbCodes } = await loadSiteSettingsRow();
@@ -517,17 +567,18 @@ export async function POST(request) {
       if (!email || !email.includes('@')) {
         return NextResponse.json({ success: false, message: 'Valid signed-in email is required.' }, { status: 400 });
       }
-      // Enforce Secretariat approval gate server-side
+      // Enforce Secretariat or OC approval gate server-side
       if (supabase && !ADMIN_EMAILS.includes(email)) {
-        const { data: rosterCheck } = await supabase
-          .from('secretariat_roster')
-          .select('onboarded')
-          .ilike('email', email)
-          .limit(1)
-          .maybeSingle();
-        if (!rosterCheck?.onboarded) {
+        const [rosterRes, ocRes] = await Promise.allSettled([
+          supabase.from('secretariat_roster').select('onboarded').ilike('email', email).limit(1).maybeSingle(),
+          supabase.from('oc_applications').select('status').ilike('email', email).limit(1).maybeSingle(),
+        ]);
+        const rosterApproved = Boolean(rosterRes.status === 'fulfilled' && rosterRes.value.data?.onboarded);
+        const ocStatus = String(ocRes.status === 'fulfilled' ? ocRes.value.data?.status || '' : '').toLowerCase();
+        const ocApproved = ocStatus === 'approved' || ocStatus === 'accepted';
+        if (!rosterApproved && !ocApproved) {
           return NextResponse.json(
-            { success: false, message: 'Your Secretariat profile is pending Admin approval before you can create referral codes.' },
+            { success: false, message: 'Your Secretariat / OC profile is pending Admin approval before you can create referral codes.' },
             { status: 403 }
           );
         }
@@ -564,12 +615,13 @@ export async function POST(request) {
         );
       }
 
+      const roleTag = String(body.memberType || '').toUpperCase() === 'OC' ? 'OC' : 'Secretariat';
       const entry = {
         code,
         type: 'SECRETARIAT_CASH',
         ownerEmail: email,
         ownerName,
-        label: `${ownerName} (Secretariat)`,
+        label: `${ownerName} (${roleTag})`,
         discountAmount,
         cashCommission,
         finalFee,
@@ -582,6 +634,32 @@ export async function POST(request) {
       memorySecretariatCodes.set(code, entry);
 
       await saveReferralCodesToSettings(row, updated);
+
+      // Ensure Secretariat/Admin code owners always appear in the Admin Secretariat Roster table
+      if (supabase && roleTag === 'Secretariat') {
+        try {
+          const { data: exRoster } = await supabase
+            .from('secretariat_roster')
+            .select('id')
+            .ilike('email', email)
+            .limit(1)
+            .maybeSingle();
+          if (!exRoster?.id) {
+            const nowIso = new Date().toISOString();
+            await supabase.from('secretariat_roster').upsert(
+              {
+                email,
+                full_name: ownerName,
+                allotted_role: ADMIN_EMAILS.includes(email) ? 'Secretariat / Admin' : 'Secretariat Member',
+                onboarded: true,
+                onboarded_at: nowIso,
+                updated_at: nowIso,
+              },
+              { onConflict: 'email' }
+            );
+          }
+        } catch (_) {}
+      }
 
       return NextResponse.json({
         success: true,

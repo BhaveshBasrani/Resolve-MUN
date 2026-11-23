@@ -20,7 +20,20 @@ import {
   ShieldCheck,
   Upload,
   Clock,
+  Copy,
+  Check,
+  Share2,
+  Trash2,
+  Plus,
 } from "lucide-react";
+
+const SPLIT_PRESETS = [
+  { discount: 0, cash: 400, tag: "Max Cash" },
+  { discount: 100, cash: 300, tag: "Balanced" },
+  { discount: 150, cash: 250, tag: "Popular" },
+  { discount: 200, cash: 200, tag: "50 / 50" },
+  { discount: 250, cash: 150, tag: "High Discount" },
+];
 
 const OC_FEE_PLANS = [
   "₹1,500 — Full Plan (Transport + T-Shirt + Meals)",
@@ -53,6 +66,26 @@ export default function OcOnboardingPortalPage() {
   const [proofFileName, setProofFileName] = useState("");
   const [proofBase64, setProofBase64] = useState("");
 
+  // Referral & ₹400 Cash Commission state (same engine as Secretariat)
+  const [refData, setRefData] = useState({
+    isApproved: false,
+    baseFee: 2500,
+    cashPoolPerReferral: 400,
+    myCodes: [],
+    stats: { totalReferrals: 0, verifiedCount: 0, pendingCount: 0, totalVerifiedCash: 0, totalPendingCash: 0 },
+    referrals: [],
+  });
+  const [codeInput, setCodeInput] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(100);
+  const [savingCode, setSavingCode] = useState(false);
+  const [codeFeedback, setCodeFeedback] = useState({ type: "", text: "" });
+  const [copiedKey, setCopiedKey] = useState("");
+
+  const baseFee = refData?.baseFee || 2500;
+  const pool = refData?.cashPoolPerReferral || 400;
+  const cashEarnedPerRef = Math.max(0, pool - discountAmount);
+  const delegatePays = Math.max(0, baseFee - discountAmount);
+
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -74,8 +107,16 @@ export default function OcOnboardingPortalPage() {
     if (!email) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/referrals/?ocEmail=${encodeURIComponent(email)}`);
+      const res = await fetch(`/api/referrals?ocEmail=${encodeURIComponent(email)}`, { cache: "no-store" });
       const json = await res.json();
+      setRefData({
+        isApproved: Boolean(json?.isApproved),
+        baseFee: Number(json?.baseFee || 2500),
+        cashPoolPerReferral: Number(json?.cashPoolPerReferral || 400),
+        myCodes: Array.isArray(json?.myCodes) ? json.myCodes : [],
+        stats: json?.stats || { totalReferrals: 0, verifiedCount: 0, pendingCount: 0, totalVerifiedCash: 0, totalPendingCash: 0 },
+        referrals: Array.isArray(json?.referrals) ? json.referrals : [],
+      });
       if (json?.found && json.ocMember) {
         setOcMember(json.ocMember);
         setForm({
@@ -206,6 +247,62 @@ export default function OcOnboardingPortalPage() {
     }
   };
 
+  const handleSaveCode = async (e) => {
+    e.preventDefault();
+    if (!user?.email) return;
+    const cleaned = codeInput.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+    if (cleaned.length < 3) {
+      setCodeFeedback({ type: "error", text: "Code must be at least 3 letters/numbers (e.g. OC-RISHI)." });
+      return;
+    }
+    setSavingCode(true);
+    setCodeFeedback({ type: "", text: "" });
+    try {
+      const res = await fetch("/api/referrals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPSERT_SECRETARIAT_CODE",
+          memberType: "OC",
+          email: user.email,
+          ownerName: ocMember?.fullName || form.fullName || user.displayName || user.email.split("@")[0],
+          code: cleaned,
+          discountAmount: Number(discountAmount),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setCodeFeedback({ type: "error", text: json.message || "Could not save referral code." });
+      } else {
+        setCodeFeedback({ type: "success", text: json.message });
+        setCodeInput("");
+        await fetchOcProfile(user.email);
+      }
+    } catch (_) {
+      setCodeFeedback({ type: "error", text: "Network error while saving code." });
+    } finally {
+      setSavingCode(false);
+    }
+  };
+
+  const handleDeleteCode = async (code) => {
+    if (!user?.email || !confirm(`Delete referral code ${code}?`)) return;
+    try {
+      await fetch("/api/referrals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "DELETE_SECRETARIAT_CODE", email: user.email, code }),
+      });
+      await fetchOcProfile(user.email);
+    } catch (_) {}
+  };
+
+  const handleCopy = (text, key) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(""), 1800);
+  };
+
   const topBar = (
     <header className="sticky top-0 z-40 h-14 border-b border-[#1f1f1f] bg-black/95 backdrop-blur-sm">
       <div className="max-w-3xl h-full mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
@@ -322,7 +419,8 @@ export default function OcOnboardingPortalPage() {
             </Link>
           </section>
         ) : ocMember && !isEditing ? (
-          /* STEP 3: CONFIRMED OC CREDENTIAL SUMMARY CARD */
+          <>
+          {/* STEP 3: CONFIRMED OC CREDENTIAL SUMMARY CARD */}
           <section className="border border-[#262626] bg-black rounded-md p-5 sm:p-6 space-y-5">
             <div className="flex items-start justify-between gap-3 border-b border-[#1f1f1f] pb-4">
               <div>
@@ -386,13 +484,13 @@ export default function OcOnboardingPortalPage() {
               </div>
             </div>
 
-            {ocMember.status !== "Approved" && ocMember.status !== "Accepted" && (
+            {ocMember.status !== "Approved" && ocMember.status !== "Accepted" && !refData.isApproved && (
               <div className="p-3.5 rounded-md border border-amber-500/30 bg-amber-500/5 flex items-start gap-2.5 text-xs text-amber-200">
                 <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-white block">Awaiting Admin Approval</strong>
                   <span className="text-zinc-400">
-                    Your OC profile, chosen fee plan, and payment proof have been received. Once approved by the Secretariat, your official OC pass will be activated.
+                    Your OC profile, chosen fee plan, and payment proof have been received. Once approved by the Secretariat, your official OC pass and ₹400 Referral &amp; Cash Commission Dashboard will unlock here.
                   </span>
                 </div>
               </div>
@@ -416,6 +514,287 @@ export default function OcOnboardingPortalPage() {
               </a>
             </div>
           </section>
+
+          {/* OC REFERRAL & ₹400 CASH COMMISSION ENGINE (Unlocked upon Admin Approval) */}
+          {refData.isApproved && (
+            <div className="space-y-6">
+              {/* 4-STAT CASH METRICS */}
+              <section className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-[#1f1f1f] border border-[#1f1f1f] rounded-md overflow-hidden">
+                <div className="bg-black p-4">
+                  <span className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                    Verified Cash
+                  </span>
+                  <span className="block text-xl font-bold text-white mt-1">
+                    ₹{(refData.stats?.totalVerifiedCash || 0).toLocaleString("en-IN")}
+                  </span>
+                  <span className="block text-[10px] text-zinc-500 mt-0.5">
+                    {refData.stats?.verifiedCount || 0} verified
+                  </span>
+                </div>
+                <div className="bg-black p-4">
+                  <span className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                    Pending Cash
+                  </span>
+                  <span className="block text-xl font-bold text-zinc-300 mt-1">
+                    ₹{(refData.stats?.totalPendingCash || 0).toLocaleString("en-IN")}
+                  </span>
+                  <span className="block text-[10px] text-zinc-500 mt-0.5">
+                    {refData.stats?.pendingCount || 0} awaiting UTR
+                  </span>
+                </div>
+                <div className="bg-black p-4">
+                  <span className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                    Total Signups
+                  </span>
+                  <span className="block text-xl font-bold text-white mt-1">
+                    {refData.stats?.totalReferrals || 0}
+                  </span>
+                  <span className="block text-[10px] text-zinc-500 mt-0.5">
+                    via your codes
+                  </span>
+                </div>
+                <div className="bg-black p-4">
+                  <span className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                    Pool / Signup
+                  </span>
+                  <span className="block text-xl font-bold text-white mt-1">
+                    ₹{pool}
+                  </span>
+                  <span className="block text-[10px] text-zinc-500 mt-0.5">
+                    Base ₹{baseFee.toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </section>
+
+              {/* CREATE / UPDATE OC REFERRAL CODE */}
+              <section className="border border-[#262626] bg-black rounded-md p-5 sm:p-6 space-y-5">
+                <div className="flex items-start justify-between gap-3 border-b border-[#1f1f1f] pb-4">
+                  <div>
+                    <span className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                      OC Referral Engine · ₹{pool} Pool
+                    </span>
+                    <h3 className="m-0 text-base sm:text-lg font-bold text-white mt-0.5">
+                      Create Your Custom Referral Code
+                    </h3>
+                    <p className="m-0 text-xs text-zinc-400 mt-1">
+                      Give delegates any discount from ₹0 to ₹{pool} off the ₹{baseFee.toLocaleString("en-IN")} base fee. Whatever remains out of ₹{pool} is your direct cash payout per verified registration.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchOcProfile(user.email)}
+                    className="h-8 px-2.5 rounded-md border border-[#262626] bg-black text-xs text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Refresh</span>
+                  </button>
+                </div>
+
+                {codeFeedback.text && (
+                  <div
+                    className={`p-3 rounded-md border text-xs ${
+                      codeFeedback.type === "error"
+                        ? "border-red-500/40 bg-red-500/10 text-red-300"
+                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                    }`}
+                  >
+                    {codeFeedback.text}
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveCode} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] text-zinc-400">Custom Referral Code *</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={20}
+                      value={codeInput}
+                      onChange={(e) => setCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))}
+                      placeholder="e.g. OC-YOURNAME or YOURNAME100"
+                      className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-xs font-mono tracking-wider text-white uppercase focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Quick Split Presets */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[11px] text-zinc-400">Quick ₹{pool} Split Presets</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {SPLIT_PRESETS.map((p) => {
+                        const active = Number(discountAmount) === p.discount;
+                        return (
+                          <button
+                            key={p.discount}
+                            type="button"
+                            onClick={() => setDiscountAmount(p.discount)}
+                            className={`p-2 rounded-md border text-left transition cursor-pointer ${
+                              active
+                                ? "border-white bg-white text-black"
+                                : "border-[#262626] bg-black text-zinc-300 hover:border-zinc-500"
+                            }`}
+                          >
+                            <span className="block text-[10px] font-mono uppercase opacity-75">{p.tag}</span>
+                            <span className="block text-xs font-bold mt-0.5">
+                              ₹{p.discount} off / ₹{p.cash}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Exact Discount Slider + Input (Any number ₹0–₹400) */}
+                  <div className="border border-[#262626] bg-[#050505] rounded-md p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="text-xs font-medium text-white">
+                        Delegate Discount (₹0 – ₹{pool})
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-400">₹</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={pool}
+                          step={1}
+                          value={discountAmount}
+                          onChange={(e) => {
+                            const v = Math.max(0, Math.min(pool, parseInt(e.target.value || "0", 10) || 0));
+                            setDiscountAmount(v);
+                          }}
+                          className="w-20 h-8 px-2 rounded border border-[#262626] bg-black text-xs font-mono text-white text-right focus:border-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={pool}
+                      step={1}
+                      value={discountAmount}
+                      onChange={(e) => setDiscountAmount(Number(e.target.value))}
+                      className="w-full accent-white cursor-pointer"
+                    />
+                    <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
+                      <div className="p-2.5 rounded border border-[#1f1f1f] bg-black">
+                        <span className="block text-[10px] font-mono uppercase text-zinc-500">Delegate Pays</span>
+                        <span className="block text-base font-bold text-white mt-0.5">
+                          ₹{delegatePays.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded border border-[#1f1f1f] bg-black">
+                        <span className="block text-[10px] font-mono uppercase text-zinc-500">Your Cash Payout</span>
+                        <span className="block text-base font-bold text-emerald-400 mt-0.5">
+                          ₹{cashEarnedPerRef.toLocaleString("en-IN")} / signup
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={savingCode}
+                    className="w-full h-10 rounded-md bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-zinc-200 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{savingCode ? "Saving Code..." : "Save Referral Code"}</span>
+                  </button>
+                </form>
+              </section>
+
+              {/* ACTIVE CODES */}
+              {refData.myCodes && refData.myCodes.length > 0 && (
+                <section className="border border-[#262626] bg-black rounded-md p-5 sm:p-6 space-y-3">
+                  <span className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                    Your Active Codes ({refData.myCodes.length})
+                  </span>
+                  <div className="divide-y divide-[#1f1f1f]">
+                    {refData.myCodes.map((c) => {
+                      const origin = typeof window !== "undefined" ? window.location.origin : "https://resolvemun.in";
+                      const shareUrl = `${origin}/register/delegate?ref=${encodeURIComponent(c.code)}`;
+                      const disc = Number(c.discountAmount || 0);
+                      const finalPrice = Math.max(0, baseFee - disc);
+                      const comm = Math.max(0, pool - disc);
+                      const waMsg = encodeURIComponent(
+                        `Register for Resolve MUN 2.0 (26–27 Dec 2026 at Northfield International School, Hyderabad)! Use my code ${c.code}${disc > 0 ? ` for ₹${disc} OFF (Pay ₹${finalPrice.toLocaleString("en-IN")})` : ""}: ${shareUrl}`
+                      );
+                      return (
+                        <div key={c.code} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono font-bold text-white">{c.code}</span>
+                              <span className="text-[11px] text-zinc-400">
+                                · Delegate pays ₹{finalPrice.toLocaleString("en-IN")} (₹{disc} off) · You earn ₹{comm}
+                              </span>
+                            </div>
+                            <span className="block text-[11px] font-mono text-zinc-500 mt-0.5 truncate max-w-md">
+                              {shareUrl}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(shareUrl, `link-${c.code}`)}
+                              className="h-8 px-2.5 rounded-md bg-white text-black text-[11px] font-semibold flex items-center gap-1 cursor-pointer hover:bg-zinc-200"
+                            >
+                              {copiedKey === `link-${c.code}` ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedKey === `link-${c.code}` ? "Copied" : "Copy Link"}</span>
+                            </button>
+                            <a
+                              href={`https://wa.me/?text=${waMsg}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-8 px-2.5 rounded-md border border-[#262626] bg-black text-white text-[11px] font-medium flex items-center gap-1 hover:bg-white/5"
+                            >
+                              <Share2 className="w-3 h-3" />
+                              <span>Share</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCode(c.code)}
+                              className="h-8 w-8 rounded-md border border-[#262626] bg-black text-zinc-400 hover:text-red-400 hover:border-red-500/40 flex items-center justify-center cursor-pointer"
+                              title="Delete code"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* TRACKED REFERRALS LIST */}
+              <section className="border border-[#262626] bg-black rounded-md p-5 sm:p-6 space-y-3">
+                <span className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                  Tracked Delegate Signups ({refData.referrals?.length || 0})
+                </span>
+                {refData.referrals && refData.referrals.length > 0 ? (
+                  <div className="divide-y divide-[#1f1f1f]">
+                    {refData.referrals.map((r, i) => (
+                      <div key={r.id || i} className="py-2.5 flex items-center justify-between gap-2 text-xs">
+                        <div>
+                          <span className="font-medium text-white">{r.name}</span>
+                          <span className="text-zinc-500 font-mono text-[11px] ml-2">{r.referralCode}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-zinc-300">₹{r.cashEarned}</span>
+                          <span className={`text-[11px] font-mono ${r.verified ? "text-emerald-400" : "text-amber-400"}`}>
+                            {r.verified ? "● Verified" : "● Pending"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="m-0 text-xs text-zinc-500">
+                    No delegate registrations have used your OC referral code yet. Share your link to start earning!
+                  </p>
+                )}
+              </section>
+            </div>
+          )}
+          </>
         ) : (
           /* STEP 2: EXISTING OC SELF-ONBOARDING FORM */
           <section className="border border-[#262626] bg-black rounded-md p-5 sm:p-6 space-y-5">
