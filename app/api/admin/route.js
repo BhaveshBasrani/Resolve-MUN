@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase, DEFAULT_SITE_SETTINGS, DEFAULT_COMMITTEE_CAPACITIES, normalizeSettings } from '@/lib/supabase';
 import { buildResolveEmailHtml } from '@/lib/emailTemplates';
 import { enforceRateLimit } from '@/lib/rateLimit';
+import { sendTransactionalEmail, notifyReferralCodeUsed, RESOLVE_CC_EMAIL } from '@/lib/mailer';
 
 const APPS_SCRIPT_URL =
   process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL ||
@@ -1029,38 +1030,25 @@ export async function POST(request) {
             },
           });
 
-          if (process.env.RESEND_API_KEY) {
-            const fromAddr = process.env.RESEND_FROM_EMAIL || 'Resolve MUN 2.0 <onboarding@resend.dev>';
-            const r = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: fromAddr,
-                to: [cleanEmail],
-                subject: regSubject,
-                text: regBodyText,
-                html: regHtml,
-              }),
-            });
-            registrationEmailSent = r.ok;
-          } else {
-            const r = await fetch(APPS_SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify({
-                action: 'ADMIN_SEND_CUSTOM_EMAIL',
-                adminKey: ADMIN_KEY,
-                subject: regSubject,
-                messageBody: regBodyText,
-                htmlBody: regHtml,
-                email: cleanEmail,
-                recipients: [{ email: cleanEmail, name: delegateName }],
-              }),
-            });
-            registrationEmailSent = r.ok;
+          const mailResult = await sendTransactionalEmail({
+            to: cleanEmail,
+            cc: RESOLVE_CC_EMAIL,
+            name: delegateName,
+            subject: regSubject,
+            text: regBodyText,
+            html: regHtml,
+          });
+          registrationEmailSent = Boolean(mailResult.sent);
+
+          // If delegate used a referral code, notify the referrer (Secretariat / OC / Delegate) + CC Resolve
+          if (referral) {
+            notifyReferralCodeUsed({
+              referralCode: referral,
+              delegateName,
+              delegateEmail: cleanEmail,
+              regId: generatedId,
+              feePaid: fee,
+            }).catch(() => {});
           }
         } catch (mailErr) {
           console.warn('[SUBMIT_DELEGATE] Registration email notice:', mailErr.message);

@@ -13,10 +13,15 @@
 const CONFIG = {
   SENDER_NAME: "Resolve MUN 2.0 Secretariat",
   REPLY_TO: "resolve.mun@gmail.com",
+  CC_EMAIL: "resolve.mun@gmail.com",
   SUPPORT_EMAIL: "support@resolvemun.in",
   HELPLINE: "+91 92121 07797",
   CONFERENCE_DATES: "26, 27 December 2026",
   VENUE: "Northfield International School, Kompally, Hyderabad",
+  BASE_DELEGATE_FEE: 2500,
+  MAX_DAILY_EMAILS: 95,
+  RESEND_API_KEY: PropertiesService.getScriptProperties().getProperty("RESEND_API_KEY") || "",
+  RESEND_FROM_EMAIL: PropertiesService.getScriptProperties().getProperty("RESEND_FROM_EMAIL") || "Resolve MUN 2.0 <noreply@resolvemun.in>",
   TOTAL_PRIZE_POOL: "TBA",
   DELEGATION_PRIZE_POOL: "₹25,000",
   PRIZE_POOL: "TBA",
@@ -1678,12 +1683,12 @@ function buildAllocationHtml(fullName, delegateId, committee, country, email) {
  * 4. Application Received Intake Email
  */
 function sendApplicationReceivedEmail(email, fullName, formType, refId) {
-  const reference = refId || ("RM26-DEL-" + Math.floor(1000 + Math.random() * 9000));
+  const reference = refId || ("RM-" + Math.floor(1000 + Math.random() * 9000));
   const subject = `Registration Received — Resolve MUN 2.0 [${reference}]`;
   const htmlBody = buildApplicationReceivedHtml(fullName, formType, reference);
-  const plainText = `Hi ${fullName},\n\nWe have received your ${formType} registration for Resolve MUN 2.0.\n\nReference: ${reference}\nDates: 25, 26, 27 December 2026\nVenue: ${CONFIG.VENUE}\n\nOur team is verifying your payment details. You will receive an official payment confirmation and QR entry pass once verified.\n\nResolve MUN 2.0 Secretariat`;
+  const plainText = `Hi ${fullName},\n\nWe have received your ${formType} registration for Resolve MUN 2.0.\n\nReference: ${reference}\nDates: ${CONFIG.CONFERENCE_DATES}\nVenue: ${CONFIG.VENUE}\n\nOur team is verifying your payment details. You will receive an official payment confirmation and QR entry pass once verified.\n\nResolve MUN 2.0 Secretariat`;
 
-  dispatchMail(email, subject, htmlBody, plainText);
+  dispatchMail(email, subject, htmlBody, plainText, CONFIG.CC_EMAIL);
   tryLogEmailToSheet("APPLICATION_RECEIVED", email, fullName, "SENT");
   return { status: "success", recipient: email, refId: reference, message: "Registration confirmation sent." };
 }
@@ -2023,10 +2028,12 @@ function adminSendCustomCrmEmail(data) {
         <strong style="color: #FFFFFF;">Secretariat, Resolve MUN 2.0</strong>
       </div>
     `;
-    const plainText = `Hi ${recipientName},\n\n${bodyText}\n\nDates: 25, 26, 27 December 2026\nResolve MUN 2.0 Secretariat`;
+    const plainText = `Hi ${recipientName},\n\n${bodyText}\n\nDates: ${CONFIG.CONFERENCE_DATES}\nVenue: ${CONFIG.VENUE}\nResolve MUN 2.0 Secretariat`;
+    const finalHtml = data.htmlBody || wrapInEmbassyLayout("OFFICIAL-NOTICE", subject, bodyHtml);
+    const ccEmail = data.cc || "";
 
     try {
-      dispatchMail(toEmail, subject, wrapInEmbassyLayout("OFFICIAL-NOTICE", subject, bodyHtml), plainText);
+      dispatchMail(toEmail, subject, finalHtml, plainText, ccEmail);
       sentCount++;
       tryLogEmailToSheet("CRM_CUSTOM_EMAIL", toEmail, recipientName, "SENT");
     } catch (e) {
@@ -2035,4 +2042,108 @@ function adminSendCustomCrmEmail(data) {
   });
 
   return { status: "success", sentCount: sentCount, total: recipients.length };
+}
+
+/**
+ * ============================================================================
+ * BULLETPROOF DUAL-PROVIDER MAIL DISPATCHER (Resend Primary -> MailApp Fallback)
+ * Enforces hard <= 95 emails/day cap per provider so neither exceeds 100/day.
+ * ============================================================================
+ */
+function dispatchMail(toEmail, subject, htmlBody, plainText, ccEmail) {
+  const to = String(toEmail || "").trim();
+  const cc = String(ccEmail || "").trim();
+  if (!to || to.indexOf("@") === -1) return { sent: false, reason: "invalid_recipient" };
+
+  const props = PropertiesService.getScriptProperties();
+  const today = Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyy-MM-dd");
+  const lastDate = props.getProperty("DAILY_MAIL_DATE") || "";
+  let resendUsed = lastDate === today ? parseInt(props.getProperty("DAILY_RESEND_COUNT") || "0", 10) : 0;
+  let mailAppUsed = lastDate === today ? parseInt(props.getProperty("DAILY_MAILAPP_COUNT") || "0", 10) : 0;
+
+  if (lastDate !== today) {
+    props.setProperties({
+      DAILY_MAIL_DATE: today,
+      DAILY_RESEND_COUNT: "0",
+      DAILY_MAILAPP_COUNT: "0",
+    });
+  }
+
+  // 1. Primary: Resend API (if configured in Script Properties & under 95/day cap)
+  if (CONFIG.RESEND_API_KEY && resendUsed < CONFIG.MAX_DAILY_EMAILS) {
+    try {
+      const resendPayload = {
+        from: CONFIG.RESEND_FROM_EMAIL,
+        to: [to],
+        reply_to: CONFIG.REPLY_TO,
+        subject: subject,
+        html: htmlBody,
+        text: plainText || "",
+      };
+      if (cc && cc.indexOf("@") !== -1 && cc.toLowerCase() !== to.toLowerCase()) {
+        resendPayload.cc = [cc];
+      }
+      const resp = UrlFetchApp.fetch("https://api.resend.com/emails", {
+        method: "post",
+        contentType: "application/json",
+        headers: { Authorization: "Bearer " + CONFIG.RESEND_API_KEY },
+        payload: JSON.stringify(resendPayload),
+        muteHttpExceptions: true,
+      });
+      if (resp.getResponseCode() >= 200 && resp.getResponseCode() < 300) {
+        props.setProperty("DAILY_RESEND_COUNT", String(resendUsed + 1));
+        return { sent: true, provider: "resend" };
+      }
+    } catch (resendErr) {
+      Logger.log("Resend fallback triggered: " + resendErr.message);
+    }
+  }
+
+  // 2. Fallback: Google Apps Script MailApp (hard-capped at 95/day + remaining quota check)
+  const remaining = MailApp.getRemainingDailyQuota();
+  if (mailAppUsed >= CONFIG.MAX_DAILY_EMAILS || remaining <= 5) {
+    Logger.log("Daily email safety cap reached (used=" + mailAppUsed + ", remaining=" + remaining + ")");
+    return { sent: false, reason: "daily_quota_cap" };
+  }
+
+  const mailOptions = {
+    to: to,
+    subject: subject,
+    body: plainText || "",
+    htmlBody: htmlBody,
+    name: CONFIG.SENDER_NAME,
+    replyTo: CONFIG.REPLY_TO,
+  };
+  if (cc && cc.indexOf("@") !== -1 && cc.toLowerCase() !== to.toLowerCase()) {
+    mailOptions.cc = cc;
+  }
+  MailApp.sendEmail(mailOptions);
+  props.setProperty("DAILY_MAILAPP_COUNT", String(mailAppUsed + 1));
+  return { sent: true, provider: "mailapp" };
+}
+
+/**
+ * Referral Code Used Notification (Secretariat, OC, or Delegate RES-XXXX) + CC Resolve
+ */
+function sendReferralUsedEmail(ownerEmail, ownerName, referralCode, delegateName, regId, rewardSummary) {
+  if (!ownerEmail || ownerEmail.indexOf("@") === -1) return { sent: false };
+  const subject = "Referral Code " + referralCode + " Used! — Resolve MUN 2.0 [" + regId + "]";
+  const plainText =
+    "Hi " + (ownerName || "Team Member") + ",\n\n" +
+    delegateName + " just registered for Resolve MUN 2.0 using your referral code " + referralCode + ".\n\n" +
+    "Registration ID: " + regId + "\n" +
+    "Reward: " + (rewardSummary || "Tracked on your portal") + "\n\n" +
+    "Dates: " + CONFIG.CONFERENCE_DATES + "\n" +
+    "Venue: " + CONFIG.VENUE + "\n\n" +
+    "Resolve MUN 2.0 Secretariat";
+  const bodyHtml =
+    '<div style="font-size:15px;color:#FFFFFF;font-weight:600;margin-bottom:10px;">Hi ' + (ownerName || "Team Member") + ',</div>' +
+    '<div style="font-size:13px;color:#D4D4D8;line-height:1.65;margin-bottom:18px;"><strong>' + delegateName + '</strong> just registered for Resolve MUN 2.0 using your referral code <strong style="color:#FFFFFF;">' + referralCode + '</strong>.</div>' +
+    '<div style="background:#18181B;border:1px solid #27272A;border-radius:8px;padding:16px;margin-bottom:20px;font-size:13px;color:#FFFFFF;">' +
+    '<div><strong>Registration ID:</strong> ' + regId + '</div>' +
+    '<div style="margin-top:6px;color:#34D399;"><strong>Reward:</strong> ' + (rewardSummary || "Tracked on your portal") + '</div>' +
+    '</div>';
+  dispatchMail(ownerEmail, subject, wrapInEmbassyLayout("REFERRAL-ALERT", "Referral Code Used", bodyHtml), plainText, CONFIG.CC_EMAIL);
+  tryLogEmailToSheet("REFERRAL_USED", ownerEmail, ownerName || "", "SENT (" + referralCode + ")");
+  return { status: "success", sent: true };
 }
