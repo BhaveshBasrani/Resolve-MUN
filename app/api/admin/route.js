@@ -1145,6 +1145,35 @@ export async function POST(request) {
       return NextResponse.json({ status: 'error', message: 'Supabase unavailable.' }, { status: 500 });
     }
 
+    if (action === 'ADMIN_APPROVE_SECRETARIAT_MEMBER') {
+      const id = String(body.id || '').trim();
+      const email = String(body.email || '').trim().toLowerCase();
+      if (!id && !email) {
+        return NextResponse.json({ status: 'error', message: 'Member ID or email required.' }, { status: 400 });
+      }
+      if (supabase) {
+        const nowIso = new Date().toISOString();
+        let q = supabase.from('secretariat_roster').update({
+          onboarded: true,
+          onboarded_at: nowIso,
+          updated_at: nowIso,
+        });
+        if (id) q = q.eq('id', id);
+        else q = q.ilike('email', email);
+        const { error: updErr } = await q;
+        if (updErr) {
+          return NextResponse.json({ status: 'error', message: updErr.message }, { status: 500 });
+        }
+        if (email) {
+          await supabase
+            .from('secretariat_applications')
+            .update({ status: 'Accepted' })
+            .ilike('email', email);
+        }
+      }
+      return NextResponse.json({ status: 'success', message: 'Secretariat member approved!' });
+    }
+
     if (action === 'ADMIN_DELETE_SECRETARIAT_MEMBER') {
       const id = String(body.id || '').trim();
       const email = String(body.email || '').trim().toLowerCase();
@@ -1274,7 +1303,11 @@ export async function POST(request) {
       if (supabase) {
         try {
           const tableName = roleType === 'OC' ? 'oc_applications' : roleType === 'SEC' ? 'secretariat_applications' : 'eb_applications';
-          await supabase.from(tableName).update({ status: newStatus }).or(`app_id.eq.${appId},email.eq.${email}`);
+          const patch = { status: newStatus };
+          if (roleType === 'OC' && (newStatus === 'Approved' || newStatus === 'Accepted')) {
+            patch.payment_status = 'VERIFIED';
+          }
+          await supabase.from(tableName).update(patch).or(`app_id.eq.${appId},email.eq.${email}`);
         } catch (err) {
           console.warn("[Supabase] Applicant status update notice:", err.message);
         }

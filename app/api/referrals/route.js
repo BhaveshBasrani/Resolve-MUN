@@ -169,8 +169,10 @@ export async function GET(request) {
               preferencesLocked: Number(row.preferences_updated_count || 0) >= 1,
               allocatedCommittee: row.allocated_committee || '',
               allocatedCountry: row.allocated_country || '',
-              status: row.status || 'Confirmed',
-              paymentStatus: 'VERIFIED',
+              paymentUtr: row.payment_utr || '',
+              paymentScreenshotUrl: row.payment_screenshot_url || '',
+              status: row.status || 'PENDING',
+              paymentStatus: String(row.payment_status || '').toUpperCase() === 'VERIFIED' ? 'VERIFIED' : 'PENDING_VERIFICATION',
               createdAt: row.created_at,
             };
           }
@@ -206,11 +208,14 @@ export async function GET(request) {
               grade: row.grade || '',
               dob: row.dob || '',
               department: row.allocated_department || row.department1 || 'Organizing Committee',
+              feeTier: row.fee_tier || row.payment_tier || '',
               transport: row.transport_needed || row.transport || 'No',
               address: row.residential_address || row.address || '',
               instagram: row.instagram || '',
               paymentUtr: row.payment_utr || '',
-              status: row.status || 'Approved',
+              paymentScreenshotUrl: row.payment_screenshot_url || '',
+              status: row.status || 'Pending Approval',
+              paymentStatus: row.payment_status || 'PENDING_VERIFICATION',
               createdAt: row.created_at,
             };
           }
@@ -307,6 +312,7 @@ export async function GET(request) {
       let memberRole = isSecretariat ? 'Secretariat / Admin' : '';
       let rosterMember = null;
       let needsOnboarding = false;
+      let pendingApproval = false;
 
       if (supabase) {
         const [rosterRes, secRes, ocRes] = await Promise.allSettled([
@@ -336,21 +342,28 @@ export async function GET(request) {
           };
           memberName = rRow.full_name || memberName;
           memberRole = rRow.allotted_role || 'Secretariat Member';
-          needsOnboarding = !rRow.onboarded;
+          const hasSubmittedProfile = Boolean(rRow.phone || rRow.school || rRow.upi_id);
+          if (rRow.onboarded || ADMIN_EMAILS.includes(email)) {
+            needsOnboarding = false;
+            pendingApproval = false;
+          } else if (hasSubmittedProfile) {
+            needsOnboarding = false;
+            pendingApproval = true;
+          } else {
+            needsOnboarding = true;
+            pendingApproval = false;
+          }
         } else if (secRow) {
           isSecretariat = true;
           memberName = secRow.full_name || memberName;
           memberRole = secRow.position || 'Secretariat';
+          const approved = String(secRow.status || '').toLowerCase() === 'accepted' || String(secRow.status || '').toLowerCase() === 'approved';
           needsOnboarding = false;
-        } else if (ocRow) {
-          isSecretariat = true;
-          memberName = ocRow.full_name || memberName;
-          memberRole = ocRow.allocated_department || 'Organizing Committee';
-          needsOnboarding = false;
+          pendingApproval = !approved && !ADMIN_EMAILS.includes(email);
         } else {
-          // Anyone with the /secretariat group link can self-onboard into the Secretariat Roster
+          // Anyone with the /secretariat group link can submit their profile for admin approval
           isSecretariat = true;
-          needsOnboarding = true;
+          needsOnboarding = !ADMIN_EMAILS.includes(email);
         }
       }
 
@@ -389,6 +402,7 @@ export async function GET(request) {
         success: true,
         authorized: isSecretariat,
         needsOnboarding,
+        pendingApproval,
         rosterMember,
         memberName,
         memberRole: memberRole || 'Secretariat',
@@ -506,8 +520,20 @@ export async function POST(request) {
         );
       }
 
+      const isAdminEmail = ADMIN_EMAILS.includes(email);
+      let isAlreadyApproved = isAdminEmail;
       if (supabase) {
         const nowIso = new Date().toISOString();
+        try {
+          const { data: exRoster } = await supabase
+            .from('secretariat_roster')
+            .select('onboarded')
+            .ilike('email', email)
+            .limit(1)
+            .maybeSingle();
+          if (exRoster?.onboarded) isAlreadyApproved = true;
+        } catch (_) {}
+
         const { error } = await supabase
           .from('secretariat_roster')
           .upsert(
@@ -520,8 +546,8 @@ export async function POST(request) {
               grade,
               upi_id: upiId,
               instagram,
-              onboarded: true,
-              onboarded_at: nowIso,
+              onboarded: isAlreadyApproved,
+              onboarded_at: isAlreadyApproved ? nowIso : null,
               updated_at: nowIso,
             },
             { onConflict: 'email' }
@@ -530,11 +556,11 @@ export async function POST(request) {
           return NextResponse.json({ success: false, message: error.message }, { status: 500 });
         }
 
-        // Also mirror into `secretariat_applications` as Accepted so it shows in Team Applications too
+        // Also mirror into `secretariat_applications` as Pending Approval until admin approves
         try {
           const { data: exSec } = await supabase
             .from('secretariat_applications')
-            .select('id')
+            .select('id, status')
             .ilike('email', email)
             .limit(1)
             .maybeSingle();
@@ -548,7 +574,7 @@ export async function POST(request) {
             instagram,
             position: allottedRole,
             allocated_role: allottedRole,
-            status: 'Accepted',
+            status: isAlreadyApproved ? 'Accepted' : 'Pending Approval',
           };
           if (exSec?.id) {
             await supabase.from('secretariat_applications').update(secPayload).eq('id', exSec.id);
@@ -563,9 +589,33 @@ export async function POST(request) {
         } catch (_) {}
       }
 
+      // Mirror to Google Apps Script Sheet
+      const appsUrl = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL;
+      if (appsUrl) {
+        fetch(appsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'SUBMIT_SECRETARIAT',
+            fullName,
+            email,
+            phone,
+            schoolCollege: school,
+            grade,
+            instagram,
+            position: allottedRole,
+            upiId,
+            status: isAlreadyApproved ? 'Accepted' : 'Pending Approval',
+          }),
+        }).catch(() => {});
+      }
+
       return NextResponse.json({
         success: true,
-        message: 'Secretariat profile saved! You can now set up your referral code and track earnings.',
+        pendingApproval: !isAlreadyApproved,
+        message: isAlreadyApproved
+          ? 'Secretariat profile saved! Your referral code dashboard is active.'
+          : 'Secretariat profile submitted! Awaiting Admin approval to unlock your referral dashboard.',
       });
     }
 
@@ -580,14 +630,28 @@ export async function POST(request) {
       const grade = String(body.grade || '').trim();
       const dob = String(body.dob || '').trim();
       const department = String(body.department || 'Organizing Committee').trim();
+      const feeTier = String(body.feeTier || body.payment_tier || '₹1,500 — Full Plan (Transport + T-Shirt + Meals)').trim();
       const transport = String(body.transport || 'No').trim();
       const address = String(body.address || '').trim();
       const instagram = String(body.instagram || '').trim();
-      const paymentUtr = String(body.paymentUtr || 'OC-CONFIRMED').trim();
+      const emergencyName = String(body.emergencyName || '').trim();
+      const emergencyPhone = String(body.emergencyPhone || '').trim();
+      const paymentUtr = String(body.paymentUtr || '').trim();
+      const paymentScreenshotUrl = String(body.paymentScreenshotUrl || '').trim();
+      const paymentScreenshotBase64 = String(body.paymentScreenshotBase64 || '').trim();
 
       if (!fullName || !phone || !school || !department) {
         return NextResponse.json(
           { success: false, message: 'Full Name, Phone, School/Institution, and Department are required.' },
+          { status: 400 }
+        );
+      }
+
+      const cleanOcPh = phone.replace(/\D/g, '').slice(-10);
+      const cleanOcEmg = emergencyPhone.replace(/\D/g, '').slice(-10);
+      if (cleanOcPh && cleanOcEmg && cleanOcPh === cleanOcEmg) {
+        return NextResponse.json(
+          { success: false, message: "Parent / Emergency phone cannot be the same as your own phone number." },
           { status: 400 }
         );
       }
@@ -597,7 +661,7 @@ export async function POST(request) {
         try {
           const { data: existing } = await supabase
             .from('oc_applications')
-            .select('id, app_id')
+            .select('id, app_id, status, payment_status, payment_screenshot_url')
             .ilike('email', email)
             .limit(1)
             .maybeSingle();
@@ -605,6 +669,10 @@ export async function POST(request) {
           if (existing?.app_id) {
             savedAppId = String(existing.app_id).replace(/^RM26-OC-/i, 'RM-OC-');
           }
+
+          const alreadyApproved =
+            String(existing?.status || '').toLowerCase() === 'approved' ||
+            String(existing?.status || '').toLowerCase() === 'accepted';
 
           const ocPayload = {
             app_id: savedAppId,
@@ -622,11 +690,13 @@ export async function POST(request) {
             residential_address: address,
             address,
             instagram,
-            payment_tier: 'CONFIRMED_OC',
-            fee_tier: 'CONFIRMED_OC',
-            payment_utr: paymentUtr || 'OC-CONFIRMED',
-            payment_status: 'VERIFIED',
-            status: 'Approved',
+            payment_tier: feeTier,
+            fee_tier: feeTier,
+            payment_utr: paymentUtr || (feeTier.toLowerCase().includes('later') ? 'PAY_LATER' : 'PENDING'),
+            payment_screenshot_url: paymentScreenshotUrl || existing?.payment_screenshot_url || '',
+            payment_status: alreadyApproved ? 'VERIFIED' : 'PENDING_VERIFICATION',
+            status: alreadyApproved ? 'Approved' : 'Pending Approval',
+            additional_info: emergencyName || emergencyPhone ? `Parent: ${emergencyName} (${emergencyPhone})` : '',
           };
 
           if (existing?.id) {
@@ -646,10 +716,41 @@ export async function POST(request) {
         }
       }
 
+      // Mirror to Google Apps Script (archives screenshot in Drive & logs to Sheet)
+      const appsUrl = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL;
+      if (appsUrl) {
+        fetch(appsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'SUBMIT_OC',
+            appId: savedAppId,
+            fullName,
+            email,
+            phone,
+            emergencyName,
+            emergencyPhone,
+            school,
+            grade,
+            dob,
+            department,
+            address,
+            instagram,
+            transport,
+            feeTier,
+            payment_tier: feeTier,
+            payment_utr: paymentUtr || 'PENDING',
+            payment_screenshot_link: paymentScreenshotUrl || paymentScreenshotBase64,
+            paymentScreenshotBase64,
+            screenshotName: body.screenshotName || `OC_Payment_${savedAppId}.png`,
+          }),
+        }).catch(() => {});
+      }
+
       return NextResponse.json({
         success: true,
         appId: savedAppId,
-        message: 'OC Profile registered in the Resolve MUN 2.0 database!',
+        message: 'OC Profile & payment proof submitted! Awaiting Secretariat approval.',
       });
     }
 
@@ -734,6 +835,11 @@ export async function POST(request) {
             );
           }
 
+          const paymentUtr = String(body.paymentUtr || '').trim() || 'LUMEN-ACQUIRED';
+          const paymentScreenshotUrl = String(body.paymentScreenshotUrl || '').trim() || existing?.payment_screenshot_url || '';
+          const paymentScreenshotBase64 = String(body.paymentScreenshotBase64 || '').trim();
+          const alreadyVerified = String(existing?.payment_status || '').toUpperCase() === 'VERIFIED';
+
           const lumenPayload = {
             reg_id: savedRegId,
             name: fullName,
@@ -755,10 +861,11 @@ export async function POST(request) {
             pref3_country: isChangingPrefs && currentPrefCount >= 1 ? existing.pref3_country : pref3Country,
             preferences_updated_count: isChangingPrefs ? 1 : currentPrefCount,
             registration_fee: 0,
-            payment_utr: 'LUMEN-ACQUIRED',
+            payment_utr: paymentUtr,
+            payment_screenshot_url: paymentScreenshotUrl,
             referral: 'LUMEN-MUN',
-            payment_status: 'VERIFIED',
-            status: existing?.allocated_committee ? 'ALLOTTED' : 'Confirmed',
+            payment_status: alreadyVerified ? 'VERIFIED' : 'PENDING_VERIFICATION',
+            status: alreadyVerified ? (existing?.allocated_committee ? 'ALLOTTED' : 'Confirmed') : 'PENDING',
             additional_info: body.liabilityAccepted ? 'LUMEN_ACQUIRED | LIABILITY_ACCEPTED' : 'LUMEN_ACQUIRED',
             updated_at: new Date().toISOString(),
           };
@@ -777,6 +884,39 @@ export async function POST(request) {
           }
 
           await supabase.from('draft_leads').delete().ilike('email', email);
+
+          // Mirror to Google Apps Script (archives Lumen transaction screenshot to Drive & logs to Sheet)
+          const appsUrl = process.env.NEXT_PUBLIC_GOOGLE_APP_SCRIPT_URL;
+          if (appsUrl) {
+            fetch(appsUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: 'SUBMIT_LUMEN',
+                regId: savedRegId,
+                fullName,
+                email,
+                phone,
+                emergencyName,
+                emergencyPhone,
+                school,
+                grade,
+                dob,
+                address,
+                experience,
+                pref1_committee: pref1Committee,
+                pref1_country: pref1Country,
+                pref2_committee: pref2Committee,
+                pref2_country: pref2Country,
+                pref3_committee: pref3Committee,
+                pref3_country: pref3Country,
+                payment_utr: paymentUtr,
+                payment_screenshot_link: paymentScreenshotUrl || paymentScreenshotBase64,
+                paymentScreenshotBase64,
+                screenshotName: body.screenshotName || `Lumen_Payment_${savedRegId}.png`,
+              }),
+            }).catch(() => {});
+          }
         } catch (err) {
           return NextResponse.json({ success: false, message: err.message }, { status: 500 });
         }
@@ -785,7 +925,7 @@ export async function POST(request) {
       return NextResponse.json({
         success: true,
         regId: savedRegId,
-        message: 'Lumen Delegate profile registered! Your digital pass is active and ready.',
+        message: 'Lumen Delegate transfer & payment proof submitted! Awaiting Secretariat approval.',
       });
     }
 

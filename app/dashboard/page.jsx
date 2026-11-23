@@ -986,13 +986,6 @@ export default function DelegateDashboard() {
               </div>
 
               <div className="p-2 border-t border-[#1f1f1f] space-y-0.5">
-                <Link
-                  href="/secretariat"
-                  className="w-full h-8 px-3 rounded text-left text-xs text-zinc-400 hover:text-white hover:bg-white/[0.04] flex items-center justify-between"
-                >
-                  <span>Secretariat Portal</span>
-                  <ArrowRight className="w-3 h-3" />
-                </Link>
                 <button
                   type="button"
                   onClick={handleSignOut}

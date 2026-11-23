@@ -15,8 +15,8 @@ const CONFIG = {
   REPLY_TO: "resolve.mun@gmail.com",
   SUPPORT_EMAIL: "support@resolvemun.in",
   HELPLINE: "+91 92121 07797",
-  CONFERENCE_DATES: "25, 26, 27 December 2026",
-  VENUE: "TBA (To Be Announced)",
+  CONFERENCE_DATES: "26, 27 December 2026",
+  VENUE: "Northfield International School, Kompally, Hyderabad",
   TOTAL_PRIZE_POOL: "TBA",
   DELEGATION_PRIZE_POOL: "₹25,000",
   PRIZE_POOL: "TBA",
@@ -46,6 +46,7 @@ const CONFIG = {
   FOLDERS: {
     ROOT: "Resolve_MUN_2026",
     DELEGATE_PAYMENTS: "Resolve_MUN_2026/Delegates",
+    LUMEN_DELEGATES: "Resolve_MUN_2026/Lumen_Delegates",
     DELEGATION_PAYMENTS: "Resolve_MUN_2026/Delegations",
     EB_CVS: "Resolve_MUN_2026/Executive_Board",
     OC_CVS: "Resolve_MUN_2026/Organizing_Committee",
@@ -63,10 +64,15 @@ const SCHEMAS = {
     "Timestamp", "UID", "FullName", "Email", "Role", "AvatarURL", "LastActive"
   ],
   "Registrations": [
-    "Timestamp", "RegID", "UID", "FullName", "Email", "Phone", "Institution", 
+    "Timestamp", "RegID", "UID", "FullName", "Email", "Phone", "ParentName", "EmergencyPhone", "Institution", 
     "CommitteePref1", "CommitteePref2", "CommitteePref3", "Experience", "PaymentUTR", 
     "PaymentScreenshotURL", "Status", "AllocatedCommittee", "AllocatedCountry", 
     "DelegationCode", "AllotmentEmailSent"
+  ],
+  "Lumen_Delegates": [
+    "Timestamp", "RegID", "FullName", "Email", "Phone", "ParentName", "EmergencyPhone",
+    "Institution", "Grade", "DOB", "Pref1", "Pref2", "Pref3",
+    "PaymentUTR", "PaymentScreenshotURL", "Status", "Transport"
   ],
   "Delegations": [
     "Timestamp", "DelID", "DelegationCode", "DelegationName", "HeadName", "HeadEmail", 
@@ -243,6 +249,11 @@ function doPost(e) {
     switch (action) {
       case "SUBMIT_DELEGATE":
         result = registerDelegateWithDrive(payload);
+        break;
+
+      case "SUBMIT_LUMEN":
+      case "COMPLETE_LUMEN_ONBOARDING":
+        result = registerLumenDelegateWithDrive(payload);
         break;
 
       case "SUBMIT_DELEGATION":
@@ -486,6 +497,7 @@ function registerDelegateWithDrive(data) {
   const driveUrl = screenshotData ? saveFileToDriveFolder(screenshotData, screenshotName, "image/png", CONFIG.FOLDERS.DELEGATE_PAYMENTS) : "";
 
   const cleanPhone = String(data.phone || "").replace(/\D/g, "");
+  const cleanEmergencyPhone = String(data.emergency_phone || data.emergencyPhone || "").replace(/\D/g, "");
 
   sheet.appendRow([
     new Date().toISOString(),
@@ -494,6 +506,8 @@ function registerDelegateWithDrive(data) {
     data.name || data.fullName || "",
     data.email || "",
     "'" + cleanPhone,
+    data.emergency_name || data.emergencyName || "",
+    cleanEmergencyPhone ? ("'" + cleanEmergencyPhone) : "",
     data.institute || data.institution || data.school || "",
     data.pref1_committee || data.committeePref1 || "",
     data.pref2_committee || data.committeePref2 || "",
@@ -524,6 +538,52 @@ function registerDelegateWithDrive(data) {
     delegateId: regId,
     driveUrl: driveUrl,
     message: "Registration recorded, receipt archived in Drive, and confirmation dispatched."
+  };
+}
+
+/**
+ * 1B. Acquired Lumen MUN Delegate Transfer (No Transport, Transaction Proof Archived to Drive)
+ */
+function registerLumenDelegateWithDrive(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Lumen_Delegates");
+  if (!sheet) {
+    repairAndInitDatabase();
+    sheet = ss.getSheetByName("Lumen_Delegates");
+  }
+
+  const regId = data.regId || ("RM-LMN-" + Math.floor(1000 + Math.random() * 9000));
+  const screenshotData = data.payment_screenshot_link || data.paymentScreenshotBase64 || data.screenshotBase64 || "";
+  const screenshotName = data.screenshotName || ("Lumen_Payment_" + regId + ".png");
+  const driveUrl = screenshotData ? saveFileToDriveFolder(screenshotData, screenshotName, "image/png", CONFIG.FOLDERS.LUMEN_DELEGATES) : "";
+  const cleanPhone = String(data.phone || "").replace(/\D/g, "");
+  const cleanEmg = String(data.emergencyPhone || data.emergency_phone || "").replace(/\D/g, "");
+
+  sheet.appendRow([
+    new Date().toISOString(),
+    regId,
+    data.fullName || data.name || "",
+    data.email || "",
+    "'" + cleanPhone,
+    data.emergencyName || data.emergency_name || "",
+    cleanEmg ? ("'" + cleanEmg) : "",
+    data.school || data.institute || "",
+    data.grade || "",
+    data.dob || "",
+    (data.pref1_committee || "") + (data.pref1_country ? " (" + data.pref1_country + ")" : ""),
+    (data.pref2_committee || "") + (data.pref2_country ? " (" + data.pref2_country + ")" : ""),
+    (data.pref3_committee || "") + (data.pref3_country ? " (" + data.pref3_country + ")" : ""),
+    data.payment_utr || data.paymentUtr || "LUMEN-ACQUIRED",
+    driveUrl,
+    "Pending_Approval",
+    "No (Lumen Transfer)"
+  ]);
+
+  return {
+    status: "success",
+    regId: regId,
+    driveUrl: driveUrl,
+    message: "Lumen Delegate transfer logged and transaction screenshot archived in Drive."
   };
 }
 

@@ -32,20 +32,24 @@ const SPLIT_PRESETS = [
 ];
 
 const SECRETARIAT_ROLES = [
-  "Secretary-General",
-  "Deputy Secretary-General",
-  "Director-General",
-  "Chief of Staff",
+  "Founder",
+  "Co-Founder",
+  "Secretary General",
+  "Deputy Secretary General",
+  "Director General",
+  "Charge d'Affairs",
+  "Conference Lead",
+  "Chief Advisor",
+  "USG Policy",
+  "Chief Of Operations",
+  "USG Logistics",
+  "USG Design",
   "USG Delegate Affairs",
-  "USG Finance",
-  "USG Logistics & Operations",
-  "USG Marketing & PR",
-  "USG Design & Media",
-  "USG Tech & IT",
-  "USG Hospitality",
-  "USG Sponsorship",
-  "USG Security",
-  "Secretariat Member",
+  "USG Content Creation",
+  "USG Marketing",
+  "USG Outreach",
+  "USG Editing",
+  "OC Head",
 ];
 
 export default function SecretariatDashboardPage() {
@@ -322,7 +326,8 @@ export default function SecretariatDashboardPage() {
   };
   const myCodes = data?.myCodes || [];
   const referrals = data?.referrals || [];
-  const showOnboardingForm = Boolean(data?.needsOnboarding || editingProfile);
+  const isPendingApproval = Boolean(data?.pendingApproval && !editingProfile);
+  const showOnboardingForm = Boolean((data?.needsOnboarding && !data?.pendingApproval) || editingProfile);
 
   return (
     <div id="dashboard-root" className="min-h-screen bg-black text-white font-sans flex flex-col justify-between selection:bg-white selection:text-black">
@@ -389,6 +394,36 @@ export default function SecretariatDashboardPage() {
               Or sign in with Email &amp; Password
             </Link>
           </section>
+        ) : isPendingApproval ? (
+          /* STEP 2B: PENDING ADMIN APPROVAL GATE */
+          <section className="border border-[#262626] bg-black rounded-md p-6 sm:p-8 text-center space-y-4 max-w-lg mx-auto">
+            <div className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-400">
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              Pending Admin Approval
+            </div>
+            <h2 className="m-0 text-xl font-bold text-white">
+              Secretariat Profile Submitted
+            </h2>
+            <p className="m-0 text-xs text-zinc-400 leading-relaxed">
+              Your details ({data?.rosterMember?.fullName || user.email} · {data?.memberRole || "Secretariat"}) have been submitted to the Admin Console. Once an administrator approves your Secretariat profile, your referral code generator (₹400 cash pool) and live payout dashboard will unlock here automatically.
+            </p>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => fetchStats(user.email)}
+                className="h-9 px-4 rounded-md bg-white text-black text-xs font-semibold hover:bg-zinc-200 cursor-pointer"
+              >
+                Check Approval Status
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingProfile(true)}
+                className="h-9 px-4 rounded-md border border-[#262626] text-xs text-zinc-300 hover:text-white cursor-pointer"
+              >
+                Edit Profile
+              </button>
+            </div>
+          </section>
         ) : showOnboardingForm ? (
           /* STEP 2: SECRETARIAT SELF-ONBOARDING FORM */
           <section className="border border-[#262626] bg-black rounded-md p-5 sm:p-6 space-y-5">
@@ -442,20 +477,18 @@ export default function SecretariatDashboardPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] text-zinc-400">Your Allotted Role / Position *</label>
-                  <input
-                    type="text"
+                  <select
                     required
-                    list="secretariat-role-list"
                     value={onboardingForm.allottedRole}
                     onChange={(e) => setOnboardingForm((p) => ({ ...p, allottedRole: e.target.value }))}
-                    placeholder="Select or type your allotted role"
                     className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-xs text-white focus:border-white focus:outline-none"
-                  />
-                  <datalist id="secretariat-role-list">
+                  >
                     {SECRETARIAT_ROLES.map((r) => (
-                      <option key={r} value={r} />
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
               </div>
 
@@ -621,7 +654,7 @@ export default function SecretariatDashboardPage() {
                   Custom Code &amp; Discount Split
                 </h2>
                 <p className="m-0 text-xs text-zinc-400 mt-1">
-                  Base fee is ₹{baseFee.toLocaleString("en-IN")}. You have a ₹{pool} pool per delegate: keep the fee at ₹2,500 and pocket ₹400 cash, or give ₹100–₹250 discount and pocket the rest.
+                  Base fee is ₹{baseFee.toLocaleString("en-IN")}. You have a ₹{pool} pool per delegate: enter any discount amount between ₹0 and ₹{pool} (e.g. ₹0, ₹75, ₹125, ₹250, ₹350) and pocket the remaining balance in cash.
                 </p>
               </div>
 
@@ -643,16 +676,21 @@ export default function SecretariatDashboardPage() {
 
                   <div>
                     <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400 mb-1.5">
-                      2. Discount Given to Delegate (₹0 – ₹{pool})
+                      2. Discount Given to Delegate (Any ₹0 – ₹{pool})
                     </label>
                     <input
                       type="number"
                       min={0}
                       max={pool}
-                      step={50}
+                      step={1}
                       value={discountAmount}
                       onChange={(e) => {
-                        const v = Math.max(0, Math.min(pool, Number(e.target.value || 0)));
+                        const raw = e.target.value;
+                        if (raw === "") {
+                          setDiscountAmount(0);
+                          return;
+                        }
+                        const v = Math.max(0, Math.min(pool, Math.floor(Number(raw) || 0)));
                         setDiscountAmount(v);
                       }}
                       className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-white font-mono text-sm focus:outline-none focus:border-white"

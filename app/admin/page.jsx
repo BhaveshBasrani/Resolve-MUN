@@ -1624,8 +1624,32 @@ export default function SuperAdminPage() {
         onLogout={handleLogout}
       />
 
-      <SidebarInset className="min-w-0">
+      <SidebarInset id="admin-console-root" className="min-w-0">
         <style>{`
+          #admin-console-root,
+          #admin-console-root h1,
+          #admin-console-root h2,
+          #admin-console-root h3,
+          #admin-console-root h4,
+          #admin-console-root h5,
+          #admin-console-root h6,
+          #admin-console-root p,
+          #admin-console-root span,
+          #admin-console-root a,
+          #admin-console-root button,
+          #admin-console-root label,
+          #admin-console-root th,
+          #admin-console-root td,
+          #admin-console-root input,
+          #admin-console-root select,
+          #admin-console-root textarea {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            text-shadow: none !important;
+            letter-spacing: normal;
+          }
+          #admin-console-root .font-mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+          }
           @keyframes adminTabFade {
             from {
               opacity: 0;
@@ -1660,32 +1684,22 @@ export default function SuperAdminPage() {
           }
         `}</style>
 
-        {/* Sticky Minimal Header + Integrated Navigation Bar */}
+        {/* Sticky Minimal Header (Sidebar handles desktop navigation; mobile strip only shows < 768px) */}
         <header className="sticky top-0 z-30 border-b border-[#1a1a1a] bg-black">
           <div className="flex h-13 sm:h-14 items-center gap-3 px-3 sm:px-6">
             <SidebarTrigger aria-label="Toggle navigation" />
             <div className="flex items-center gap-2.5 min-w-0">
-              <h1 className="truncate text-xs sm:text-sm font-semibold tracking-tight text-white">
+              <h1 className="truncate text-xs sm:text-sm font-semibold text-white">
                 Resolve MUN 2.0 Console
               </h1>
-              <span className="hidden md:inline-block text-[10px] font-mono text-zinc-500">
-                26–27 Dec 2026 · Northfield International School
+              <span className="hidden md:inline-block text-xs text-zinc-500">
+                · 26–27 Dec 2026 · Northfield International School
               </span>
-            </div>
-
-            {/* Integrated Quick Portal Links (Seamless 1-click access across the platform) */}
-            <div className="hidden xl:flex items-center gap-4 ml-6 pl-6 border-l border-[#1f1f1f] text-[11px] font-mono text-zinc-400">
-              <Link href="/" className="hover:text-white transition-colors !no-underline">Site</Link>
-              <Link href="/secretariat" className="hover:text-white transition-colors !no-underline">Secretariat</Link>
-              <Link href="/oc" className="hover:text-white transition-colors !no-underline">OC Portal</Link>
-              <Link href="/lumen" className="hover:text-white transition-colors !no-underline">Lumen</Link>
-              <Link href="/scan" className="hover:text-white transition-colors !no-underline">Scanner</Link>
-              <Link href="/liability" className="hover:text-white transition-colors !no-underline">Liability</Link>
             </div>
 
             <div className="ml-auto flex items-center gap-2 shrink-0">
               {lastSyncTime && (
-                <span className="hidden lg:inline-block text-[11px] font-mono text-zinc-500">
+                <span className="hidden lg:inline-block text-[11px] text-zinc-500">
                   Synced {lastSyncTime}
                 </span>
               )}
@@ -1710,8 +1724,8 @@ export default function SuperAdminPage() {
             </div>
           </div>
 
-          {/* Unified Always-Visible Horizontal Workspace Bar (Zero pills — clean bottom underline active indicator) */}
-          <nav className="flex items-center gap-5 overflow-x-auto px-3 sm:px-6 border-t border-[#141414] bg-[#030303] no-scrollbar">
+          {/* Mobile-Only Quick-Switch Bar (Hidden on Desktop where the Left Sidebar is active) */}
+          <nav className="md:hidden flex items-center gap-4 overflow-x-auto px-3 border-t border-[#141414] bg-[#030303] no-scrollbar">
             {[
               { id: "overview", label: "Overview" },
               { id: "delegates", label: "Delegates", count: navCounts.delegates },
@@ -1741,7 +1755,7 @@ export default function SuperAdminPage() {
                 >
                   <span>{t.label}</span>
                   {typeof t.count === "number" && t.count > 0 && (
-                    <span className={cn("font-mono text-[10px]", isAct ? "text-zinc-300" : "text-zinc-600")}>
+                    <span className={cn("text-[10px]", isAct ? "text-zinc-300" : "text-zinc-600")}>
                       {t.count}
                     </span>
                   )}
@@ -3316,19 +3330,24 @@ export default function SuperAdminPage() {
                           className="w-full h-9 px-3 rounded-md bg-black border border-[#262626] text-xs text-white focus:border-white focus:outline-none"
                         />
                         <datalist id="sec-role-presets">
-                          <option value="Secretary-General" />
-                          <option value="Deputy Secretary-General" />
-                          <option value="Director-General" />
-                          <option value="Chief of Staff" />
+                          <option value="Founder" />
+                          <option value="Co-Founder" />
+                          <option value="Secretary General" />
+                          <option value="Deputy Secretary General" />
+                          <option value="Director General" />
+                          <option value="Charge d'Affairs" />
+                          <option value="Conference Lead" />
+                          <option value="Chief Advisor" />
+                          <option value="USG Policy" />
+                          <option value="Chief Of Operations" />
+                          <option value="USG Logistics" />
+                          <option value="USG Design" />
                           <option value="USG Delegate Affairs" />
-                          <option value="USG Finance" />
-                          <option value="USG Logistics & Operations" />
-                          <option value="USG Marketing & PR" />
-                          <option value="USG Design & Media" />
-                          <option value="USG Tech & IT" />
-                          <option value="USG Hospitality" />
-                          <option value="USG Sponsorship" />
-                          <option value="Secretariat Member" />
+                          <option value="USG Content Creation" />
+                          <option value="USG Marketing" />
+                          <option value="USG Outreach" />
+                          <option value="USG Editing" />
+                          <option value="OC Head" />
                         </datalist>
                       </div>
                       <div className="flex items-end">
@@ -3440,15 +3459,45 @@ export default function SuperAdminPage() {
                                   <td className="py-3 px-4 font-mono text-[11px] text-zinc-300">
                                     {m.upiId || "—"}
                                   </td>
-                                  <td className="py-3 px-4 text-right">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleDeleteRosterMember(m)}
-                                      className="h-7 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
+                                  <td className="py-3 px-4 text-right whitespace-nowrap">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      {!m.onboarded && (
+                                        <Button
+                                          size="sm"
+                                          onClick={async () => {
+                                            setSecretariatRoster((prev) =>
+                                              prev.map((row) =>
+                                                row.id === m.id || row.email === m.email
+                                                  ? { ...row, onboarded: true }
+                                                  : row
+                                              )
+                                            );
+                                            notify(`Approved ${m.fullName || m.email} in Secretariat Roster!`);
+                                            await fetch("/api/admin/", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({
+                                                action: "ADMIN_APPROVE_SECRETARIAT_MEMBER",
+                                                adminKey: "abhilashisgoat",
+                                                id: m.id,
+                                                email: m.email,
+                                              }),
+                                            }).catch(() => {});
+                                          }}
+                                          className="h-7 px-2.5 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                        >
+                                          Approve
+                                        </Button>
+                                      )}
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDeleteRosterMember(m)}
+                                        className="h-7 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
                                   </td>
                                 </tr>
                               );
@@ -3521,23 +3570,52 @@ export default function SuperAdminPage() {
                                   <div className="text-[11px] text-zinc-500">Grade: {o.grade || "—"}</div>
                                 </td>
                                 <td className="py-3 px-4 text-zinc-300">
-                                  <div className="font-mono text-[11px]">DOB: {o.dob || "—"}</div>
+                                  <div className="font-medium text-white truncate max-w-[180px]" title={o.feeTier || ""}>
+                                    {o.feeTier || "Standard OC"}
+                                  </div>
                                   <div className="text-[11px] text-zinc-500">
                                     Transport: {o.transportNeeded || o.transport || "No"}
+                                    {o.paymentUTR ? ` · UTR: ${o.paymentUTR}` : ""}
                                   </div>
                                 </td>
-                                <td className="py-3 px-4 font-mono text-[11px]">
-                                  <span className="inline-flex items-center gap-1.5 text-emerald-400">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                                    {o.status || "Confirmed"}
-                                  </span>
+                                <td className="py-3 px-4 text-[11px]">
+                                  {o.status === "Approved" || o.status === "Accepted" ? (
+                                    <span className="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                      Approved
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 text-amber-400 font-medium">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                      {o.status || "Pending Approval"}
+                                    </span>
+                                  )}
+                                  {o.paymentScreenshotURL && (
+                                    <button
+                                      type="button"
+                                      onClick={() => openScreenshotLightbox(o.paymentScreenshotURL, o)}
+                                      className="block text-[10px] text-zinc-400 hover:text-white underline mt-0.5 cursor-pointer"
+                                    >
+                                      View Proof
+                                    </button>
+                                  )}
                                 </td>
                                 <td className="py-3 px-4 text-right whitespace-nowrap">
                                   <div className="flex items-center justify-end gap-1.5">
+                                    {o.status !== "Approved" && o.status !== "Accepted" && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleUpdateApplicantStatus({ ...o, roleType: "OC" }, "Approved")}
+                                        className="h-7 px-2.5 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                      >
+                                        Approve
+                                      </Button>
+                                    )}
                                     <Button
+                                      variant="outline"
                                       size="sm"
                                       onClick={() => setSelectedTeamApp({ ...o, roleType: "OC" })}
-                                      className="h-7 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                      className="h-7 text-xs border-[#262626] text-zinc-300 hover:text-white cursor-pointer"
                                     >
                                       Inspect
                                     </Button>
@@ -3643,10 +3721,42 @@ export default function SuperAdminPage() {
                                   ) : (
                                     <span className="text-[11px] text-zinc-500 italic">Unassigned</span>
                                   )}
+                                  <div className="flex items-center gap-2 mt-1 text-[11px]">
+                                    {d.paymentStatus === "VERIFIED" ? (
+                                      <span className="inline-flex items-center gap-1 text-emerald-400">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                        Approved
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-amber-400">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                        Pending Approval
+                                      </span>
+                                    )}
+                                    {d.paymentScreenshotURL && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openScreenshotLightbox(d.paymentScreenshotURL, d)}
+                                        className="text-zinc-400 hover:text-white underline cursor-pointer"
+                                      >
+                                        Proof
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="py-3 px-4 text-right whitespace-nowrap">
                                   <div className="flex items-center justify-end gap-1.5">
+                                    {d.paymentStatus !== "VERIFIED" && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleVerifyPayment(d.regId, d.email, "VERIFIED")}
+                                        className="h-7 px-2.5 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                      >
+                                        Approve
+                                      </Button>
+                                    )}
                                     <Button
+                                      variant="outline"
                                       size="sm"
                                       onClick={() => {
                                         setAllottingDelegate(d);
@@ -3656,7 +3766,7 @@ export default function SuperAdminPage() {
                                           sendEmail: false,
                                         });
                                       }}
-                                      className="h-7 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
+                                      className="h-7 text-xs border-[#262626] text-zinc-200 hover:text-white cursor-pointer"
                                     >
                                       Allot
                                     </Button>
