@@ -9,6 +9,7 @@ import {
   signOutUser,
   syncUserToBackend,
 } from "@/lib/firebase";
+import { uploadFileToSupabase } from "@/lib/supabase";
 import Footer from "@/components/Footer";
 import {
   CheckCircle2,
@@ -17,7 +18,16 @@ import {
   LogOut,
   Pencil,
   ShieldCheck,
+  Upload,
+  Clock,
 } from "lucide-react";
+
+const OC_FEE_PLANS = [
+  "₹1,500 — Full Plan (Transport + T-Shirt + Meals)",
+  "₹1,000 — No Transport (T-Shirt + Meals)",
+  "₹750 — Basic Plan (ID + Meals)",
+  "Pay Later / Exempt",
+];
 
 const OC_DEPARTMENTS = [
   "Delegate Affairs",
@@ -39,18 +49,25 @@ export default function OcOnboardingPortalPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", text: "" });
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [proofFileName, setProofFileName] = useState("");
+  const [proofBase64, setProofBase64] = useState("");
 
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
+    emergencyName: "",
+    emergencyPhone: "",
     school: "",
     grade: "",
     dob: "",
     department: "Delegate Affairs",
-    transport: "No",
+    feeTier: OC_FEE_PLANS[0],
+    transport: "Yes",
     address: "",
     instagram: "",
     paymentUtr: "",
+    paymentScreenshotUrl: "",
   });
 
   const fetchOcProfile = async (email) => {
@@ -64,14 +81,18 @@ export default function OcOnboardingPortalPage() {
         setForm({
           fullName: json.ocMember.fullName || user?.displayName || "",
           phone: json.ocMember.phone || "",
+          emergencyName: json.ocMember.emergencyName || "",
+          emergencyPhone: json.ocMember.emergencyPhone || "",
           school: json.ocMember.school || "",
           grade: json.ocMember.grade || "",
           dob: json.ocMember.dob || "",
           department: json.ocMember.department || "Delegate Affairs",
+          feeTier: json.ocMember.feeTier || OC_FEE_PLANS[0],
           transport: json.ocMember.transport || "No",
           address: json.ocMember.address || "",
           instagram: json.ocMember.instagram || "",
           paymentUtr: json.ocMember.paymentUtr === "OC-CONFIRMED" ? "" : json.ocMember.paymentUtr || "",
+          paymentScreenshotUrl: json.ocMember.paymentScreenshotUrl || "",
         });
       } else {
         setOcMember(null);
@@ -114,9 +135,48 @@ export default function OcOnboardingPortalPage() {
     }
   };
 
+  const handleProofUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setFeedback({ type: "error", text: "Payment screenshot must be under 8MB." });
+      return;
+    }
+    setUploadingProof(true);
+    setProofFileName(file.name);
+    setFeedback({ type: "", text: "" });
+    try {
+      const reader = new FileReader();
+      reader.onload = () => setProofBase64(String(reader.result || ""));
+      reader.readAsDataURL(file);
+      const uploaded = await uploadFileToSupabase(file, "oc-payments", "OC_PAY");
+      if (uploaded) {
+        setForm((p) => ({ ...p, paymentScreenshotUrl: uploaded }));
+      }
+    } catch (_) {
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user?.email) return;
+    const cleanPhone = String(form.phone || "").replace(/\D/g, "").slice(-10);
+    const cleanEmg = String(form.emergencyPhone || "").replace(/\D/g, "").slice(-10);
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      setFeedback({ type: "error", text: "Please enter a valid 10-digit WhatsApp mobile number." });
+      return;
+    }
+    if (cleanEmg && cleanEmg === cleanPhone) {
+      setFeedback({ type: "error", text: "Parent / Emergency number cannot be the same as your own phone number." });
+      return;
+    }
+    const isPayLater = String(form.feeTier || "").toLowerCase().includes("later");
+    if (!isPayLater && !form.paymentScreenshotUrl && !proofBase64) {
+      setFeedback({ type: "error", text: "Please upload your payment transaction screenshot for your selected OC plan." });
+      return;
+    }
     setSaving(true);
     setFeedback({ type: "", text: "" });
     try {
@@ -127,6 +187,8 @@ export default function OcOnboardingPortalPage() {
           action: "COMPLETE_OC_ONBOARDING",
           email: user.email,
           ...form,
+          paymentScreenshotBase64: proofBase64 || "",
+          screenshotName: proofFileName || "OC_Payment_Proof.png",
         }),
       });
       const json = await res.json();
@@ -265,11 +327,19 @@ export default function OcOnboardingPortalPage() {
             <div className="flex items-start justify-between gap-3 border-b border-[#1f1f1f] pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-white text-black text-[10px] font-bold uppercase tracking-wider">
-                    Confirmed OC
-                  </span>
-                  <span className="text-xs font-mono text-zinc-400">
-                    {ocMember.appId}
+                  {ocMember.status === "Approved" || ocMember.status === "Accepted" ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400 font-semibold">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Approved OC
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-400 font-semibold">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      Pending Secretariat Approval
+                    </span>
+                  )}
+                  <span className="text-xs font-mono text-zinc-500">
+                    · {ocMember.appId}
                   </span>
                 </div>
                 <h2 className="m-0 text-xl font-bold text-white mt-2">
@@ -307,14 +377,26 @@ export default function OcOnboardingPortalPage() {
                 <span className="block text-xs font-semibold text-white mt-1">{ocMember.transport}</span>
               </div>
               <div className="bg-black p-3">
-                <span className="block text-[10px] font-mono uppercase text-zinc-500">Instagram</span>
-                <span className="block text-xs font-semibold text-white mt-1 truncate">{ocMember.instagram || "—"}</span>
+                <span className="block text-[10px] font-mono uppercase text-zinc-500">Selected OC Plan</span>
+                <span className="block text-xs font-semibold text-white mt-1 truncate">{ocMember.feeTier || "Standard OC"}</span>
               </div>
               <div className="bg-black p-3">
                 <span className="block text-[10px] font-mono uppercase text-zinc-500">Status</span>
-                <span className="block text-xs font-semibold text-white mt-1">Registered in DB</span>
+                <span className="block text-xs font-semibold text-white mt-1">{ocMember.status || "Pending Approval"}</span>
               </div>
             </div>
+
+            {ocMember.status !== "Approved" && ocMember.status !== "Accepted" && (
+              <div className="p-3.5 rounded-md border border-amber-500/30 bg-amber-500/5 flex items-start gap-2.5 text-xs text-amber-200">
+                <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white block">Awaiting Admin Approval</strong>
+                  <span className="text-zinc-400">
+                    Your OC profile, chosen fee plan, and payment proof have been received. Once approved by the Secretariat, your official OC pass will be activated.
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               <Link
@@ -324,12 +406,14 @@ export default function OcOnboardingPortalPage() {
                 <span>Open Digital Pass</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-              <Link
-                href="/secretariat"
+              <a
+                href="/liability"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="h-10 rounded-md border border-[#262626] bg-black text-white text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-white/[0.04]"
               >
-                <span>Setup Referral Code (₹400 Pool)</span>
-              </Link>
+                <span>Download Liability Form</span>
+              </a>
             </div>
           </section>
         ) : (
@@ -471,25 +555,98 @@ export default function OcOnboardingPortalPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] text-zinc-400">Instagram Handle</label>
+                  <label className="text-[11px] text-zinc-400">Parent / Guardian Full Name *</label>
                   <input
                     type="text"
-                    value={form.instagram}
-                    onChange={(e) => setForm((p) => ({ ...p, instagram: e.target.value }))}
-                    placeholder="@handle"
+                    required
+                    value={form.emergencyName}
+                    onChange={(e) => setForm((p) => ({ ...p, emergencyName: e.target.value }))}
+                    placeholder="Parent / Guardian Name"
                     className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-xs text-white focus:border-white focus:outline-none"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] text-zinc-400">UPI UTR (Optional — if already paid)</label>
+                  <label className="text-[11px] text-zinc-400">Parent / Emergency Phone *</label>
                   <input
-                    type="text"
-                    value={form.paymentUtr}
-                    onChange={(e) => setForm((p) => ({ ...p, paymentUtr: e.target.value }))}
-                    placeholder="12-digit UTR or leave blank"
+                    type="tel"
+                    required
+                    value={form.emergencyPhone}
+                    onChange={(e) => setForm((p) => ({ ...p, emergencyPhone: e.target.value }))}
+                    placeholder="Must differ from your phone"
                     className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-xs text-white font-mono focus:border-white focus:outline-none"
                   />
                 </div>
+              </div>
+
+              {/* OC Fee Plan & Payment Proof */}
+              <div className="border border-[#262626] bg-[#050505] rounded-md p-4 space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-zinc-400 font-semibold">OC Fee Plan Chosen *</label>
+                  <select
+                    required
+                    value={form.feeTier}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm((p) => ({
+                        ...p,
+                        feeTier: val,
+                        transport: val.includes("1,500") ? "Yes" : val.includes("1,000") || val.includes("750") ? "No" : p.transport,
+                      }));
+                    }}
+                    className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-xs text-white focus:border-white focus:outline-none"
+                  >
+                    {OC_FEE_PLANS.map((plan) => (
+                      <option key={plan} value={plan}>
+                        {plan}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-zinc-400">UPI UTR / Transaction Reference</label>
+                    <input
+                      type="text"
+                      value={form.paymentUtr}
+                      onChange={(e) => setForm((p) => ({ ...p, paymentUtr: e.target.value }))}
+                      placeholder="12-digit UTR (if paid)"
+                      className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-xs text-white font-mono focus:border-white focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-zinc-400">Payment Screenshot (JPG/PNG/PDF)</label>
+                    <label className="flex items-center justify-between gap-2 h-10 px-3 rounded-md bg-black border border-[#262626] hover:border-zinc-500 text-xs text-zinc-300 cursor-pointer">
+                      <span className="truncate">
+                        {uploadingProof
+                          ? "Uploading proof..."
+                          : proofFileName
+                          ? `✓ ${proofFileName}`
+                          : form.paymentScreenshotUrl
+                          ? "✓ Screenshot Attached (Replace)"
+                          : "Upload Transaction Screenshot"}
+                      </span>
+                      <Upload className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleProofUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] text-zinc-400">Instagram Handle</label>
+                <input
+                  type="text"
+                  value={form.instagram}
+                  onChange={(e) => setForm((p) => ({ ...p, instagram: e.target.value }))}
+                  placeholder="@handle"
+                  className="w-full h-10 px-3 rounded-md bg-black border border-[#262626] text-xs text-white focus:border-white focus:outline-none"
+                />
               </div>
 
               <div className="border border-[#262626] bg-[#050505] rounded-md p-3.5 space-y-2">

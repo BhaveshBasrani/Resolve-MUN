@@ -3400,18 +3400,18 @@ export default function SuperAdminPage() {
                                       <div className="text-[10px] font-mono text-zinc-500">{m.instagram}</div>
                                     )}
                                   </td>
-                                  <td className="py-3 px-4">
-                                    <span className="inline-flex px-2 py-0.5 rounded border border-white/15 bg-white/[0.04] text-[11px] font-medium text-white">
-                                      {m.allottedRole}
-                                    </span>
+                                  <td className="py-3 px-4 font-medium text-white">
+                                    {m.allottedRole}
                                   </td>
-                                  <td className="py-3 px-4">
+                                  <td className="py-3 px-4 font-mono text-[11px]">
                                     {m.onboarded ? (
-                                      <span className="inline-flex px-2 py-0.5 rounded bg-white text-black text-[10px] font-bold uppercase tracking-wider">
+                                      <span className="inline-flex items-center gap-1.5 text-emerald-400">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                                         Onboarded
                                       </span>
                                     ) : (
-                                      <span className="inline-flex px-2 py-0.5 rounded border border-white/15 text-zinc-400 text-[10px] font-mono uppercase">
+                                      <span className="inline-flex items-center gap-1.5 text-zinc-500">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
                                         Pending Login
                                       </span>
                                     )}
@@ -3513,10 +3513,8 @@ export default function SuperAdminPage() {
                                     {o.phone || "—"}{o.instagram ? ` · ${o.instagram}` : ""}
                                   </div>
                                 </td>
-                                <td className="py-3 px-4">
-                                  <span className="inline-flex px-2 py-0.5 rounded border border-white/15 bg-white/[0.04] text-[11px] font-medium text-white">
-                                    {o.allocatedDepartment || o.department1 || "Organizing Committee"}
-                                  </span>
+                                <td className="py-3 px-4 text-white font-medium">
+                                  {o.allocatedDepartment || o.department1 || "Organizing Committee"}
                                 </td>
                                 <td className="py-3 px-4 text-zinc-300">
                                   <div>{o.school || o.institution || "—"}</div>
@@ -3528,8 +3526,9 @@ export default function SuperAdminPage() {
                                     Transport: {o.transportNeeded || o.transport || "No"}
                                   </div>
                                 </td>
-                                <td className="py-3 px-4">
-                                  <span className="inline-flex px-2 py-0.5 rounded bg-white text-black text-[10px] font-bold uppercase">
+                                <td className="py-3 px-4 font-mono text-[11px]">
+                                  <span className="inline-flex items-center gap-1.5 text-emerald-400">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                                     {o.status || "Confirmed"}
                                   </span>
                                 </td>
@@ -3607,12 +3606,7 @@ export default function SuperAdminPage() {
                             lumenDelegatesList.map((d) => (
                               <tr key={d.regId || d.email} className="hover:bg-white/[0.02]">
                                 <td className="py-3 px-4">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-mono font-bold text-white">{d.regId}</span>
-                                    <span className="px-1.5 py-0.5 rounded bg-white text-black text-[9px] font-bold uppercase font-mono">
-                                      LUMEN · NO BUS
-                                    </span>
-                                  </div>
+                                  <span className="font-mono font-bold text-white block">{d.regId}</span>
                                   <div className="font-medium text-white mt-0.5">{d.fullName}</div>
                                   <div className="text-[11px] font-mono text-zinc-400">
                                     {d.email} · {d.phone}
@@ -3625,18 +3619,17 @@ export default function SuperAdminPage() {
                                   </div>
                                 </td>
                                 <td className="py-3 px-4">
-                                  <div className="flex flex-wrap gap-1">
+                                  <div className="space-y-0.5 text-[11px] font-mono">
                                     {[1, 2, 3].map((n) => {
                                       const cm = d[`pref${n}_committee`];
                                       const ct = d[`pref${n}_country`];
                                       if (!cm) return null;
                                       return (
-                                        <span
-                                          key={n}
-                                          className="inline-flex px-1.5 py-0.5 rounded border border-[#262626] bg-[#0a0a0a] text-[10px] font-mono text-zinc-200"
-                                        >
-                                          {n}. {cm}{ct ? ` (${ct})` : ""}
-                                        </span>
+                                        <div key={n} className="text-zinc-300">
+                                          <span className="text-zinc-600">{n}.</span>{" "}
+                                          <span className="text-white font-medium">{cm}</span>
+                                          {ct ? <span className="text-zinc-500"> · {ct}</span> : ""}
+                                        </div>
                                       );
                                     })}
                                   </div>
@@ -5420,6 +5413,30 @@ export default function SuperAdminPage() {
                 </div>
               </div>
 
+              {/* Parent / Emergency Contact */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Parent / Guardian Full Name</label>
+                  <input
+                    type="text"
+                    value={editingDelegate.emergencyName || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, emergencyName: e.target.value, emergency_name: e.target.value })}
+                    placeholder="Parent / Guardian Name"
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Parent / Emergency Phone</label>
+                  <input
+                    type="tel"
+                    value={editingDelegate.emergencyPhone || ""}
+                    onChange={(e) => setEditingDelegate({ ...editingDelegate, emergencyPhone: e.target.value, emergency_phone: e.target.value })}
+                    placeholder="10-digit parent number"
+                    className="w-full h-8 px-2.5 rounded-lg border border-white/15 bg-zinc-900 text-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
               {/* Address & Transport */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
@@ -5589,163 +5606,219 @@ export default function SuperAdminPage() {
       )}
 
       {/* =========================================================================
-          MODAL: VIEW FULL DELEGATE DOSSIER (COMPLETE APPLICATION & PREFERENCES)
+          SLIDE-OVER INSPECTOR DRAWER: DELEGATE DOSSIER, INLINE ALLOTMENT & VERIFICATION
           ========================================================================= */}
       {viewingDossier && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex justify-end bg-black/75"
           onClick={() => setViewingDossier(null)}
         >
           <div
-            className="relative max-w-2xl max-h-[92vh] w-full rounded-2xl border border-white/15 bg-zinc-950 p-6 shadow-2xl space-y-5 overflow-y-auto"
+            className="admin-drawer-transition relative h-full w-full max-w-xl border-l border-[#1f1f1f] bg-[#040404] p-5 sm:p-6 shadow-2xl flex flex-col justify-between overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-start justify-between border-b border-white/10 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-white tracking-tight">
-                    {viewingDossier.fullName}
-                  </h3>
-                  <Badge
-                    variant={viewingDossier.paymentStatus === "VERIFIED" ? "default" : "secondary"}
-                    className={cn(
-                      "text-[9px] py-0 uppercase font-mono",
-                      viewingDossier.paymentStatus === "VERIFIED" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-amber-500/20 text-amber-300 border-amber-500/30"
+            <div className="space-y-5">
+              {/* Drawer Header */}
+              <div className="flex items-start justify-between border-b border-[#1a1a1a] pb-4">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-lg font-bold text-white tracking-tight">
+                      {viewingDossier.fullName}
+                    </h3>
+                    {viewingDossier.paymentStatus === "VERIFIED" ? (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-amber-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        Pending
+                      </span>
                     )}
-                  >
-                    {viewingDossier.paymentStatus || "PENDING"}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-zinc-400 font-mono">{viewingDossier.regId || viewingDossier.id}</span>
-                  <span className="text-zinc-600">·</span>
-                  <span className="text-xs text-zinc-400">{viewingDossier.institution || "Independent"} (Grade {viewingDossier.grade || "N/A"})</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewingDossier(null)}
-                className="h-8 w-8 rounded-lg border border-white/15 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Profile & Contact Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
-              <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Email Address</span>
-                <span className="text-xs font-mono text-zinc-200 block truncate">{viewingDossier.email || "—"}</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Phone / WhatsApp</span>
-                <a
-                  href={`https://wa.me/91${String(viewingDossier.phone || "").replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-mono text-emerald-400 hover:underline block"
-                >
-                  +91 {viewingDossier.phone || "—"}
-                </a>
-              </div>
-              <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Date of Birth</span>
-                <span className="text-xs font-mono text-zinc-200 block">{viewingDossier.dob || "Not specified"}</span>
-              </div>
-            </div>
-
-            {/* Address & Transport Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
-              <div className="sm:col-span-2">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-0.5">Full Residential Address</span>
-                <span className="text-xs text-zinc-300 block leading-relaxed">{viewingDossier.address || "No residential address provided."}</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-0.5">Transportation Choice</span>
-                <span className="text-xs font-semibold text-white block">
-                  {viewingDossier.transport && viewingDossier.transport !== "No" ? `Opted In (${viewingDossier.transport})` : "Self-arranged (No)"}
-                </span>
-              </div>
-            </div>
-
-            {/* MUN Experience */}
-            <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
-              <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Delegate MUN Experience & Background</span>
-              <p className="text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                {viewingDossier.experience || "First-time delegate (No previous conferences recorded)."}
-              </p>
-            </div>
-
-            {/* Committee Preferences */}
-            <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-semibold block">
-                Delegate Committee Preferences
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div className="p-2.5 rounded-lg border border-white/10 bg-zinc-900/60">
-                  <span className="text-[9px] font-mono text-amber-400 block mb-0.5 font-bold">1ST CHOICE</span>
-                  <span className="text-xs font-semibold text-white block">{viewingDossier.pref1_committee || "Not specified"}</span>
-                  <span className="text-[11px] text-zinc-400 block mt-0.5">{viewingDossier.pref1_country || "General Portfolio"}</span>
-                </div>
-                <div className="p-2.5 rounded-lg border border-white/10 bg-zinc-900/60">
-                  <span className="text-[9px] font-mono text-zinc-400 block mb-0.5 font-bold">2ND CHOICE</span>
-                  <span className="text-xs font-semibold text-white block">{viewingDossier.pref2_committee || "Not specified"}</span>
-                  <span className="text-[11px] text-zinc-400 block mt-0.5">{viewingDossier.pref2_country || "General Portfolio"}</span>
-                </div>
-                <div className="p-2.5 rounded-lg border border-white/10 bg-zinc-900/60">
-                  <span className="text-[9px] font-mono text-zinc-400 block mb-0.5 font-bold">3RD CHOICE</span>
-                  <span className="text-xs font-semibold text-white block">{viewingDossier.pref3_committee || "Not specified"}</span>
-                  <span className="text-[11px] text-zinc-400 block mt-0.5">{viewingDossier.pref3_country || "General Portfolio"}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Current Allotment & Payment Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl border border-white/10 bg-white/[0.02]">
-              <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Current Allotment</span>
-                {viewingDossier.allocatedCommittee ? (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Badge variant="outline" className="text-xs font-mono border-white/20 text-white bg-white/[0.06]">
-                      {viewingDossier.allocatedCommittee}
-                    </Badge>
-                    <span className="text-xs font-semibold text-zinc-200">
-                      {viewingDossier.allocatedCountry || "General Delegate"}
-                    </span>
                   </div>
-                ) : (
-                  <span className="text-xs text-zinc-500 italic">No committee allotted yet</span>
-                )}
+                  <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400 font-mono">
+                    <span>{viewingDossier.regId || viewingDossier.id}</span>
+                    <span className="text-zinc-700">·</span>
+                    <span className="font-sans">{viewingDossier.institution || "Independent"} (Grade {viewingDossier.grade || "—"})</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewingDossier(null)}
+                  className="h-8 w-8 rounded-md border border-[#262626] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Payment Details</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-zinc-300">UTR: {viewingDossier.paymentUTR || "OFFLINE"}</span>
-                  {viewingDossier.paymentScreenshotURL && (
-                    <button
-                      onClick={() => openScreenshotLightbox(viewingDossier.paymentScreenshotURL, viewingDossier)}
-                      className="text-xs text-cyan-400 hover:underline font-mono inline-flex items-center gap-1"
-                    >
-                      <Eye className="h-3 w-3" /> View Proof
-                    </button>
+
+              {/* Integrated Inline Committee & Portfolio Allocation Bar */}
+              <div className="p-3.5 rounded-md border border-[#1f1f1f] bg-[#090909] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+                    Quick Committee &amp; Portfolio Allotment
+                  </span>
+                  {viewingDossier.allocatedCommittee && (
+                    <span className="text-[10px] font-mono text-emerald-400">
+                      Assigned: {viewingDossier.allocatedCommittee} ({viewingDossier.allocatedCountry || "Delegate"})
+                    </span>
                   )}
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                  <select
+                    value={viewingDossier._draftComm ?? viewingDossier.allocatedCommittee ?? viewingDossier.pref1_committee ?? "DISEC"}
+                    onChange={(e) => setViewingDossier({ ...viewingDossier, _draftComm: e.target.value })}
+                    className="sm:col-span-4 h-8 px-2 rounded border border-[#262626] bg-black text-xs text-white font-mono focus:outline-none"
+                  >
+                    {COMMITTEES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Country / Portfolio (e.g. France)"
+                    value={
+                      viewingDossier._draftCountry !== undefined
+                        ? viewingDossier._draftCountry
+                        : viewingDossier.allocatedCountry || (viewingDossier.pref1_country || "").split("/")[0]?.trim() || ""
+                    }
+                    onChange={(e) => setViewingDossier({ ...viewingDossier, _draftCountry: e.target.value })}
+                    className="sm:col-span-5 h-8 px-2.5 rounded border border-[#262626] bg-black text-xs text-white focus:outline-none"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const comm = viewingDossier._draftComm ?? viewingDossier.allocatedCommittee ?? viewingDossier.pref1_committee ?? "DISEC";
+                      const port =
+                        viewingDossier._draftCountry !== undefined
+                          ? viewingDossier._draftCountry
+                          : viewingDossier.allocatedCountry || (viewingDossier.pref1_country || "").split("/")[0]?.trim() || "Delegate";
+                      handleUpdateAllocation(viewingDossier.regId, comm, port);
+                      setViewingDossier((prev) =>
+                        prev ? { ...prev, allocatedCommittee: comm, allocatedCountry: port } : null
+                      );
+                    }}
+                    className="sm:col-span-3 h-8 bg-white text-black hover:bg-zinc-200 text-xs font-semibold cursor-pointer"
+                  >
+                    Save Allotment
+                  </Button>
+                </div>
+              </div>
+
+              {/* Delegate & Parent Emergency Contact Grid */}
+              <div className="grid grid-cols-2 gap-px bg-[#1a1a1a] border border-[#1a1a1a] rounded-md overflow-hidden text-xs">
+                <div className="bg-[#050505] p-3">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block">Delegate Email</span>
+                  <span className="font-mono text-zinc-200 block truncate mt-0.5">{viewingDossier.email || "—"}</span>
+                </div>
+                <div className="bg-[#050505] p-3">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block">Delegate WhatsApp</span>
+                  <a
+                    href={`https://wa.me/91${String(viewingDossier.phone || "").replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-white hover:underline block mt-0.5"
+                  >
+                    +91 {viewingDossier.phone || "—"}
+                  </a>
+                </div>
+                <div className="bg-[#050505] p-3">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block">Parent / Guardian Name</span>
+                  <span className="text-zinc-200 font-medium block mt-0.5">{viewingDossier.emergencyName || "Not provided"}</span>
+                </div>
+                <div className="bg-[#050505] p-3">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block">Parent / Emergency Phone</span>
+                  {viewingDossier.emergencyPhone ? (
+                    <a
+                      href={`https://wa.me/91${String(viewingDossier.emergencyPhone || "").replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-mono text-white hover:underline block mt-0.5"
+                    >
+                      +91 {viewingDossier.emergencyPhone}
+                    </a>
+                  ) : (
+                    <span className="font-mono text-zinc-500 block mt-0.5">Not provided</span>
+                  )}
+                </div>
+                <div className="bg-[#050505] p-3">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block">Date of Birth</span>
+                  <span className="font-mono text-zinc-200 block mt-0.5">{viewingDossier.dob || "Not specified"}</span>
+                </div>
+                <div className="bg-[#050505] p-3">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block">Transportation</span>
+                  <span className="text-zinc-200 font-medium block mt-0.5">
+                    {viewingDossier.transport && viewingDossier.transport !== "No" ? `Bus Opted (${viewingDossier.transport})` : "Self Commute (No)"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Committee Preferences (1 · 2 · 3) */}
+              <div className="p-3.5 rounded-md border border-[#1a1a1a] bg-[#070707] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+                    Submitted Committee Preferences
+                  </span>
+                  {viewingDossier.preferencesLocked && (
+                    <span className="text-[10px] font-mono text-zinc-500">1/1 Edit Used</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="p-2.5 rounded border border-[#1f1f1f] bg-black">
+                      <span className="text-[9px] font-mono text-zinc-500 block mb-0.5">CHOICE {n}</span>
+                      <span className="text-xs font-semibold text-white block">{viewingDossier[`pref${n}_committee`] || "—"}</span>
+                      <span className="text-[11px] text-zinc-400 block mt-0.5">{viewingDossier[`pref${n}_country`] || "General"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Address & MUN Experience */}
+              <div className="grid grid-cols-1 gap-3 text-xs">
+                <div className="p-3 rounded-md border border-[#1a1a1a] bg-[#070707]">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-0.5">Residential Address</span>
+                  <span className="text-zinc-300 block leading-relaxed">{viewingDossier.address || "No residential address provided."}</span>
+                </div>
+                <div className="p-3 rounded-md border border-[#1a1a1a] bg-[#070707]">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-0.5">MUN Experience</span>
+                  <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                    {viewingDossier.experience || "First-time delegate."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Payment Reference */}
+              <div className="p-3 rounded-md border border-[#1a1a1a] bg-[#070707] flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block">Payment UTR</span>
+                  <span className="font-mono text-white font-semibold">{viewingDossier.paymentUTR || "OFFLINE"}</span>
+                </div>
+                {viewingDossier.paymentScreenshotURL && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openScreenshotLightbox(viewingDossier.paymentScreenshotURL, viewingDossier)}
+                    className="h-7 text-xs border-[#262626] text-zinc-200 cursor-pointer"
+                  >
+                    <Eye className="h-3 w-3 mr-1" /> View Payment Proof
+                  </Button>
+                )}
               </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/10 flex-wrap gap-2">
+            {/* Bottom Sticky Drawer Actions */}
+            <div className="flex items-center justify-between pt-4 mt-5 border-t border-[#1a1a1a] flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 {viewingDossier.paymentStatus !== "VERIFIED" ? (
                   <Button
                     size="sm"
                     onClick={() => {
                       handleVerifyPayment(viewingDossier.regId, viewingDossier.email, "VERIFIED");
-                      setViewingDossier((prev) => prev ? { ...prev, paymentStatus: "VERIFIED" } : null);
+                      setViewingDossier((prev) => (prev ? { ...prev, paymentStatus: "VERIFIED" } : null));
                     }}
-                    className="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer"
+                    className="h-8 px-3 text-xs bg-white text-black hover:bg-zinc-200 font-semibold cursor-pointer"
                   >
-                    Verify Payment
+                    Verify Payment &amp; Send Pass
                   </Button>
                 ) : (
                   <Button
@@ -5753,29 +5826,13 @@ export default function SuperAdminPage() {
                     size="sm"
                     onClick={() => {
                       handleVerifyPayment(viewingDossier.regId, viewingDossier.email, "FAILED");
-                      setViewingDossier((prev) => prev ? { ...prev, paymentStatus: "FAILED" } : null);
+                      setViewingDossier((prev) => (prev ? { ...prev, paymentStatus: "FAILED" } : null));
                     }}
-                    className="h-8 px-3 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-950/40 cursor-pointer"
+                    className="h-8 px-3 text-xs border-[#262626] text-zinc-400 hover:text-white cursor-pointer"
                   >
-                    Mark Payment Pending
+                    Mark Pending
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setAllottingDelegate(viewingDossier);
-                    setAllotForm({
-                      committee: viewingDossier.allocatedCommittee || viewingDossier.pref1_committee || "DISEC",
-                      country: viewingDossier.allocatedCountry || viewingDossier.pref1_country || "",
-                      sendEmail: false,
-                    });
-                    setViewingDossier(null);
-                  }}
-                  className="h-8 px-3 text-xs border-white/15 text-zinc-300 hover:text-white cursor-pointer"
-                >
-                  Allot Committee
-                </Button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -5783,10 +5840,9 @@ export default function SuperAdminPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => window.print()}
-                  className="h-8 px-3 text-xs border-white/15 text-zinc-300 hover:text-white cursor-pointer"
-                  title="Print Official Delegate Dossier & Registration Slip"
+                  className="h-8 px-2.5 text-xs border-[#262626] text-zinc-300 hover:text-white cursor-pointer"
                 >
-                  <Printer className="h-3 w-3 mr-1" /> Print Slip
+                  <Printer className="h-3 w-3 mr-1" /> Print
                 </Button>
                 <Button
                   variant="outline"
@@ -5795,17 +5851,9 @@ export default function SuperAdminPage() {
                     setEditingDelegate(viewingDossier);
                     setViewingDossier(null);
                   }}
-                  className="h-8 px-3 text-xs border-white/15 text-white hover:bg-white/10 cursor-pointer"
+                  className="h-8 px-3 text-xs border-[#262626] text-white hover:bg-white/5 cursor-pointer"
                 >
-                  <Edit3 className="h-3 w-3 mr-1" /> Edit All Details
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewingDossier(null)}
-                  className="h-8 px-3 text-xs text-zinc-400 hover:text-white cursor-pointer"
-                >
-                  Close
+                  <Edit3 className="h-3 w-3 mr-1" /> Edit Fields
                 </Button>
               </div>
             </div>
