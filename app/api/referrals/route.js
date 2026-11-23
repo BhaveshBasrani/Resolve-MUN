@@ -345,8 +345,9 @@ export async function GET(request) {
           baseFee,
           discountAmount: 0,
           resPointsForReferrer: RES_POINTS_PER_REFERRAL,
+          resPointsForDelegate: RES_POINTS_PER_REFERRAL,
           finalFee: baseFee,
-          message: `✓ Valid Delegate Referral (${matchedDelegate.name}) — +${RES_POINTS_PER_REFERRAL} RES Points to referrer · Pay ₹${baseFee.toLocaleString('en-IN')}`,
+          message: `✓ Valid Delegate Referral (${matchedDelegate.name}) — +${RES_POINTS_PER_REFERRAL} RES Points to BOTH you & ${matchedDelegate.name}! · Pay ₹${baseFee.toLocaleString('en-IN')}`,
         }, { headers: { 'Cache-Control': 'no-store' } });
       }
 

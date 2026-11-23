@@ -1569,7 +1569,7 @@ export default function DelegateDashboard() {
                 const origin = typeof window !== "undefined" ? window.location.origin : "https://resolvemun.in";
                 const shareUrl = `${origin}/?open=delegate&ref=${encodeURIComponent(refCode)}`;
                 const whatsappText = encodeURIComponent(
-                  `Join me at Resolve MUN 2.0 (26–27 Dec 2026 at Northfield International School, Hyderabad)! Register with my referral link: ${shareUrl} (Code: ${refCode})`
+                  `Join me at Resolve MUN 2.0 (26–27 Dec 2026 at Northfield International School, Hyderabad)! Register with my link and we BOTH get +${RES_POINTS_PER_REFERRAL} RES Points (₹${RUPEES_PER_REFERRAL} stall credit): ${shareUrl} (Code: ${refCode})`
                 );
 
                 return (
@@ -1583,7 +1583,7 @@ export default function DelegateDashboard() {
                         Invite Friends
                       </h3>
                       <p className="m-0 text-xs text-zinc-400 mt-1">
-                        {RES_POINTS_PER_REFERRAL} RES points (₹{RUPEES_PER_REFERRAL} stall credit) per verified referral.
+                        Both you and your friend earn {RES_POINTS_PER_REFERRAL} RES points (₹{RUPEES_PER_REFERRAL} stall credit each) on every verified referral.
                       </p>
                     </div>
 
@@ -1644,6 +1644,19 @@ export default function DelegateDashboard() {
                         </a>
                       </div>
                     </div>
+
+                    {/* Welcome Signup Bonus (if registered using a friend's RES-XXXX code) */}
+                    {stats.signupReferralCode && (
+                      <div className="pt-3 border-t border-[#1f1f1f] flex items-center justify-between gap-2 text-xs">
+                        <div>
+                          <span className="font-medium text-white">Welcome Bonus</span>
+                          <span className="text-zinc-500 ml-2">via {stats.signupReferralCode}</span>
+                        </div>
+                        <span className={`text-[11px] font-medium ${stats.signupBonusVerified ? "text-emerald-400" : "text-zinc-500"}`}>
+                          {stats.signupBonusVerified ? `+${RES_POINTS_PER_REFERRAL} RES` : "Pending Verification"}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Referred Friends Activity List */}
                     {stats.referrals && stats.referrals.length > 0 && (

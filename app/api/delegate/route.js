@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getDelegateReferralCode, getStallCouponCode, calculateResStats } from '@/lib/referrals';
+import { getDelegateReferralCode, getStallCouponCode, calculateResStats, isReferralVerified } from '@/lib/referrals';
 import { enforceRateLimit } from '@/lib/rateLimit';
 
 const APPS_SCRIPT_URL =
@@ -66,10 +66,19 @@ export async function GET(request) {
             }
           } catch (_) {}
 
+          const usedReferralCode = String(delRow.referral || delRow.referral_code || '').trim().toUpperCase();
+          const hasMutualResBonus =
+            usedReferralCode.startsWith('RES-') &&
+            usedReferralCode.length >= 7 &&
+            usedReferralCode !== personalRefCode.toUpperCase();
+          const signupBonus = hasMutualResBonus
+            ? { usedCode: usedReferralCode, verified: isReferralVerified(delRow) }
+            : null;
+
           const referralStats = {
             code: personalRefCode,
             couponCode: personalCouponCode,
-            ...calculateResStats(referredRows),
+            ...calculateResStats(referredRows, signupBonus),
           };
 
           const delegate = {
