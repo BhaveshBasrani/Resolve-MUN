@@ -744,10 +744,14 @@
     const termsModal = document.getElementById('termsModal');
     if (termsModal) {
       if (initialTab && typeof initialTab === 'string') {
-        switchTermsTab(initialTab);
+        if (typeof window.switchTermsTab === 'function') window.switchTermsTab(initialTab);
+        else if (typeof switchTermsTab === 'function') switchTermsTab(initialTab);
       }
+      termsModal.style.zIndex = '100000';
       termsModal.classList.add('active');
       document.body.style.overflow = 'hidden';
+    } else {
+      window.location.href = initialTab === 'privacy' ? '/?open=privacy' : '/?open=terms';
     }
   }
 

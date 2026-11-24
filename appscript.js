@@ -21,7 +21,7 @@ const CONFIG = {
   BASE_DELEGATE_FEE: 2500,
   MAX_DAILY_EMAILS: 95,
   RESEND_API_KEY: PropertiesService.getScriptProperties().getProperty("RESEND_API_KEY") || "",
-  RESEND_FROM_EMAIL: PropertiesService.getScriptProperties().getProperty("RESEND_FROM_EMAIL") || "Resolve MUN 2.0 <noreply@resolvemun.in>",
+  RESEND_FROM_EMAIL: PropertiesService.getScriptProperties().getProperty("RESEND_FROM_EMAIL") || "Resolve MUN 2.0 <no-reply@resolvemun.in>",
   TOTAL_PRIZE_POOL: "TBA",
   DELEGATION_PRIZE_POOL: "₹25,000",
   PRIZE_POOL: "TBA",

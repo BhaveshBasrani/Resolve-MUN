@@ -156,6 +156,10 @@ export default function Home() {
           normalized = 'selectionModal';
         } else if (['passes', 'pass', 'ticket', 'tickets'].includes(rawTarget)) {
           normalized = 'SCROLL_TO_PASSES';
+        } else if (['terms', 'tnc', 'tos', 'terms-and-conditions'].includes(rawTarget)) {
+          normalized = 'OPEN_TERMS';
+        } else if (['privacy', 'privacy-policy'].includes(rawTarget)) {
+          normalized = 'OPEN_PRIVACY';
         }
 
         if (normalized) {
@@ -164,6 +168,10 @@ export default function Home() {
               if (window.openSelectionModal) window.openSelectionModal();
             } else if (normalized === 'SCROLL_TO_PASSES') {
               if (window.scrollToPassesSection) window.scrollToPassesSection();
+            } else if (normalized === 'OPEN_TERMS') {
+              if (window.openTermsModal) window.openTermsModal('delegate');
+            } else if (normalized === 'OPEN_PRIVACY') {
+              if (window.openTermsModal) window.openTermsModal('privacy');
             } else if (window.selectPathway) {
               window.selectPathway(normalized);
             }
@@ -1620,11 +1628,14 @@ export default function Home() {
       window.openTermsModal = function (initialTab) {
         const modal = document.getElementById("termsModal");
         if (modal) {
-          if (initialTab && typeof initialTab === "string") {
+          if (initialTab && typeof initialTab === "string" && typeof window.switchTermsTab === "function") {
             window.switchTermsTab(initialTab);
           }
+          modal.style.zIndex = "100000";
           modal.classList.add("active");
           document.body.style.overflow = "hidden";
+        } else {
+          window.location.href = initialTab === "privacy" ? "/?open=privacy" : "/?open=terms";
         }
       };
 
@@ -1864,7 +1875,7 @@ export default function Home() {
         YUVUT42: "Yuvraj",
       };
 
-      const normalizeReferral = (code) => (code || "").trim().toUpperCase();
+      const normalizeReferral = (code) => (code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
       window.__verifiedReferralCache = window.__verifiedReferralCache || {};
       let referralLookupTimer = null;
 
@@ -1996,7 +2007,11 @@ export default function Home() {
             try {
               const res = await fetch(`/api/referrals?code=${encodeURIComponent(referralVal)}`, { cache: "no-store" });
               const data = await res.json();
-              window.__verifiedReferralCache[referralVal] = data;
+              if (data.valid) {
+                window.__verifiedReferralCache[referralVal] = data;
+              } else {
+                delete window.__verifiedReferralCache[referralVal];
+              }
               const currentVal = normalizeReferral(document.getElementById("regReferral")?.value);
               if (currentVal !== referralVal) return;
               if (data.valid) {

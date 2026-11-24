@@ -320,8 +320,12 @@ export default function Footer() {
 
   const handleOpenTermsModal = (tab = "delegate") => (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (typeof window !== "undefined" && typeof window.openTermsModal === "function") {
-      window.openTermsModal(tab);
+    if (typeof window !== "undefined") {
+      if (document.getElementById("termsModal") && typeof window.openTermsModal === "function") {
+        window.openTermsModal(tab);
+      } else {
+        window.location.href = tab === "privacy" ? "/?open=privacy" : "/?open=terms";
+      }
     }
   };
 

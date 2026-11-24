@@ -57,7 +57,7 @@ export async function GET(request) {
           if (Object.keys(merged).length > 0) settings = normalizeSettings(merged);
         } catch (_) { }
       }
-      return NextResponse.json({ status: 'success', settings });
+      return NextResponse.json({ status: 'success', settings }, { headers: { 'Cache-Control': 'no-store' } });
     }
 
     if (!isAuthorizedKey(key)) {
@@ -1030,26 +1030,26 @@ export async function POST(request) {
             },
           });
 
-          const mailResult = await sendTransactionalEmail({
-            to: cleanEmail,
-            cc: RESOLVE_CC_EMAIL,
-            name: delegateName,
-            subject: regSubject,
-            text: regBodyText,
-            html: regHtml,
-          });
-          registrationEmailSent = Boolean(mailResult.sent);
-
-          // If delegate used a referral code, notify the referrer (Secretariat / OC / Delegate) + CC Resolve
-          if (referral) {
-            notifyReferralCodeUsed({
-              referralCode: referral,
-              delegateName,
-              delegateEmail: cleanEmail,
-              regId: generatedId,
-              feePaid: fee,
-            }).catch(() => {});
-          }
+          const [mailOutcome] = await Promise.allSettled([
+            sendTransactionalEmail({
+              to: cleanEmail,
+              cc: RESOLVE_CC_EMAIL,
+              name: delegateName,
+              subject: regSubject,
+              text: regBodyText,
+              html: regHtml,
+            }),
+            referral
+              ? notifyReferralCodeUsed({
+                  referralCode: referral,
+                  delegateName,
+                  delegateEmail: cleanEmail,
+                  regId: generatedId,
+                  feePaid: fee,
+                })
+              : Promise.resolve({ skipped: true }),
+          ]);
+          registrationEmailSent = Boolean(mailOutcome.status === 'fulfilled' && mailOutcome.value?.sent);
         } catch (mailErr) {
           console.warn('[SUBMIT_DELEGATE] Registration email notice:', mailErr.message);
         }
@@ -1832,39 +1832,15 @@ export async function POST(request) {
         });
 
         try {
-          if (process.env.RESEND_API_KEY) {
-            const fromAddr = process.env.RESEND_FROM_EMAIL || 'Resolve MUN 2.0 <onboarding@resend.dev>';
-            const r = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: fromAddr,
-                to: [delEmail],
-                subject: allotSubject,
-                text: allotText,
-                html: allotHtml,
-              }),
-            });
-            dispatchStatus = r.ok ? 'sent' : 'failed';
-          } else {
-            const asRes = await fetch(APPS_SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify({
-                action: 'ADMIN_SEND_CUSTOM_EMAIL',
-                adminKey: ADMIN_KEY,
-                subject: allotSubject,
-                messageBody: allotText,
-                htmlBody: allotHtml,
-                email: delEmail,
-                recipients: [{ email: delEmail, name: delName || 'Delegate' }],
-              }),
-            });
-            dispatchStatus = asRes.ok ? 'sent' : 'failed';
-          }
+          const mailRes = await sendTransactionalEmail({
+            to: delEmail,
+            cc: RESOLVE_CC_EMAIL,
+            name: delName || 'Delegate',
+            subject: allotSubject,
+            text: allotText,
+            html: allotHtml,
+          });
+          dispatchStatus = mailRes.sent ? `sent (${mailRes.provider})` : `failed: ${mailRes.error || 'unknown'}`;
         } catch (err) {
           dispatchStatus = 'failed: ' + err.message;
         }
@@ -2052,39 +2028,15 @@ export async function POST(request) {
             qrCaption: `Official Digital Gate Pass (${shortIdForMail}) · Show at the registration desk`,
           });
 
-          if (process.env.RESEND_API_KEY) {
-            const fromAddr = process.env.RESEND_FROM_EMAIL || 'Resolve MUN 2.0 <onboarding@resend.dev>';
-            const r = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: fromAddr,
-                to: [resolvedEmail],
-                subject,
-                text: messageBody,
-                html: htmlBody,
-              }),
-            });
-            emailDispatched = r.ok;
-          } else {
-            const mailRes = await fetch(APPS_SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify({
-                action: 'ADMIN_SEND_CUSTOM_EMAIL',
-                adminKey: ADMIN_KEY,
-                subject,
-                messageBody,
-                htmlBody,
-                email: resolvedEmail,
-                recipients: [{ email: resolvedEmail, name: resolvedName }],
-              }),
-            });
-            emailDispatched = mailRes.ok;
-          }
+          const verifyMailRes = await sendTransactionalEmail({
+            to: resolvedEmail,
+            cc: RESOLVE_CC_EMAIL,
+            name: resolvedName,
+            subject,
+            text: messageBody,
+            html: htmlBody,
+          });
+          emailDispatched = Boolean(verifyMailRes.sent);
         } catch (mailErr) {
           console.warn('[ADMIN_VERIFY_PAYMENT] Email dispatch error:', mailErr.message);
         }
@@ -2520,47 +2472,44 @@ export async function POST(request) {
         }
       }
 
-      const asPayload = {
-        action: 'ADMIN_SEND_CUSTOM_EMAIL',
-        adminKey: ADMIN_KEY,
-        subject: subject,
-        messageBody: message,
-        email: uniqueRecipients[0]?.email,
-        recipients: uniqueRecipients,
-      };
-
       try {
-        const asRes = await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(asPayload),
-        });
+        let sentCount = 0;
+        let failedCount = 0;
+        let lastProvider = '';
+        let lastError = '';
 
-        const text = await asRes.text();
-        let parsed = null;
-        try {
-          parsed = JSON.parse(text);
-        } catch (_) { }
-
-        if (text.includes('You need permission to access this item') || text.includes('accounts.google.com') || text.includes('docs-drivelogo') || asRes.status === 403) {
-          return NextResponse.json({
-            status: 'error',
-            code: 'APPS_SCRIPT_ACCESS_RESTRICTED',
-            message: 'Google Apps Script deployment access is currently restricted (HTTP 403: "You need permission"). In Google Apps Script (extensions > Apps Script), click Deploy > Manage deployments > Edit (pencil icon) and set "Who has access" to "Anyone", then click Deploy to authorize email dispatches.',
-          }, { status: 502 });
+        // Dispatch via unified dual-provider mailer (Resend primary <=95/day -> Apps Script fallback)
+        for (const r of uniqueRecipients) {
+          const res = await sendTransactionalEmail({
+            to: r.email,
+            name: r.name || 'Delegate',
+            subject,
+            text: message,
+            eyebrow: 'Official Secretariat Dispatch',
+            title: subject,
+          });
+          if (res.sent) {
+            sentCount++;
+            lastProvider = res.provider || lastProvider;
+          } else {
+            failedCount++;
+            lastError = res.error || lastError;
+          }
         }
 
-        if (parsed && (parsed.status === 'success' || parsed.sentCount !== undefined)) {
+        if (sentCount === 0) {
           return NextResponse.json({
-            status: 'success',
-            message: `Official communiqué dispatched successfully to ${uniqueRecipients.length} recipient(s).`,
-            sentCount: parsed.sentCount || uniqueRecipients.length,
-          });
+            status: 'error',
+            message: `Email dispatch failed for all ${uniqueRecipients.length} recipient(s): ${lastError || 'Check RESEND_API_KEY in Vercel env vars or Apps Script deployment.'}`,
+          }, { status: 502 });
         }
 
         return NextResponse.json({
           status: 'success',
-          message: `Official communiqué dispatched to ${uniqueRecipients.length} recipient(s).`,
+          provider: lastProvider,
+          sentCount,
+          failedCount,
+          message: `Official communiqué dispatched via ${lastProvider || 'mailer'} to ${sentCount}/${uniqueRecipients.length} recipient(s).`,
         });
       } catch (dispatchErr) {
         return NextResponse.json({
