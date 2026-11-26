@@ -191,6 +191,7 @@ export default function SuperAdminPage() {
   const [ebApplications, setEbApplications] = useState([]);
   const [ocApplications, setOcApplications] = useState([]);
   const [secApplications, setSecApplications] = useState([]);
+  const [transferRequests, setTransferRequests] = useState([]);
   const [secretariatRoster, setSecretariatRoster] = useState([]);
   const [secRosterForm, setSecRosterForm] = useState({
     fullName: "",
@@ -584,6 +585,16 @@ export default function SuperAdminPage() {
           setSecretariatRoster(json.secretariatRoster || []);
           setEbApplications(json.ebApplicants || []);
           setSiteUsers(normalizedUsers);
+
+          // Fetch Allocation Transfer pre-approval requests
+          fetch(`/api/transfer?adminKey=${encodeURIComponent(ADMIN_KEY)}`, { cache: "no-store" })
+            .then((r) => r.json())
+            .then((trJson) => {
+              if (trJson?.success && Array.isArray(trJson.transfers)) {
+                setTransferRequests(trJson.transfers);
+              }
+            })
+            .catch(() => {});
 
           if (json.settings) {
             setSiteSettings((prev) => ({
@@ -1347,10 +1358,11 @@ export default function SuperAdminPage() {
       delegations: delegations.length,
       leads: abandonedLeads.length,
       applications: ocApplications.length + secApplications.length + ebApplications.length,
+      transfers: transferRequests.filter((t) => t.status === "Pending Approval").length || transferRequests.length,
       secretariatRoster: secretariatRoster.length,
       users: siteUsers.length,
     }),
-    [registrations, delegations, abandonedLeads, ocApplications, secApplications, ebApplications, secretariatRoster, siteUsers]
+    [registrations, delegations, abandonedLeads, ocApplications, secApplications, ebApplications, transferRequests, secretariatRoster, siteUsers]
   );
 
   // Dynamic Chart Data based on live registrations
@@ -1433,17 +1445,23 @@ export default function SuperAdminPage() {
         committeeFilter === "ALL" ||
         (d.allocatedCommittee || "").toUpperCase() === committeeFilter;
 
+      const isLumenDel =
+        String(d.regId || "").toUpperCase().startsWith("RM-LMN-") ||
+        String(d.paymentUTR || "").toUpperCase() === "LUMEN-ACQUIRED" ||
+        String(d.referral || "").toUpperCase() === "LUMEN-MUN";
+      const cleanRef = String(d.referral || "").trim().toUpperCase();
+      const hasReferral = Boolean(cleanRef && cleanRef !== "NONE" && cleanRef !== "N/A" && cleanRef !== "LUMEN-MUN");
+
       const matchPay =
         paymentFilter === "ALL" ||
         (paymentFilter === "VERIFIED" && d.paymentStatus === "VERIFIED") ||
         (paymentFilter === "PENDING" && d.paymentStatus !== "VERIFIED") ||
-        (paymentFilter === "LUMEN" &&
-          (String(d.regId || "").toUpperCase().startsWith("RM-LMN-") ||
-            String(d.paymentUTR || "").toUpperCase() === "LUMEN-ACQUIRED" ||
-            String(d.referral || "").toUpperCase() === "LUMEN-MUN")) ||
+        (paymentFilter === "ORGANIC" && !isLumenDel && !hasReferral) ||
+        (paymentFilter === "RESOLVE_DIRECT" && !isLumenDel) ||
+        (paymentFilter === "REFERRED" && !isLumenDel && hasReferral) ||
+        (paymentFilter === "LUMEN" && isLumenDel) ||
         (paymentFilter === "BUS" &&
-          !String(d.regId || "").toUpperCase().startsWith("RM-LMN-") &&
-          String(d.paymentUTR || "").toUpperCase() !== "LUMEN-ACQUIRED" &&
+          !isLumenDel &&
           String(d.transport || "").toLowerCase().startsWith("yes"));
 
       return matchSearch && matchComm && matchPay;
@@ -1735,6 +1753,7 @@ export default function SuperAdminPage() {
               { id: "delegations", label: "Delegations", count: navCounts.delegations },
               { id: "leads", label: "Leads", count: navCounts.leads },
               { id: "applications", label: "Team Apps", count: navCounts.applications },
+              { id: "transfers", label: "Transfers", count: navCounts.transfers },
               { id: "referrals", label: "Referrals" },
               { id: "users", label: "Accounts", count: navCounts.users },
               { id: "crm", label: "CRM" },
@@ -2206,9 +2225,12 @@ export default function SuperAdminPage() {
                     className="h-8 px-2.5 rounded-md border border-[#262626] bg-black text-xs text-white focus:outline-none"
                   >
                     <option value="ALL">All Delegates</option>
+                    <option value="ORGANIC">Organic Delegates Only (No Referral / Non-Lumen)</option>
+                    <option value="RESOLVE_DIRECT">Resolve Direct Only (Excl. Lumen)</option>
+                    <option value="REFERRED">Referred Delegates Only (Sec / OC / RES)</option>
+                    <option value="LUMEN">Lumen Delegates Only</option>
                     <option value="VERIFIED">Verified Only</option>
                     <option value="PENDING">Pending Only</option>
-                    <option value="LUMEN">Lumen Delegates Only</option>
                     <option value="BUS">Bus Transport Opted Only</option>
                   </select>
 
@@ -4682,6 +4704,180 @@ export default function SuperAdminPage() {
               </div>
             );
           })()}
+
+          {/* ===============================================================
+              TAB: ALLOCATION TRANSFERS (PRE-APPROVAL QUEUE · RESEND STYLE)
+              =============================================================== */}
+          {activeTab === "transfers" && (
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="m-0 text-lg font-semibold tracking-tight text-white">
+                    Allocation Transfer Requests
+                  </h2>
+                  <p className="m-0 text-xs text-zinc-500 mt-0.5">
+                    Mandatory pre-approval queue before delegates can transfer or sell seats. Approving or rejecting emails both parties automatically.
+                  </p>
+                </div>
+                <a
+                  href="/transfer"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-8 px-3 rounded-md border border-[#242428] bg-[#0a0a0c] text-xs text-zinc-300 hover:text-white inline-flex items-center gap-1.5"
+                >
+                  <span>Open Public Form ↗</span>
+                </a>
+              </div>
+
+              <div className="rounded-lg border border-[#1c1c20] bg-black overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-[#18181b] text-[11px] text-zinc-500 font-medium">
+                        <th className="py-3 px-4 font-medium">Request &amp; Mode</th>
+                        <th className="py-3 px-4 font-medium">Current Holder (Seller)</th>
+                        <th className="py-3 px-4 font-medium">Incoming Delegate (Buyer)</th>
+                        <th className="py-3 px-4 font-medium">Status</th>
+                        <th className="py-3 px-4 text-right font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#141418]">
+                      {transferRequests.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-zinc-500">
+                            No allocation transfer requests submitted yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        transferRequests.map((tr) => {
+                          const isLumenReq = String(tr.registration_mode || "").toLowerCase().includes("lumen");
+                          const handleTransferDecision = async (newStatus) => {
+                            const note =
+                              newStatus === "Rejected"
+                                ? window.prompt(`Optional reason for declining ${tr.request_id}:`, "") ?? ""
+                                : "";
+                            try {
+                              const res = await fetch("/api/transfer", {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  adminKey: ADMIN_KEY,
+                                  id: tr.id,
+                                  requestId: tr.request_id,
+                                  status: newStatus,
+                                  adminNote: note,
+                                }),
+                              });
+                              const j = await res.json();
+                              if (res.ok && j.success) {
+                                setTransferRequests((prev) =>
+                                  prev.map((row) =>
+                                    row.id === tr.id ? { ...row, status: newStatus, admin_note: note } : row
+                                  )
+                                );
+                                notify(`Transfer ${tr.request_id} marked ${newStatus} & both parties emailed.`);
+                              } else {
+                                notify(j.message || "Update failed", "error");
+                              }
+                            } catch (_) {
+                              notify("Network error updating transfer request", "error");
+                            }
+                          };
+
+                          return (
+                            <tr key={tr.id} className="hover:bg-[#08080b] transition-colors">
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="font-mono text-white font-semibold">{tr.request_id}</div>
+                                <div className={`text-[11px] mt-0.5 ${isLumenReq ? "text-amber-400" : "text-zinc-400"}`}>
+                                  {tr.registration_mode}
+                                </div>
+                                {tr.agreed_amount && (
+                                  <div className="text-[11px] text-zinc-500 mt-0.5">
+                                    Proposed: {tr.agreed_amount}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="text-white font-medium">{tr.seller_name}</div>
+                                <div className="text-zinc-400 text-[11px]">{tr.seller_email}</div>
+                                <div className="text-zinc-500 text-[11px] font-mono mt-0.5">
+                                  {tr.seller_reg_id} · {tr.seller_phone}
+                                </div>
+                                {tr.transfer_reason && (
+                                  <div className="text-zinc-500 text-[11px] mt-1 max-w-xs line-clamp-2">
+                                    Reason: {tr.transfer_reason}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="text-white font-medium">{tr.buyer_name}</div>
+                                <div className="text-zinc-400 text-[11px]">{tr.buyer_email} · {tr.buyer_phone}</div>
+                                <div className="text-zinc-500 text-[11px] mt-0.5">
+                                  {tr.buyer_school} {tr.buyer_grade ? `· ${tr.buyer_grade}` : ""}
+                                </div>
+                                <div className="text-zinc-500 text-[11px] mt-0.5">
+                                  Parent: {tr.buyer_emergency_name} ({tr.buyer_emergency_phone})
+                                </div>
+                                <div className="text-zinc-500 text-[11px] mt-0.5">
+                                  Prefs: {[tr.buyer_pref1, tr.buyer_pref2, tr.buyer_pref3].filter(Boolean).join(" · ") || "—"}
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 text-[11px] font-medium",
+                                    tr.status === "Approved"
+                                      ? "text-emerald-400"
+                                      : tr.status === "Rejected"
+                                      ? "text-red-400"
+                                      : "text-amber-400"
+                                  )}
+                                >
+                                  <span
+                                    className={cn(
+                                      "h-1.5 w-1.5 rounded-full",
+                                      tr.status === "Approved"
+                                        ? "bg-emerald-400"
+                                        : tr.status === "Rejected"
+                                        ? "bg-red-400"
+                                        : "bg-amber-400"
+                                    )}
+                                  />
+                                  {tr.status}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 align-top text-right whitespace-nowrap">
+                                <div className="inline-flex items-center gap-1.5">
+                                  {tr.status !== "Approved" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTransferDecision("Approved")}
+                                      className="h-7 px-2.5 rounded-md bg-white text-black text-[11px] font-semibold hover:bg-zinc-200 cursor-pointer"
+                                    >
+                                      Approve
+                                    </button>
+                                  )}
+                                  {tr.status !== "Rejected" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTransferDecision("Rejected")}
+                                      className="h-7 px-2.5 rounded-md border border-[#26262a] bg-black text-zinc-300 hover:text-red-400 hover:border-red-500/40 text-[11px] font-medium cursor-pointer"
+                                    >
+                                      Reject
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ===============================================================
               TAB: ALLOCATIONS MATRIX & SEAT CAPACITIES

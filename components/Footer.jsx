@@ -368,9 +368,9 @@ export default function Footer() {
       title: "Resources",
       links: [
         { label: "Delegate Brochure (PDF)", href: "/brochure" },
-        { label: "Background Guides", onClick: handleOpenCommitteeIntro },
+        { label: "Allocation Transfer Form", href: "/transfer" },
         { label: "Liability Waiver", href: "/liability" },
-        { label: "Terms & Conditions", href: "/terms" },
+        { label: "Terms & No-Refund Policy", href: "/terms" },
         { label: "Privacy Policy", href: "/terms?tab=privacy" },
       ],
     },

@@ -17,6 +17,7 @@ import {
   Layers,
   QrCode,
   Ticket,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar";
@@ -70,6 +71,14 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
       icon: FileCheck2,
       count: counts.applications || 0,
       hint: "OC, Sec & EB",
+    },
+    {
+      id: "transfers",
+      label: "Transfers",
+      icon: ArrowRightLeft,
+      count: counts.transfers || 0,
+      hint: "Seat Transfer Requests",
+      dividerAfter: true,
     },
     {
       id: "secretariat",
@@ -153,25 +162,25 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
             const isActive = activeTab === item.id;
 
             return (
+              <React.Fragment key={item.id}>
               <button
-                key={item.id}
                 type="button"
                 onClick={() => {
                   onTabChange?.(item.id);
                   if (isMobile) setOpen(false);
                 }}
                 className={cn(
-                  "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer",
+                  "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[12.5px] font-medium transition-colors cursor-pointer border",
                   isActive
-                    ? "bg-white text-black font-semibold"
-                    : "text-zinc-400 hover:bg-[#0a0a0a] hover:text-white"
+                    ? "bg-[#16161a] text-white border-[#27272e]"
+                    : "text-zinc-400 border-transparent hover:bg-[#0c0c0f] hover:text-zinc-100"
                 )}
                 title={!open ? item.label : undefined}
               >
                 <Icon
                   className={cn(
                     "h-3.5 w-3.5 shrink-0 transition-colors",
-                    isActive ? "text-black" : "text-zinc-500 group-hover:text-white"
+                    isActive ? "text-white" : "text-zinc-500 group-hover:text-zinc-200"
                   )}
                 />
                 {open && (
@@ -182,8 +191,8 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
                         className={cn(
                           "ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded",
                           isActive
-                            ? "bg-black/15 text-black font-bold"
-                            : "bg-[#0a0a0a] text-zinc-300 border border-[#262626]"
+                            ? "bg-white/10 text-white"
+                            : "text-zinc-500"
                         )}
                       >
                         {item.count}
@@ -192,6 +201,8 @@ export function App1Sidebar({ activeTab = "overview", onTabChange, counts = {}, 
                   </div>
                 )}
               </button>
+              {item.dividerAfter && open && <div className="my-2 border-t border-[#18181b]" />}
+              </React.Fragment>
             );
           })}
         </div>
