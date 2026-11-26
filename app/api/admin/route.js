@@ -1159,7 +1159,32 @@ export async function POST(request) {
             .ilike('email', email);
         }
       }
-      return NextResponse.json({ status: 'success', message: 'Secretariat member approved!' });
+
+      if (email && email.includes('@')) {
+        const secName = body.fullName || body.name || 'Secretariat Member';
+        const secRole = body.allottedRole || body.role || 'Secretariat';
+        await sendTransactionalEmail({
+          to: email,
+          cc: RESOLVE_CC_EMAIL,
+          name: secName,
+          subject: `Secretariat Profile Approved — Welcome to Resolve MUN 2.0!`,
+          eyebrow: 'Secretariat Approval · Access Unlocked',
+          title: 'Your Secretariat Profile Is Approved',
+          text:
+            `Congratulations! Your Resolve MUN 2.0 Secretariat profile (${secRole}) has been approved by the Admin.\n\n` +
+            `Your Secretariat Portal & ₹400 Referral Cash Dashboard are now unlocked. You can create your custom referral code, pick any delegate discount from ₹0 to ₹400, and track your live cash earnings.\n\n` +
+            `Dates: 26–27 December 2026\nVenue: Northfield International School, Kompally, Hyderabad\n\n` +
+            `Welcome aboard!\nResolve MUN 2.0 Secretariat`,
+          ctaLabel: 'Open Secretariat Portal',
+          ctaUrl: 'https://resolvemun.in/secretariat',
+          highlightBox: {
+            label: 'Approved Role',
+            value: `${secRole} · ₹400 Referral Cash Engine Unlocked`,
+          },
+        }).catch(() => {});
+      }
+
+      return NextResponse.json({ status: 'success', message: 'Secretariat member approved & notified!' });
     }
 
     if (action === 'ADMIN_DELETE_SECRETARIAT_MEMBER') {
@@ -1301,23 +1326,104 @@ export async function POST(request) {
         }
       }
 
-      // 2. Sync to Google Apps Script & dispatch official offer letter if Accepted
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'ADMIN_ACCEPT_APPLICANT',
-          adminKey: ADMIN_KEY,
-          appId,
-          roleType,
-          email,
-          fullName,
-          position: position || (roleType === 'OC' ? 'Organizing Committee' : roleType === 'EB' ? 'Executive Board' : 'Secretariat'),
-          status: newStatus,
-        }),
-      }).catch(() => {});
+      // 2. Dispatch official Approval / Rejection / Waitlist email via Resend (with Apps Script fallback) + CC Resolve
+      let statusEmailSent = false;
+      const cleanApplicantEmail = String(email || '').trim().toLowerCase();
+      if (cleanApplicantEmail && cleanApplicantEmail.includes('@')) {
+        const applicantName = fullName || 'Applicant';
+        const roleLabel =
+          roleType === 'OC'
+            ? 'Organizing Committee (OC)'
+            : roleType === 'EB'
+            ? 'Executive Board (EB)'
+            : 'Secretariat';
+        const rolePosition = position || roleLabel;
+        const stLower = String(newStatus || '').toLowerCase();
+        const isApproved = stLower === 'accepted' || stLower === 'approved' || stLower === 'appointed';
+        const isRejected = stLower === 'rejected' || stLower === 'declined';
 
-      return NextResponse.json({ status: 'success', appId, newStatus, message: `Applicant updated to ${newStatus}` });
+        const portalUrl =
+          roleType === 'OC'
+            ? 'https://resolvemun.in/oc'
+            : roleType === 'SEC'
+            ? 'https://resolvemun.in/secretariat'
+            : 'https://resolvemun.in/dashboard';
+
+        let mailSubject = `Application Status Update (${newStatus}) — Resolve MUN 2.0`;
+        let mailEyebrow = `${roleLabel} · Status Update`;
+        let mailTitle = `Application Status: ${newStatus}`;
+        let mailCtaLabel = 'Open Portal';
+        let mailCtaUrl = portalUrl;
+        let mailBody =
+          `Your ${roleLabel} application (${rolePosition}) for Resolve MUN 2.0 has been updated to: ${newStatus}.\n\n` +
+          `Dates: 26–27 December 2026\nVenue: Northfield International School, Kompally, Hyderabad\n\n` +
+          `Resolve MUN 2.0 Secretariat`;
+
+        if (isApproved) {
+          mailSubject = `Congratulations! You Are Approved for ${roleLabel} — Resolve MUN 2.0`;
+          mailEyebrow = `${roleLabel} · Officially Approved`;
+          mailTitle = `Welcome to the ${roleLabel}!`;
+          mailCtaLabel =
+            roleType === 'OC'
+              ? 'Open OC Portal & Referral Dashboard'
+              : roleType === 'SEC'
+              ? 'Open Secretariat Portal'
+              : 'Open Your Digital Pass';
+          mailBody =
+            `Congratulations! Your application for ${roleLabel} (${rolePosition}) at Resolve MUN 2.0 has been officially APPROVED.\n\n` +
+            (roleType === 'OC'
+              ? `Your OC Pass and ₹400 Referral & Cash Commission Dashboard are now unlocked on https://resolvemun.in/oc — you can create your custom OC referral code right away!\n\n`
+              : roleType === 'SEC'
+              ? `Your Secretariat Portal & ₹400 Referral Cash Dashboard are now unlocked on https://resolvemun.in/secretariat.\n\n`
+              : `Your Executive Board appointment is now confirmed and your official Digital Gate Pass is unlocked on https://resolvemun.in/dashboard.\n\n`) +
+            `Dates: 26–27 December 2026\nVenue: Northfield International School, Kompally, Hyderabad\n\n` +
+            `Warm regards,\nResolve MUN 2.0 Secretariat`;
+        } else if (isRejected) {
+          mailSubject = `Application Update — Resolve MUN 2.0 (${roleLabel})`;
+          mailEyebrow = `${roleLabel} · Application Decision`;
+          mailTitle = `Thank You for Applying to Resolve MUN 2.0`;
+          mailCtaLabel = 'Register as a Delegate';
+          mailCtaUrl = 'https://resolvemun.in/register/delegate';
+          mailBody =
+            `Thank you for your interest in joining the ${roleLabel} (${rolePosition}) at Resolve MUN 2.0.\n\n` +
+            `After careful review of all applications, we regret to inform you that we are unable to move forward with your ${roleLabel} application for this edition due to limited seats.\n\n` +
+            `We would still love to host you at Resolve MUN 2.0 as a Delegate across our 6 committees (UNCSW, UNHRC, DISEC, IP, Lok Sabha, and Marvel) on 26–27 December 2026 at Northfield International School, Kompally, Hyderabad.\n\n` +
+            `Wishing you the very best,\nResolve MUN 2.0 Secretariat`;
+        } else {
+          mailSubject = `Application Under Review (${newStatus}) — Resolve MUN 2.0`;
+          mailEyebrow = `${roleLabel} · Waiting for Approval`;
+          mailTitle = `Your Application Is ${newStatus}`;
+          mailBody =
+            `Your ${roleLabel} application (${rolePosition}) for Resolve MUN 2.0 is currently marked as "${newStatus}" and is under Secretariat review.\n\n` +
+            `Please note that your position is not final until you receive an official approval email from us.\n\n` +
+            `Warm regards,\nResolve MUN 2.0 Secretariat`;
+        }
+
+        const mailOutcome = await sendTransactionalEmail({
+          to: cleanApplicantEmail,
+          cc: RESOLVE_CC_EMAIL,
+          name: applicantName,
+          subject: mailSubject,
+          eyebrow: mailEyebrow,
+          title: mailTitle,
+          text: mailBody,
+          ctaLabel: mailCtaLabel,
+          ctaUrl: mailCtaUrl,
+          highlightBox: {
+            label: `${roleLabel} · ${appId || 'Application'}`,
+            value: `${rolePosition} · Status: ${newStatus}`,
+          },
+        }).catch(() => ({ sent: false }));
+        statusEmailSent = Boolean(mailOutcome?.sent);
+      }
+
+      return NextResponse.json({
+        status: 'success',
+        appId,
+        newStatus,
+        emailDispatched: statusEmailSent,
+        message: `Applicant updated to ${newStatus}${statusEmailSent ? ' & email sent' : ''}`,
+      });
     }
 
     if (action === 'ADMIN_DELETE_APPLICATION' || action === 'DELETE_APPLICATION') {

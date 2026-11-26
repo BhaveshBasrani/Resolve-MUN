@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { getDelegateReferralCode, RES_POINTS_PER_REFERRAL } from '@/lib/referrals';
 import { enforceRateLimit } from '@/lib/rateLimit';
+import { sendTransactionalEmail, RESOLVE_CC_EMAIL } from '@/lib/mailer';
 
 const BASE_DELEGATE_FEE = 2500;
 const SECRETARIAT_CASH_POOL = 400;
@@ -778,6 +779,29 @@ export async function POST(request) {
         }).catch(() => { });
       }
 
+      // Send "Waiting for Approval" email to Secretariat member + CC Resolve
+      if (!isAlreadyApproved) {
+        await sendTransactionalEmail({
+          to: email,
+          cc: RESOLVE_CC_EMAIL,
+          name: fullName,
+          subject: `Secretariat Profile Submitted — Waiting for Approval | Resolve MUN 2.0`,
+          eyebrow: 'Secretariat Onboarding · Pending Approval',
+          title: 'Profile Received — Waiting for Admin Approval',
+          text:
+            `We have received your Resolve MUN 2.0 Secretariat onboarding details (${allottedRole}).\n\n` +
+            `Your profile is currently waiting for Admin approval. Once approved, you will receive a confirmation email and your ₹400 Referral Cash Dashboard will unlock at https://resolvemun.in/secretariat.\n\n` +
+            `Dates: 26–27 December 2026\nVenue: Northfield International School, Kompally, Hyderabad\n\n` +
+            `Resolve MUN 2.0 Secretariat`,
+          ctaLabel: 'Open Secretariat Portal',
+          ctaUrl: 'https://resolvemun.in/secretariat',
+          highlightBox: {
+            label: 'Submitted Role · Status',
+            value: `${allottedRole} · Waiting for Admin Approval`,
+          },
+        }).catch(() => {});
+      }
+
       return NextResponse.json({
         success: true,
         pendingApproval: !isAlreadyApproved,
@@ -919,6 +943,28 @@ export async function POST(request) {
           }),
         }).catch(() => { });
       }
+
+      // Send "Waiting for Approval" email to OC member + CC Resolve
+      await sendTransactionalEmail({
+        to: email,
+        cc: RESOLVE_CC_EMAIL,
+        name: fullName,
+        subject: `OC Onboarding Received — Waiting for Admin Approval [${savedAppId}]`,
+        eyebrow: 'Organizing Committee · Pending Approval',
+        title: 'OC Profile Received — Waiting for Approval',
+        text:
+          `We have received your Resolve MUN 2.0 Organizing Committee (OC) profile.\n\n` +
+          `Application ID: ${savedAppId}\nDepartment: ${department}\nSelected Plan: ${feeTier}\nUTR: ${paymentUtr || 'Pending / Pay Later'}\n\n` +
+          `Your profile and payment proof are waiting for Admin approval. Once approved, you will receive an approval email and your OC Pass & ₹400 Referral Cash Dashboard will unlock at https://resolvemun.in/oc.\n\n` +
+          `Dates: 26–27 December 2026\nVenue: Northfield International School, Kompally, Hyderabad\n\n` +
+          `Resolve MUN 2.0 Secretariat`,
+        ctaLabel: 'Open OC Portal',
+        ctaUrl: 'https://resolvemun.in/oc',
+        highlightBox: {
+          label: `OC Profile · ${savedAppId}`,
+          value: `${department} · ${feeTier} · Waiting for Approval`,
+        },
+      }).catch(() => {});
 
       return NextResponse.json({
         success: true,
@@ -1097,6 +1143,28 @@ export async function POST(request) {
           return NextResponse.json({ success: false, message: err.message }, { status: 500 });
         }
       }
+
+      // Send "Waiting for Verification" email to Lumen MUN Delegate + CC Resolve
+      await sendTransactionalEmail({
+        to: email,
+        cc: RESOLVE_CC_EMAIL,
+        name: fullName,
+        subject: `Lumen Transfer Received — Payment Proof Under Verification [${savedRegId}]`,
+        eyebrow: 'Lumen MUN Transfer · Waiting for Approval',
+        title: 'Your Transfer & Payment Proof Are Under Review',
+        text:
+          `Welcome to Resolve MUN 2.0! We have received your Lumen MUN transfer details, transaction proof (UTR: ${paymentUtr || 'Attached'}), and committee preferences.\n\n` +
+          `Registration ID: ${savedRegId}\nPreferences: ${[pref1Committee, pref2Committee, pref3Committee].filter(Boolean).join(' · ')}\n\n` +
+          `Our Secretariat is currently verifying your Lumen transaction screenshot. Once approved, your official Digital Gate Pass & Committee Allotment will be unlocked.\n\n` +
+          `Dates: 26–27 December 2026\nVenue: Northfield International School, Kompally, Hyderabad\n\n` +
+          `Resolve MUN 2.0 Secretariat`,
+        ctaLabel: 'Track Status on Dashboard',
+        ctaUrl: 'https://resolvemun.in/dashboard',
+        highlightBox: {
+          label: 'Lumen Transfer Reference',
+          value: `${savedRegId} · UTR: ${paymentUtr || 'Attached'} · Waiting for Approval`,
+        },
+      }).catch(() => {});
 
       return NextResponse.json({
         success: true,
