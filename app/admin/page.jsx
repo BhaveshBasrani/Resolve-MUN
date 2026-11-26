@@ -587,7 +587,7 @@ export default function SuperAdminPage() {
           setSiteUsers(normalizedUsers);
 
           // Fetch Allocation Transfer pre-approval requests
-          fetch(`/api/transfer?adminKey=${encodeURIComponent(ADMIN_KEY)}`, { cache: "no-store" })
+          fetch(`/api/transfer?adminKey=${encodeURIComponent(DEFAULT_ADMIN_KEY)}`, { cache: "no-store" })
             .then((r) => r.json())
             .then((trJson) => {
               if (trJson?.success && Array.isArray(trJson.transfers)) {
@@ -4761,7 +4761,7 @@ export default function SuperAdminPage() {
                                 method: "PATCH",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
-                                  adminKey: ADMIN_KEY,
+                                  adminKey: DEFAULT_ADMIN_KEY,
                                   id: tr.id,
                                   requestId: tr.request_id,
                                   status: newStatus,
