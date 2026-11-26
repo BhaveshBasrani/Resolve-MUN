@@ -453,7 +453,7 @@ export const homeHtml = `
       <div class="terms-modal-topline">
         <div class="terms-modal-title-group">
           <h2 class="terms-modal-title">LEGAL POLICIES &amp; TERMS</h2>
-          <span class="terms-modal-subtitle">Resolve MUN 2.0 · 26, 27 December 2026 · Northfield International School</span>
+          <span class="terms-modal-subtitle">Resolve MUN 2.0 · 26, 27 December 2026 · Northfield International School · <a href="/terms" style="color:#ffffff;text-decoration:underline;margin-left:4px;">Direct Link ↗</a></span>
         </div>
         <button class="terms-close-btn" onclick="closeTermsModal()" aria-label="Close modal">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">

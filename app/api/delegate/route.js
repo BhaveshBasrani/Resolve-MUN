@@ -151,27 +151,25 @@ export async function GET(request) {
           .maybeSingle();
 
         if (ocRow) {
+          const ocStatusLower = String(ocRow.status || '').toLowerCase().trim();
+          const ocApproved = ocStatusLower === 'approved' || ocStatusLower === 'accepted';
           return NextResponse.json({
             found: true,
             delegate: {
               ...ocRow,
               id: ocRow.id,
-              regId: ocRow.app_id || `RM26-OC-${String(ocRow.id).slice(0, 4).toUpperCase()}`,
-              delegateId: ocRow.app_id || `RM26-OC-${String(ocRow.id).slice(0, 4).toUpperCase()}`,
+              regId: ocRow.app_id || `RM-OC-${String(ocRow.id).slice(0, 4).toUpperCase()}`,
+              delegateId: ocRow.app_id || `RM-OC-${String(ocRow.id).slice(0, 4).toUpperCase()}`,
               fullName: ocRow.full_name || 'OC Applicant',
               email: ocRow.email || email,
               institution: ocRow.school || 'Organizing Committee',
               status: ocRow.status || 'Pending Approval',
-              paymentStatus:
-                String(ocRow.payment_status || '').toUpperCase() === 'VERIFIED' ||
-                ocRow.status === 'Approved' ||
-                ocRow.status === 'Accepted'
-                  ? 'VERIFIED'
-                  : 'PENDING_VERIFICATION',
+              paymentStatus: ocApproved ? 'VERIFIED' : 'PENDING_VERIFICATION',
               paymentUTR: ocRow.payment_utr || 'OC-TRACK',
-              allocatedCommittee: ocRow.allocated_department || 'Organizing Committee',
-              allocatedCountry: `OC Member (${ocRow.payment_tier || 'Salaried Track'})`,
+              allocatedCommittee: ocApproved ? (ocRow.allocated_department || 'Organizing Committee') : 'Application Under Review',
+              allocatedCountry: ocApproved ? `OC Member (${ocRow.fee_tier || ocRow.payment_tier || 'Approved'})` : 'Pending Secretariat Approval',
               roleType: 'OC',
+              isApproved: ocApproved,
             },
           });
         }
@@ -185,27 +183,30 @@ export async function GET(request) {
           .maybeSingle();
 
         if (secRow) {
+          const secStatusLower = String(secRow.status || '').toLowerCase().trim();
+          const secApproved = secStatusLower === 'accepted' || secStatusLower === 'approved';
           return NextResponse.json({
             found: true,
             delegate: {
               ...secRow,
               id: secRow.id,
-              regId: secRow.app_id || `RM26-SEC-${String(secRow.id).slice(0, 4).toUpperCase()}`,
-              delegateId: secRow.app_id || `RM26-SEC-${String(secRow.id).slice(0, 4).toUpperCase()}`,
+              regId: secRow.app_id || `RM-SEC-${String(secRow.id).slice(0, 4).toUpperCase()}`,
+              delegateId: secRow.app_id || `RM-SEC-${String(secRow.id).slice(0, 4).toUpperCase()}`,
               fullName: secRow.full_name || 'Secretariat Applicant',
               email: secRow.email || email,
               institution: secRow.school_college || 'Secretariat',
-              status: secRow.status || 'Pending',
-              paymentStatus: secRow.status === 'Accepted' || secRow.status === 'Approved' ? 'VERIFIED' : 'PENDING_VERIFICATION',
+              status: secRow.status || 'Pending Approval',
+              paymentStatus: secApproved ? 'VERIFIED' : 'PENDING_VERIFICATION',
               paymentUTR: 'SECRETARIAT-EXEMPT',
-              allocatedCommittee: 'Resolve Secretariat',
-              allocatedCountry: secRow.position || 'Secretariat Role',
+              allocatedCommittee: secApproved ? 'Resolve Secretariat' : 'Application Under Review',
+              allocatedCountry: secApproved ? (secRow.position || 'Secretariat Role') : 'Pending Secretariat Approval',
               roleType: 'SECRETARIAT',
+              isApproved: secApproved,
             },
           });
         }
 
-        // 1D. Executive Board Applications
+        // 1D. Executive Board Applications (STRICT: NEVER issue Gate Pass until Accepted/Approved!)
         const { data: ebRow } = await supabase
           .from('eb_applications')
           .select('*')
@@ -214,22 +215,25 @@ export async function GET(request) {
           .maybeSingle();
 
         if (ebRow) {
+          const ebStatusLower = String(ebRow.status || '').toLowerCase().trim();
+          const ebApproved = ebStatusLower === 'accepted' || ebStatusLower === 'approved' || ebStatusLower === 'appointed';
           return NextResponse.json({
             found: true,
             delegate: {
               ...ebRow,
               id: ebRow.id,
-              regId: ebRow.app_id || `RM26-EB-${String(ebRow.id).slice(0, 4).toUpperCase()}`,
-              delegateId: ebRow.app_id || `RM26-EB-${String(ebRow.id).slice(0, 4).toUpperCase()}`,
+              regId: ebRow.app_id || `RM-EB-${String(ebRow.id).slice(0, 4).toUpperCase()}`,
+              delegateId: ebRow.app_id || `RM-EB-${String(ebRow.id).slice(0, 4).toUpperCase()}`,
               fullName: ebRow.full_name || 'EB Applicant',
               email: ebRow.email || email,
               institution: ebRow.institute || 'Executive Board',
-              status: ebRow.status || 'Pending',
-              paymentStatus: 'VERIFIED',
-              paymentUTR: 'EB-HONORARY',
-              allocatedCommittee: ebRow.allocated_committee || ebRow.committees || 'Executive Board',
-              allocatedCountry: ebRow.allocated_role || ebRow.role_preference || 'Executive Board Member',
+              status: ebRow.status || 'Pending Review',
+              paymentStatus: ebApproved ? 'VERIFIED' : 'PENDING_VERIFICATION',
+              paymentUTR: ebApproved ? 'EB-APPOINTED' : 'EB-UNDER-REVIEW',
+              allocatedCommittee: ebApproved ? (ebRow.allocated_committee || ebRow.committees || 'Executive Board') : 'Application Under Review',
+              allocatedCountry: ebApproved ? (ebRow.allocated_role || ebRow.role_preference || 'Executive Board Member') : 'Not Final · Pending Selection',
               roleType: 'EB',
+              isApproved: ebApproved,
             },
           });
         }

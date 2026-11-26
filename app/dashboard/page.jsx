@@ -1179,6 +1179,29 @@ export default function DelegateDashboard() {
             </section>
             ))}
 
+            {/* APPLICATION UNDER REVIEW BANNER FOR PENDING EB / OC / SECRETARIAT */}
+            {activeTab === "overview" && isReg && ["EB", "OC", "SECRETARIAT"].includes(delegateRecord?.roleType) && !isPaid && (
+              <section className="rounded-md border border-amber-500/30 bg-amber-500/[0.06] p-4 sm:p-5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-semibold">
+                    Application Under Review · Position Not Final
+                  </span>
+                </div>
+                <p className="m-0 text-xs text-zinc-300 leading-relaxed">
+                  We have received your{" "}
+                  <strong className="text-white">
+                    {delegateRecord.roleType === "EB"
+                      ? "Executive Board"
+                      : delegateRecord.roleType === "OC"
+                      ? "Organizing Committee"
+                      : "Secretariat"}
+                  </strong>{" "}
+                  application. Submitting an application does <strong className="text-white">not</strong> confirm your appointment — all selections are finalized only after Secretariat review/interview and official approval. Your Digital Gate Pass will unlock once approved.
+                </p>
+              </section>
+            )}
+
             {/* CRM OVERVIEW QUICK KPI GRID & JUMP CARDS */}
             {activeTab === "overview" && isReg && (
               <section className="rounded-md border border-[#262626] bg-black p-4 sm:p-5 space-y-4">
@@ -1555,6 +1578,27 @@ export default function DelegateDashboard() {
 
               {/* RES POINTS & REFERRALS (Referrals Tab) */}
               {activeTab === "referrals" && (() => {
+                const isVerifiedDelegate = delegateRecord?.roleType === "DELEGATE" && isPaid;
+                if (!isVerifiedDelegate) {
+                  return (
+                    <section className="rounded-md border border-[#262626] bg-black p-6 text-center space-y-3">
+                      <span className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                        Delegate Referral Program
+                      </span>
+                      <h3 className="m-0 text-base font-semibold text-white">
+                        {delegateRecord?.roleType === "DELEGATE"
+                          ? "Referral Code Unlocks After Payment Verification"
+                          : "Available for Verified Delegates Only"}
+                      </h3>
+                      <p className="m-0 text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+                        {delegateRecord?.roleType === "DELEGATE"
+                          ? "Once our Secretariat verifies your delegate payment UTR, your personal RES-XXXX referral code and +400 RES Points rewards will unlock here."
+                          : "Delegate RES-XXXX referral codes are issued exclusively to verified Individual Delegates. Your current application is under review and has not been finalized yet."}
+                      </p>
+                    </section>
+                  );
+                }
+
                 const refCode =
                   delegateRecord.referralCode ||
                   getDelegateReferralCode(delegateRecord.delegateId || delegateRecord.regId, delegateRecord.email || user?.email);

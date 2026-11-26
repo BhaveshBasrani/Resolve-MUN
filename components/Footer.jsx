@@ -367,10 +367,11 @@ export default function Footer() {
     {
       title: "Resources",
       links: [
+        { label: "Delegate Brochure (PDF)", href: "/brochure" },
         { label: "Background Guides", onClick: handleOpenCommitteeIntro },
-        { label: "Delegate Guide", onClick: (e) => { e.preventDefault(); handleOpenCommModal("Delegate Guide", "📖"); } },
-        { label: "Terms & Conditions", onClick: handleOpenTermsModal("delegate") },
-        { label: "Privacy Policy", onClick: handleOpenTermsModal("privacy") },
+        { label: "Liability Waiver", href: "/liability" },
+        { label: "Terms & Conditions", href: "/terms" },
+        { label: "Privacy Policy", href: "/terms?tab=privacy" },
       ],
     },
   ];
